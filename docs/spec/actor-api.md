@@ -63,6 +63,40 @@ Agent (agy CLI / Claude / Gen)
 | `actor.hold` | `{ actor, prop, hand }` | cầm đồ vật (`left`/`right`) |
 | `actor.drop` | `{ actor }` | |
 
+### 3.2b Cảm xúc = gói (Boss quyết 03/10: mặt + cơ thể + giọng đi cùng nhau)
+
+Nguyên tắc: **không lệnh nào chỉ đổi mặt**. `actor.express` giữ cho việc tinh chỉnh, nhưng lệnh chính để dùng là `actor.emote` và `actor.say` có `emotion`.
+
+| Lệnh | Args | Ghi chú |
+| --- | --- | --- |
+| `actor.emote` | `{ actor, emote, intensity?: 0–1, say?: text }` | Chạy **cả gói**: biểu cảm mặt + chuỗi chuyển động cơ thể + âm thanh ngắn + (tùy chọn) nói. Sự kiện `actor.emoteDone` |
+| `actor.say` | thêm `emotion` | Khi nói: mặt theo cảm xúc, đầu gật/nghiêng, tay làm cử chỉ nhịp (beat gesture) ngẫu nhiên hợp với cảm xúc, mắt nhìn người nghe, miệng nhép theo âm |
+| `actor.idleStyle` | `{ actor, style: "binh-thuong" \| "hao-hung" \| "met" \| "cang-thang" }` | Đổi dáng đứng chờ: thở nhanh/chậm, đổi chân, nhìn quanh, gãi đầu… để nhân vật không bao giờ đứng im |
+
+**Thư viện emote v0.1** (mỗi emote = mặt + chuyển động + âm; agent chỉ cần gọi tên):
+
+| emote | Mặt | Cơ thể | Âm |
+| --- | --- | --- | --- |
+| `vui` | happy | nhún người, vỗ tay hoặc giơ 2 tay, lắc lư | "yay" ngắn |
+| `rat-vui` | happy max | nhảy lên, xoay người, vẫy 2 tay | reo |
+| `buon` | sad | vai sụp, cúi đầu, tay buông, lùi nửa bước | thở dài |
+| `ngac-nhien` | surprised | giật lùi, tay đưa lên che miệng, mắt mở to | "ồ" |
+| `gian` | angry | khoanh tay, dậm chân, lắc đầu | hừ |
+| `suy-nghi` | neutral + nheo mắt | tay chống cằm, nhìn lên, gật gù chậm | "hmm" |
+| `dong-y` | happy nhẹ | gật đầu 2 lần, giơ ngón cái | "ok" |
+| `tu-choi` | sad nhẹ | lắc đầu, xua tay | |
+| `chao` | happy | vẫy tay, hơi cúi người | "chào" |
+| `ra-lenh` | neutral quyết đoán | chỉ tay về phía màn hình, đứng thẳng | tiếng quét |
+| `thanh-cong` | happy | đấm tay lên trời, quay về phía camera | thành công |
+| `that-bai` | sad | ôm đầu, ngồi thụp | lỗi |
+| `boi-roi` | surprised nhẹ | gãi đầu, nhìn quanh | |
+| `met` | relaxed | vươn vai, ngáp | ngáp |
+| `cham-chu` | neutral | nhìn chằm màn hình, gõ nhịp tay | |
+
+Thêm emote mới = thêm 1 dòng cấu hình (mặt, danh sách clip, âm), không sửa code lõi. `stage.bootstrap` liệt kê đủ emote hiện có.
+
+Chuyển động cơ thể lấy từ Mixamo (miễn phí) đổi sang VRMA bằng `fbx2vrma-converter`; chuyển động nhỏ (gật, nghiêng đầu, cử chỉ nhịp, thở, đổi chân) làm thủ tục bằng code, trộn chồng lên clip chính (additive) để không bị cứng.
+
 ### 3.3 Đồ vật, cảnh, camera
 | Lệnh | Args |
 | --- | --- |
@@ -129,7 +163,7 @@ Ví dụ kịch bản Boss dán vào ô kịch bản (hoặc agent gửi):
 ```
 
 ### 3.5 Sự kiện sân khấu → agent
-`actor.arrived`, `actor.clipDone`, `actor.sayDone`, `script.done`, `user.speech` (Boss nói, đã chuyển thành chữ), `user.click` (Boss bấm vào actor/prop), `user.text` (Boss gõ).
+`actor.arrived`, `actor.clipDone`, `actor.sayDone`, `actor.emoteDone`, `script.done`, `user.speech` (Boss nói, đã chuyển thành chữ), `user.click` (Boss bấm vào actor/prop), `user.text` (Boss gõ).
 
 ## 4. Giao diện test thủ công (bắt buộc có từ đợt A)
 - Bảng bên phải liệt kê **tự động** mọi lệnh từ `stage.bootstrap` → mỗi lệnh 1 form nhỏ + nút Chạy. Không viết tay nút nào.
