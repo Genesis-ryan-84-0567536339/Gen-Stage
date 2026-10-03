@@ -26,7 +26,9 @@ interface ActorGia {
   expression: string;
   holding: string | null;
   lookingAt: string | null;
-  hd: { cancel: () => void } | null;
+  hd: Action | null;
+  /** Đang ở tư thế ngồi (sau khi `actor.sit` chạy xong trọn vẹn). */
+  ngoi: boolean;
 }
 
 /** Mỗi hành động mất đúng `nhip` ms để test chạy nhanh và đoán được. */
@@ -52,6 +54,7 @@ export class SanKhauGia implements StageWorld {
         holding: null,
         lookingAt: 'camera',
         hd: null,
+        ngoi: false,
       });
     }
   }
@@ -62,26 +65,41 @@ export class SanKhauGia implements StageWorld {
     return x;
   }
 
-  /** Hành động giả: xong sau `NHIP_MS`, huỷ được. */
-  private hd(id: string, ten: string, trangThai: ActorSnapshot['state']): Action {
+  /**
+   * Hành động giả: xong sau `NHIP_MS`, huỷ được.
+   *
+   * `khiXong` chỉ chạy khi hết giờ bình thường — bị `cancel()` thì KHÔNG chạy.
+   * Sân khấu thật cũng phải vậy: một hành động đã bị cắt không được ghi đè
+   * trạng thái của hành động mới (lỗi C3 trong review PR #6).
+   */
+  private hd(
+    id: string,
+    ten: string,
+    trangThai: ActorSnapshot['state'],
+    khiXong?: () => void,
+  ): Action {
     this.lichSu.push(`${ten}:${id}`);
     const x = this.a(id);
+    x.hd?.cancel();
     x.state = trangThai;
     let xong = false;
     let giaiQuyet: () => void = () => undefined;
     const done = new Promise<void>((r) => {
       giaiQuyet = r;
     });
-    const ket = () => {
+    const ket = (biHuy: boolean) => {
       if (xong) return;
       xong = true;
       clearTimeout(hen);
-      if (x.state === trangThai) x.state = 'idle';
-      x.hd = null;
+      if (x.hd === action) {
+        x.hd = null;
+        if (!biHuy) khiXong?.();
+        if (x.state === trangThai) x.state = x.ngoi ? 'sitting' : 'idle';
+      }
       giaiQuyet();
     };
-    const hen = setTimeout(ket, NHIP_MS);
-    const action: Action = { durationMs: NHIP_MS, done, cancel: ket };
+    const hen = setTimeout(() => ket(false), NHIP_MS);
+    const action: Action = { durationMs: NHIP_MS, done, cancel: () => ket(true) };
     x.hd = action;
     return action;
   }
@@ -141,6 +159,7 @@ export class SanKhauGia implements StageWorld {
       holding: null,
       lookingAt: 'camera',
       hd: null,
+      ngoi: false,
     });
     this.lichSu.push(`spawn:${p.id}`);
     return this.snap(this.a(p.id));
@@ -154,12 +173,19 @@ export class SanKhauGia implements StageWorld {
 
   actorMoveTo(id: string, to: string | Vec3): Action {
     const v = this.viTri(to);
-    const hd = this.hd(id, 'moveTo', 'walking');
-    void hd.done.then(() => {
-      const x = this.actors.get(id);
-      if (x) x.pos = v;
+    const x = this.a(id);
+    x.ngoi = false;
+
+    // Đã đứng sẵn ở đó: hành động dài 0 ms, `done` xong ngay trong cùng nhịp —
+    // đúng như `NhanVat.diToi` ngoài đời. Đây là cái bẫy của lỗi C1, sân khấu
+    // giả phải tái hiện được thì test hồi quy mới có nghĩa.
+    if (kc(x.pos, v) < 0.04) {
+      this.lichSu.push(`moveTo:${id}`);
+      return { durationMs: 0, done: Promise.resolve(), cancel: () => undefined };
+    }
+    return this.hd(id, 'moveTo', 'walking', () => {
+      x.pos = v;
     });
-    return hd;
   }
 
   actorLookAt(id: string, target: string | null): void {
@@ -170,32 +196,34 @@ export class SanKhauGia implements StageWorld {
   actorTurnTo(id: string, target: string | Vec3): Action {
     const v = this.viTri(target);
     const x = this.a(id);
-    const hd = this.hd(id, 'turnTo', 'playing');
-    void hd.done.then(() => {
+    return this.hd(id, 'turnTo', 'playing', () => {
       x.facing = Math.round(
         ((Math.atan2(v[0] - x.pos[0], v[2] - x.pos[2]) * 180) / Math.PI + 360) % 360,
       );
     });
-    return hd;
   }
 
   actorSit(id: string, seat: string): Action {
     const p = timPlace(seat);
     if (!p) throw new Error(`Không có place "${seat}"`);
     if (p.kind !== 'seat') throw new Error(`"${seat}" không phải ghế`);
-    const hd = this.hd(id, 'sit', 'playing');
-    void hd.done.then(() => {
-      const x = this.actors.get(id);
-      if (x) {
-        x.pos = p.pos;
-        x.state = 'sitting';
-      }
+    const x = this.a(id);
+    return this.hd(id, 'sit', 'playing', () => {
+      x.pos = p.pos;
+      x.ngoi = true;
+      x.state = 'sitting';
     });
-    return hd;
   }
 
   actorStand(id: string): Action {
-    return this.hd(id, 'stand', 'playing');
+    const x = this.a(id);
+    if (!x.ngoi) {
+      this.lichSu.push(`stand:${id}`);
+      return { durationMs: 0, done: Promise.resolve(), cancel: () => undefined };
+    }
+    return this.hd(id, 'stand', 'playing', () => {
+      x.ngoi = false;
+    });
   }
 
   actorPlay(id: string, clip: string): Action {
@@ -208,7 +236,7 @@ export class SanKhauGia implements StageWorld {
   actorStop(id: string): void {
     const x = this.a(id);
     x.hd?.cancel();
-    x.state = 'idle';
+    x.state = x.ngoi ? 'sitting' : 'idle';
     this.lichSu.push(`stop:${id}`);
   }
 
@@ -246,7 +274,7 @@ export class SanKhauGia implements StageWorld {
     const x = this.actors.get(id);
     if (!x) return;
     x.hd?.cancel();
-    x.state = 'idle';
+    x.state = x.ngoi ? 'sitting' : 'idle';
     this.lichSu.push(`interrupt:${id}`);
   }
 

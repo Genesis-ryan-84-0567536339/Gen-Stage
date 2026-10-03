@@ -50,6 +50,9 @@ export class BridgeClient {
     this.ws = ws;
 
     ws.addEventListener('open', () => {
+      // bridge mở ra ngoài máy sẽ bật token — gửi ngay ở khung đầu
+      const token = new URLSearchParams(location.search).get('bridgeToken');
+      if (token) ws.send(JSON.stringify({ token }));
       this.bus.emit('bridge.connected', { url: this.url });
       this.boNgheSuKien = this.bus.on('*', (e) => {
         if (e.event.startsWith('bridge.')) return;
@@ -96,10 +99,8 @@ export class BridgeClient {
       this.guiVe({ ok: false, error: 'Gói JSON không đọc được' });
       return;
     }
-    if (!goi || typeof goi.cmd !== 'string') {
-      this.guiVe({ id: goi?.id, ok: false, error: 'Thiếu "cmd"' });
-      return;
-    }
+    // gói không phải lệnh (vd xác nhận token) thì bỏ qua, không coi là lỗi
+    if (!goi || typeof goi.cmd !== 'string') return;
     const kq = await this.dispatcher.runCommand(goi, 'bridge');
     this.guiVe(kq);
   }

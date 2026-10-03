@@ -12,7 +12,12 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { VRM, VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
 import type { Action, ActorState } from '../api/types';
 import { BIEU_CAM, DAI_CLIP } from './noi-dung';
-import { hanhDong, hanhDongXongNgay, type HanhDongCoTay } from './hanh-dong';
+import {
+  hanhDong,
+  hanhDongHenGio,
+  hanhDongXongNgay,
+  type HanhDongCoTay,
+} from './hanh-dong';
 
 /** Tay buông xuống bao nhiêu radian so với T-pose. */
 const TAY_BUONG = 1.26;
@@ -47,6 +52,8 @@ interface LanXoay {
   batDau: number;
   dai: number;
   hd: HanhDongCoTay;
+  /** Xoay do lệnh `actor.turnTo` (chiếm thân) hay chỉ là chỉnh hướng sau khi đi. */
+  chiemThan: boolean;
 }
 
 const bayGio = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
@@ -102,9 +109,18 @@ export class NhanVat {
   // ngồi
   private dangNgoi = false;
 
+  /**
+   * Hành động đang **chiếm thân** (đi / xoay / clip / ngồi / đứng / nói).
+   *
+   * Đây là nguồn sự thật DUY NHẤT của `state`: còn `viec` thì `state` khác
+   * `idle`, hết `viec` thì về `idle`/`sitting`. Mọi hẹn giờ đều kiểm "mình còn
+   * là `viec` hiện tại không" trước khi ghi trạng thái, nên một hành động bị
+   * cắt không bao giờ ghi đè trạng thái của hành động mới.
+   */
+  private viec: HanhDongCoTay | null = null;
+
   // nói
   private noiConLai = 0;
-  private hdNoi: HanhDongCoTay | null = null;
   /** Chữ đang hiện trên bong bóng (null = không hiện). */
   bongBong: string | null = null;
   private hanBongBong = 0;
@@ -156,8 +172,9 @@ export class NhanVat {
     return this.trangThai;
   }
 
+  /** Có hành động chiếm thân đang chạy không. */
   get busy(): boolean {
-    return this.trangThai !== 'idle' && this.trangThai !== 'sitting';
+    return this.viec !== null;
   }
 
   get bieuCamHienTai(): string {
@@ -185,9 +202,33 @@ export class NhanVat {
 
   /* ------------------------------------------------------------- hành động */
 
+  /** Nhận một hành động mới làm chủ thân: cắt hành động cũ trước. */
+  private batDauViec(hd: HanhDongCoTay, trangThai: ActorState): void {
+    this.viec = hd;
+    this.trangThai = trangThai;
+  }
+
+  /** Trả thân về trạng thái nghỉ — chỉ khi `hd` vẫn là hành động hiện tại. */
+  private traViec(hd: HanhDongCoTay): void {
+    if (this.viec !== hd) return;
+    this.viec = null;
+    this.trangThai = this.dangNgoi ? 'sitting' : 'idle';
+  }
+
+  /** Cắt hành động đang chiếm thân (nếu có). */
+  private huyViec(): void {
+    const cu = this.viec;
+    if (!cu) return;
+    cu.cancel();
+    if (this.viec === cu) {
+      this.viec = null;
+      this.trangThai = this.dangNgoi ? 'sitting' : 'idle';
+    }
+  }
+
   /** Đi tới một điểm trên sàn. Tới nơi đúng `durationMs` đã hứa. */
   diToi(v: THREE.Vector3, speed?: number): Action {
-    this.huyDi();
+    this.huyViec();
     this.dangNgoi = false;
 
     const tu = new THREE.Vector3(this.goc.position.x, 0, this.goc.position.z);
@@ -197,18 +238,24 @@ export class NhanVat {
 
     const tocDo = speed && speed > 0 ? speed : TOC_DO_DI;
     const dai = (kc / tocDo) * 1000;
-    this.trangThai = 'walking';
-    const hd = hanhDong(dai, () => {
+    let hd!: HanhDongCoTay;
+    hd = hanhDong(dai, () => {
       this.di = null;
       this.phaBuoc = 0;
-      if (this.trangThai === 'walking') this.trangThai = 'idle';
+      this.traViec(hd);
     });
     this.di = { tu, den, batDau: bayGio(), dai, hd };
+    this.batDauViec(hd, 'walking');
     return hd;
   }
 
-  /** Xoay người về một hướng (độ) hoặc một điểm. */
-  xoayVe(muc: THREE.Vector3 | number): Action {
+  /**
+   * Xoay người về một hướng (độ) hoặc một điểm.
+   * `chiemThan = false` dành cho việc tự chỉnh hướng sau khi đi tới nơi — nó
+   * không được làm actor "bận" thêm sau khi lệnh `moveTo` đã xong.
+   */
+  xoayVe(muc: THREE.Vector3 | number, chiemThan = true): Action {
+    if (chiemThan) this.huyViec();
     this.xoay?.hd.cancel();
     const goc =
       typeof muc === 'number'
@@ -221,8 +268,10 @@ export class NhanVat {
     if (Math.abs(lech) < 0.02) return hanhDongXongNgay(0);
 
     const dai = Math.abs(lech) * 420 + 120;
-    const hd = hanhDong(dai, () => {
+    let hd!: HanhDongCoTay;
+    hd = hanhDong(dai, () => {
       this.xoay = null;
+      if (chiemThan) this.traViec(hd);
     });
     this.xoay = {
       tu: this.goc.rotation.y,
@@ -230,61 +279,57 @@ export class NhanVat {
       batDau: bayGio(),
       dai,
       hd,
+      chiemThan,
     };
+    if (chiemThan) this.batDauViec(hd, 'playing');
     return hd;
   }
 
   /** Chơi một clip. `loop` thì `done` chỉ xong khi bị cắt. */
   choiClip(ten: string, loop = false, speed = 1): Action {
-    this.clip?.hd.cancel();
     const dai = (DAI_CLIP[ten] ?? 1500) / Math.max(0.1, speed);
 
     if (ten === 'idle') {
+      this.huyViec();
       this.clip = null;
       this.dangNgoi = false;
-      if (!this.busy) this.trangThai = 'idle';
       return hanhDongXongNgay(DAI_CLIP.idle);
     }
     if (ten === 'sit') return this.ngoi();
     if (ten === 'stand') return this.dungLen();
 
-    const hd = hanhDong(loop ? 0 : dai, () => {
+    this.huyViec();
+    let hd!: HanhDongCoTay;
+    hd = hanhDong(loop ? 0 : dai, () => {
       this.clip = null;
-      if (this.trangThai === 'playing') this.trangThai = this.dangNgoi ? 'sitting' : 'idle';
+      this.traViec(hd);
     });
     this.clip = { ten, batDau: bayGio(), dai, loop, hd };
-    this.trangThai = 'playing';
+    this.batDauViec(hd, 'playing');
     return hd;
   }
 
   ngoi(): Action {
-    this.clip?.hd.cancel();
+    this.huyViec();
     this.dangNgoi = true;
-    const hd = hanhDong(DAI_CLIP.sit!, () => {
-      this.trangThai = 'sitting';
+    // dáng ngồi đạt được bằng nội suy trong capNhat; hẹn giờ huỷ được, và bị
+    // cắt giữa chừng thì đứng lại chứ không kẹt ở trạng thái "đang ngồi"
+    let hd!: HanhDongCoTay;
+    hd = hanhDongHenGio(DAI_CLIP.sit!, (biHuy) => {
+      if (biHuy) this.dangNgoi = false;
+      this.traViec(hd);
     });
-    this.trangThai = 'playing';
-    // dáng ngồi đạt được bằng nội suy trong capNhat; kết thúc sau đúng thời lượng
-    setTimeout(() => {
-      this.trangThai = 'sitting';
-      hd.xong();
-    }, DAI_CLIP.sit);
+    this.batDauViec(hd, 'playing');
     return hd;
   }
 
   dungLen(): Action {
-    this.clip?.hd.cancel();
-    if (!this.dangNgoi) {
-      this.trangThai = 'idle';
-      return hanhDongXongNgay(0);
-    }
+    this.huyViec();
+    if (!this.dangNgoi) return hanhDongXongNgay(0);
     this.dangNgoi = false;
-    const hd = hanhDong(DAI_CLIP.stand!);
-    this.trangThai = 'playing';
-    setTimeout(() => {
-      this.trangThai = 'idle';
-      hd.xong();
-    }, DAI_CLIP.stand);
+    let hd!: HanhDongCoTay;
+    hd = hanhDongHenGio(DAI_CLIP.stand!, () => this.traViec(hd));
+    this.batDauViec(hd, 'playing');
     return hd;
   }
 
@@ -300,14 +345,11 @@ export class NhanVat {
     const ms = durationMs && durationMs > 0 ? durationMs : uocThoiLuongNoi(chu);
     this.bongBong = chu;
     this.hanBongBong = this.t + ms / 1000;
-    const hd = hanhDong(ms, () => {
-      this.bongBong = null;
+    // chỉ xoá đúng câu của mình: hẹn cũ không được xoá oan bong bóng mới
+    const hd = hanhDongHenGio(ms, () => {
+      if (this.bongBong === chu) this.bongBong = null;
     });
     this.hdBong = hd;
-    setTimeout(() => {
-      this.bongBong = null;
-      hd.xong();
-    }, ms);
     return hd;
   }
 
@@ -316,50 +358,39 @@ export class NhanVat {
    * nếu có (không chặn). A2 thay bằng TTS thật + cử chỉ theo cảm xúc.
    */
   noi(chu: string, voice?: string): Action {
-    this.hdNoi?.cancel();
+    this.huyViec();
+    this.hdBong?.cancel();
     const ms = uocThoiLuongNoi(chu);
     this.bongBong = chu;
     this.hanBongBong = this.t + ms / 1000;
     this.noiConLai = ms / 1000;
-    this.trangThai = 'speaking';
 
     doc(chu, voice);
 
-    const hd = hanhDong(ms, () => {
+    let hd!: HanhDongCoTay;
+    hd = hanhDongHenGio(ms, () => {
       this.noiConLai = 0;
-      this.bongBong = null;
-      if (this.trangThai === 'speaking') this.trangThai = this.dangNgoi ? 'sitting' : 'idle';
+      if (this.bongBong === chu) this.bongBong = null;
       dungDoc();
+      this.traViec(hd);
     });
-    this.hdNoi = hd;
-    setTimeout(() => {
-      this.noiConLai = 0;
-      this.bongBong = null;
-      if (this.trangThai === 'speaking') this.trangThai = this.dangNgoi ? 'sitting' : 'idle';
-      hd.xong();
-    }, ms);
+    this.batDauViec(hd, 'speaking');
     return hd;
   }
 
   /** Dừng mọi hành động, về idle (giữ nguyên dáng ngồi nếu đang ngồi). */
   dung(): void {
-    this.huyDi();
+    this.huyViec();
     this.xoay?.hd.cancel();
     this.xoay = null;
-    this.clip?.hd.cancel();
-    this.hdNoi?.cancel();
     this.hdBong?.cancel();
+    this.hdBong = null;
+    this.di = null;
     this.clip = null;
     this.noiConLai = 0;
     this.bongBong = null;
     dungDoc();
     this.trangThai = this.dangNgoi ? 'sitting' : 'idle';
-  }
-
-  private huyDi(): void {
-    const cu = this.di;
-    this.di = null;
-    cu?.hd.cancel();
   }
 
   /* ---------------------------------------------------------------- update */
@@ -423,6 +454,7 @@ export class NhanVat {
       this.goc.rotation.y = x.tu + (x.den - x.tu) * muot(u);
       if (u >= 1) {
         this.xoay = null;
+        if (x.chiemThan) this.traViec(x.hd);
         x.hd.xong();
       }
     }
@@ -439,7 +471,7 @@ export class NhanVat {
       if (u >= 1) {
         this.di = null;
         this.phaBuoc = 0;
-        if (this.trangThai === 'walking') this.trangThai = 'idle';
+        this.traViec(d.hd);
         d.hd.xong();
       } else {
         dangDi = true;
@@ -506,9 +538,7 @@ export class NhanVat {
       if (!c.loop && troi * 1000 >= c.dai) {
         const hd = c.hd;
         this.clip = null;
-        if (this.trangThai === 'playing') {
-          this.trangThai = this.dangNgoi ? 'sitting' : 'idle';
-        }
+        this.traViec(hd);
         hd.xong();
       }
     }

@@ -15,6 +15,23 @@ import type {
   StageWorld,
 } from './types';
 
+/**
+ * Sự kiện không thuộc lệnh nào: do dispatcher, sân khấu hoặc người dùng sinh ra.
+ * Đây là chỗ duy nhất còn khai tay, và chỉ chứa thứ không gắn với một lệnh.
+ */
+export const SU_KIEN_HE_THONG = [
+  'stage.ready',
+  'stage.resetting',
+  'cmd.queued',
+  'cmd.interrupted',
+  'cmd.error',
+  'user.click',
+  'user.speech',
+  'user.text',
+  'bridge.connected',
+  'bridge.disconnected',
+] as const;
+
 export class Registry implements RegistryLike {
   private ds = new Map<string, CommandSpec>();
 
@@ -40,6 +57,13 @@ export class Registry implements RegistryLike {
     const g: string[] = [];
     for (const s of this.ds.values()) if (!g.includes(s.group)) g.push(s.group);
     return g;
+  }
+
+  /** Mọi sự kiện có thể gặp: khai trong từng lệnh + sự kiện hệ thống. */
+  suKien(): string[] {
+    const ds = new Set<string>(SU_KIEN_HE_THONG);
+    for (const s of this.ds.values()) for (const e of s.events ?? []) ds.add(e);
+    return [...ds].sort();
   }
 
   /** Lệnh theo nhóm, giữ đúng thứ tự đăng ký. */
@@ -115,6 +139,7 @@ export interface MoTaLenh {
   cmd: string;
   group: string;
   desc: string;
+  events?: string[];
   params: MoTaThamSo[];
   example: unknown;
   /** Có thì nghĩa là lệnh chưa chạy ở A1, để dành cho đợt ghi trong đó. */
@@ -128,6 +153,7 @@ export function moTaLenh(spec: CommandSpec, world: StageWorld): MoTaLenh {
     group: spec.group,
     desc: spec.desc,
     params: danhSachThamSo(spec).map((p) => moTaThamSo(p, world)),
+    ...(spec.events?.length ? { events: [...spec.events] } : {}),
     example: spec.example,
     ...(spec.stub ? { chuaLam: spec.stub } : {}),
   };

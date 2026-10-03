@@ -68,3 +68,29 @@ export function noiTiep(ds: Array<() => Action>, uocLuongMs: number): Action {
     },
   };
 }
+
+/**
+ * Hành động tự xong sau `durationMs` bằng hẹn giờ **huỷ được**.
+ *
+ * Dùng cho mọi thứ không nội suy theo khung hình (ngồi, đứng, nói, bong bóng).
+ * `ket(biHuy)` chạy đúng một lần: `biHuy=false` khi hết giờ bình thường,
+ * `biHuy=true` khi bị `cancel()` — nhờ vậy nơi gọi phân biệt được "xong" với
+ * "bị cắt" và không ghi đè trạng thái của hành động mới.
+ */
+export function hanhDongHenGio(
+  durationMs: number,
+  ket: (biHuy: boolean) => void,
+): HanhDongCoTay {
+  let hen: ReturnType<typeof setTimeout> | null = null;
+  const hd = hanhDong(durationMs, () => {
+    if (hen !== null) clearTimeout(hen);
+    hen = null;
+    ket(true);
+  });
+  hen = setTimeout(() => {
+    hen = null;
+    ket(false);
+    hd.xong();
+  }, Math.max(0, durationMs));
+  return hd;
+}

@@ -197,3 +197,102 @@ describe('dạng ngắn trong ô kịch bản', () => {
     expect(world.lichSu).toEqual(['moveTo:lan', 'play.wave:lan']);
   });
 });
+
+/* ------------------------------------------------------------------------ */
+/* Hồi quy theo review PR #6                                                 */
+/* ------------------------------------------------------------------------ */
+
+/** Đúng kịch bản mẫu mục 3.4 của spec (bỏ phần screen/module thuộc A3). */
+const MAU_SPEC = [
+  { cmd: 'actor.moveTo', args: { actor: 'lan', to: 'ban-2' } },
+  { waitFor: 'actor.arrived' },
+  { cmd: 'actor.express', args: { actor: 'lan', expression: 'happy' } },
+  { cmd: 'actor.say', args: { actor: 'lan', text: 'Sếp ơi, test xanh rồi!' } },
+  { cmd: 'actor.play', args: { actor: 'lan', clip: 'celebrate' } },
+];
+
+describe('hồi quy C1 — waitFor không được bỏ lỡ sự kiện bắn cùng nhịp', () => {
+  it('kịch bản mẫu chạy HAI lần liên tiếp, lần hai cũng errors:0 và nhanh', async () => {
+    await d.run('script.run', { steps: MAU_SPEC });
+    const lan1 = await xongKichBan();
+    expect(lan1.data).toMatchObject({ steps: 5, errors: 0 });
+
+    // lần hai: lan đã ở ban-2 nên moveTo dài 0 ms, `actor.arrived` bắn ngay
+    // trong cùng nhịp — bản cũ ngồi chờ 15 giây rồi báo lỗi bước
+    const t0 = Date.now();
+    await d.run('script.run', { steps: MAU_SPEC });
+    const lan2 = await xongKichBan();
+    expect(lan2.data).toMatchObject({ steps: 5, errors: 0 });
+    expect(Date.now() - t0).toBeLessThan(1000);
+  });
+
+  it('waitFor bắt được sự kiện của bước ngay trước dù lệnh đó dài 0 ms', async () => {
+    // đưa lan tới nơi trước, để moveTo trong kịch bản thành 0 m
+    await d.run('actor.moveTo', { actor: 'lan', to: 'ban-2' });
+    await new Promise((r) => setTimeout(r, NHIP_MS * 3));
+
+    const t0 = Date.now();
+    await d.run('script.run', {
+      steps: [
+        { cmd: 'actor.moveTo', args: { actor: 'lan', to: 'ban-2' } },
+        { waitFor: 'actor.arrived', timeoutMs: 400 },
+        { cmd: 'actor.express', args: { actor: 'lan', expression: 'happy' } },
+      ],
+    });
+    const e = await xongKichBan();
+    expect(e.data).toMatchObject({ errors: 0 });
+    expect(Date.now() - t0).toBeLessThan(400);
+    expect(world.lichSu).toContain('express:happy');
+  });
+
+  it('hai waitFor liền nhau không ăn chung một lần sự kiện', async () => {
+    await d.run('script.run', {
+      steps: [
+        { cmd: 'actor.moveTo', args: { actor: 'lan', to: 'ban-2' } },
+        { waitFor: 'actor.arrived' },
+        { cmd: 'actor.moveTo', args: { actor: 'lan', to: 'cua' } },
+        { waitFor: 'actor.arrived' },
+        { cmd: 'actor.express', args: { actor: 'lan', expression: 'happy' } },
+      ],
+    });
+    const e = await xongKichBan();
+    expect(e.data).toMatchObject({ steps: 5, errors: 0 });
+    expect(world.lichSu).toEqual(['moveTo:lan', 'moveTo:lan', 'express:happy']);
+  });
+});
+
+describe('hồi quy — script.run trả durationMs, script.stop cắt hành động đang diễn', () => {
+  it('script.run trả durationMs ước lượng từ các bước biết trước', async () => {
+    const r = await d.run('script.run', {
+      steps: [
+        { wait: 300 },
+        { cmd: 'actor.play', args: { actor: 'lan', clip: 'wave' } },
+        { cmd: 'actor.say', args: { actor: 'lan', text: 'Xin chào Sếp' } },
+      ],
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const dm = (r.result as { durationMs: number }).durationMs;
+    // 300 (wait) + 2600 (clip wave) + ~1500 (câu nói)
+    expect(dm).toBeGreaterThan(300 + 2600);
+    await d.run('script.stop');
+  });
+
+  it('script.stop cắt luôn hành động đang diễn của actor kịch bản đã chạm', async () => {
+    await d.run('script.run', {
+      steps: [
+        { cmd: 'actor.moveTo', args: { actor: 'lan', to: 'cua' } },
+        { wait: 5000 },
+        { cmd: 'actor.express', args: { actor: 'lan', expression: 'happy' } },
+      ],
+    });
+    await new Promise((r) => setTimeout(r, 5));
+    expect(d.dangBan('lan')).toBe(true);
+
+    const r = await d.run('script.stop');
+    expect(r.ok).toBe(true);
+    expect(world.lichSu).toContain('interrupt:lan');
+    expect(d.dangBan('lan')).toBe(false);
+    expect(world.lichSu).not.toContain('express:happy');
+  });
+});

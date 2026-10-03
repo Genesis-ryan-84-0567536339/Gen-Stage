@@ -9,6 +9,7 @@ export const LENH_SCENE: CommandSpec[] = [
   {
     cmd: 'scene.light',
     group: 'scene',
+    events: ['scene.lightChanged'],
     desc: 'Đổi ánh sáng cảnh theo preset',
     params: [
       pEnum('preset', 'Kiểu sáng', {

@@ -361,3 +361,119 @@ describe('vòng đời actor và prop', () => {
     expect(d.dangBan('lan')).toBe(false);
   });
 });
+
+/* ------------------------------------------------------------------------ */
+/* Hồi quy theo review PR #6                                                 */
+/* ------------------------------------------------------------------------ */
+
+describe('hồi quy C2 — nhận diện hành động bằng token, không bằng tên lệnh', () => {
+  it('interrupt bằng CÙNG tên lệnh thì actor vẫn busy (không rảnh giả)', async () => {
+    void d.run('actor.play', { actor: 'lan', clip: 'wave' });
+    await cho(5);
+    const r = await d.run('actor.play', { actor: 'lan', clip: 'wave', interrupt: true });
+    expect(r.ok).toBe(true);
+
+    // hành động cũ resolve ngay sau khi bị cắt — không được xoá chỗ của cái mới
+    await cho(5);
+    expect(d.dangBan('lan')).toBe(true);
+    const st = await d.run('stage.describe');
+    if (st.ok) {
+      expect((st.result as { actors: { busy: boolean }[] }).actors[0]!.busy).toBe(true);
+    }
+    await cho(NHIP_MS * 3);
+  });
+
+  it('sau interrupt cùng tên, lệnh kế tiếp vẫn phải XẾP HÀNG chứ không chèn ngang', async () => {
+    void d.run('actor.play', { actor: 'lan', clip: 'wave' });
+    await cho(5);
+    void d.run('actor.play', { actor: 'lan', clip: 'wave', interrupt: true });
+    await cho(5);
+    void d.run('actor.play', { actor: 'lan', clip: 'nod' });
+    await cho(5);
+    expect(d.soCho('lan')).toBe(1);
+    await cho(NHIP_MS * 5);
+  });
+
+  it('hai moveTo liên tiếp: lệnh 2 xếp hàng, chạy sau lệnh 1', async () => {
+    const xong: string[] = [];
+    const p1 = d.run('actor.moveTo', { actor: 'lan', to: 'ban-2' }).then(() => xong.push('1'));
+    const p2 = d.run('actor.moveTo', { actor: 'lan', to: 'cua' }).then(() => xong.push('2'));
+    await cho(5);
+    expect(d.soCho('lan')).toBe(1);
+    await Promise.all([p1, p2]);
+    expect(xong).toEqual(['1', '2']);
+    expect(world.lichSu).toEqual(['moveTo:lan', 'moveTo:lan']);
+  });
+
+  it('moveTo với interrupt:true huỷ sạch lệnh 1 và bắn cmd.interrupted', async () => {
+    const huy: Array<Record<string, unknown>> = [];
+    bus.on('cmd.interrupted', (e) => huy.push(e.data));
+
+    const p1 = d.run('actor.moveTo', { actor: 'lan', to: 'ban-2' });
+    await cho(5);
+    const pCho = d.run('actor.play', { actor: 'lan', clip: 'wave' });
+    await cho(5);
+
+    const r = await d.run('actor.moveTo', { actor: 'lan', to: 'cua', interrupt: true });
+    expect(r.ok).toBe(true);
+    expect(await p1).toMatchObject({ ok: true }); // đã trả lời từ lúc gửi
+    const kqCho = await pCho;
+    expect(kqCho.ok).toBe(false);
+    if (!kqCho.ok) expect(kqCho.error).toContain('interrupt');
+
+    expect(huy.length).toBe(1);
+    expect(huy[0]).toMatchObject({ actor: 'lan', catLenh: 'actor.moveTo', boHangDoi: 1 });
+    expect(world.lichSu).toContain('interrupt:lan');
+    await cho(NHIP_MS * 3);
+  });
+});
+
+describe('hồi quy C3 — cắt hành động hẹn giờ không được ghi đè trạng thái mới', () => {
+  it('sit rồi moveTo ngay: state là walking, không quay lại sitting', async () => {
+    void d.run('actor.sit', { actor: 'lan', seat: 'ghe-1' });
+    await cho(5);
+    await d.run('actor.moveTo', { actor: 'lan', to: 'ban-2', interrupt: true });
+
+    for (const dung of [0, NHIP_MS / 2]) {
+      await cho(dung);
+      const st = await d.run('stage.describe');
+      if (!st.ok) throw new Error(st.error);
+      const a = (st.result as { actors: { state: string }[] }).actors[0]!;
+      expect(a.state, `sau ${dung} ms`).toBe('walking');
+    }
+    await cho(NHIP_MS * 3);
+  });
+});
+
+describe('hồi quy — sự kiện trong bootstrap sinh từ registry', () => {
+  it('có đủ sự kiện của lệnh lẫn sự kiện hệ thống, không thiếu như bản hard-code', async () => {
+    const r = await d.run('stage.bootstrap');
+    if (!r.ok) throw new Error(r.error);
+    const ds = (r.result as { events: string[] }).events;
+    for (const e of [
+      'actor.arrived',
+      'actor.sayDone',
+      'script.step',
+      'script.stepError',
+      'script.done',
+      'stage.ready',
+      'user.click',
+      'cmd.queued',
+      'cmd.interrupted',
+      'bridge.connected',
+      'module.built',
+      'screen.streamDone',
+      'actor.emoteDone',
+    ]) {
+      expect(ds, `thiếu sự kiện ${e}`).toContain(e);
+    }
+  });
+
+  it('mỗi lệnh có bắn sự kiện đều khai trong mô tả của chính nó', async () => {
+    const r = await d.run('stage.bootstrap');
+    if (!r.ok) throw new Error(r.error);
+    const cmds = (r.result as { commands: Array<{ cmd: string; events?: string[] }> }).commands;
+    expect(cmds.find((c) => c.cmd === 'actor.moveTo')!.events).toContain('actor.arrived');
+    expect(cmds.find((c) => c.cmd === 'script.run')!.events).toContain('script.stepError');
+  });
+});

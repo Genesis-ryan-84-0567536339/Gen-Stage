@@ -115,6 +115,11 @@ export interface CommandSpec {
    * có `interrupt: true`. Giá trị là tên tham số chứa id actor.
    */
   chiemActor?: string;
+  /**
+   * Sự kiện lệnh này có thể bắn ra. `stage.bootstrap` gom lại từ đây, nên thêm
+   * lệnh mới là danh sách sự kiện tự đúng — không có bảng viết tay nào.
+   */
+  events?: readonly string[];
   /** Lệnh chưa làm trong A1 (A2/A3) — vẫn đăng ký để bootstrap liệt kê đủ. */
   stub?: 'A2' | 'A3';
   handler: CommandHandler;
@@ -304,4 +309,6 @@ export interface RegistryLike {
   get(cmd: string): CommandSpec | undefined;
   all(): CommandSpec[];
   groups(): string[];
+  /** Mọi sự kiện có thể gặp, gom từ `CommandSpec.events` + sự kiện hệ thống. */
+  suKien(): string[];
 }

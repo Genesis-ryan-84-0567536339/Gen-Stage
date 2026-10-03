@@ -15,6 +15,7 @@ export const LENH_ACTOR: CommandSpec[] = [
   {
     cmd: 'actor.spawn',
     group: 'actor',
+    events: ['actor.spawned'],
     desc: 'Thêm một nhân vật VRM vào sân khấu',
     params: [
       { name: 'id', type: 'string', desc: 'Mã ngắn, vd "lan"', required: true },
@@ -53,6 +54,7 @@ export const LENH_ACTOR: CommandSpec[] = [
   {
     cmd: 'actor.remove',
     group: 'actor',
+    events: ['actor.removed', 'cmd.interrupted'],
     desc: 'Bỏ nhân vật khỏi sân khấu',
     params: [P_ACTOR],
     example: { cmd: 'actor.remove', args: { actor: 'minh' } },
@@ -80,6 +82,7 @@ export const LENH_ACTOR: CommandSpec[] = [
   {
     cmd: 'actor.moveTo',
     group: 'actor',
+    events: ['actor.arrived', 'cmd.queued'],
     desc: 'Đi tới một place hoặc toạ độ (tự chơi walk, tới nơi về idle)',
     chiemActor: 'actor',
     params: [
@@ -140,6 +143,7 @@ export const LENH_ACTOR: CommandSpec[] = [
   {
     cmd: 'actor.turnTo',
     group: 'actor',
+    events: ['actor.turned', 'cmd.queued'],
     desc: 'Xoay người về mục tiêu',
     chiemActor: 'actor',
     params: [
@@ -166,6 +170,7 @@ export const LENH_ACTOR: CommandSpec[] = [
   {
     cmd: 'actor.sit',
     group: 'actor',
+    events: ['actor.sat', 'cmd.queued'],
     desc: 'Ngồi xuống một ghế',
     chiemActor: 'actor',
     params: [
@@ -185,6 +190,7 @@ export const LENH_ACTOR: CommandSpec[] = [
   {
     cmd: 'actor.stand',
     group: 'actor',
+    events: ['actor.stood', 'cmd.queued'],
     desc: 'Đứng lên',
     chiemActor: 'actor',
     params: [P_ACTOR],
@@ -199,6 +205,7 @@ export const LENH_ACTOR: CommandSpec[] = [
   {
     cmd: 'actor.play',
     group: 'actor',
+    events: ['actor.clipDone', 'cmd.queued'],
     desc: 'Chơi một chuyển động có tên (hết thì bắn actor.clipDone)',
     chiemActor: 'actor',
     params: [
@@ -228,6 +235,7 @@ export const LENH_ACTOR: CommandSpec[] = [
   {
     cmd: 'actor.stop',
     group: 'actor',
+    events: ['actor.stopped', 'cmd.interrupted'],
     desc: 'Dừng mọi thứ đang làm, bỏ hàng đợi, về idle',
     params: [P_ACTOR],
     example: { cmd: 'actor.stop', args: { actor: 'lan' } },
@@ -274,6 +282,7 @@ export const LENH_ACTOR: CommandSpec[] = [
   {
     cmd: 'actor.say',
     group: 'actor',
+    events: ['actor.sayDone', 'cmd.queued'],
     desc:
       'Nói: bong bóng chữ + nhép miệng + giọng trình duyệt nếu có. Bắn actor.sayDone',
     chiemActor: 'actor',
@@ -307,6 +316,7 @@ export const LENH_ACTOR: CommandSpec[] = [
   {
     cmd: 'actor.bubble',
     group: 'actor',
+    events: ['actor.bubbleDone', 'cmd.queued'],
     desc: 'Chỉ hiện bong bóng chữ, không tiếng',
     chiemActor: 'actor',
     params: [
@@ -334,6 +344,7 @@ export const LENH_ACTOR: CommandSpec[] = [
   {
     cmd: 'actor.hold',
     group: 'actor',
+    events: ['actor.held'],
     desc: 'Cầm một đồ vật lên tay',
     params: [
       P_ACTOR,
@@ -360,6 +371,7 @@ export const LENH_ACTOR: CommandSpec[] = [
   {
     cmd: 'actor.drop',
     group: 'actor',
+    events: ['actor.dropped'],
     desc: 'Thả đồ đang cầm xuống chân',
     params: [P_ACTOR],
     example: { cmd: 'actor.drop', args: { actor: 'lan' } },

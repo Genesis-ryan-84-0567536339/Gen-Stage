@@ -412,14 +412,67 @@ ghiNhan(
 await page.waitForTimeout(800);
 await anh('10-hang-doi-interrupt');
 
-/* --- kịch bản: dạng ngắn rồi JSON mẫu của spec --- */
+/* --- C3: cắt hành động hẹn giờ không được báo sai trạng thái --- */
+
+in_('\n--- nhóm 10b-cat-sit-bang-moveTo (hồi quy C3) ---');
+await goiApi('stage.reset', {});
+await page.waitForTimeout(800);
+const c3 = await page.evaluate(async () => {
+  const doc = async () => {
+    const r = await window.stage.describe();
+    const a = r.result.actors.find((x) => x.id === 'lan');
+    return { state: a.state, at: a.at, pos: a.pos, busy: a.busy };
+  };
+  // actor.sit = đi tới ghế + xoay + ngồi, nên phải chờ hết chuỗi mới là "sitting"
+  const rSit = await window.stage.run('actor.sit', { actor: 'lan', seat: 'ghe-1' });
+  await new Promise((r) => setTimeout(r, (rSit.result.durationMs ?? 1500) + 1200));
+  const khiNgoi = await doc();
+
+  await window.stage.run('actor.moveTo', { actor: 'lan', to: 'cua', interrupt: true });
+  const ngaySau = await doc();
+  await new Promise((r) => setTimeout(r, 500));
+  const sau500 = await doc();
+  await new Promise((r) => setTimeout(r, 1000));
+  const sau1500 = await doc();
+  return { khiNgoi, ngaySau, sau500, sau1500 };
+});
+in_('   khi ngồi    :', JSON.stringify(c3.khiNgoi));
+in_('   ngay sau cắt:', JSON.stringify(c3.ngaySau));
+in_('   sau 0,5 giây:', JSON.stringify(c3.sau500));
+in_('   sau 1,5 giây:', JSON.stringify(c3.sau1500));
+ghiNhan('chk', 'sit-roi-moveTo', c3.khiNgoi.state === 'sitting', `ngồi xong: state=${c3.khiNgoi.state}`);
+// Lỗi C3 biểu hiện ở `state`: bản cũ nhảy về "sitting" khi hẹn giờ ngồi đáo hạn
+// dù nhân vật đang đi giữa phòng. `at` ở mốc 0,5 giây vẫn là "ghe-1" là ĐÚNG —
+// lúc đó nhân vật mới rời ghế vài centimet, còn trong bán kính nhận place.
+ghiNhan(
+  'chk',
+  'cat-sit-0.5s',
+  c3.sau500.state === 'walking' &&
+    JSON.stringify(c3.sau500.pos) !== JSON.stringify(c3.khiNgoi.pos),
+  `state=${c3.sau500.state} at=${c3.sau500.at} pos=${JSON.stringify(c3.sau500.pos)}`,
+);
+ghiNhan(
+  'chk',
+  'cat-sit-1.5s',
+  c3.sau1500.state === 'walking' &&
+    c3.sau1500.at === null &&
+    JSON.stringify(c3.sau1500.pos) !== JSON.stringify(c3.sau500.pos),
+  `state=${c3.sau1500.state} at=${c3.sau1500.at} pos=${JSON.stringify(c3.sau1500.pos)}`,
+);
+await choRanh('lan');
+await anh('10b-cat-sit-bang-moveTo');
+
+/* --- kịch bản: dạng ngắn rồi JSON mẫu của spec (chạy 2 lần) --- */
 
 in_('\n--- nhóm 11-kich-ban ---');
 await page.click('#bang-the button[data-the="kich-ban"]');
 
+// kịch bản mẫu chạy HAI lần liên tiếp: lần hai nhân vật đã đứng sẵn ở ban-2 nên
+// moveTo dài 0 ms — đúng cái bẫy lỗi C1 trong review PR #6
 for (const [ten, noiDung] of [
   ['dạng ngắn', KICH_BAN_NGAN],
-  ['JSON mẫu spec mục 3.4', KICH_BAN_MAU],
+  ['JSON mẫu spec mục 3.4 — lần 1', KICH_BAN_MAU],
+  ['JSON mẫu spec mục 3.4 — lần 2 (lan đã ở ban-2)', KICH_BAN_MAU],
 ]) {
   await page.fill('#kb-nhap', noiDung);
   const xong = page.evaluate(
@@ -439,6 +492,7 @@ for (const [ten, noiDung] of [
   const e = await xong;
   ghiNhan('kb', `script.run/${ten}`, e.timeout !== true && e.errors === 0, JSON.stringify(e));
   await page.waitForTimeout(400);
+  await choRanh('lan');
 }
 await anh('11-kich-ban');
 

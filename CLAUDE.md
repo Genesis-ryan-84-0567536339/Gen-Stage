@@ -36,6 +36,15 @@ node scripts/kiem-bridge.mjs  # bằng chứng bridge: moveTo qua ws → nhận 
   **tên lệnh, tên tham số, khoá JSON trong Actor API giữ nguyên tiếng Anh** theo
   spec (`actor.moveTo`, `durationMs`, `distances`) — đổi là phá hợp đồng với agent.
 - **Hiệu năng**: pixel ratio ≤ 2, shadow map 2048, chạy mượt trên điện thoại.
+- **Thời gian là lời hứa**: mọi hành động có thời lượng nội suy theo đồng hồ
+  thật (không cộng dồn `dt`) và dùng hẹn giờ **huỷ được**, để `durationMs` trả
+  cho agent luôn đúng kể cả khi máy tụt xuống vài khung hình/giây.
+- **Một nguồn sự thật cho trạng thái**: `NhanVat.viec` (hành động đang chiếm
+  thân) quyết định `state`; `Dispatcher.dangChay` quyết định `busy`/`queued`.
+  Không nơi nào khác được tự ghi `trangThai`, và mọi hẹn giờ phải kiểm "mình còn
+  là hành động hiện tại không" trước khi ghi.
+- **Nhận diện hành động bằng token, không bằng tên lệnh** — cắt `actor.play`
+  bằng đúng `actor.play` là chuyện thường ở A2.
 - Quy trình: Issue → branch → PR (`Refs #N`) → tự kiểm kèm bằng chứng → merge.
   Không merge khi chưa có ảnh/log chạy thật trong PR.
 
@@ -61,13 +70,14 @@ biết registry, **giao diện** không gọi thẳng vào sân khấu.
 | `src/ui/log-view.ts` | Nhật ký cuộn + Sao chép / Xuất JSON |
 | `src/events.ts` · `src/log.ts` | Bus sự kiện · nhật ký JSON mọi lệnh và sự kiện |
 | `src/bridge-client.ts` | Nối trình duyệt với bridge (bật bằng `?bridge=1`) |
-| `bridge/server.ts` | Bridge WebSocket Node (chưa MCP) |
+| `bridge/server.ts` | Bridge WebSocket Node (chưa MCP) — mặc định chỉ nghe `127.0.0.1`; mở ra ngoài phải có `--host` + `GEN_STAGE_TOKEN` |
 | `src/api/__tests__/` | `san-khau-gia.ts` (sân khấu giả, không WebGL) + 3 file test |
 
 ### Thêm một lệnh mới
 
 1. Viết `CommandSpec` trong đúng file `src/api/commands/<nhóm>.ts` (có `desc`,
-   `params`, `example`; khai `chiemActor: 'actor'` nếu lệnh có thời lượng).
+   `params`, `example`; khai `chiemActor: 'actor'` nếu lệnh có thời lượng; khai
+   `events: [...]` cho mọi sự kiện lệnh bắn ra — `stage.bootstrap` gom từ đây).
 2. Nếu cần động tới cảnh: thêm phương thức vào `StageWorld` (`src/api/types.ts`),
    thi công ở `src/stage/world.ts`, và thêm bản giả ở `san-khau-gia.ts`.
 3. Hết. `stage.bootstrap`, bảng lệnh UI, ô kịch bản dạng ngắn và bridge tự biết.

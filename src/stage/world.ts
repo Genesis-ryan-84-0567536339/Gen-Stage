@@ -391,8 +391,9 @@ export class World implements StageWorld {
     const { v, place } = this.choDung(to);
     const hd = nv.diToi(v, speed);
     if (place?.facing !== undefined) {
+      // chỉnh hướng sau khi tới nơi: KHÔNG chiếm thân, vì lệnh moveTo đã xong
       void hd.done.then(() => {
-        if (this.actors.get(id) === nv) nv.xoayVe(place.facing!);
+        if (this.actors.get(id) === nv) nv.xoayVe(place.facing!, false);
       });
     }
     return hd;

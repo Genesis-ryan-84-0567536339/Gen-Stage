@@ -9,6 +9,7 @@ export const LENH_CAMERA: CommandSpec[] = [
   {
     cmd: 'camera.focus',
     group: 'camera',
+    events: ['camera.moved'],
     desc: 'Bay tới nhìn gần một actor / prop / place',
     params: [
       {
@@ -33,6 +34,7 @@ export const LENH_CAMERA: CommandSpec[] = [
   {
     cmd: 'camera.preset',
     group: 'camera',
+    events: ['camera.moved'],
     desc: 'Về một góc máy đặt sẵn',
     params: [
       pEnum('name', 'Góc máy', {

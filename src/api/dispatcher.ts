@@ -31,6 +31,14 @@ interface ViecCho {
 }
 
 interface DangChay {
+  /**
+   * Mã riêng của **lần chạy này**, không phải tên lệnh.
+   *
+   * Nhận diện bằng tên lệnh là sai: cắt `actor.play` bằng đúng `actor.play` thì
+   * `done` của hành động cũ về sau sẽ xoá nhầm bản ghi của hành động mới, làm
+   * `busy` thành `false` giả và hàng đợi xả sớm.
+   */
+  token: number;
   cmd: string;
   cancel?: () => void;
 }
@@ -52,6 +60,8 @@ export class Dispatcher {
   private dangChay = new Map<string, DangChay>();
   /** Lệnh chờ actor rảnh, theo id actor. */
   private hangDoiActor = new Map<string, ViecCho[]>();
+  /** Bộ đếm sinh token cho mỗi lần chạy. */
+  private demToken = 0;
 
   constructor(o: DispatcherOpts) {
     this.registry = o.registry;
@@ -181,9 +191,11 @@ export class Dispatcher {
   ): Promise<Result> {
     const actor = spec.chiemActor ? String(args[spec.chiemActor] ?? '') : '';
 
+    const token = ++this.demToken;
+
     try {
       // đánh dấu bận TRƯỚC khi gọi handler: handler có thể gọi lệnh khác
-      if (actor) this.dangChay.set(actor, { cmd: spec.cmd });
+      if (actor) this.dangChay.set(actor, { token, cmd: spec.cmd });
 
       const kq = await spec.handler(args, this.ctx());
 
@@ -191,12 +203,14 @@ export class Dispatcher {
       if (kq.durationMs !== undefined) result.durationMs = kq.durationMs;
 
       if (actor) {
-        if (kq.done) {
-          this.dangChay.set(actor, { cmd: spec.cmd, cancel: kq.cancel });
+        // hành động cũ có thể đã cắt mình giữa chừng → không giành lại chỗ
+        const conGiuCho = this.dangChay.get(actor)?.token === token;
+        if (kq.done && conGiuCho) {
+          this.dangChay.set(actor, { token, cmd: spec.cmd, cancel: kq.cancel });
           void kq.done
             .catch(() => undefined)
-            .then(() => this.xongActor(actor, spec.cmd));
-        } else {
+            .then(() => this.xongActor(actor, token));
+        } else if (conGiuCho) {
           this.dangChay.delete(actor);
           this.giaiPhong(actor);
         }
@@ -204,7 +218,7 @@ export class Dispatcher {
 
       return this.ghi(spec.cmd, args, { ok: true, result }, batDau, nguon);
     } catch (e) {
-      if (actor) {
+      if (actor && this.dangChay.get(actor)?.token === token) {
         this.dangChay.delete(actor);
         this.giaiPhong(actor);
       }
@@ -213,10 +227,12 @@ export class Dispatcher {
     }
   }
 
-  private xongActor(actor: string, cmd: string): void {
+  private xongActor(actor: string, token: number): void {
     const hien = this.dangChay.get(actor);
-    // chỉ dọn nếu đúng hành động mình đang theo (tránh dọn hành động mới hơn)
-    if (hien && hien.cmd === cmd) this.dangChay.delete(actor);
+    // so TOKEN chứ không so tên lệnh: hành động cũ xong muộn không được dọn chỗ
+    // của hành động mới (kể cả khi hai bên trùng tên lệnh)
+    if (!hien || hien.token !== token) return;
+    this.dangChay.delete(actor);
     this.giaiPhong(actor);
   }
 

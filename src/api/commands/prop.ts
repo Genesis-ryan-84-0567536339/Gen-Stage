@@ -16,6 +16,7 @@ export const LENH_PROP: CommandSpec[] = [
   {
     cmd: 'prop.spawn',
     group: 'prop',
+    events: ['prop.spawned'],
     desc: 'Thêm một đồ vật vào sân khấu',
     params: [
       { name: 'id', type: 'string', desc: 'Mã đồ vật', required: true },
@@ -51,6 +52,7 @@ export const LENH_PROP: CommandSpec[] = [
   {
     cmd: 'prop.remove',
     group: 'prop',
+    events: ['prop.removed'],
     desc: 'Bỏ đồ vật khỏi sân khấu',
     params: [pEnum('prop', 'Đồ vật', { required: true, goiY: 'props' })],
     example: { cmd: 'prop.remove', args: { prop: 'so-tay' } },
@@ -77,6 +79,7 @@ export const LENH_PROP: CommandSpec[] = [
   {
     cmd: 'prop.moveTo',
     group: 'prop',
+    events: ['prop.moved'],
     desc: 'Chuyển đồ vật sang place hoặc toạ độ khác',
     params: [
       pEnum('prop', 'Đồ vật', { required: true, goiY: 'props' }),
@@ -102,6 +105,7 @@ export const LENH_PROP: CommandSpec[] = [
   {
     cmd: 'prop.set',
     group: 'prop',
+    events: ['prop.set'],
     desc: 'Đổi trạng thái đồ vật, vd {"screen":"on","text":"Đang chạy test…"}',
     params: [
       pEnum('prop', 'Đồ vật', { required: true, goiY: 'props' }),

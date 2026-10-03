@@ -21,6 +21,27 @@ const CONG = Number(process.env.GEN_STAGE_PORT ?? 8787);
 /** Hạn chờ trình duyệt trả lời một lệnh. */
 const HAN_MS = Number(process.env.GEN_STAGE_TIMEOUT ?? 30000);
 
+/**
+ * Mặc định chỉ nghe trên máy này.
+ *
+ * Bridge điều khiển được toàn bộ sân khấu (kể cả `stage.reset`), nên mở ra cả
+ * mạng wifi là ai cũng giỡn được. Muốn cho máy khác vào thì phải nói rõ:
+ * `--host 0.0.0.0` (hoặc `GEN_STAGE_HOST`) **và** đặt `GEN_STAGE_TOKEN`.
+ */
+const coCoMoRong = process.argv.includes('--host');
+const hostCo = coCoMoRong ? process.argv[process.argv.indexOf('--host') + 1] : undefined;
+const HOST = hostCo ?? process.env.GEN_STAGE_HOST ?? '127.0.0.1';
+const TOKEN = process.env.GEN_STAGE_TOKEN ?? '';
+const RIENG_MAY_NAY = HOST === '127.0.0.1' || HOST === 'localhost' || HOST === '::1';
+
+if (!RIENG_MAY_NAY && !TOKEN) {
+  console.error(
+    `[bridge] Từ chối nghe trên ${HOST} khi chưa có GEN_STAGE_TOKEN.\n` +
+      '         Mở ra ngoài máy thì phải có mã: GEN_STAGE_TOKEN=... pnpm bridge --host 0.0.0.0',
+  );
+  process.exit(1);
+}
+
 interface Cho {
   client: WebSocket;
   /** Mã client đặt, trả lại y nguyên. */
@@ -28,12 +49,14 @@ interface Cho {
   hen: NodeJS.Timeout;
 }
 
-const wss = new WebSocketServer({ port: CONG });
+const wss = new WebSocketServer({ port: CONG, host: HOST });
 
 let sanKhau: WebSocket | null = null;
 const clients = new Set<WebSocket>();
 /** Lệnh đang chờ trình duyệt trả lời, theo mã nội bộ của bridge. */
 const dangCho = new Map<string, Cho>();
+/** Kết nối đã qua cửa token (khi có bật token). */
+const daXac = new Set<WebSocket>();
 let dem = 0;
 
 function ghi(...x: unknown[]): void {
@@ -47,6 +70,42 @@ function gio(): string {
 wss.on('connection', (ws, req) => {
   const q = new URLSearchParams((req.url ?? '/').split('?')[1] ?? '');
   const vai = q.get('role') === 'stage' ? 'stage' : 'client';
+
+  // Có token thì mọi kết nối phải xưng tên: hoặc `?token=` trên URL, hoặc khung
+  // đầu tiên `{"token":"..."}`. Sai/thiếu là đóng ngay, không trả lời gì thêm.
+  if (TOKEN) {
+    if (q.get('token') === TOKEN) {
+      daXac.add(ws);
+    } else {
+      const han = setTimeout(() => {
+        if (!daXac.has(ws)) {
+          ws.send(JSON.stringify({ ok: false, error: 'Thiếu token trong khung đầu' }));
+          ws.close(1008, 'thieu-token');
+        }
+      }, 3000);
+      ws.once('message', (tho) => {
+        clearTimeout(han);
+        let g: { token?: unknown } = {};
+        try {
+          g = JSON.parse(String(tho));
+        } catch {
+          /* hỏng JSON = sai token */
+        }
+        if (g.token === TOKEN) {
+          daXac.add(ws);
+          if (vai === 'client') chaoClient(ws);
+          else ws.send(JSON.stringify({ event: 'bridge.authOk', data: {} }));
+        } else {
+          ghi('từ chối một kết nối sai token');
+          ws.send(JSON.stringify({ ok: false, error: 'Token sai' }));
+          ws.close(1008, 'sai-token');
+        }
+      });
+    }
+  } else {
+    daXac.add(ws);
+  }
+  ws.on('close', () => daXac.delete(ws));
 
   if (vai === 'stage') {
     if (sanKhau && sanKhau.readyState === WebSocket.OPEN) {
@@ -69,6 +128,18 @@ wss.on('connection', (ws, req) => {
 
   clients.add(ws);
   ghi('client nối. Tổng:', clients.size);
+  // lời chào chỉ gửi cho kết nối đã qua cửa — chưa xưng tên thì chưa biết gì
+  if (daXac.has(ws)) chaoClient(ws);
+
+  ws.on('message', (tho) => tuClient(ws, String(tho)));
+  ws.on('close', () => {
+    clients.delete(ws);
+    ghi('client ngắt. Tổng:', clients.size);
+  });
+  ws.on('error', (e) => ghi('lỗi client:', e.message));
+});
+
+function chaoClient(ws: WebSocket): void {
   ws.send(
     JSON.stringify({
       event: 'bridge.hello',
@@ -80,18 +151,12 @@ wss.on('connection', (ws, req) => {
       },
     }),
   );
-
-  ws.on('message', (tho) => tuClient(ws, String(tho)));
-  ws.on('close', () => {
-    clients.delete(ws);
-    ghi('client ngắt. Tổng:', clients.size);
-  });
-  ws.on('error', (e) => ghi('lỗi client:', e.message));
-});
+}
 
 /* ------------------------------------------------------- client → sân khấu */
 
 function tuClient(ws: WebSocket, tho: string): void {
+  if (!daXac.has(ws)) return; // khung đầu là token, không phải lệnh
   let goi: { id?: unknown; cmd?: unknown; args?: unknown };
   try {
     goi = JSON.parse(tho);
@@ -138,6 +203,7 @@ function tuClient(ws: WebSocket, tho: string): void {
 /* ------------------------------------------------------- sân khấu → client */
 
 function tuSanKhau(tho: string): void {
+  if (sanKhau && !daXac.has(sanKhau)) return;
   let goi: { id?: unknown; ok?: unknown; event?: unknown };
   try {
     goi = JSON.parse(tho);
@@ -174,9 +240,16 @@ function phatChoClient(x: Record<string, unknown>): void {
 
 /* ------------------------------------------------------------------ chạy */
 
-ghi(`đang nghe ws://localhost:${CONG}`);
-ghi(`sân khấu nối vào  ws://localhost:${CONG}/?role=stage  (mở app với ?bridge=1)`);
-ghi(`client ra lệnh    ws://localhost:${CONG}/`);
+ghi(`đang nghe ws://${HOST}:${CONG}  (kiểm bằng: ss -ltn | grep ${CONG})`);
+ghi(`sân khấu nối vào  ws://${HOST}:${CONG}/?role=stage  (mở app với ?bridge=1)`);
+ghi(`client ra lệnh    ws://${HOST}:${CONG}/`);
+ghi(
+  TOKEN
+    ? 'token: BẬT — gửi {"token":"..."} ở khung đầu, hoặc thêm ?token=... vào URL'
+    : RIENG_MAY_NAY
+      ? 'token: tắt (chỉ nghe trên máy này nên không cần)'
+      : 'token: tắt',
+);
 
 for (const tin of ['SIGINT', 'SIGTERM'] as const) {
   process.on(tin, () => {

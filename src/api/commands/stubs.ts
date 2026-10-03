@@ -19,12 +19,14 @@ function stub(
   desc: string,
   params: ParamSpec[],
   example: Record<string, unknown>,
+  events: string[] = [],
 ): CommandSpec {
   return {
     cmd,
     group,
     desc,
     params,
+    events,
     stub: dot,
     example: { cmd, args: example },
     handler() {
@@ -58,6 +60,7 @@ export const LENH_STUB: CommandSpec[] = [
       { name: 'say', type: 'text', desc: 'Nói kèm (tuỳ chọn)' },
     ],
     { actor: 'lan', emote: 'vui', intensity: 1 },
+    ['actor.emoteDone'],
   ),
   stub(
     'A2',
@@ -119,6 +122,7 @@ export const LENH_STUB: CommandSpec[] = [
       { name: 'source', type: 'string', desc: 'Nguồn đẩy, vd "agent"' },
     ],
     { screen: 'main', kind: 'code', source: 'agent' },
+    ['screen.streamDone'],
   ),
   stub('A3', 'screen.clear', 'screen', 'Xoá nội dung màn hình', [P_SCREEN], {
     screen: 'main',
@@ -141,6 +145,7 @@ export const LENH_STUB: CommandSpec[] = [
       pSo('durationMs', 'Thời lượng hiệu ứng (ms)', { min: 200, max: 20000 }),
     ],
     { id: 'connector-baserow', shape: 'book', label: 'Baserow', from: 'main' },
+    ['module.built'],
   ),
   stub(
     'A3',
