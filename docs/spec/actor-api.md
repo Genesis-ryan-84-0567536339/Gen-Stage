@@ -1,0 +1,108 @@
+# Gen-Stage Actor API — spec v0.1 (bản nháp để chốt)
+
+Mục tiêu: **một bộ lệnh cố định** điều khiển nhân vật, đồ vật, camera, lời nói trên sân khấu 3D.
+Mọi đường vào (nút bấm trên giao diện, ô dán kịch bản, MCP cho agent) đều đi qua **cùng một bộ phân phối lệnh**, nên:
+
+- Boss bấm tay được gì → agent gọi được đúng cái đó, không lệch.
+- Agent mới (agy CLI, Claude, Gen) connect vào, gọi `stage.bootstrap` một lần là có đủ sách hướng dẫn, không phải mò.
+
+## 1. Kiến trúc
+
+```
+Giao diện (nút + ô kịch bản) ─┐
+                              ├─► Dispatcher (1 hàm duy nhất: run(cmd, args)) ─► Sân khấu Three.js
+Bridge Node (WebSocket) ──────┘
+   ▲
+   │ MCP (stdio / HTTP) — đăng ký vào Gen-hub làm connector `gen-stage`
+   │
+Agent (agy CLI / Claude / Gen)
+```
+
+- Gói lệnh: `{ "id": "a1", "cmd": "actor.moveTo", "args": { "actor": "lan", "to": "ban-2" } }`
+- Trả lời: `{ "id": "a1", "ok": true, "result": {...} }` hoặc `{ "id": "a1", "ok": false, "error": "..." }`
+- Sự kiện từ sân khấu gửi ngược lên agent: `{ "event": "actor.arrived", "data": {...} }`
+- Mọi lệnh có hiệu ứng theo thời gian (đi, nói, chạy kịch bản) trả về ngay kèm `durationMs`, và bắn sự kiện khi xong.
+
+## 2. Khái niệm
+
+| Tên | Nghĩa |
+| --- | --- |
+| **actor** | Nhân vật VRM, có `id` ngắn (`lan`, `minh`) |
+| **place** | Điểm đặt tên trên sân khấu: `ban-1`, `ban-2`, `ghe-hop-1`, `cua`, `may-cafe` |
+| **prop** | Đồ vật: màn hình, cốc, tài liệu, cây… có `id` |
+| **clip** | Chuyển động có tên: `idle`, `walk`, `wave`, `type`, `nod`, `shake`, `think`, `clap`, `point`, `celebrate`, `sleep`, `sit`, `stand` |
+| **expression** | Biểu cảm VRM: `neutral`, `happy`, `angry`, `sad`, `relaxed`, `surprised` (+ `blink`, `aa/ih/ou/ee/oh` cho miệng) |
+
+## 3. Bộ lệnh (v0.1, cố định — thêm thì tăng version, không đổi nghĩa lệnh cũ)
+
+### 3.1 Meta
+| Lệnh | Args | Kết quả |
+| --- | --- | --- |
+| `stage.bootstrap` | — | Toàn bộ sách hướng dẫn: version, danh sách lệnh + mô tả + ví dụ, actors, places, props, clips, expressions, voices. **Agent gọi đầu tiên.** |
+| `stage.describe` | — | Trạng thái hiện tại: mỗi actor đang ở đâu, làm gì, biểu cảm gì; props ở đâu |
+| `stage.reset` | — | Về trạng thái ban đầu |
+
+### 3.2 Nhân vật
+| Lệnh | Args | Ghi chú |
+| --- | --- | --- |
+| `actor.spawn` | `{ id, model, name?, at }` | `model` = tên file VRM trong kho; `at` = place hoặc `{x,y,z}` |
+| `actor.remove` | `{ id }` | |
+| `actor.list` | — | |
+| `actor.moveTo` | `{ actor, to, speed? }` | Tự chơi `walk`, tới nơi về `idle`, sự kiện `actor.arrived` |
+| `actor.lookAt` | `{ actor, target }` | target = actor id, prop id, place, `camera`, `cursor`, `null` |
+| `actor.turnTo` | `{ actor, target }` | xoay người |
+| `actor.sit` | `{ actor, seat }` | seat = place loại ghế |
+| `actor.stand` | `{ actor }` | |
+| `actor.play` | `{ actor, clip, loop?, speed? }` | sự kiện `actor.clipDone` khi hết (nếu không loop) |
+| `actor.stop` | `{ actor }` | về `idle` |
+| `actor.express` | `{ actor, expression, weight?, durationMs? }` | weight 0–1, mặc định 1; durationMs = tự về neutral sau đó |
+| `actor.say` | `{ actor, text, emotion?, voice? }` | TTS + nhép miệng + bong bóng chữ; trả `durationMs`; sự kiện `actor.sayDone` |
+| `actor.bubble` | `{ actor, text, durationMs? }` | chỉ chữ, không tiếng |
+| `actor.hold` | `{ actor, prop, hand }` | cầm đồ vật (`left`/`right`) |
+| `actor.drop` | `{ actor }` | |
+
+### 3.3 Đồ vật, cảnh, camera
+| Lệnh | Args |
+| --- | --- |
+| `prop.spawn` / `prop.remove` / `prop.list` | `{ id, model, at }` |
+| `prop.moveTo` | `{ prop, to }` |
+| `prop.set` | `{ prop, state }` — vd màn hình `{ screen: "on", text: "Đang chạy test…" }` |
+| `scene.light` | `{ preset: "sang" \| "toi" \| "am" }` |
+| `camera.focus` | `{ target, distance? }` |
+| `camera.preset` | `{ name: "toan-canh" \| "ban-1" \| "hop" }` |
+
+### 3.4 Kịch bản
+| Lệnh | Args |
+| --- | --- |
+| `script.run` | `{ steps: Step[], mode?: "sequential" \| "parallel" }` — Step = bất kỳ lệnh nào ở trên, thêm `wait` (ms) và `waitFor` (tên sự kiện) |
+| `script.stop` | — |
+
+Ví dụ kịch bản Boss dán vào ô kịch bản (hoặc agent gửi):
+
+```json
+{ "cmd": "script.run", "args": { "steps": [
+  { "cmd": "actor.moveTo", "args": { "actor": "lan", "to": "ban-2" } },
+  { "waitFor": "actor.arrived" },
+  { "cmd": "actor.express", "args": { "actor": "lan", "expression": "happy" } },
+  { "cmd": "actor.say", "args": { "actor": "lan", "text": "Sếp ơi, test xanh rồi!" } },
+  { "cmd": "actor.play", "args": { "actor": "lan", "clip": "celebrate" } }
+]}}
+```
+
+### 3.5 Sự kiện sân khấu → agent
+`actor.arrived`, `actor.clipDone`, `actor.sayDone`, `script.done`, `user.speech` (Boss nói, đã chuyển thành chữ), `user.click` (Boss bấm vào actor/prop), `user.text` (Boss gõ).
+
+## 4. Giao diện test thủ công (bắt buộc có từ đợt A)
+- Bảng bên phải liệt kê **tự động** mọi lệnh từ `stage.bootstrap` → mỗi lệnh 1 form nhỏ + nút Chạy. Không viết tay nút nào.
+- Ô "Kịch bản": dán JSON (hoặc dạng ngắn 1 dòng/1 lệnh: `lan moveTo ban-2`) → Chạy.
+- Nhật ký lệnh/sự kiện cuộn ở dưới, sao chép được để gửi cho tôi.
+
+## 5. MCP cho agent
+- Bridge Node phơi MCP tools **1:1 với bộ lệnh** (tool `stage_bootstrap`, `actor_moveTo`…), cộng tool `stage_events` để đọc sự kiện mới.
+- Đăng ký vào Gen-hub làm connector `gen-stage`. Hướng dẫn kèm theo (`docs/BOOTSTRAP-AGENT.md`) chỉ có 1 câu: *"Gọi `stage_bootstrap` trước, làm theo nó."*
+
+## 6. Ngoài phạm vi v0.1
+Nhiều người xem cùng lúc, vật lý, chỉnh ngoại hình trong game (làm bằng VRoid Studio rồi nạp VRM), giọng nói thời gian thực hai chiều (đợt C).
+
+## 7. Tiêu chí chốt spec
+Boss đọc xong, bấm thử được từng dòng trong bảng lệnh trên giao diện, và tôi/agy gọi qua MCP cho cùng kết quả. Lệnh nào Boss thấy thiếu → thêm vào spec trước, code sau.
