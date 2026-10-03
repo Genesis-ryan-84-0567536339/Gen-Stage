@@ -28,8 +28,10 @@ Agent (agy CLI / Claude / Gen)
 | Tên | Nghĩa |
 | --- | --- |
 | **actor** | Nhân vật VRM, có `id` ngắn (`lan`, `minh`) |
-| **place** | Điểm đặt tên trên sân khấu: `ban-1`, `ban-2`, `ghe-hop-1`, `cua`, `may-cafe` |
-| **prop** | Đồ vật: màn hình, cốc, tài liệu, cây… có `id` |
+| **place** | Điểm đặt tên trên sân khấu: `ban-dieu-khien`, `buc-trung-tam`, `ke-module`, `cua` |
+| **prop** | Đồ vật: thiết bị, cốc, tài liệu… có `id` |
+| **screen** | Màn hình hologram 3D, có `id` (`main`, `left`, `right`) |
+| **module** | Vật thể kết tinh sau khi "tạo lập" xong (sách, khối, công cụ), cầm tay được, cũng là prop |
 | **clip** | Chuyển động có tên: `idle`, `walk`, `wave`, `type`, `nod`, `shake`, `think`, `clap`, `point`, `celebrate`, `sleep`, `sit`, `stand` |
 | **expression** | Biểu cảm VRM: `neutral`, `happy`, `angry`, `sad`, `relaxed`, `surprised` (+ `blink`, `aa/ih/ou/ee/oh` cho miệng) |
 
@@ -70,6 +72,43 @@ Agent (agy CLI / Claude / Gen)
 | `scene.light` | `{ preset: "sang" \| "toi" \| "am" }` |
 | `camera.focus` | `{ target, distance? }` |
 | `camera.preset` | `{ name: "toan-canh" \| "ban-1" \| "hop" }` |
+
+### 3.4b Phòng lab viễn tưởng: màn hình hologram, chế tạo module (Boss quyết 03/10)
+
+Bối cảnh chốt: **phòng nghiên cứu khoa học viễn tưởng**, không phải văn phòng. Sàn tối có vân sáng, kính, ánh neon, hậu kỳ phát sáng (bloom). Nhân vật đứng giữa, ra lệnh cho các màn hình 3D lớn.
+
+| Lệnh | Args | Ghi chú |
+| --- | --- | --- |
+| `screen.spawn` / `screen.remove` | `{ id, at, size?, tilt? }` | Tấm hologram trong suốt phát sáng, lơ lửng |
+| `screen.show` | `{ screen, kind: "text" \| "code" \| "log" \| "chart" \| "image", content }` | Hiện nội dung tĩnh |
+| `screen.stream` | `{ screen, kind, chunks[] \| source }` | Chữ/code chạy dần như đang được gõ; agent có thể đẩy từng mẩu khi đang sinh |
+| `screen.clear` | `{ screen }` | |
+| `screen.focus` | `{ screen }` | Bay tới trước mặt nhân vật/camera |
+| `module.build` | `{ id, shape: "book" \| "cube" \| "tool" \| "crystal" \| "orb", label, from?: screen, durationMs? }` | **Hiệu ứng kết tinh**: hạt sáng/khối voxel từ màn hình tụ lại thành vật thể rồi rơi vào tay nhân vật (tự gọi `actor.hold`). Trả về prop id. Sự kiện `module.built` |
+| `module.open` | `{ module }` | Mở ra thành màn hình nhỏ hiện nội dung bên trong |
+| `module.store` | `{ module, to: place }` | Đặt lên kệ/bàn lưu trữ |
+| `fx.play` | `{ name: "scan" \| "pulse" \| "alert" \| "success", at?, durationMs? }` | Hiệu ứng ánh sáng/âm ngắn |
+
+Mẫu kịch bản "ra lệnh → lập trình → kết tinh module":
+
+```json
+{ "cmd": "script.run", "args": { "steps": [
+  { "cmd": "actor.say",      "args": { "actor": "gen", "text": "Bắt đầu dựng connector Baserow." } },
+  { "cmd": "actor.play",     "args": { "actor": "gen", "clip": "point" } },
+  { "cmd": "screen.focus",   "args": { "screen": "main" } },
+  { "cmd": "screen.stream",  "args": { "screen": "main", "kind": "code", "source": "agent" } },
+  { "waitFor": "screen.streamDone" },
+  { "cmd": "fx.play",        "args": { "name": "success" } },
+  { "cmd": "module.build",   "args": { "id": "connector-baserow", "shape": "book", "label": "Baserow", "from": "main" } },
+  { "waitFor": "module.built" },
+  { "cmd": "actor.express",  "args": { "actor": "gen", "expression": "happy" } },
+  { "cmd": "actor.say",      "args": { "actor": "gen", "text": "Xong rồi Sếp, module đây." } }
+]}}
+```
+
+Sự kiện thêm: `screen.streamDone`, `module.built`.
+
+Ghi chú kỹ thuật (để biết là làm được, không phải phần Boss cần đọc): màn hình = mặt phẳng trong suốt + CanvasTexture vẽ chữ, viền phát sáng qua UnrealBloomPass; kết tinh = hệ hạt (Points) nội suy từ vị trí ngẫu nhiên về bề mặt mô hình đích rồi hoán đổi sang mô hình thật; tất cả có sẵn trong Three.js, không cần thư viện thêm.
 
 ### 3.4 Kịch bản
 | Lệnh | Args |
