@@ -356,7 +356,8 @@ for (const b of BUOC) {
       'describe-doi',
       doi,
       `${b.api.actor}: pos ${JSON.stringify(a0.pos)} → ${JSON.stringify(a1.pos)}` +
-        ` · distances["${dich}"] ${a0.distances[dich]} → ${a1.distances[dich]} m · at=${a1.at}`,
+        ` · distances["${dich}"] ${a0.distances[dich]} → ${a1.distances[dich]} m` +
+        ` · at=${a1.at} · nearest=${JSON.stringify(a1.nearest)}`,
     );
     in_('');
   }
@@ -421,43 +422,61 @@ const c3 = await page.evaluate(async () => {
   const doc = async () => {
     const r = await window.stage.describe();
     const a = r.result.actors.find((x) => x.id === 'lan');
-    return { state: a.state, at: a.at, pos: a.pos, busy: a.busy };
+    return { state: a.state, at: a.at, nearest: a.nearest, pos: a.pos, busy: a.busy };
   };
   // actor.sit = đi tới ghế + xoay + ngồi, nên phải chờ hết chuỗi mới là "sitting"
   const rSit = await window.stage.run('actor.sit', { actor: 'lan', seat: 'ghe-1' });
   await new Promise((r) => setTimeout(r, (rSit.result.durationMs ?? 1500) + 1200));
   const khiNgoi = await doc();
 
+  // bắt sự kiện tới nơi TRƯỚC khi ra lệnh, để không phụ thuộc tốc độ máy
+  const toiNoi = new Promise((resolve) => {
+    const huy = window.stage.on('actor.arrived', () => {
+      huy();
+      resolve();
+    });
+  });
   await window.stage.run('actor.moveTo', { actor: 'lan', to: 'cua', interrupt: true });
   const ngaySau = await doc();
-  await new Promise((r) => setTimeout(r, 500));
-  const sau500 = await doc();
-  await new Promise((r) => setTimeout(r, 1000));
-  const sau1500 = await doc();
-  return { khiNgoi, ngaySau, sau500, sau1500 };
+  await new Promise((r) => setTimeout(r, 300));
+  const sau300 = await doc();
+  await toiNoi;
+  const khiToi = await doc();
+  return { khiNgoi, ngaySau, sau300, khiToi };
 });
-in_('   khi ngồi    :', JSON.stringify(c3.khiNgoi));
-in_('   ngay sau cắt:', JSON.stringify(c3.ngaySau));
-in_('   sau 0,5 giây:', JSON.stringify(c3.sau500));
-in_('   sau 1,5 giây:', JSON.stringify(c3.sau1500));
-ghiNhan('chk', 'sit-roi-moveTo', c3.khiNgoi.state === 'sitting', `ngồi xong: state=${c3.khiNgoi.state}`);
-// Lỗi C3 biểu hiện ở `state`: bản cũ nhảy về "sitting" khi hẹn giờ ngồi đáo hạn
-// dù nhân vật đang đi giữa phòng. `at` ở mốc 0,5 giây vẫn là "ghe-1" là ĐÚNG —
-// lúc đó nhân vật mới rời ghế vài centimet, còn trong bán kính nhận place.
+in_('   khi ngồi      :', JSON.stringify(c3.khiNgoi));
+in_('   ngay sau cắt  :', JSON.stringify(c3.ngaySau));
+in_('   sau 0,3 giây  :', JSON.stringify(c3.sau300));
+in_('   khi actor.arrived:', JSON.stringify(c3.khiToi));
+
 ghiNhan(
   'chk',
-  'cat-sit-0.5s',
-  c3.sau500.state === 'walking' &&
-    JSON.stringify(c3.sau500.pos) !== JSON.stringify(c3.khiNgoi.pos),
-  `state=${c3.sau500.state} at=${c3.sau500.at} pos=${JSON.stringify(c3.sau500.pos)}`,
+  'sit-roi-moveTo',
+  c3.khiNgoi.state === 'sitting' && c3.khiNgoi.at === 'ghe-1',
+  `ngồi xong: state=${c3.khiNgoi.state} at=${c3.khiNgoi.at}`,
+);
+// Lỗi C3 biểu hiện ở `state`: bản cũ nhảy về "sitting" khi hẹn giờ ngồi đáo hạn
+// dù nhân vật đang đi giữa phòng. Và theo ngữ nghĩa đã chốt ở spec mục 1b,
+// đang `walking` thì `at` luôn null, còn `nearest` vẫn phải có giá trị.
+ghiNhan(
+  'chk',
+  'cat-sit-ngay-sau',
+  c3.ngaySau.state === 'walking' && c3.ngaySau.at === null && !!c3.ngaySau.nearest.place,
+  `state=${c3.ngaySau.state} at=${c3.ngaySau.at} nearest=${JSON.stringify(c3.ngaySau.nearest)}`,
 );
 ghiNhan(
   'chk',
-  'cat-sit-1.5s',
-  c3.sau1500.state === 'walking' &&
-    c3.sau1500.at === null &&
-    JSON.stringify(c3.sau1500.pos) !== JSON.stringify(c3.sau500.pos),
-  `state=${c3.sau1500.state} at=${c3.sau1500.at} pos=${JSON.stringify(c3.sau1500.pos)}`,
+  'cat-sit-0.3s',
+  c3.sau300.state === 'walking' &&
+    c3.sau300.at === null &&
+    JSON.stringify(c3.sau300.pos) !== JSON.stringify(c3.khiNgoi.pos),
+  `state=${c3.sau300.state} at=${c3.sau300.at} pos=${JSON.stringify(c3.sau300.pos)}`,
+);
+ghiNhan(
+  'chk',
+  'cat-sit-khi-toi-noi',
+  c3.khiToi.state !== 'walking' && c3.khiToi.at === 'cua',
+  `state=${c3.khiToi.state} at=${c3.khiToi.at} pos=${JSON.stringify(c3.khiToi.pos)}`,
 );
 await choRanh('lan');
 await anh('10b-cat-sit-bang-moveTo');
@@ -584,6 +603,7 @@ function chonGon(st) {
       pos: a.pos,
       facing: a.facing,
       at: a.at,
+      nearest: a.nearest,
       state: a.state,
       busy: a.busy,
       expression: a.expression,

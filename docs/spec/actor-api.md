@@ -33,6 +33,7 @@ Não AI chỉ điều khiển tốt khi **đọc được thế giới bằng s�
   "time": { "clock": "20:31", "bossPresent": true, "idleSec": 12 },
   "actors": [
     { "id": "gen", "pos": [1.2, 0, -0.8], "facing": 90, "at": "buc-trung-tam",
+      "nearest": { "place": "buc-trung-tam", "distance": 0.2 },
       "state": "idle", "busy": false, "mood": "binh-thuong", "expression": "neutral",
       "holding": null, "lookingAt": "camera",
       "distances": { "ban-dieu-khien": 1.6, "ke-module": 3.2, "main": 1.1 } }
@@ -44,7 +45,9 @@ Não AI chỉ điều khiển tốt khi **đọc được thế giới bằng s�
 }
 ```
 
-Quy ước đo: mét, gốc tọa độ giữa phòng, `facing` độ (0 = hướng camera mặc định). `distances` tính sẵn để não không phải tự tính. Mỗi actor là một **máy trạng thái** rõ: `idle | walking | sitting | playing | speaking | emoting | building`; `busy=true` thì lệnh mới vào hàng đợi (hoặc `{ interrupt: true }` để cắt).
+Quy ước đo: mét, gốc tọa độ giữa phòng, `facing` độ (0 = hướng camera mặc định). `distances` tính sẵn để não không phải tự tính.
+
+**Sửa spec (04/10, từ review A1):** `at` chỉ mang tên place khi actor **đã đứng yên tại đó**; đang `walking` thì `at: null`, kể cả khi đi ngang qua một place khác — "đang ở đâu" phải là câu trả lời dứt khoát, không để não phải đoán giữa "tới rồi" và "đi ngang". Bù lại, mỗi actor luôn có `nearest: { place, distance }` (place gần nhất, luôn có giá trị) để biết mình đang ở gần cái gì. Mỗi actor là một **máy trạng thái** rõ: `idle | walking | sitting | playing | speaking | emoting | building`; `busy=true` thì lệnh mới vào hàng đợi (hoặc `{ interrupt: true }` để cắt).
 
 Mọi lệnh đi qua dispatcher đều được **ghi nhật ký** `{ t, cmd, args, ok, durationMs }` (xuất JSON) → bằng chứng kiểm thử, và sau này là dữ liệu để AI học cách Boss ra lệnh.
 

@@ -438,8 +438,12 @@ describe('hồi quy C3 — cắt hành động hẹn giờ không được ghi �
       await cho(dung);
       const st = await d.run('stage.describe');
       if (!st.ok) throw new Error(st.error);
-      const a = (st.result as { actors: { state: string }[] }).actors[0]!;
+      const a = (st.result as {
+        actors: { state: string; at: string | null; nearest: { place: string } }[];
+      }).actors[0]!;
       expect(a.state, `sau ${dung} ms`).toBe('walking');
+      expect(a.at, `sau ${dung} ms: đang đi thì at phải null`).toBeNull();
+      expect(a.nearest.place, `sau ${dung} ms`).toBeTruthy();
     }
     await cho(NHIP_MS * 3);
   });

@@ -734,18 +734,22 @@ export class World implements StageWorld {
       );
     }
 
-    let at: string | null = null;
-    let gan = BAN_KINH_AT;
+    // place gần nhất — luôn tính, không phụ thuộc trạng thái
+    let ganNhat: string | null = null;
+    let gan = Infinity;
     for (const p of PLACES) {
       const kc = Math.min(
         khoangCach(nv.goc.position, p.pos),
         p.standAt ? khoangCach(nv.goc.position, p.standAt) : Infinity,
       );
-      if (kc <= gan) {
+      if (kc < gan) {
         gan = kc;
-        at = p.id;
+        ganNhat = p.id;
       }
     }
+    // `at` chỉ có giá trị khi đã đứng yên tại chỗ: đang đi thì luôn null
+    const dangDiChuyen = nv.state === 'walking';
+    const at = !dangDiChuyen && gan <= BAN_KINH_AT ? ganNhat : null;
 
     return {
       id: nv.id,
@@ -753,6 +757,7 @@ export class World implements StageWorld {
       pos: [tron(nv.goc.position.x), tron(nv.goc.position.y), tron(nv.goc.position.z)],
       facing: nv.facing,
       at,
+      nearest: { place: ganNhat, distance: tron(gan) },
       state: nv.state,
       busy: nv.busy,
       mood: nv.mood,

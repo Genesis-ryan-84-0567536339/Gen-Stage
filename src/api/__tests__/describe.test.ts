@@ -61,6 +61,10 @@ describe('khuôn stage.describe', () => {
     });
     expect(a.pos.length).toBe(3);
     expect('holding' in a && 'lookingAt' in a && 'at' in a).toBe(true);
+    expect(a.nearest).toMatchObject({
+      place: expect.any(String),
+      distance: expect.any(Number),
+    });
   });
 
   it('places v0.1 đủ 7 điểm của cảnh hiện tại, kèm toạ độ mét', async () => {
@@ -117,6 +121,56 @@ describe('khuôn stage.describe', () => {
     expect(st.actors[0]!.busy).toBe(true);
     await new Promise((r) => setTimeout(r, NHIP_MS * 3));
     expect((await moTa()).actors[0]!.state).toBe('idle');
+  });
+
+  it('`at` chỉ có khi đã đứng yên: đang walking thì luôn null', async () => {
+    const dung = await moTa();
+    // đứng yên trong bán kính một place → at = chính place gần nhất
+    expect(dung.actors[0]!.state).toBe('idle');
+    expect(dung.actors[0]!.at).toBe(dung.actors[0]!.nearest.place);
+
+    void d.run('actor.moveTo', { actor: 'lan', to: 'cua' });
+    await new Promise((r) => setTimeout(r, 5));
+    const dangDi = await moTa();
+    expect(dangDi.actors[0]!.state).toBe('walking');
+    expect(dangDi.actors[0]!.at, 'đang đi thì at phải null').toBeNull();
+
+    await new Promise((r) => setTimeout(r, NHIP_MS * 3));
+    const toiNoi = await moTa();
+    expect(toiNoi.actors[0]!.state).toBe('idle');
+    expect(toiNoi.actors[0]!.at).toBe('cua');
+  });
+
+  it('`nearest` LUÔN có, kể cả khi đang đi hay đứng giữa phòng', async () => {
+    void d.run('actor.moveTo', { actor: 'lan', to: 'cua' });
+    await new Promise((r) => setTimeout(r, 5));
+    const dangDi = await moTa();
+    expect(dangDi.actors[0]!.at).toBeNull();
+    expect(dangDi.actors[0]!.nearest.place).toBeTruthy();
+    expect(typeof dangDi.actors[0]!.nearest.distance).toBe('number');
+
+    await new Promise((r) => setTimeout(r, NHIP_MS * 3));
+    // đứng giữa phòng, ngoài bán kính mọi place: at null nhưng nearest vẫn có
+    await d.run('actor.moveTo', { actor: 'lan', to: [0, 0, 1.6] });
+    await new Promise((r) => setTimeout(r, NHIP_MS * 3));
+    const giua = await moTa();
+    const a = giua.actors[0]!;
+    expect(a.state).toBe('idle');
+    // ngoài bán kính mọi place → at null, nhưng nearest vẫn chỉ đúng chỗ gần nhất
+    expect(a.nearest.distance).toBeGreaterThan(0.9);
+    expect(a.at).toBeNull();
+    expect(a.nearest.place).toBeTruthy();
+    const gan = Math.min(...PLACES.map((p) => a.distances[p.id]!));
+    expect(a.nearest.distance).toBeLessThanOrEqual(gan + 0.01);
+  });
+
+  it('place không bị ai "chiếm" khi người đó chỉ đang đi ngang qua', async () => {
+    void d.run('actor.moveTo', { actor: 'lan', to: 'cua' });
+    await new Promise((r) => setTimeout(r, 5));
+    const st = await moTa();
+    expect(st.places.every((p) => p.occupiedBy === null)).toBe(true);
+    await new Promise((r) => setTimeout(r, NHIP_MS * 3));
+    expect((await moTa()).places.find((p) => p.id === 'cua')!.occupiedBy).toBe('lan');
   });
 
   it('lastEvents là mảng, và bus giữ lại sự kiện gần nhất cho sân khấu thật', async () => {

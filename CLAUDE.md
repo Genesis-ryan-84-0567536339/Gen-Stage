@@ -45,6 +45,9 @@ node scripts/kiem-bridge.mjs  # bằng chứng bridge: moveTo qua ws → nhận 
   là hành động hiện tại không" trước khi ghi.
 - **Nhận diện hành động bằng token, không bằng tên lệnh** — cắt `actor.play`
   bằng đúng `actor.play` là chuyện thường ở A2.
+- **`at` là câu trả lời dứt khoát**: chỉ mang tên place khi actor đã đứng yên
+  tại đó; đang `walking` thì luôn `null`, kể cả khi đi ngang qua place khác.
+  Muốn biết "đang gần cái gì" thì đọc `nearest: { place, distance }` (luôn có).
 - Quy trình: Issue → branch → PR (`Refs #N`) → tự kiểm kèm bằng chứng → merge.
   Không merge khi chưa có ảnh/log chạy thật trong PR.
 

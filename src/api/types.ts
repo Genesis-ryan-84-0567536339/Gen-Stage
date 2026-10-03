@@ -155,8 +155,17 @@ export interface ActorSnapshot {
   pos: Vec3;
   /** Độ, 0 = hướng camera mặc định, tăng theo chiều kim đồng hồ nhìn từ trên. */
   facing: number;
-  /** Place gần nhất trong bán kính nhận (≤ 0,9 m), không có thì `null`. */
+  /**
+   * Place actor **đang đứng tại**, và chỉ khi đã đứng yên ở đó: còn đang di
+   * chuyển thì luôn `null`, dù có đi ngang qua một place khác.
+   *
+   * Lý do: "đang ở đâu" phải là một câu trả lời dứt khoát cho não AI. Nếu vừa
+   * `walking` vừa `at: "ban-1"` thì agent không biết nên coi là đã tới nơi hay
+   * chưa. Muốn biết đang gần cái gì thì đọc `nearest`.
+   */
   at: string | null;
+  /** Place gần nhất, LUÔN có, kể cả khi đang đi hay đứng giữa phòng. */
+  nearest: { place: string | null; distance: number };
   state: ActorState;
   busy: boolean;
   mood: string;

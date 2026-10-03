@@ -361,21 +361,24 @@ export class SanKhauGia implements StageWorld {
     for (const d of this.props.values()) {
       distances[d.id] = Math.round(kc(x.pos, d.pos) * 100) / 100;
     }
-    let at: string | null = null;
-    let gan = 0.9;
+    let ganNhat: string | null = null;
+    let gan = Infinity;
     for (const p of PLACES) {
       const k = Math.min(kc(x.pos, p.pos), p.standAt ? kc(x.pos, p.standAt) : Infinity);
-      if (k <= gan) {
+      if (k < gan) {
         gan = k;
-        at = p.id;
+        ganNhat = p.id;
       }
     }
+    // cùng ngữ nghĩa với sân khấu thật: đang đi thì `at` luôn null
+    const at = x.state !== 'walking' && gan <= 0.9 ? ganNhat : null;
     return {
       id: x.id,
       name: x.name,
       pos: x.pos,
       facing: x.facing,
       at,
+      nearest: { place: ganNhat, distance: Math.round(gan * 100) / 100 },
       state: x.state,
       busy: x.state !== 'idle' && x.state !== 'sitting',
       mood: 'binh-thuong',
