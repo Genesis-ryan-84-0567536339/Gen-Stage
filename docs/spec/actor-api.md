@@ -23,6 +23,33 @@ Agent (agy CLI / Claude / Gen)
 - Sự kiện từ sân khấu gửi ngược lên agent: `{ "event": "actor.arrived", "data": {...} }`
 - Mọi lệnh có hiệu ứng theo thời gian (đi, nói, chạy kịch bản) trả về ngay kèm `durationMs`, và bắn sự kiện khi xong.
 
+## 1b. Số liệu hóa không gian (Boss quyết 03/10: AI gắn sau, nhưng mọi thứ phải đo được trước)
+
+Não AI chỉ điều khiển tốt khi **đọc được thế giới bằng số**. `stage.describe` vì thế trả về đầy đủ, luôn cùng một khuôn:
+
+```json
+{
+  "version": "0.1",
+  "time": { "clock": "20:31", "bossPresent": true, "idleSec": 12 },
+  "actors": [
+    { "id": "gen", "pos": [1.2, 0, -0.8], "facing": 90, "at": "buc-trung-tam",
+      "state": "idle", "busy": false, "mood": "binh-thuong", "expression": "neutral",
+      "holding": null, "lookingAt": "camera",
+      "distances": { "ban-dieu-khien": 1.6, "ke-module": 3.2, "main": 1.1 } }
+  ],
+  "places": [ { "id": "ban-dieu-khien", "pos": [0,0,-2], "kind": "desk", "occupiedBy": null } ],
+  "screens": [ { "id": "main", "pos": [0,1.6,-2.5], "showing": "code", "streaming": true, "lines": 42 } ],
+  "props": [ { "id": "connector-baserow", "kind": "module", "shape": "book", "at": "ke-module" } ],
+  "lastEvents": [ { "t": 1699..., "event": "module.built", "data": { "id": "connector-baserow" } } ]
+}
+```
+
+Quy ước đo: mét, gốc tọa độ giữa phòng, `facing` độ (0 = hướng camera mặc định). `distances` tính sẵn để não không phải tự tính. Mỗi actor là một **máy trạng thái** rõ: `idle | walking | sitting | playing | speaking | emoting | building`; `busy=true` thì lệnh mới vào hàng đợi (hoặc `{ interrupt: true }` để cắt).
+
+Mọi lệnh đi qua dispatcher đều được **ghi nhật ký** `{ t, cmd, args, ok, durationMs }` (xuất JSON) → bằng chứng kiểm thử, và sau này là dữ liệu để AI học cách Boss ra lệnh.
+
+Kết luận thiết kế: khi A xong, "gắn não" = viết 1 skill cho agent CLI gồm 3 câu: gọi `stage_bootstrap`, đọc `stage_describe`, chọn lệnh. Không phải việc lớn.
+
 ## 2. Khái niệm
 
 | Tên | Nghĩa |
