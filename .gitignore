@@ -1,0 +1,10 @@
+node_modules
+dist
+.DS_Store
+*.local
+
+# Asset nặng: không commit, tải bằng scripts/fetch-assets.sh
+assets/models/
+assets/kenney/
+public/models/
+public/kenney/
