@@ -7,13 +7,22 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "assets": "bash scripts/fetch-assets.sh"
+    "assets": "bash scripts/fetch-assets.sh",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "bridge": "tsx bridge/server.ts",
+    "kiem-a1": "node scripts/kiem-a1.mjs"
   },
   "devDependencies": {
+    "@types/node": "^22.20.5",
     "@types/three": "^0.186.0",
+    "@types/ws": "^8.18.2",
     "playwright": "^1.63.0",
+    "tsx": "^4.23.15",
     "typescript": "^7.0.2",
-    "vite": "^8.3.2"
+    "vite": "^8.3.2",
+    "vitest": "^3.2.7",
+    "ws": "^8.22.0"
   },
   "dependencies": {
     "@pixiv/three-vrm": "^3.5.5",
