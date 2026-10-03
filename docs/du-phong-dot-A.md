@@ -17,17 +17,17 @@ Sau A: đợt B (não + việc thật qua Gen-hub), C (giác quan + nhịp sốn
 | Vai | Model | Việc |
 | --- | --- | --- |
 | Thiết kế / điều phối | Fable (phiên chính) | Spec đã xong; chỉ giao việc, quyết định, tổng hợp |
-| Thi công | Sonnet 5 (A1: có khuôn rõ) · Opus 5 (A2 + A3: chuyển động và hình ảnh là chỗ dễ nửa mùa — Boss yêu cầu 04/10) | Code trên worktree riêng, tự chụp ảnh + log bằng Playwright làm bằng chứng |
+| Thi công | Opus 5 cho cả A1, A2, A3 (Boss giao Claude quyết 04/10: chất lượng trước) | Code trên worktree riêng, tự chụp ảnh + log bằng Playwright làm bằng chứng |
 | Review trước merge | Opus 5, 1 vòng đầy đủ | Đối chiếu spec, bấm thử từng lệnh trên UI thật |
 | Kiểm trạng thái / đọc log | Haiku 4.5 | CI, console, so ảnh |
 
 ## 3. Ước tính token (dựa số liệu thật đợt 0: thi công Opus 175k cho 1 cảnh đơn giản không review; nghiên cứu 89k)
 | Workflow | Thi công | Review Opus | Haiku + điều phối | Cộng |
 | --- | --- | --- | --- | --- |
-| A1 | 350k (Sonnet) | 150k | 50k | **~550k** |
+| A1 | 500k (Opus) | 150k | 50k | **~700k** |
 | A2 | 450k (Opus) | 150k | 50k | **~650k** |
 | A3 | 550k (Opus) | 120k | 50k | **~720k** |
-| **Tổng đợt A** | | | | **~2.0M** (A là đợt lớn gộp 3 workflow; cả A1 Opus nữa thì ~2.3M) |
+| **Tổng đợt A** | | | | **~2.3M** (toàn Opus, A là đợt lớn gộp 3 workflow) |
 
 Dự phòng rủi ro +30% nếu retarget VRM hoặc Vite/three-vrm phát sinh lỗi lạ: tối đa ~2.6M.
 
