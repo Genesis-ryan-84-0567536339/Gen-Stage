@@ -72,8 +72,10 @@ export async function dungGiaoDien(
     nutDongMo.setAttribute('aria-label', dangThuGon ? 'Mở bảng lệnh' : 'Thu gọn bảng');
   };
   nutDongMo.addEventListener('click', () => dongMo());
-  // điện thoại: mở app là thu gọn cho thấy sân khấu, bấm nút để mở bảng
-  if (window.innerWidth < 760) dongMo(false);
+  // Điện thoại / màn hẹp: mở app là THU GỌN để thấy trọn sân khấu, bấm nút
+  // góc phải để mở bảng. Boss 25/10: ngưỡng nâng từ 760 lên 900 px vì ở
+  // 760–900 px tấm kính 390 px vẫn che gần nửa khung hình.
+  if (window.innerWidth < 900) dongMo(false);
 
   return { bangLenh, oKichBan, nhatKyView, moThe, dongMo };
 }

@@ -469,3 +469,99 @@ input[type="checkbox"] { width: 17px; height: 17px; min-height: 0; accent-color:
   .luoi-tham-so { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
   .nut-chay, .kb-chan button, .nk-chan button { min-height: 40px; }
 }
+
+/* ------------------------------------------- bảng gợi ý phím (Issue #14) */
+
+#goi-y-phim {
+  position: fixed;
+  left: 14px;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  z-index: 4;
+  min-width: 206px;
+  padding: 9px 12px 10px;
+  border-radius: var(--bo);
+  background: var(--kinh);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--vien);
+  box-shadow: 0 6px 20px rgba(64, 55, 46, 0.1);
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+#goi-y-phim.an {
+  opacity: 0;
+  transform: translateY(8px);
+}
+#goi-y-phim p {
+  margin: 0 0 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muc-nhat);
+}
+#goi-y-phim ul { margin: 0; padding: 0; list-style: none; }
+#goi-y-phim li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  line-height: 1.75;
+  color: var(--muc-nhat);
+}
+#goi-y-phim span { flex: 1 1 auto; }
+#goi-y-phim kbd {
+  flex: 0 0 auto;
+  min-width: 58px;
+  padding: 1px 5px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--muc);
+  background: var(--kinh-dam);
+  border: 1px solid var(--vien);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+}
+#goi-y-phim p kbd { min-width: 0; }
+
+/* --------------------------------------------------- ô nói nhanh (Space) */
+
+#o-noi-nhanh {
+  position: fixed;
+  left: 50%;
+  bottom: max(72px, calc(env(safe-area-inset-bottom) + 72px));
+  transform: translateX(-50%);
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: min(460px, calc(100vw - 28px));
+  padding: 9px 12px;
+  border-radius: var(--bo);
+  background: var(--kinh-dam);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--vien);
+  box-shadow: 0 10px 30px rgba(64, 55, 46, 0.16);
+}
+#o-noi-nhanh label {
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muc-nhat);
+}
+#o-noi-nhanh input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 32px;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--muc);
+  background: rgba(64, 55, 46, 0.05);
+  border: 1px solid var(--vien);
+  border-radius: 9px;
+  padding: 0 10px;
+}
+
+/* Màn hẹp: không có bàn phím cứng → ẩn bảng gợi ý, nhường chỗ cho sân khấu */
+@media (max-width: 900px) {
+  #goi-y-phim { display: none; }
+}

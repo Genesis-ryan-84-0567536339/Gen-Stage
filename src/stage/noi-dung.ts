@@ -44,47 +44,58 @@ export function layMatGhe(id: string): number {
 }
 
 /**
- * Places v0.1 của cảnh LAB VIỄN TƯỞNG (A3, `phong.ts`: phòng 7,2 × 7,2 m).
+ * Places v0.1 của cảnh LAB VIỄN TƯỞNG (A3, `phong.ts`).
+ *
+ * 25/10 — Boss xem thật và chốt "không gian quá chật chội": phòng nở từ
+ * 7,2 × 7,2 m lên **16 × 16 m**, trần 5,6 m. Toạ độ place dãn ra theo phòng
+ * mới nhưng **giữ nguyên id** — `kiem-a1.mjs` và bộ test A1/A3 viết theo *tên*
+ * place và theo hình học suy ra từ chính bảng này (`standAt` → `at`), không
+ * chôn số, nên đổi toạ độ không phá bằng chứng cũ.
  *
  * Spec mục 3.4b chốt 4 place bắt buộc: `ban-dieu-khien`, `buc-trung-tam`,
- * `ke-module`, `cua`. Giữ nguyên id + toạ độ của `ban-1/ban-2/ghe-1/ghe-2`
- * (console phụ + ghế thao tác viên hai bên bệ trung tâm) vì `kiem-a1.mjs` và
- * bộ test A1 (`src/api/__tests__/`, `scripts/kiem-a1.mjs`) viết theo đúng
- * hình học này — đổi tên sẽ phá vỡ bằng chứng A1 đã chốt, nên A3 CHỈ THÊM
- * `ban-dieu-khien` (bàn điều khiển cong chính, nơi đặt 3 màn hình hologram)
- * chứ không xoá/đổi tên place cũ.
+ * `ke-module`, `cua`. `ban-1/ban-2/ghe-1/ghe-2` của A1 vẫn còn (đã bỏ khối
+ * bàn/ghế văn phòng cũ khỏi cảnh theo ý Boss, nhưng place vẫn là mốc hợp lệ
+ * để `actor.moveTo` / `actor.sit` / test A1 dùng).
  */
 export const PLACES: readonly DinhNghiaPlace[] = [
   {
     id: 'ban-dieu-khien',
-    pos: [0, 0, -2.6],
+    pos: [0, 0, -6],
     kind: 'desk',
-    standAt: [0, 0, -1.55],
+    standAt: [0, 0, -4.6],
     facing: 180,
   },
   {
     id: 'ban-1',
-    pos: [-1.85, 0, -1.75],
+    pos: [-4.4, 0, -4.2],
     kind: 'desk',
-    standAt: [-1.85, 0, -0.75],
+    standAt: [-4.4, 0, -3.1],
     facing: 180,
   },
   {
     id: 'ban-2',
-    pos: [1.85, 0, -1.75],
+    pos: [4.4, 0, -4.2],
     kind: 'desk',
-    standAt: [1.85, 0, -0.75],
+    standAt: [4.4, 0, -3.1],
     facing: 180,
   },
-  { id: 'ghe-1', pos: [-1.85, 0, -0.97], kind: 'seat', facing: 180, seatY: 0.45 },
-  { id: 'ghe-2', pos: [1.85, 0, -0.97], kind: 'seat', facing: 180, seatY: 0.45 },
-  { id: 'buc-trung-tam', pos: [0, 0, 0.35], kind: 'stage', facing: 0 },
-  { id: 'cua', pos: [0, 0, 3.3], kind: 'door', standAt: [0, 0, 2.6], facing: 0 },
+  // Ghế dời theo phòng 16 × 16 m (sát rìa). `seatY` ở đây chỉ là FALLBACK:
+  // `phong.ts` đo mặt ghế thật trên model vừa dựng rồi ghi đè qua `datSeatY()`.
+  { id: 'ghe-1', pos: [-4.4, 0, -2.4], kind: 'seat', facing: 180, seatY: 0.45 },
+  { id: 'ghe-2', pos: [4.4, 0, -2.4], kind: 'seat', facing: 180, seatY: 0.45 },
+  // bục ở ĐÚNG gốc toạ độ: tâm phòng, và là mốc mặc định của sân khấu giả
+  // trong test (`SanKhauGia` đặt actor mới ở [0,0,0]).
+  { id: 'buc-trung-tam', pos: [0, 0, 0], kind: 'stage', facing: 0 },
+  // Cửa chuyển sang TƯỜNG TRÁI phía trước (không còn ở mép trước phòng): máy
+  // quay toàn cảnh đứng ngoài mép trước, cửa đặt ở đó thì khung cửa cao 3,4 m
+  // chắn ngay tiền cảnh (ảnh thử 25/10). `facing: 90` = quay mặt về +X, tức
+  // nhìn vào trong phòng khi vừa bước qua cửa.
+  { id: 'cua', pos: [-7.4, 0, 4.6], kind: 'door', standAt: [-6.2, 0, 4.6], facing: 90 },
   {
     id: 'ke-module',
-    pos: [-3.15, 0, -0.9],
+    pos: [-7.3, 0, -1],
     kind: 'shelf',
-    standAt: [-2.45, 0, -0.9],
+    standAt: [-6.1, 0, -1],
     facing: 270,
   },
 ] as const;

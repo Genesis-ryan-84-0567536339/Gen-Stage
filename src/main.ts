@@ -11,6 +11,7 @@ import { taoRegistry } from './api/commands/index';
 import { Dispatcher } from './api/dispatcher';
 import { World } from './stage/world';
 import { dungGiaoDien } from './ui/index';
+import { batPhim } from './ui/phim';
 import { BridgeClient, coBatBridge } from './bridge-client';
 import type { Command, Result, StageEvent } from './api/types';
 
@@ -124,10 +125,13 @@ async function khoiDong(): Promise<void> {
   loadingText.textContent = 'Đang dựng bảng lệnh…';
   await dungGiaoDien(dispatcher, bus, nhatKy);
 
+  // Issue #14 — bàn phím là mặt thứ ba của cùng bộ lệnh, vẫn qua dispatcher.
+  batPhim(dispatcher, toast);
+
   loading.classList.add('xong');
   sanSang = true;
   bus.emit('stage.ready', { actors: world.actorIds(), places: world.placeIds() });
-  toast('Bảng lệnh bên phải · bấm từng lệnh để thử');
+  toast('WASD để đi · 1–0 emote · Space nói · ? xem bảng phím');
 
   if (coBatBridge()) bridge.bat();
 }

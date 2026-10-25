@@ -24,6 +24,7 @@ pnpm preview              # xem thử bản build
 
 node scripts/kiem-a1.mjs      # bằng chứng A1: bấm từng lệnh + chụp ảnh vào docs/a1/
 node scripts/kiem-a3.mjs      # bằng chứng A3: screen/module/fx/preset + kịch bản mẫu + FPS vào docs/a3/
+node scripts/kiem-lab2.mjs    # bằng chứng lab rộng-sáng-gọn + điều khiển phím vào docs/lab2/
 node scripts/kiem-bridge.mjs  # bằng chứng bridge: moveTo qua ws → nhận actor.arrived
 node scripts/kiem-a2.mjs      # bằng chứng A2: 15 emote + 13 clip + say + idleStyle, ảnh/video/log số vào docs/a2/
 node scripts/kiem-a2.mjs --chi-anh  # bản NHANH lúc đang làm (chỉ ảnh + số đo, không quay video, không đo FPS)
@@ -41,11 +42,18 @@ bash scripts/fetch-anim.sh    # tải bộ chuyển động CC0 (Quaternius) v�
   **tên lệnh, tên tham số, khoá JSON trong Actor API giữ nguyên tiếng Anh** theo
   spec (`actor.moveTo`, `durationMs`, `distances`) — đổi là phá hợp đồng với agent.
 - **Hiệu năng**: pixel ratio ≤ 2, shadow map 2048, chạy mượt trên điện thoại.
+  Khung bóng của đèn chính phải **bó sát cảnh** (`shadow.camera.near/far`): để
+  khoảng near/far rộng quá thì depth loãng và cả mặt sàn tự che bóng chính mình.
 - **Không viết số euler cho xương tay.** Mọi cử chỉ dùng tay đi qua
   `huongTay(ben, doCao, raTruoc)` / `tay(...)` trong `src/behavior/cu-chi.ts`:
   `doCao` 0 = buông, 0.5 = ngang vai, 1 = quá đầu. Hướng gốc của xương tay
   **đo trên chính model** (`doHuongGoc`), không giả định T-pose. Vòng 1 đoán
   dấu `rotation.z` nên 4 emote giơ tay thành ép tay vào hông.
+- **Kích thước asset tính bằng mét, không bằng hệ số scale chung**: `phong.ts`
+  chuẩn hoá mỗi model Kenney về chiều cao/bề ngang thật (`layCao`/`layRong`).
+  Một hệ số chung cho mọi model làm kệ/cột phình lên 6–8 m chắn khung hình.
+- **Vật liệu không nhân màu hai lần**: `map` đã mang màu thì đừng đặt thêm
+  `color` tối — tường từng đen kịt vì map × color.
 - **Thời gian là lời hứa**: mọi hành động có thời lượng nội suy theo đồng hồ
   thật (không cộng dồn `dt`) và dùng hẹn giờ **huỷ được**, để `durationMs` trả
   cho agent luôn đúng kể cả khi máy tụt xuống vài khung hình/giây.
@@ -77,7 +85,7 @@ biết registry, **giao diện** không gọi thẳng vào sân khấu.
 | `src/stage/nhanvat.ts` | Một nhân vật VRM: máy trạng thái + 3 lớp chuyển động (clip thật → cử chỉ → vi mô) + nhép miệng |
 | `src/behavior/chuyen-dong.ts` | Nạp bộ clip CC0, **retarget sang `vrm.humanoid`**, `AnimationMixer` + crossfade 0,25 s; bảng `DANG_NEN`/`NEN_CLIP`/`NEN_EMOTE` |
 | `src/behavior/cu-chi.ts` | Lớp cử chỉ thủ tục trộn lên clip thật; **hướng tay khai bằng hình học** (`huongTay(doCao, raTruoc)`), không viết số euler |
-| `src/stage/phong.ts` | Dựng LAB VIỄN TƯỞNG (A3): sàn vân sáng, bục trung tâm, bàn điều khiển cong, kệ module, cột kính, trần đèn dải (Kenney Space Kit hoặc fallback geometry emissive) |
+| `src/stage/phong.ts` | Dựng LAB VIỄN TƯỞNG (A3): phòng 16 × 16 m, trần 5,6 m, sàn vân sáng, bục trung tâm, bàn điều khiển cong, kệ module, máy phát, trần đèn dải (Kenney Space Kit chuẩn hoá theo mét, hoặc fallback geometry emissive) |
 | `src/stage/man-hinh.ts` | Màn hình hologram A3: CanvasTexture + scan-line, stream chữ chạy dần |
 | `src/fx/*.ts` | A3: hiệu ứng kết tinh module (`hat-ket-tinh.ts`) + `fx.play` (`hieu-ung.ts`) |
 | `src/stage/noi-dung.ts` | Dữ liệu cảnh v0.1: places (gồm `ban-dieu-khien` A3), clips, biểu cảm, emote, preset đèn/máy quay (gồm `truoc-mat` A2) |
@@ -85,6 +93,7 @@ biết registry, **giao diện** không gọi thẳng vào sân khấu.
 | `src/ui/panel.ts` | Bảng lệnh **tự sinh** từ `stage.bootstrap` — không viết tay nút nào |
 | `src/ui/script-box.ts` | Ô kịch bản: JSON hoặc dạng ngắn `lan moveTo ban-2` |
 | `src/ui/log-view.ts` | Nhật ký cuộn + Sao chép / Xuất JSON |
+| `src/ui/phim.ts` | Điều khiển bằng phím (WASD/1–0/Space/C/E/R/?) — **mọi phím gọi `dispatcher.run`**, tắt khi con trỏ đang ở ô nhập |
 | `src/events.ts` · `src/log.ts` | Bus sự kiện · nhật ký JSON mọi lệnh và sự kiện |
 | `src/bridge-client.ts` | Nối trình duyệt với bridge (bật bằng `?bridge=1`) |
 | `bridge/server.ts` | Bridge WebSocket Node (chưa MCP) — mặc định chỉ nghe `127.0.0.1`; mở ra ngoài phải có `--host` + `GEN_STAGE_TOKEN` |
@@ -121,6 +130,11 @@ biết registry, **giao diện** không gọi thẳng vào sân khấu.
   qua `window.stage.feed`), `module.build` (kết tinh hạt `src/fx/hat-ket-tinh.ts`
   + tự `actor.hold` qua dispatcher) + `module.open`/`module.store`, `fx.play`
   (`src/fx/hieu-ung.ts`), `camera.preset` thêm `ban-dieu-khien`.
+- **Lab vòng 2 — rộng/sáng/gọn + phím (xong, #11 #14)**: phòng **16 × 16 m**,
+  trần 5,6 m, `buc-trung-tam` về đúng gốc toạ độ, camera `toan-canh` lùi ra,
+  bỏ bàn gỗ + ghế văn phòng cũ (place `ban-*`/`ghe-*` giữ nguyên làm mốc test),
+  Kenney chuẩn hoá theo mét, và **điều khiển bằng phím** (`src/ui/phim.ts`:
+  WASD/1–0/Space/C/E/R/?) — mọi phím đi qua `dispatcher.run`.
 
 `src/api/commands/stubs.ts` giờ **rỗng**: cả A2 lẫn A3 đã thi công thật, không
 còn lệnh nào trả `ok:false` kiểu "chưa làm". File được giữ lại làm chỗ khai

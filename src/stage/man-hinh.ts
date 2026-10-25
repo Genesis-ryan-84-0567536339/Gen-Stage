@@ -19,9 +19,12 @@ const DOI_MAU: Record<string, { vien: number; chu: number; nen: number }> = {
 
 /** Vị trí + góc mặc định của 3 màn hình cố định của lab, quanh `ban-dieu-khien`. */
 export const MAC_DINH_MAN_HINH: Record<string, { pos: THREE.Vector3; rotY: number }> = {
-  main: { pos: new THREE.Vector3(0, 1.82, -3.18), rotY: 0 },
-  left: { pos: new THREE.Vector3(-1.4, 1.62, -3.0), rotY: 0.34 },
-  right: { pos: new THREE.Vector3(1.4, 1.62, -3.0), rotY: -0.34 },
+  // Phòng 16 × 16 m (Boss 25/10): 3 hologram treo trên bàn điều khiển cong ở
+  // z ≈ -6, cao 2,1–2,4 m — nằm giữa phòng theo chiều ngang nên KHÔNG chắn
+  // giữa camera `toan-canh` và nhân vật trên bục (z = 1).
+  main: { pos: new THREE.Vector3(0, 2.3, -6.4), rotY: 0 },
+  left: { pos: new THREE.Vector3(-3.1, 1.95, -5.8), rotY: 0.4 },
+  right: { pos: new THREE.Vector3(3.1, 1.95, -5.8), rotY: -0.4 },
 };
 
 export class ManHinh {
@@ -43,9 +46,12 @@ export class ManHinh {
 
   private tGian = 0;
   private flicker = 0;
+  /** Bề ngang panel (m) — `World.screenFocus` cần để tính chỗ đặt vừa khung. */
+  private readonly size: number;
 
   constructor(id: string, size = 2.2, pos = new THREE.Vector3(), rotY = 0, tilt = 0) {
     this.id = id;
+    this.size = size;
     this.docked = { pos: pos.clone(), rotY };
 
     this.canvas.width = 1024;
@@ -85,6 +91,11 @@ export class ManHinh {
     this.group.rotation.x = (tilt * Math.PI) / 180;
 
     this.ve();
+  }
+
+  /** Bề ngang panel tính theo mét. */
+  beRong(): number {
+    return this.size;
   }
 
   /** Nội dung tĩnh — thay toàn bộ. */
