@@ -19,3 +19,9 @@ public/anim/
 
 # A2 vòng 5 — cờ khoá "đã chạy kiem-a2.mjs" (xoá bằng --lai)
 docs/a2/.da-chay
+
+# B2 (#20) — cache mp3 giọng tiếng Việt (bridge tự sinh lại)
+.cache/
+
+# B2 — cờ khoá "đã chạy kiem-b2.mjs" (xoá bằng --lai)
+docs/b2/.da-chay

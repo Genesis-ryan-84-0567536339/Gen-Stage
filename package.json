@@ -14,7 +14,8 @@
     "bridge": "tsx bridge/server.ts",
     "kiem-a1": "node scripts/kiem-a1.mjs",
     "kiem-a3": "node scripts/kiem-a3.mjs",
-    "kiem-lab2": "node scripts/kiem-lab2.mjs"
+    "kiem-lab2": "node scripts/kiem-lab2.mjs",
+    "kiem-b2": "node scripts/kiem-b2.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",

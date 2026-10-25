@@ -88,7 +88,7 @@ Kết luận thiết kế: khi A xong, "gắn não" = viết 1 skill cho agent C
 | `actor.play` | `{ actor, clip, loop?, speed? }` | sự kiện `actor.clipDone` khi hết (nếu không loop) |
 | `actor.stop` | `{ actor }` | về `idle` |
 | `actor.express` | `{ actor, expression, weight?, durationMs? }` | weight 0–1, mặc định 1; durationMs = tự về neutral sau đó |
-| `actor.say` | `{ actor, text, emotion?, voice? }` | TTS + nhép miệng + bong bóng chữ; trả `durationMs`; sự kiện `actor.sayDone` |
+| `actor.say` | `{ actor, text, emotion?, voice? }` | TTS + nhép miệng + bong bóng chữ; trả `durationMs`; sự kiện `actor.sayDone`. **Sửa spec (B2 #20):** `voice` nhận `"nu"` \| `"nam"` \| tên giọng đầy đủ (vd `vi-VN-HoaiMyNeural`); bỏ trống thì theo actor — `owner` → **nam**, còn lại → **nữ**. Giọng là edge-tts `vi-VN` thật qua bridge, `durationMs` = **thời lượng audio thật**; bridge tắt thì rơi về Web Speech `vi-VN` như cũ |
 | `actor.bubble` | `{ actor, text, durationMs? }` | chỉ chữ, không tiếng |
 | `actor.hold` | `{ actor, prop, hand }` | cầm đồ vật (`left`/`right`) |
 | `actor.drop` | `{ actor }` | |

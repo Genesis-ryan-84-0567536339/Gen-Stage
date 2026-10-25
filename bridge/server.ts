@@ -16,8 +16,12 @@
  * trong trình duyệt, nên thêm MCP về sau chỉ là bọc thêm một lớp.
  */
 import { WebSocketServer, WebSocket } from 'ws';
+// B2 (#20) — giọng tiếng Việt: `pnpm bridge` bật cả ws lẫn HTTP /tts.
+import { batTts } from './tts';
 
 const CONG = Number(process.env.GEN_STAGE_PORT ?? 8787);
+/** Cổng HTTP cho TTS (B2) — khác cổng ws để không đụng `WebSocketServer`. */
+const CONG_TTS = Number(process.env.GEN_STAGE_TTS_PORT ?? 8788);
 /** Hạn chờ trình duyệt trả lời một lệnh. */
 const HAN_MS = Number(process.env.GEN_STAGE_TIMEOUT ?? 30000);
 
@@ -251,9 +255,13 @@ ghi(
       : 'token: tắt',
 );
 
+// B2 — cùng một lệnh `pnpm bridge` bật luôn giọng nói, cùng chính sách bind.
+const svTts = batTts(HOST, CONG_TTS);
+
 for (const tin of ['SIGINT', 'SIGTERM'] as const) {
   process.on(tin, () => {
     ghi('đóng bridge…');
+    svTts.close();
     wss.close(() => process.exit(0));
   });
 }

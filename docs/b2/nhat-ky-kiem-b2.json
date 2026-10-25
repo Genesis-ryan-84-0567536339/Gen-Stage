@@ -1,0 +1,111 @@
+{
+  "chay": "2026-10-25T13:00:44.389Z",
+  "buoc": [
+    {
+      "nhan": "mở khoá autoplay (window.stage.batTieng)",
+      "ok": true,
+      "chiTiet": "batTieng=true"
+    },
+    {
+      "nhan": "actor.spawn owner (giọng nam mặc định)",
+      "ok": true,
+      "chiTiet": ""
+    },
+    {
+      "nhan": "actor.say lan",
+      "ok": true,
+      "chiTiet": "durationMs=5616"
+    },
+    {
+      "nhan": "nhép miệng theo âm thật (nu)",
+      "ok": true,
+      "chiTiet": "soMau=50 soMauDuong=41 đỉnhRMS=0.890",
+      "so": {
+        "soMau": 50,
+        "soMauDuong": 41,
+        "dinh": 0.8901326060295105
+      }
+    },
+    {
+      "nhan": "mp3 mẫu docs/b2/giong-nu.mp3",
+      "ok": true,
+      "chiTiet": "32.9 KB · ffprobe 5616 ms"
+    },
+    {
+      "nhan": "durationMs là thời lượng AUDIO thật (nu)",
+      "ok": true,
+      "chiTiet": "say=5616 ms · mp3=5616 ms · ước theo chữ=5446 ms"
+    },
+    {
+      "nhan": "actor.say owner",
+      "ok": true,
+      "chiTiet": "durationMs=5328"
+    },
+    {
+      "nhan": "nhép miệng theo âm thật (nam)",
+      "ok": true,
+      "chiTiet": "soMau=48 soMauDuong=48 đỉnhRMS=0.901",
+      "so": {
+        "soMau": 48,
+        "soMauDuong": 48,
+        "dinh": 0.9011430740356445
+      }
+    },
+    {
+      "nhan": "mp3 mẫu docs/b2/giong-nam.mp3",
+      "ok": true,
+      "chiTiet": "31.2 KB · ffprobe 5328 ms"
+    },
+    {
+      "nhan": "durationMs là thời lượng AUDIO thật (nam)",
+      "ok": true,
+      "chiTiet": "say=5328 ms · mp3=5328 ms · ước theo chữ=4908 ms"
+    },
+    {
+      "nhan": "hai giọng là hai file khác nhau",
+      "ok": true,
+      "chiTiet": "nữ 32.9 KB vs nam 31.2 KB"
+    },
+    {
+      "nhan": "0 lỗi console",
+      "ok": true,
+      "chiTiet": ""
+    }
+  ],
+  "cau": [
+    {
+      "actor": "lan",
+      "giong": "nu",
+      "text": "Chào Sếp, em là Gen. Giọng tiếng Việt đã chạy qua bridge rồi ạ.",
+      "durationMsSay": 5616,
+      "durationMsMp3": 5616,
+      "uocTheoChu": 5446,
+      "mp3KB": 32.9,
+      "rms": {
+        "soMau": 50,
+        "soMauDuong": 41,
+        "dinh": 0.8901326060295105
+      }
+    },
+    {
+      "actor": "owner",
+      "giong": "nam",
+      "text": "Giỏi lắm. Nghe rõ từng chữ, nhép miệng khớp với âm luôn.",
+      "durationMsSay": 5328,
+      "durationMsMp3": 5328,
+      "uocTheoChu": 4908,
+      "mp3KB": 31.2,
+      "rms": {
+        "soMau": 48,
+        "soMauDuong": 48,
+        "dinh": 0.9011430740356445
+      }
+    }
+  ],
+  "loiConsole": [],
+  "tongKet": {
+    "soBuoc": 12,
+    "soOk": 12,
+    "thatBai": []
+  }
+}
