@@ -1,0 +1,343 @@
+{
+  "chay": "2026-10-25T14:03:52.754Z",
+  "cong": {
+    "ws": 8797,
+    "tts": 8798,
+    "mcp": 8799
+  },
+  "buoc": [
+    {
+      "nhan": "bridge bật cả ws + tts + mcp",
+      "ok": true,
+      "chiTiet": "mcp /khoe: {\"ok\":true,\"mcp\":\"0.1\",\"tools\":42}"
+    },
+    {
+      "nhan": "trình duyệt nối bridge (?bridge=1)",
+      "ok": true,
+      "chiTiet": "cổng ws 8797"
+    },
+    {
+      "nhan": "ô chat hiện dưới màn hình",
+      "ok": true,
+      "chiTiet": "{\"rong\":560,\"cao\":52,\"duoi\":12}",
+      "so": {
+        "rong": 560,
+        "cao": 52,
+        "duoi": 12
+      }
+    },
+    {
+      "nhan": "não nối MCP stdio và bắt đầu nghe stage_events",
+      "ok": true,
+      "chiTiet": "đã nối MCP stdio · 42 tool"
+    },
+    {
+      "nhan": "Sếp gõ → sự kiện user.text",
+      "ok": true,
+      "chiTiet": "{\"actor\":\"owner\",\"text\":\"Chào Gen\"}",
+      "so": {
+        "t": 1792937052415,
+        "event": "user.text",
+        "data": {
+          "actor": "owner",
+          "text": "Chào Gen"
+        }
+      }
+    },
+    {
+      "nhan": "Gen diễn + trả lời (emote + say)",
+      "ok": true,
+      "chiTiet": "emote=chao · say=\"Chào Gen\""
+    },
+    {
+      "nhan": "câu thứ hai → user.text",
+      "ok": true,
+      "chiTiet": "{\"actor\":\"owner\",\"text\":\"Gen, dựng connector Baserow\"}",
+      "so": {
+        "t": 1792937060957,
+        "event": "user.text",
+        "data": {
+          "actor": "owner",
+          "text": "Gen, dựng connector Baserow"
+        }
+      }
+    },
+    {
+      "nhan": "màn hình hologram chạy code do não đẩy",
+      "ok": true,
+      "chiTiet": "streamDone=có"
+    },
+    {
+      "nhan": "module kết tinh và nằm trên tay Gen",
+      "ok": true,
+      "chiTiet": "module.built={\"module\":\"connector-baserow-2\",\"shape\":\"book\",\"label\":\"connector Baserow\"} · holding=connector-baserow-2",
+      "so": {
+        "holding": "connector-baserow-2",
+        "state": "speaking",
+        "mood": "vui"
+      }
+    },
+    {
+      "nhan": "Gen báo cáo xong bằng giọng Việt",
+      "ok": true,
+      "chiTiet": "say=\"Xong rồi Sếp, connector Baserow đã kết tinh thành module. Em cất lên k\""
+    },
+    {
+      "nhan": "não ghi nhật ký tool call (MCP stdio thật)",
+      "ok": true,
+      "chiTiet": "16 tool call · 42 tool · 2 lượt"
+    },
+    {
+      "nhan": "não gọi đúng bộ tool của vòng mẫu",
+      "ok": true,
+      "chiTiet": "stage_bootstrap, stage_events, stage_describe, actor_emote, actor_say, screen_stream, module_build"
+    },
+    {
+      "nhan": "stage_bootstrap trả kèm \"Hướng dẫn cho agent\"",
+      "ok": true,
+      "chiTiet": "Hướng dẫn cho agent: bạn là Gen, nhân vật nữ trong phòng lab này. Bạn CHỈ điều khiển actor…"
+    },
+    {
+      "nhan": "giọng phát có durationMs thật (audio edge-tts)",
+      "ok": true,
+      "chiTiet": "4032 ms · 6168 ms"
+    },
+    {
+      "nhan": "đúng 2 sự kiện user.text, đều của owner",
+      "ok": true,
+      "chiTiet": "[{\"actor\":\"owner\",\"text\":\"Chào Gen\"},{\"actor\":\"owner\",\"text\":\"Gen, dựng connector Baserow\"}]"
+    },
+    {
+      "nhan": "0 lỗi console",
+      "ok": true,
+      "chiTiet": ""
+    }
+  ],
+  "luot": [
+    {
+      "luot": 1,
+      "boss": {
+        "actor": "owner",
+        "text": "Chào Gen"
+      },
+      "emote": {
+        "actor": "gen",
+        "emote": "chao"
+      },
+      "say": {
+        "actor": "owner",
+        "text": "Chào Gen"
+      },
+      "bongBong": "BossChào Gen"
+    },
+    {
+      "luot": 2,
+      "boss": {
+        "actor": "owner",
+        "text": "Gen, dựng connector Baserow"
+      },
+      "streamDone": {
+        "screen": "main",
+        "cancelled": false
+      },
+      "moduleBuilt": {
+        "module": "connector-baserow-2",
+        "shape": "book",
+        "label": "connector Baserow"
+      },
+      "gen": {
+        "holding": "connector-baserow-2",
+        "state": "speaking",
+        "mood": "vui"
+      },
+      "say": {
+        "actor": "gen",
+        "text": "Xong rồi Sếp, connector Baserow đã kết tinh thành module. Em cất lên kệ nhé?"
+      }
+    }
+  ],
+  "nao": {
+    "soTool": 42,
+    "soToolCall": 16,
+    "tongKet": {
+      "soLuot": 2,
+      "soToolCall": 16,
+      "soLoi": 0
+    },
+    "coHuongDanAgent": true,
+    "tenToolDaGoi": [
+      "stage_bootstrap",
+      "stage_events",
+      "stage_describe",
+      "actor_emote",
+      "actor_say",
+      "screen_stream",
+      "module_build"
+    ]
+  },
+  "giong": [
+    {
+      "text": "Dạ em chào Sếp. Sếp cần em làm gì ạ?",
+      "durationMs": 4032
+    },
+    {
+      "text": "Xong rồi Sếp, connector Baserow đã kết tinh thành module. Em cất lên kệ nhé?",
+      "durationMs": 6168
+    }
+  ],
+  "userText": [
+    {
+      "t": 1792937052415,
+      "event": "user.text",
+      "data": {
+        "actor": "owner",
+        "text": "Chào Gen"
+      }
+    },
+    {
+      "t": 1792937060957,
+      "event": "user.text",
+      "data": {
+        "actor": "owner",
+        "text": "Gen, dựng connector Baserow"
+      }
+    }
+  ],
+  "loiConsole": [],
+  "suKien": [
+    {
+      "t": 1792937048201,
+      "event": "bridge.connected",
+      "data": {
+        "url": "ws://localhost:8797/?role=stage"
+      }
+    },
+    {
+      "t": 1792937048277,
+      "event": "scene.lightChanged",
+      "data": {
+        "preset": "am"
+      }
+    },
+    {
+      "t": 1792937052415,
+      "event": "user.text",
+      "data": {
+        "actor": "owner",
+        "text": "Chào Gen"
+      }
+    },
+    {
+      "t": 1792937054367,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "owner",
+        "text": "Chào Gen"
+      }
+    },
+    {
+      "t": 1792937054487,
+      "event": "actor.emoteDone",
+      "data": {
+        "actor": "gen",
+        "emote": "chao"
+      }
+    },
+    {
+      "t": 1792937058715,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "gen",
+        "text": "Dạ em chào Sếp. Sếp cần em làm gì ạ?"
+      }
+    },
+    {
+      "t": 1792937060957,
+      "event": "user.text",
+      "data": {
+        "actor": "owner",
+        "text": "Gen, dựng connector Baserow"
+      }
+    },
+    {
+      "t": 1792937062636,
+      "event": "actor.emoteDone",
+      "data": {
+        "actor": "gen",
+        "emote": "ra-lenh"
+      }
+    },
+    {
+      "t": 1792937064056,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "owner",
+        "text": "Gen, dựng connector Baserow"
+      }
+    },
+    {
+      "t": 1792937066581,
+      "event": "screen.streamDone",
+      "data": {
+        "screen": "main",
+        "cancelled": false
+      }
+    },
+    {
+      "t": 1792937073172,
+      "event": "cmd.queued",
+      "data": {
+        "cmd": "actor.say",
+        "actor": "gen",
+        "position": 1,
+        "dangChay": "actor.emote"
+      }
+    },
+    {
+      "t": 1792937075802,
+      "event": "actor.held",
+      "data": {
+        "actor": "gen",
+        "prop": "connector-baserow-2",
+        "hand": "right"
+      }
+    },
+    {
+      "t": 1792937075803,
+      "event": "module.built",
+      "data": {
+        "module": "connector-baserow-2",
+        "shape": "book",
+        "label": "connector Baserow"
+      }
+    },
+    {
+      "t": 1792937075803,
+      "event": "actor.emoteDone",
+      "data": {
+        "actor": "gen",
+        "emote": "thanh-cong"
+      }
+    },
+    {
+      "t": 1792937083396,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "gen",
+        "text": "Xong rồi Sếp, connector Baserow đã kết tinh thành module. Em cất lên kệ nhé?"
+      }
+    },
+    {
+      "t": 1792937083590,
+      "event": "camera.moved",
+      "data": {
+        "preset": "toan-canh"
+      }
+    }
+  ],
+  "tongKet": {
+    "soBuoc": 16,
+    "soOk": 16,
+    "thatBai": []
+  }
+}

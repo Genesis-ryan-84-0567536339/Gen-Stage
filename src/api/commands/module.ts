@@ -64,7 +64,17 @@ export const LENH_MODULE: CommandSpec[] = [
       });
 
       void hd.done.then(async () => {
-        const actorId = ctx.world.actorIds()[0];
+        /**
+         * B3 (#21) — module rơi vào tay **người làm việc**, không phải tay Boss.
+         *
+         * A3 lấy `actorIds()[0]`, mà từ B1 nhân vật đầu tiên là `owner` (Boss
+         * tự lái) → Gen kết tinh module xong thì module nằm trên tay Boss, sai
+         * cả tầm nhìn ("module rơi vào tay nhân vật đang làm") lẫn bằng chứng.
+         * Ưu tiên actor `controlledBy: "agent"`, không có thì giữ hành vi cũ.
+         */
+        const dsActor = ctx.world.describe().actors;
+        const actorId =
+          dsActor.find((x) => x.controlledBy === 'agent')?.id ?? ctx.world.actorIds()[0];
         if (actorId) {
           try {
             await ctx.run('actor.hold', { actor: actorId, prop: id, hand: 'right' });
