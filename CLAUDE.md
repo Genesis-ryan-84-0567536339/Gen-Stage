@@ -19,13 +19,14 @@ pnpm dev                  # chạy dev, mở http://localhost:5173
 pnpm dev --host           # cho điện thoại cùng wifi vào xem
 pnpm build                # tsc + vite build, phải không lỗi trước khi mở PR
 pnpm test                 # vitest: dispatcher, hàng đợi, kịch bản, stage.describe, A3 screen/module/fx
-pnpm bridge               # bridge WebSocket cho agent (xem bridge/README.md)
+pnpm bridge               # bridge: ws lệnh (8787) + HTTP giọng tiếng Việt (8788)
 pnpm preview              # xem thử bản build
 
 node scripts/kiem-a1.mjs      # bằng chứng A1: bấm từng lệnh + chụp ảnh vào docs/a1/
 node scripts/kiem-a3.mjs      # bằng chứng A3: screen/module/fx/preset + kịch bản mẫu + FPS vào docs/a3/
 node scripts/kiem-lab2.mjs    # bằng chứng lab rộng-sáng-gọn + điều khiển phím vào docs/lab2/
 node scripts/kiem-bridge.mjs  # bằng chứng bridge: moveTo qua ws → nhận actor.arrived
+node scripts/kiem-b2.mjs      # bằng chứng B2: giọng tiếng Việt + nhép miệng theo âm vào docs/b2/
 node scripts/kiem-a2.mjs      # bằng chứng A2: 15 emote + 13 clip + say + idleStyle, ảnh/video/log số vào docs/a2/
 node scripts/kiem-a2.mjs --chi-anh  # bản NHANH lúc đang làm (chỉ ảnh + số đo, không quay video, không đo FPS)
 bash scripts/fetch-anim.sh    # tải bộ chuyển động CC0 (Quaternius) về public/anim/ — chạy 1 lần sau khi clone
@@ -97,6 +98,10 @@ biết registry, **giao diện** không gọi thẳng vào sân khấu.
 | `src/events.ts` · `src/log.ts` | Bus sự kiện · nhật ký JSON mọi lệnh và sự kiện |
 | `src/bridge-client.ts` | Nối trình duyệt với bridge (bật bằng `?bridge=1`) |
 | `bridge/server.ts` | Bridge WebSocket Node (chưa MCP) — mặc định chỉ nghe `127.0.0.1`; mở ra ngoài phải có `--host` + `GEN_STAGE_TOKEN` |
+| `bridge/tts.ts` | **B2** — giọng tiếng Việt: `GET /tts` (cổng 8788) gọi thẳng WebSocket Edge, trả mp3, cache `.cache/tts/<sha1>.mp3` |
+| `src/audio/tts-client.ts` | **B2** — tải + giải mã mp3, đo `durationMs` thật, phát bằng Web Audio, đẩy biên độ RMS mỗi 50 ms sang nhân vật |
+| `src/audio/so-tieng.ts` | **B2** — sổ nối sân khấu ↔ lớp tiếng (không phụ thuộc gì): sổ miệng, thời lượng thật, cờ chặn Web Speech |
+| `src/audio/nut-tieng.ts` | **B2** — nút "🔊 Bật tiếng" mở khoá autoplay, nhớ bằng `localStorage` |
 | `src/api/__tests__/` | `san-khau-gia.ts` (sân khấu giả, không WebGL) + test dispatcher/describe/script/A3 |
 
 ### Thêm một lệnh mới
@@ -188,3 +193,41 @@ lệnh mới cho các đợt sau — `stage.bootstrap` vẫn liệt kê đủ b�
   trong spec: chibi hoá bằng bone scale (`TY_LE_CHIBI` trong `nhanvat.ts`),
   áp cho MỌI model nạp (kể cả `AvatarSample_B.vrm` mặc định) — Boss thay bằng
   VRM chibi thật lúc nào cũng được, code tự nhân hệ số lên bộ xương có sẵn.
+
+## Quyết định B2 — giọng tiếng Việt (25/10, Issue #20)
+
+- **Không dùng thư viện edge-tts nào.** `@andresaya/edge-tts` là
+  **GPL-3.0-only**, `edge-tts-universal` là **AGPL-3.0** — copyleft, nối vào
+  bridge là kéo cả Gen-Stage theo giấy phép đó. Giao thức Edge chỉ gồm một URL
+  có `Sec-MS-GEC` (SHA-256 của mốc thời gian Windows làm tròn 5 phút + token
+  công khai), một khung `speech.config`, một khung SSML, rồi các khung nhị phân
+  `Path:audio` tới `turn.end` — tự viết trong `bridge/tts.ts` bằng `ws` +
+  `node:crypto` **có sẵn**, không thêm phụ thuộc, không khoá API.
+  Cạm bẫy đã đo: thiếu header `Cookie: MUID=…` hoặc `Accept-Encoding` thì dịch
+  vụ trả **HTTP 200 thay vì 101** ("Unexpected server response: 200").
+- **`durationMs` là thời lượng audio THẬT.** `actor.say` tải + giải mã mp3
+  **trước** khi nhân vật mở miệng, rồi báo số đo vào `src/audio/so-tieng.ts`;
+  `uocThoiLuongNoi` đọc số đó thay cho công thức đếm ký tự. Nhờ vậy bong bóng
+  chữ, hẹn giờ hành động và `durationMs` trả cho agent **cùng một con số**
+  (đo thật: 5616 ms audio vs 5446 ms nếu đếm chữ).
+- **Biên độ tính sẵn từ `AudioBuffer`, không đọc `AnalyserNode`.** Envelope RMS
+  mỗi 50 ms lấy thẳng từ mẫu PCM đã giải mã rồi phát theo đồng hồ, nên nhép
+  miệng vẫn đúng trên máy **không có thiết bị âm thanh** (Playwright headless,
+  `--mute-audio`) — bằng chứng B2 đo được 30/30 mẫu RMS > 0, đỉnh 0,89.
+- **Nhép miệng cũ không bị thay, chỉ bị nhường chỗ.** `nhepMiengTheoBienDo(rms)`
+  đặt biên độ kèm **hạn dùng 0,25 s**; hết mẫu là `capNhat` tự quay về đúng hai
+  nhánh A1/A2 (nhép theo độ dài chữ). `aa` theo RMS, thêm `ih`/`ou` xen kẽ nhẹ
+  — giọng Việt nhiều nguyên âm, chỉ há `aa` thì nhìn như cá đớp.
+- **Giọng theo actor, không theo lệnh gọi**: `owner` → **nam**
+  (`vi-VN-NamMinhNeural`), còn lại → **nữ** (`vi-VN-HoaiMyNeural`).
+  `actor.say` nhận `voice: "nu" | "nam" | <tên giọng>` và **trả về giọng đã
+  chọn** trong `result.voice`, để agent đọc log biết câu đó phát bằng giọng nào.
+- **Bridge tắt không phải lỗi.** `chuanBi` trả `null`, hạ cờ chặn Web Speech →
+  `NhanVat.noi` chạy đúng như A1 (Web Speech `vi-VN`, không có giọng Việt thì
+  nhép theo độ dài chữ). Toast nhắc `pnpm bridge` hiện **một lần mỗi phiên**,
+  và không gọi lại bridge cho tới khi tải lại trang.
+- **Autoplay**: Chrome chặn tiếng tới khi có cú bấm thật. Nút "🔊 Bật tiếng"
+  góc trên (`src/audio/nut-tieng.ts`) `resume()` AudioContext trong chính
+  handler của cú bấm, rồi nhớ vào `localStorage` — phiên sau không hiện nút
+  nữa, chỉ cần cú tương tác đầu tiên bất kỳ là tự mở khoá. Script bằng chứng
+  gọi `window.stage.batTieng()` + cờ `--autoplay-policy=no-user-gesture-required`.

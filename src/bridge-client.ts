@@ -13,6 +13,8 @@ import type { Dispatcher } from './api/dispatcher';
 import type { EventBus } from './events';
 
 const CONG_MAC_DINH = 8787;
+/** Cổng HTTP TTS của bridge (B2 #20 — xem `bridge/tts.ts`). */
+const CONG_TTS_MAC_DINH = 8788;
 
 export interface TrangThaiBridge {
   bat: boolean;
@@ -115,6 +117,21 @@ function macDinhUrl(): string {
   const giaoThuc = location.protocol === 'https:' ? 'wss:' : 'ws:';
   const may = location.hostname || 'localhost';
   return `${giaoThuc}//${may}:${cong}/?role=stage`;
+}
+
+/**
+ * B2 — chỗ **nhận audio** giọng tiếng Việt: cùng máy với bridge ws, khác cổng.
+ *
+ * Suy ra từ địa chỉ đang mở app, nên mở bằng `pnpm dev --host` trên điện thoại
+ * thì vẫn trúng máy chạy bridge. Ghi đè bằng `?ttsUrl=` hoặc `?ttsPort=`.
+ */
+export function urlTts(): string {
+  const q = new URLSearchParams(location.search);
+  const thang = q.get('ttsUrl');
+  if (thang) return thang;
+  const cong = q.get('ttsPort') ?? String(CONG_TTS_MAC_DINH);
+  const may = location.hostname || '127.0.0.1';
+  return `${location.protocol === 'https:' ? 'https:' : 'http:'}//${may}:${cong}`;
 }
 
 /** Có bật bridge lúc mở app không. */

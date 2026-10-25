@@ -35,6 +35,13 @@ import {
   type HanhDongCoTay,
 } from './hanh-dong';
 import { DINH_NGHIA_EMOTE } from '../behavior/emotes';
+// B2 (#20) — sổ nối sang lớp tiếng (`src/audio/`). File `so-tieng.ts` không
+// phụ thuộc gì, nên nạp nó không kéo theo Web Audio hay lớp tiếng vào test.
+import {
+  dangChanWebSpeech,
+  ghiMiengNhep,
+  thoiLuongThat,
+} from '../audio/so-tieng';
 import { phatAmNgan } from '../behavior/am-thanh';
 import { IDLE_STYLES, THONG_SO_IDLE, type IdleStyle } from '../behavior/idle-styles';
 import {
@@ -281,12 +288,20 @@ export class NhanVat {
   /** Đồ vật đang gắn vào tay (do World gán). */
   objCam: THREE.Object3D | null = null;
 
+  // B2 — nhép miệng theo âm thật: biên độ mới nhất + hạn dùng của nó.
+  private bienDoAm = 0;
+  private hanBienDoAm = 0;
+  /** Đếm bước để xen `ih`/`ou` cho miệng đỡ máy móc. */
+  private nhipMieng = 0;
+
   constructor(id: string, ten: string, vrm: VRM, chibi = true) {
     this.id = id;
     this.ten = ten;
     this.vrm = vrm;
     this.goc = vrm.scene;
     this.goc.name = `actor:${id}`;
+    // B2 — để lớp tiếng tìm đúng người mà nhép miệng (xem `so-tieng.ts`).
+    ghiMiengNhep(id, this);
 
     const phienBan = (vrm.meta as { metaVersion?: string }).metaVersion;
     if (phienBan === '0') VRMUtils.rotateVRM0(vrm);
@@ -941,6 +956,24 @@ export class NhanVat {
   }
 
   /**
+   * **B2 — nhép miệng theo biên độ âm THẬT** (`rms` 0–1), do
+   * `src/audio/tts-client.ts` gọi mỗi 50 ms trong lúc phát mp3.
+   *
+   * Hàm này KHÔNG thay nhép miệng cũ: nó chỉ đặt biên độ kèm **hạn dùng**
+   * 0,25 s. Còn mẫu mới thì miệng chạy theo âm; hết mẫu (câu xong, hoặc không
+   * có bridge) thì `capNhat` tự quay về nhép theo độ dài chữ như A1.
+   *
+   * `rms = 0` là tín hiệu "thôi, trả miệng về mặc định".
+   */
+  nhepMiengTheoBienDo(rms: number): void {
+    const v = Number.isFinite(rms) ? THREE.MathUtils.clamp(rms, 0, 1) : 0;
+    this.bienDoAm = v;
+    // 0,25 s = 5 nhịp lấy mẫu: trễ một hai nhịp thì miệng vẫn mượt, nhưng
+    // tiếng tắt giữa câu là miệng đóng ngay chứ không há mãi.
+    this.hanBienDoAm = v > 0 ? this.t + 0.25 : 0;
+  }
+
+  /**
    * Nói: bong bóng + nhép miệng + giọng trình duyệt nếu có.
    *
    * `camXuc` (spec 3.2b) đổi **cả cử chỉ**: mỗi nhóm cảm xúc một kiểu gật đầu
@@ -993,6 +1026,8 @@ export class NhanVat {
     this.noiConLai = 0;
     this.bongBong = null;
     this.nhomNoi = 'binh-thuong';
+    this.bienDoAm = 0; // B2 — hết mẫu âm, miệng về mặc định ngay
+    this.hanBienDoAm = 0;
     dungDoc();
     this.datBieuCam('neutral', 0);
     this.mood = MOOD_MAC_DINH;
@@ -1317,12 +1352,32 @@ export class NhanVat {
         em.setValue(ten, hienTai + (muon - hienTai) * Math.min(1, dt * 6));
       }
 
-      if (this.noiConLai > 0) {
-        this.noiConLai -= dt;
-        const m = (Math.sin(t * 19) * 0.5 + 0.5) * 0.55 + Math.abs(Math.sin(t * 7)) * 0.25;
+      // B2 — còn mẫu biên độ thật thì miệng chạy theo âm; hết mẫu thì rơi về
+      // đúng hai nhánh cũ của A1/A2 (không sửa dòng nào bên trong).
+      if (t < this.hanBienDoAm) {
+        this.noiConLai = Math.max(0, this.noiConLai - dt);
+        // `aa` theo RMS (bình phương căn cho miệng mở dứt khoát hơn), thêm
+        // `ih`/`ou` xen kẽ rất nhẹ — giọng Việt nhiều nguyên âm, chỉ há `aa`
+        // nhìn như cá đớp.
+        const m = Math.min(1, Math.pow(this.bienDoAm, 0.75) * 0.95);
+        this.nhipMieng += dt;
+        const xen = Math.sin(this.nhipMieng * 5.5);
         em.setValue('aa', m);
+        em.setValue('ih', Math.max(0, xen) * m * 0.3);
+        em.setValue('ou', Math.max(0, -xen) * m * 0.35);
       } else {
-        em.setValue('aa', Math.max(0, Math.sin(t * 0.7) - 0.86) * 1.4);
+        if (this.bienDoAm !== 0) {
+          this.bienDoAm = 0;
+          em.setValue('ih', 0);
+          em.setValue('ou', 0);
+        }
+        if (this.noiConLai > 0) {
+          this.noiConLai -= dt;
+          const m = (Math.sin(t * 19) * 0.5 + 0.5) * 0.55 + Math.abs(Math.sin(t * 7)) * 0.25;
+          em.setValue('aa', m);
+        } else {
+          em.setValue('aa', Math.max(0, Math.sin(t * 0.7) - 0.86) * 1.4);
+        }
       }
     }
 
@@ -1347,6 +1402,10 @@ function muot(u: number): number {
  * đệm, kẹp trong 900–9000 ms.
  */
 export function uocThoiLuongNoi(chu: string): number {
+  // B2 — lớp tiếng đã tải mp3 thì `durationMs` là **thời lượng audio thật**,
+  // không phải số đếm ký tự (spec: durationMs là lời hứa với agent).
+  const that = thoiLuongThat(chu);
+  if (that !== null) return that;
   const ms = 600 + (chu.trim().length / 13) * 1000;
   return Math.round(THREE.MathUtils.clamp(ms, 900, 9000));
 }
@@ -1364,6 +1423,9 @@ function layGiong(): GiongNoi | null {
 
 /** Đọc bằng Web Speech nếu trình duyệt có — không bao giờ chặn lệnh. */
 function doc(chu: string, voice?: string): void {
+  // B2 — đã có giọng edge-tts cho câu này thì Web Speech phải im (không thì
+  // nói chồng hai tiếng). Bridge tắt → cờ hạ xuống → chạy đúng như A1.
+  if (dangChanWebSpeech()) return;
   const ss = layGiong();
   if (!ss) return;
   try {

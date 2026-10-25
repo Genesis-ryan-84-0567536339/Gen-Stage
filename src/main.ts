@@ -12,7 +12,10 @@ import { Dispatcher } from './api/dispatcher';
 import { World } from './stage/world';
 import { dungGiaoDien } from './ui/index';
 import { batPhim } from './ui/phim';
-import { BridgeClient, coBatBridge } from './bridge-client';
+import { BridgeClient, coBatBridge, urlTts } from './bridge-client';
+// B2 (#20) — giọng tiếng Việt thật + nút mở khoá autoplay.
+import { lopTieng } from './audio/tts-client';
+import { ganNutTieng } from './audio/nut-tieng';
 import type { Command, Result, StageEvent } from './api/types';
 
 /** Cửa duy nhất cho test / bridge / agent. */
@@ -37,6 +40,16 @@ export interface CuaStage {
   doXuong(actor: string): Record<string, unknown>;
   /** Đặt góc máy thủ công, tức thì (ảnh bằng chứng — xem `World.datMayThu`). */
   datMay(vt: [number, number, number], tam: [number, number, number]): void;
+  /**
+   * B2 — mở khoá autoplay (trình duyệt chặn tiếng tới khi có cú bấm thật).
+   * Trả `true` khi `AudioContext` đã chạy. Script bằng chứng gọi cái này.
+   */
+  batTieng(): Promise<boolean>;
+  /**
+   * B2 — số đo nhép miệng theo âm của một actor (bằng chứng):
+   * `{ soMau, soMauDuong, dinh }`. `soMauDuong > 0` = miệng đã chạy theo âm thật.
+   */
+  doTieng(actor: string): { soMau: number; soMauDuong: number; dinh: number };
 }
 
 declare global {
@@ -69,6 +82,9 @@ try {
 const registry = taoRegistry();
 const dispatcher = new Dispatcher({ registry, world, bus, nhatKy });
 const bridge = new BridgeClient(dispatcher, bus);
+// B2 — lớp tiếng dùng chung; `null` nếu trình duyệt không có Web Audio.
+const tieng = lopTieng();
+tieng?.capHinh({ url: urlTts() });
 
 let hanToast = 0;
 function toast(chu: string): void {
@@ -91,6 +107,8 @@ window.stage = {
   bridge: (bat) => (bat ? bridge.bat() : bridge.tat()),
   doXuong: (actor) => world.doXuongActor(actor),
   datMay: (vt, tam) => world.datMayThu(vt, tam),
+  batTieng: () => tieng?.batTieng() ?? Promise.resolve(false),
+  doTieng: (actor) => tieng?.thongKe(actor) ?? { soMau: 0, soMauDuong: 0, dinh: 0 },
   get san() {
     return sanSang;
   },
@@ -127,6 +145,12 @@ async function khoiDong(): Promise<void> {
 
   // Issue #14 — bàn phím là mặt thứ ba của cùng bộ lệnh, vẫn qua dispatcher.
   batPhim(dispatcher, toast);
+
+  // B2 (#20) — nút "🔊 Bật tiếng" (ẩn nếu Boss đã đồng ý ở phiên trước).
+  if (tieng) {
+    tieng.capHinh({ toast });
+    ganNutTieng(tieng, toast);
+  }
 
   loading.classList.add('xong');
   sanSang = true;

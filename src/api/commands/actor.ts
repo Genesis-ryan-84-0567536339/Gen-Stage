@@ -9,8 +9,35 @@ import type { CommandSpec, Vec3 } from '../types';
 import { BIEU_CAM, EMOTES } from '../../stage/noi-dung';
 import { IDLE_STYLES } from '../../behavior/idle-styles';
 import { P_ACTOR, ngay, pEnum, pSo, tuHanhDong } from './tien-ich';
+// B2 (#20) — giọng tiếng Việt thật qua bridge. `lopTieng()` trả `null` ngoài
+// trình duyệt (test Node), nên mọi chỗ gọi đều có `?.`.
+import { giongTheoActor, lopTieng } from '../../audio/tts-client';
+import { boMiengNhep } from '../../audio/so-tieng';
 
 const s = (v: unknown) => String(v);
+
+/**
+ * B2 — tải sẵn giọng cho một câu TRƯỚC khi sân khấu mở miệng.
+ *
+ * Phải xong trước `world.actorSay`/`actorEmote` vì `durationMs` của hành động
+ * lấy từ `uocThoiLuongNoi`, mà hàm đó đọc thời lượng audio thật do lớp tiếng
+ * vừa đo (xem `src/audio/so-tieng.ts`). Bridge tắt → `null`, sân khấu nói như
+ * A1 (Web Speech `vi-VN`, không có thì nhép theo độ dài chữ).
+ */
+async function chuanBiGiong(
+  actor: string,
+  text: string,
+  voice?: string,
+  emotion?: string,
+) {
+  const t = lopTieng();
+  if (!t) return null;
+  try {
+    return await t.chuanBi(actor, text, { voice, emotion });
+  } catch {
+    return null; // thiếu tiếng không bao giờ làm hỏng lệnh
+  }
+}
 
 export const LENH_ACTOR: CommandSpec[] = [
   {
@@ -63,6 +90,8 @@ export const LENH_ACTOR: CommandSpec[] = [
       const id = s(a.actor);
       if (!ctx.world.coActor(id)) throw new Error(`Không có actor "${id}"`);
       ctx.catNgang(id);
+      lopTieng()?.huy(id); // B2 — dọn tiếng + sổ nhép miệng của actor này
+      boMiengNhep(id);
       ctx.world.actorRemove(id);
       ctx.bus.emit('actor.removed', { actor: id });
       return ngay({ actor: id, removed: true });
@@ -244,6 +273,7 @@ export const LENH_ACTOR: CommandSpec[] = [
       const id = s(a.actor);
       if (!ctx.world.coActor(id)) throw new Error(`Không có actor "${id}"`);
       const boQua = ctx.catNgang(id);
+      lopTieng()?.huy(id); // B2 — im tiếng ngay, không đọc tiếp sau khi stop
       ctx.world.actorStop(id);
       ctx.bus.emit('actor.stopped', { actor: id, boHangDoi: boQua });
       return ngay({ actor: id, boHangDoi: boQua });
@@ -294,23 +324,34 @@ export const LENH_ACTOR: CommandSpec[] = [
         goiY: 'emotes',
         tuDo: true,
       }),
-      { name: 'voice', type: 'string', desc: 'Tên giọng Web Speech' },
+      {
+        name: 'voice',
+        type: 'string',
+        desc: 'Giọng: "nu" | "nam" | tên giọng đầy đủ (mặc định: owner → nam, còn lại → nữ)',
+      },
     ],
     example: {
       cmd: 'actor.say',
-      args: { actor: 'lan', text: 'Sếp ơi, test xanh rồi!', emotion: 'vui' },
+      args: { actor: 'lan', text: 'Sếp ơi, test xanh rồi!', emotion: 'vui', voice: 'nu' },
     },
-    handler(a, ctx) {
-      const hd = ctx.world.actorSay(
-        s(a.actor),
-        s(a.text),
-        a.emotion === undefined ? undefined : s(a.emotion),
-        a.voice === undefined ? undefined : s(a.voice),
-      );
-      void hd.done.then(() =>
-        ctx.bus.emit('actor.sayDone', { actor: s(a.actor), text: s(a.text) }),
-      );
-      return tuHanhDong(hd, { actor: s(a.actor), text: s(a.text) });
+    async handler(a, ctx) {
+      const id = s(a.actor);
+      // kiểm trước khi tải tiếng: actor không có thì lỗi ngay như cũ
+      if (!ctx.world.coActor(id)) throw new Error(`Không có actor "${id}"`);
+      const chu = s(a.text);
+      const camXuc = a.emotion === undefined ? undefined : s(a.emotion);
+      const giong = a.voice === undefined ? undefined : s(a.voice);
+
+      const tieng = await chuanBiGiong(id, chu, giong, camXuc);
+      const hd = ctx.world.actorSay(id, chu, camXuc, giong);
+      tieng?.phat();
+      void hd.done.then(() => {
+        if (tieng) lopTieng()?.huy(id);
+        ctx.bus.emit('actor.sayDone', { actor: id, text: chu });
+      });
+      // trả **giọng đã chọn** (không phải tham số thô): agent đọc log biết ngay
+      // câu này phát bằng giọng nào, kể cả khi `voice` bỏ trống.
+      return tuHanhDong(hd, { actor: id, text: chu, voice: giongTheoActor(id, giong) });
     },
   },
 
@@ -383,13 +424,20 @@ export const LENH_ACTOR: CommandSpec[] = [
       { name: 'say', type: 'text', desc: 'Nói kèm (tuỳ chọn)' },
     ],
     example: { cmd: 'actor.emote', args: { actor: 'lan', emote: 'vui', intensity: 1 } },
-    handler(a, ctx) {
+    async handler(a, ctx) {
+      const id = s(a.actor);
+      if (!ctx.world.coActor(id)) throw new Error(`Không có actor "${id}"`);
+      const noiKem = a.say === undefined ? undefined : s(a.say);
+      // B2 — emote cắt câu đang nói, và nếu có `say` thì nói bằng giọng thật.
+      lopTieng()?.huy(id);
+      const tieng = noiKem ? await chuanBiGiong(id, noiKem, undefined, s(a.emote)) : null;
       const hd = ctx.world.actorEmote(
         s(a.actor),
         s(a.emote),
         a.intensity as number | undefined,
-        a.say === undefined ? undefined : s(a.say),
+        noiKem,
       );
+      tieng?.phat();
       // Bị cắt giữa chừng KHÔNG được coi là xong: bắn `actor.emoteCancelled`
       // để agent đọc sự kiện không tưởng emote chạy trọn (review PR #10 1.3).
       void hd.done.then(() =>
