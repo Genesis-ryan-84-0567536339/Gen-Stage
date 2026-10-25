@@ -58,7 +58,7 @@ try {
   loadingText.textContent =
     'Trình duyệt này không bật được WebGL (3D). Hãy mở bằng Chrome/Firefox thật trên máy, ' +
     'không dùng khung xem trong app. Kiểm tra: chrome://gpu → WebGL phải là "Hardware accelerated".';
-  document.querySelector('#loading .spinner')?.remove();
+  document.querySelector('#loading .spin')?.remove();
   throw e;
 }
 const registry = taoRegistry();
