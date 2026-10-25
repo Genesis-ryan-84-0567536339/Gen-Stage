@@ -125,10 +125,10 @@ export class World implements StageWorld {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 0.92;
+    this.renderer.toneMappingExposure = 1.0;
 
     this.scene.background = new THREE.Color(MAU_NEN_LAB);
-    this.scene.fog = new THREE.FogExp2(MAU_NEN_LAB, 0.05);
+    this.scene.fog = new THREE.FogExp2(MAU_NEN_LAB, 0.025);
 
     this.camera = new THREE.PerspectiveCamera(
       38,
@@ -190,10 +190,10 @@ export class World implements StageWorld {
 
   private dungAnhSang(): void {
     // lab tối, ánh sáng chính từ bục trung tâm + đèn dải trần + viền cyan/cam
-    this.troi = new THREE.HemisphereLight(0x3a6a7a, 0x0a0f14, 0.5);
+    this.troi = new THREE.HemisphereLight(0x3a6a7a, 0x0a0f14, 0.85);
     this.scene.add(this.troi);
 
-    this.nang = new THREE.DirectionalLight(0x9fd8ff, 0.55);
+    this.nang = new THREE.DirectionalLight(0x9fd8ff, 0.8);
     this.nang.position.set(2.2, 4.4, 1.2);
     this.nang.castShadow = true;
     this.nang.shadow.mapSize.set(2048, 2048);
@@ -719,7 +719,7 @@ export class World implements StageWorld {
         this.nang.color.setHex(0x9fd8ff);
         this.vien.intensity = 0.35;
         bg.setHex(MAU_NEN_LAB);
-        this.renderer.toneMappingExposure = 0.92;
+        this.renderer.toneMappingExposure = 1.0;
         break;
       case 'toi':
         this.troi.intensity = 0.16;

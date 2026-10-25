@@ -197,7 +197,7 @@ function gheTuDung(): THREE.Group {
   );
   cot.position.y = 0.26;
   g.add(cot);
-  const vienSang = khoiSang(0.44, 0.015, 0.44, MAU_CYAN, 0.9);
+  const vienSang = khoiSang(0.44, 0.015, 0.44, MAU_CYAN, 0.6);
   vienSang.position.y = 0.531;
   g.add(vienSang);
   return g;
@@ -350,9 +350,9 @@ async function napKenneyLab(loader: GLTFLoader): Promise<KhoSciFi> {
           for (const mat of Array.isArray(m.material) ? m.material : [m.material]) {
             const mh = mat as THREE.MeshStandardMaterial;
             if (!mh) continue;
-            mh.color?.setHex(0x1a2430);
-            if ('metalness' in mh) mh.metalness = 0.6;
-            if ('roughness' in mh) mh.roughness = 0.35;
+            mh.color?.setHex(0x2a3340);
+            if ('metalness' in mh) mh.metalness = 0.25;
+            if ('roughness' in mh) mh.roughness = 0.6;
             if ('emissiveIntensity' in mh) mh.emissiveIntensity = 0;
           }
           if (m.geometry) {
@@ -392,9 +392,9 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
   /* --- 3 tường kim loại tối --- */
   const matTuong = new THREE.MeshStandardMaterial({
     map: textureTuongLab(),
-    color: 0x1a2430,
-    roughness: 0.55,
-    metalness: 0.5,
+    color: 0x2a3340,
+    roughness: 0.6,
+    metalness: 0.3,
   });
 
   const sau = new THREE.Mesh(new THREE.PlaneGeometry(KICH_THUOC_PHONG, CAO_TUONG), matTuong);

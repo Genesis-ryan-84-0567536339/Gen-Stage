@@ -147,7 +147,7 @@ export const LENH_SCREEN: CommandSpec[] = [
         );
         void (async () => {
           for (const c of chunks) {
-            if (xongRoi) return;
+            if (xongRoi || !ctx.world.coScreen(id)) { xong(true); return; }
             ctx.world.screenAppend(id, c);
             await ngu(90 + Math.min(c.length * 18, 900));
           }
