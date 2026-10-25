@@ -22,7 +22,7 @@ export const LENH_CAMERA: CommandSpec[] = [
       },
       pSo('distance', 'Khoảng cách mét', { min: 0.5, max: 12, default: 2.6 }),
     ],
-    example: { cmd: 'camera.focus', args: { target: 'lan', distance: 2.2 } },
+    example: { cmd: 'camera.focus', args: { target: 'gen', distance: 2.2 } },
     handler(a, ctx) {
       const target = String(a.target);
       ctx.world.cameraFocus(target, a.distance as number | undefined);

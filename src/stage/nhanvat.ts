@@ -26,8 +26,9 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { VRM, VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
-import type { Action, ActorState } from '../api/types';
+import type { Action, ActorState, DieuKhienBoi } from '../api/types';
 import { BIEU_CAM, DAI_CLIP } from './noi-dung';
+import { truotVaCham } from './bo-cuc';
 import {
   hanhDong,
   hanhDongHenGio,
@@ -118,34 +119,76 @@ const KHONG_QUAY = /* @__PURE__ */ new THREE.Quaternion();
 const LE_DAU_GOI = 0.03;
 
 /**
- * Chibi hoá bằng bone scale (spec A2 mục 4): phóng đầu, rút thân/chân để tỉ
- * lệ đầu/người về khoảng **1/2,5–1/3** (vòng 1 chỉ đạt ~1/4,5 — review PR #10
- * mục 2.4). Mọi hệ số đều `setScalar` (scale ĐỀU, không bóp méo trục) và
- * không có hệ số âm, nên da/tóc không bị răng cưa hay lộn mặt pháp tuyến.
+ * Chibi hoá bằng bone scale — **phải scale XƯƠNG RAW** (Issue #17).
+ *
+ * Bài học B1: bản A2 đặt `scale` lên rig **normalized** của three-vrm, và
+ * `VRMHumanoidRig.update()` chỉ copy `quaternion` (+ `position` của `hips`)
+ * sang xương raw — **không copy `scale`**. Tức toàn bộ bảng tỉ lệ A2 là
+ * **no-op**: đo `rawHeadY` trước/sau không đổi một phần nghìn nào, nhân vật
+ * vẫn tỉ lệ người thật. Bản này đặt scale lên chính xương đang dựng hình
+ * (`getRawBoneNode`), nên nó có tác dụng thật — và vì thế phải tính theo tỉ lệ
+ * **tuyệt đối**, không phải tỉ lệ cục bộ:
+ *
+ * Xương raw là một cây thật: scale của cha nhân xuống con. Lấy nguyên bảng cũ
+ * (hips 0,84 × spine 0,74 × chest 0,74 × neck 0,66 × head 1,76 ≈ 0,53) thì đầu
+ * **teo đi** thay vì phóng to. Nên ở đây khai tỉ lệ MONG MUỐN so với model
+ * gốc, rồi `apDungChibi()` chia cho tỉ lệ của xương tổ tiên gần nhất để ra
+ * scale cục bộ phải đặt.
+ *
+ * Mọi hệ số đều `setScalar` (scale ĐỀU, không hệ số âm) nên da/tóc không răng
+ * cưa và pháp tuyến không lộn.
  */
-const TY_LE_CHIBI: Partial<Record<TenXuong, number>> = {
-  head: 1.76,
-  neck: 0.66,
-  chest: 0.74,
-  upperChest: 0.76,
-  spine: 0.74,
-  hips: 0.84,
-  leftUpperArm: 0.74,
-  rightUpperArm: 0.74,
-  leftLowerArm: 0.76,
-  rightLowerArm: 0.76,
-  leftHand: 1.12,
-  rightHand: 1.12,
-  leftUpperLeg: 0.58,
-  rightUpperLeg: 0.58,
+const CHIBI_TUYET_DOI: Partial<Record<TenXuong, number>> = {
+  hips: 1,
+  spine: 0.9,
+  chest: 0.9,
+  upperChest: 0.9,
+  neck: 0.9,
+  head: 1.95,
+  leftShoulder: 0.92,
+  rightShoulder: 0.92,
+  leftUpperArm: 0.82,
+  rightUpperArm: 0.82,
+  leftLowerArm: 0.82,
+  rightLowerArm: 0.82,
+  leftHand: 1,
+  rightHand: 1,
+  leftUpperLeg: 0.6,
+  rightUpperLeg: 0.6,
   leftLowerLeg: 0.6,
   rightLowerLeg: 0.6,
-  leftFoot: 1.05,
-  rightFoot: 1.05,
+  leftFoot: 0.8,
+  rightFoot: 0.8,
 };
 
 /** Tốc độ đi mặc định (m/s). */
 export const TOC_DO_DI = 0.95;
+
+/* ------------------------------------------------- B1: lái bằng vận tốc */
+
+/**
+ * Vận tốc tối đa khi lái bằng phím (`actor.steer`), m/s — Issue #18 mục 2.
+ * Nhanh hơn `TOC_DO_DI` (0,95) vì đây là Boss tự điều khiển, không phải
+ * nhân vật "đi làm việc" theo lệnh agent.
+ */
+export const TOC_DO_STEER = 1.6;
+/**
+ * Thời gian để vận tốc bám tới vận tốc yêu cầu (s) — gia tốc *và* giảm tốc
+ * dùng cùng một hằng số, nên vào và ra đều mượt như nhau. 0,15 s = ~9 khung
+ * hình ở 60 fps: đủ mềm để không "giật" khi nhấn/nhả, đủ nhanh để không
+ * thành trượt băng.
+ */
+export const LERP_VAN_TOC = 0.15;
+/**
+ * Trần thời gian một khung hình được tích phân cho phần lái (s). Vận tốc tối
+ * đa 1,6 m/s × 0,2 s = 0,32 m — nhỏ hơn nửa bề dày của vật cản mỏng nhất
+ * trong `bo-cuc.ts` (dãy tủ: 0,4 m) nên không bao giờ lọt xuyên.
+ */
+const BUOC_LAI_TOI_DA = 0.2;
+/** Dưới ngưỡng này (m/s) coi là đã dừng hẳn → về `idle`. */
+const NGUONG_DUNG = 0.05;
+/** Bán kính thân người khi kiểm va chạm với bàn/kệ (m). */
+const BAN_KINH_THAN = 0.34;
 
 type TenXuong = Parameters<NonNullable<VRM['humanoid']>['getNormalizedBoneNode']>[0];
 
@@ -193,6 +236,25 @@ interface ChuyenDi {
   dai: number;
   hd: HanhDongCoTay;
   tocDo: number;
+}
+
+/**
+ * Một lần lái bằng vận tốc (`actor.steer`).
+ *
+ * KHÔNG nội suy theo đồng hồ như `ChuyenDi`: điều khiển bằng vận tốc thì mỗi
+ * khung hình cộng `v·dt` — vị trí là *kết quả* của phím Boss đang giữ, không
+ * phải lời hứa tính trước. Lời hứa duy nhất ở đây là `ms`: hết `ms` thì lệnh
+ * hết hiệu lực và nhân vật giảm tốc về 0 (gọi lại để kéo dài).
+ */
+interface LanLai {
+  /** Vận tốc yêu cầu (m/s). */
+  vxMuc: number;
+  vzMuc: number;
+  /** Mốc đồng hồ thật (ms) mà lệnh hết hiệu lực. */
+  han: number;
+  hd: HanhDongCoTay;
+  /** Token của lần lái này — steer mới thay steer cũ, token đổi. */
+  token: number;
 }
 
 /** Một lần xoay người, nội suy theo đồng hồ thật. */
@@ -256,6 +318,23 @@ export class NhanVat {
 
   // xoay người
   private xoay: LanXoay | null = null;
+
+  /* --- B1: lái bằng vận tốc (`actor.steer`) --- */
+  /** Lệnh lái đang có hiệu lực (null = không ai lái). Tên khác method `lai()`. */
+  private dangLai: LanLai | null = null;
+  /** Vận tốc HIỆN TẠI (m/s) — lerp dần về `lai.vxMuc`, không nhảy bậc. */
+  private vx = 0;
+  private vz = 0;
+  private demTokenLai = 0;
+  /**
+   * Cờ "đang THAY steer": `lai()` phải huỷ lệnh lái cũ (để token đổi) nhưng
+   * KHÔNG được xoá vận tốc đang có — nếu xoá thì giữ phím W liên tục sẽ giật
+   * về 0 mỗi 100 ms. Lệnh khác (`moveTo`, `sit`, `stop`) cắt steer thì vẫn
+   * xoá vận tốc như thường.
+   */
+  private dangThaySteer = false;
+  /** Ai điều khiển nhân vật này (`stage.describe` → `controlledBy`). */
+  dieuKhienBoi: DieuKhienBoi = 'agent';
 
   // clip
   private clip: ClipDangChay | null = null;
@@ -466,6 +545,8 @@ export class NhanVat {
   }
 
   private tyLeChest = 1;
+  /** Đã áp chibi hoá lên xương raw chưa (bằng chứng Issue #17). */
+  private daChibi = false;
   /**
    * Nửa bề dày đùi (m) **đo trên xương RAW của chính model**: lấy một nửa
    * khoảng cách ngang giữa hai xương `upperLeg` — đúng cỡ bán kính đùi của
@@ -492,11 +573,68 @@ export class NhanVat {
   private chanDungY = 0.07;
   /** Mốc đồng hồ thật của khung hình trước (ms) — cho mixer chạy đúng tốc độ. */
   private tKhungTruoc = 0;
+  /** Mốc đồng hồ thật của khung trước, riêng cho phần LÁI (xem `capNhat`). */
+  private tLaiTruoc = 0;
   private apDungChibi(): void {
-    for (const [xuong, ty] of Object.entries(TY_LE_CHIBI)) {
-      this.xuong(xuong as TenXuong)?.scale.setScalar(ty!);
+    const h = this.vrm.humanoid;
+    if (!h) return;
+    // 1. gom các xương RAW có trong model + tỉ lệ tuyệt đối mong muốn
+    const dat = new Map<THREE.Object3D, number>();
+    const ds: Array<{ node: THREE.Object3D; ty: number }> = [];
+    for (const [ten, ty] of Object.entries(CHIBI_TUYET_DOI)) {
+      const node = h.getRawBoneNode(ten as TenXuong);
+      if (node && ty !== undefined) {
+        dat.set(node, ty);
+        ds.push({ node, ty });
+      }
     }
-    this.tyLeChest = TY_LE_CHIBI.chest ?? 1;
+    // 2. scale CỤC BỘ = tỉ lệ mong muốn ÷ tỉ lệ của tổ tiên gần nhất cũng được
+    //    khai (xương raw là cây thật: scale cha nhân xuống con).
+    for (const { node, ty } of ds) {
+      let cha: THREE.Object3D | null = node.parent;
+      let tyCha = 1;
+      while (cha) {
+        const t = dat.get(cha);
+        if (t !== undefined) {
+          tyCha = t;
+          break;
+        }
+        cha = cha.parent;
+      }
+      node.scale.setScalar(tyCha > 0.0001 ? ty / tyCha : ty);
+    }
+    this.daChibi = true;
+    // Tóc/váy chạy bằng spring bone: `VRMSpringBoneJoint` ghi lại độ dài đoạn
+    // xương lúc khởi tạo. Scale xương SAU đó mà không khởi tạo lại thì độ dài
+    // cũ không khớp hình học mới → tóc bung ra thành chùm gai quanh đầu (thấy
+    // rõ trên ảnh thử 25/10 với head ×1,95). Khởi tạo lại trạng thái gốc ngay
+    // sau khi scale là hết.
+    this.goc.updateMatrixWorld(true);
+    (this.vrm.springBoneManager as { setInitState?: () => void } | undefined)?.setInitState?.();
+    // Lớp thở cộng thêm vào `chest` chạy trên rig NORMALIZED (xem `capNhat`),
+    // nơi `scale` không được copy xuống xương raw → giữ 1, đừng nhân tỉ lệ
+    // chibi vào đó nữa (vòng A2 nhân vào mà không có tác dụng gì).
+    this.tyLeChest = 1;
+  }
+
+  /** Số đo tỉ lệ chibi trên XƯƠNG RAW — bằng chứng Issue #17 đã sửa thật. */
+  doChibi(): Record<string, number | boolean> {
+    const h = this.vrm.humanoid;
+    this.goc.updateMatrixWorld(true);
+    const yThat = (ten: TenXuong) =>
+      h?.getRawBoneNode(ten)?.getWorldPosition(new THREE.Vector3()).y ?? NaN;
+    const hop = new THREE.Box3().setFromObject(this.goc, true);
+    const cao = hop.max.y - hop.min.y;
+    const dauCao = hop.max.y - yThat('neck');
+    return {
+      daChibi: this.daChibi,
+      rawHeadY: +yThat('head').toFixed(4),
+      rawNeckY: +yThat('neck').toFixed(4),
+      rawHipsY: +yThat('hips').toFixed(4),
+      caoTong: +cao.toFixed(4),
+      dauCao: +dauCao.toFixed(4),
+      tyLeDauNguoi: +(cao / dauCao).toFixed(3),
+    };
   }
 
   /* ----------------------------------------------------------- đọc trạng thái */
@@ -570,6 +708,9 @@ export class NhanVat {
     return Object.assign(ra, {
       bbox: [b.min.y, b.max.y, b.min.x, b.max.x].map((v) => +v.toFixed(4)),
       tuThe: this.doTuThe(),
+      vanToc: this.vanToc(),
+      chibi: this.doChibi(),
+      state: this.state,
       seatY: +this.seatYHienTai.toFixed(4),
       dayDui: +this.dayDui.toFixed(4),
       dangNgoiCo: this.dangNgoi,
@@ -628,6 +769,70 @@ export class NhanVat {
     this.di = { tu, den, batDau: bayGio(), dai, hd, tocDo };
     this.batDauViec(hd, 'walking');
     return hd;
+  }
+
+  /**
+   * **Lái bằng vận tốc** (`actor.steer`) — Issue #18 mục 2.
+   *
+   * Khác `diToi` ở bản chất: `diToi` biết trước đích nên hứa được `durationMs`
+   * và nội suy theo đồng hồ; `lai` không biết Boss sẽ giữ phím bao lâu, nên
+   * mỗi khung hình chỉ cộng `v·dt` và **lời hứa duy nhất là `ms`**.
+   *
+   * Quy tắc (chốt ở B1, ghi trong spec):
+   *   · Lệnh mới **thay** lệnh cũ, KHÔNG xếp hàng: `actor.steer` cố tình không
+   *     khai `chiemActor` trong registry nên dispatcher không bao giờ xếp nó
+   *     vào hàng đợi. Việc "chiếm thân" do chính `NhanVat.viec` giữ (nguồn sự
+   *     thật của `state` theo CLAUDE.md), và mỗi lần lái có token riêng.
+   *   · Vận tốc kẹp `TOC_DO_STEER` (1,6 m/s), bám tới vận tốc yêu cầu trong
+   *     `LERP_VAN_TOC` (0,15 s) nên vào/ra đều mượt.
+   *   · Hết `ms` thì lệnh hết hiệu lực nhưng thân vẫn **giảm tốc tiếp** cho
+   *     tới khi dừng; `state` còn là `walking` suốt lúc đó (đúng nghĩa "đang
+   *     đi"), chỉ về `idle` khi |v| đã về 0. `done` vẫn resolve đúng `ms` để
+   *     dispatcher không bị giữ.
+   */
+  lai(vx: number, vz: number, ms: number): Action {
+    const toc = Math.hypot(vx, vz);
+    let mx = vx;
+    let mz = vz;
+    if (toc > TOC_DO_STEER) {
+      mx = (vx / toc) * TOC_DO_STEER;
+      mz = (vz / toc) * TOC_DO_STEER;
+    }
+    const dai = Math.max(0, ms);
+
+    // giữ vận tốc đang có khi THAY steer (xem `dangThaySteer`)
+    this.dangThaySteer = true;
+    this.huyViec();
+    this.dangThaySteer = false;
+    this.roiGhe();
+    this.clip = null;
+    this.xoay?.hd.cancel();
+    this.xoay = null;
+
+    const token = ++this.demTokenLai;
+    const hd = henGioCoCo(dai, (biHuy) => {
+      // Hết giờ bình thường: KHÔNG xoá `lai` — để `capNhat` giảm tốc về 0 rồi
+      // mới nhả thân. Bị cắt: dừng ngay, nhường thân cho lệnh mới.
+      if (!biHuy) return;
+      if (this.dangLai?.token !== token) return;
+      this.dangLai = null;
+      if (!this.dangThaySteer) {
+        this.vx = 0;
+        this.vz = 0;
+      }
+    });
+    this.dangLai = { vxMuc: mx, vzMuc: mz, han: bayGio() + dai, hd, token };
+    this.batDauViec(hd, 'walking');
+    return hd;
+  }
+
+  /** Vận tốc hiện tại (m/s) + tốc độ — bằng chứng số cho `kiem-b1.mjs`. */
+  vanToc(): { vx: number; vz: number; toc: number } {
+    return {
+      vx: +this.vx.toFixed(4),
+      vz: +this.vz.toFixed(4),
+      toc: +Math.hypot(this.vx, this.vz).toFixed(4),
+    };
   }
 
   /** Xoay người về một hướng (độ) hoặc một điểm. */
@@ -1017,6 +1222,9 @@ export class NhanVat {
    */
   dung(): void {
     this.huyViec();
+    this.dangLai = null;
+    this.vx = 0;
+    this.vz = 0;
     this.xoay?.hd.cancel();
     this.xoay = null;
     this.hdBong?.cancel();
@@ -1097,6 +1305,14 @@ export class NhanVat {
     }
     if (this.chuyenNgoi) return { khoa: this.chuyenNgoi, tocDo: 1 };
     if (this.di) return { khoa: 'walk', tocDo: this.di.tocDo / TOC_DO_DI };
+    // Lái bằng vận tốc: blend walk/idle theo TỐC ĐỘ THẬT — chậm thì clip walk
+    // phát chậm lại (đọc ra như bước nhỏ), dưới ngưỡng thì về idle.
+    if (this.dangLai || Math.hypot(this.vx, this.vz) > NGUONG_DUNG) {
+      const toc = Math.hypot(this.vx, this.vz);
+      if (toc > NGUONG_DUNG) {
+        return { khoa: 'walk', tocDo: THREE.MathUtils.clamp(toc / TOC_DO_DI, 0.45, 1.8) };
+      }
+    }
     if (this.trangThai === 'speaking') {
       return { khoa: this.dangNgoi ? 'noi-ngoi' : 'noi', tocDo: 1 };
     }
@@ -1154,8 +1370,78 @@ export class NhanVat {
       }
     }
 
-    /* --- đi lại: nội suy theo đồng hồ thật, tới nơi đúng durationMs --- */
+    /* --- LÁI BẰNG VẬN TỐC (`actor.steer`) --- */
     let dangDi = false;
+    if (this.dangLai || this.vx !== 0 || this.vz !== 0) {
+      const L = this.dangLai;
+      const hetHan = L === null || nay >= L.han;
+      const mx = hetHan ? 0 : L!.vxMuc;
+      const mz = hetHan ? 0 : L!.vzMuc;
+      /**
+       * Tích phân theo ĐỒNG HỒ THẬT, không theo `dt` của vòng dựng hình.
+       *
+       * `dt` đã bị kẹp 1/20 s ở `world.ts` (chống nhảy bậc khi tab bị ẩn). Trên
+       * máy không GPU (~2 fps, đúng môi trường chụp bằng chứng) kẹp đó làm mỗi
+       * khung chỉ tiến 50 ms trong khi đồng hồ đi 400 ms → nhân vật bò 0,2 m
+       * trong 3 giây dù vận tốc báo 1,3 m/s. Đúng tinh thần "thời gian là lời
+       * hứa" của CLAUDE.md: steer 1,6 m/s trong 1 s phải đi được ~1,6 m thật.
+       *
+       * Vẫn kẹp trần `BUOC_LAI_TOI_DA` để một khung hình không nhảy quá xa mà
+       * lọt xuyên vật cản mỏng nhất trong `bo-cuc.ts`.
+       */
+      const dtLai =
+        this.tLaiTruoc > 0
+          ? Math.min((nay - this.tLaiTruoc) / 1000, BUOC_LAI_TOI_DA)
+          : dt;
+      this.tLaiTruoc = nay;
+      // bám tới vận tốc yêu cầu trong LERP_VAN_TOC giây (gia tốc = giảm tốc)
+      const k = Math.min(1, dtLai / LERP_VAN_TOC);
+      this.vx += (mx - this.vx) * k;
+      this.vz += (mz - this.vz) * k;
+      const toc = Math.hypot(this.vx, this.vz);
+
+      if (toc <= NGUONG_DUNG && hetHan) {
+        this.vx = 0;
+        this.vz = 0;
+        this.phaBuoc = 0;
+        this.tLaiTruoc = 0;
+        if (L) {
+          this.dangLai = null;
+          this.traViec(L.hd);
+        } else if (this.trangThai === 'walking' && !this.di) {
+          this.trangThai = this.dangNgoi ? 'sitting' : 'idle';
+        }
+      } else {
+        dangDi = true;
+        // Kẹp trong phòng + trượt dọc bàn/kệ (`bo-cuc.ts`): giải TỪNG TRỤC nên
+        // đi chéo vào mép bàn thì men theo mép chứ không dính cứng.
+        const [nx, nz] = truotVaCham(
+          this.goc.position.x,
+          this.goc.position.z,
+          this.goc.position.x + this.vx * dtLai,
+          this.goc.position.z + this.vz * dtLai,
+          BAN_KINH_THAN,
+        );
+        // va vào vật thì bỏ luôn thành phần vận tốc theo trục bị chặn, để
+        // không tích luỹ một vận tốc "ảo" mà thân không hề đi được
+        if (Math.abs(nx - this.goc.position.x) < Math.abs(this.vx * dtLai) * 0.5) this.vx *= 0.2;
+        if (Math.abs(nz - this.goc.position.z) < Math.abs(this.vz * dtLai) * 0.5) this.vz *= 0.2;
+        this.goc.position.x = nx;
+        this.goc.position.z = nz;
+        this.phaBuoc += dtLai * 7.5 * Math.max(0.35, toc / TOC_DO_DI);
+
+        // xoay mặt theo hướng đi, slerp mềm (không nhảy bậc)
+        if (toc > 0.12) {
+          const goc = Math.atan2(this.vx, this.vz);
+          let lech = goc - this.goc.rotation.y;
+          while (lech > Math.PI) lech -= Math.PI * 2;
+          while (lech < -Math.PI) lech += Math.PI * 2;
+          this.goc.rotation.y += lech * Math.min(1, dtLai * 9);
+        }
+      }
+    }
+
+    /* --- đi lại: nội suy theo đồng hồ thật, tới nơi đúng durationMs --- */
     if (this.di) {
       const d = this.di;
       const u = Math.min(1, (nay - d.batDau) / d.dai);

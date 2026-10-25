@@ -68,7 +68,7 @@ export const LENH_SCRIPT: CommandSpec[] = [
         desc: 'Mảng JSON các bước',
         required: true,
         default:
-          '[{"cmd":"actor.moveTo","args":{"actor":"lan","to":"ban-2"}},{"waitFor":"actor.arrived"},{"cmd":"actor.say","args":{"actor":"lan","text":"Tới rồi Sếp!"}}]',
+          '[{"cmd":"actor.moveTo","args":{"actor":"gen","to":"ban-2"}},{"waitFor":"actor.arrived"},{"cmd":"actor.say","args":{"actor":"gen","text":"Tới rồi Sếp!"}}]',
       },
       {
         name: 'mode',
@@ -82,10 +82,10 @@ export const LENH_SCRIPT: CommandSpec[] = [
       cmd: 'script.run',
       args: {
         steps: [
-          { cmd: 'actor.moveTo', args: { actor: 'lan', to: 'ban-2' } },
+          { cmd: 'actor.moveTo', args: { actor: 'gen', to: 'ban-2' } },
           { waitFor: 'actor.arrived' },
-          { cmd: 'actor.express', args: { actor: 'lan', expression: 'happy' } },
-          { cmd: 'actor.say', args: { actor: 'lan', text: 'Sếp ơi, test xanh rồi!' } },
+          { cmd: 'actor.express', args: { actor: 'gen', expression: 'happy' } },
+          { cmd: 'actor.say', args: { actor: 'gen', text: 'Sếp ơi, test xanh rồi!' } },
         ],
         mode: 'sequential',
       },

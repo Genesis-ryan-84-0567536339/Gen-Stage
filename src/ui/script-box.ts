@@ -6,10 +6,10 @@
  *     lệnh đơn `{ "cmd": "...", "args": {...} }`, hoặc thẳng mảng các bước.
  *  2. **Dạng ngắn**, một lệnh mỗi dòng:
  *     ```
- *     lan moveTo ban-2
+ *     gen moveTo ban-2
  *     waitFor actor.arrived
- *     lan express happy
- *     lan say Sếp ơi, test xanh rồi!
+ *     gen express happy
+ *     gen say Sếp ơi, test xanh rồi!
  *     wait 500
  *     ```
  *     Dòng bắt đầu bằng `#` là ghi chú. `<actor> <việc> …` tự thành
@@ -41,10 +41,10 @@ export class OKichBan {
     this.dispatcher = dispatcher;
     root.innerHTML = `
       <p class="goi-y">Dán JSON, hoặc gõ dạng ngắn — <b>1 lệnh / 1 dòng</b>:
-        <code>lan moveTo ban-2</code>, <code>wait 500</code>,
+        <code>gen moveTo ban-2</code>, <code>wait 500</code>,
         <code>waitFor actor.arrived</code>.</p>
       <textarea id="kb-nhap" rows="9" spellcheck="false"
-        placeholder="lan moveTo ban-2&#10;waitFor actor.arrived&#10;lan express happy&#10;lan say Sếp ơi, test xanh rồi!&#10;lan play celebrate"></textarea>
+        placeholder="gen moveTo ban-2&#10;waitFor actor.arrived&#10;gen express happy&#10;gen say Sếp ơi, test xanh rồi!&#10;gen play celebrate"></textarea>
       <div class="kb-chan">
         <select id="kb-mode" title="Cách chạy các bước">
           <option value="sequential">Lần lượt</option>
@@ -118,11 +118,11 @@ export const KICH_BAN_MAU = JSON.stringify(
     cmd: 'script.run',
     args: {
       steps: [
-        { cmd: 'actor.moveTo', args: { actor: 'lan', to: 'ban-2' } },
+        { cmd: 'actor.moveTo', args: { actor: 'gen', to: 'ban-2' } },
         { waitFor: 'actor.arrived' },
-        { cmd: 'actor.express', args: { actor: 'lan', expression: 'happy' } },
-        { cmd: 'actor.say', args: { actor: 'lan', text: 'Sếp ơi, test xanh rồi!' } },
-        { cmd: 'actor.play', args: { actor: 'lan', clip: 'celebrate' } },
+        { cmd: 'actor.express', args: { actor: 'gen', expression: 'happy' } },
+        { cmd: 'actor.say', args: { actor: 'gen', text: 'Sếp ơi, test xanh rồi!' } },
+        { cmd: 'actor.play', args: { actor: 'gen', clip: 'celebrate' } },
       ],
     },
   },

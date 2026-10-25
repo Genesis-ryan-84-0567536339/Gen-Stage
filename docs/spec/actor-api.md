@@ -77,10 +77,11 @@ Kết luận thiết kế: khi A xong, "gắn não" = viết 1 skill cho agent C
 ### 3.2 Nhân vật
 | Lệnh | Args | Ghi chú |
 | --- | --- | --- |
-| `actor.spawn` | `{ id, model, name?, at }` | `model` = tên file VRM trong kho; `at` = place hoặc `{x,y,z}` |
+| `actor.spawn` | `{ id, model, name?, at, controlledBy? }` | `model` = tên file VRM trong kho; `at` = place hoặc `{x,y,z}`; **Sửa spec (25/10, B1):** `controlledBy: "owner" \| "agent"` (mặc định `agent`) — xem mục 3.2c |
 | `actor.remove` | `{ id }` | |
 | `actor.list` | — | |
 | `actor.moveTo` | `{ actor, to, speed? }` | Tự chơi `walk`, tới nơi về `idle`, sự kiện `actor.arrived` |
+| `actor.steer` | `{ actor, vx, vz, ms? }` | **Sửa spec (25/10, B1 — Issue #18):** lái bằng **vận tốc** (m/s) trong `ms` ms rồi tự dừng êm; gọi lại để kéo dài. Sự kiện `actor.steerDone`. Xem mục 3.2c |
 | `actor.lookAt` | `{ actor, target }` | target = actor id, prop id, place, `camera`, `cursor`, `null` |
 | `actor.turnTo` | `{ actor, target }` | xoay người |
 | `actor.sit` | `{ actor, seat }` | seat = place loại ghế |
@@ -101,7 +102,7 @@ Nguyên tắc: **không lệnh nào chỉ đổi mặt**. `actor.express` giữ 
 | --- | --- | --- |
 | `actor.emote` | `{ actor, emote, intensity?: 0–1, say?: text }` | Chạy **cả gói**: biểu cảm mặt + chuỗi chuyển động cơ thể + âm thanh ngắn + (tùy chọn) nói. Sự kiện `actor.emoteDone` |
 | `actor.say` | thêm `emotion` | Khi nói: mặt theo cảm xúc, đầu gật/nghiêng, tay làm cử chỉ nhịp (beat gesture) ngẫu nhiên hợp với cảm xúc, mắt nhìn người nghe, miệng nhép theo âm |
-| `actor.idleStyle` | `{ actor, style: "binh-thuong" \| "hao-hung" \| "met" \| "cang-thang" }` | Đổi dáng đứng chờ: thở nhanh/chậm, đổi chân, nhìn quanh, gãi đầu… để nhân vật không bao giờ đứng im |
+| `actor.idleStyle` | `{ actor, style: "binh-thuong" \| "hao-hung" \| "met" \| "cang-thang" \| "cham-chu" }` — **Sửa spec (25/10, B1):** thêm `cham-chu` (dáng dán mắt vào màn hình, dùng cho `gen` ở bàn điều khiển) | Đổi dáng đứng chờ: thở nhanh/chậm, đổi chân, nhìn quanh, gãi đầu… để nhân vật không bao giờ đứng im |
 
 **Thư viện emote v0.1** (mỗi emote = mặt + chuyển động + âm; agent chỉ cần gọi tên):
 
@@ -127,6 +128,46 @@ Thêm emote mới = thêm 1 dòng cấu hình (mặt, danh sách clip, âm), kh�
 
 Chuyển động cơ thể lấy từ Mixamo (miễn phí) đổi sang VRMA bằng `fbx2vrma-converter`; chuyển động nhỏ (gật, nghiêng đầu, cử chỉ nhịp, thở, đổi chân) làm thủ tục bằng code, trộn chồng lên clip chính (additive) để không bị cứng.
 
+### 3.2c Điều khiển tay: `actor.steer` + `controlledBy` (Sửa spec 25/10 — B1, Issue #18)
+
+Boss xem lab vòng 2 và chốt: **"điều khiển chạy không mượt"**. Nguyên nhân là
+phím WASD gửi `actor.moveTo` tới một đích tích luỹ rồi cắt ngang lệnh trước mỗi
+nhịp — vận tốc nhảy bậc từng nhịp, nhả phím thì nhân vật còn lết tới đích cũ.
+v0.1 vì vậy thêm **một** lệnh, không đổi nghĩa lệnh nào có sẵn:
+
+| Lệnh | Args | Nghĩa |
+| --- | --- | --- |
+| `actor.steer` | `{ actor, vx, vz, ms? }` | Đi theo vận tốc `[vx, vz]` (m/s, trục phòng) trong `ms` ms (mặc định 150, tối đa 5000), rồi **giảm tốc êm về 0**. Trả `durationMs = ms`, bắn `actor.steerDone`. |
+
+Giao kèo của `actor.steer` (khác mọi lệnh khác, cố ý):
+
+- **Không xếp hàng.** Lệnh steer mới **thay** lệnh cũ ngay lập tức — không có
+  `cmd.queued`, không cần `interrupt: true`. Giữ phím W thì cứ 100 ms một lệnh
+  bay vào; xếp hàng thì nhả phím rồi nhân vật vẫn lết hết hàng đợi.
+- **Vẫn chiếm thân.** Đang steer thì `state: "walking"`, `busy: true`, và `at`
+  **luôn `null`** (giao kèo mục 1b không đổi); `nearest` vẫn luôn có. Hết `ms`
+  và vận tốc về 0 thì `state` trở lại `idle`/`sitting`.
+- **Lệnh khác cắt được steer**: `actor.moveTo`/`sit`/`play`/`stop` chiếm thân
+  như thường và steer đang chạy bị huỷ ngay.
+- **Giới hạn vật lý do sân khấu giữ**, không phải do bên gọi: tốc độ kẹp
+  **1,6 m/s**, gia tốc/giảm tốc nội suy trong **0,15 s**, mặt quay theo hướng
+  đi (slerp), kẹp trong phòng và **không đi xuyên bàn/kệ** (hộp AABB trong
+  `src/stage/bo-cuc.ts`). Agent gửi `vx: 99` chỉ nhận được 1,6 m/s.
+
+`stage.describe` thêm cho MỖI actor:
+
+```json
+{ "id": "owner", "controlledBy": "owner" }
+```
+
+`controlledBy: "owner" | "agent"` — `owner` là nhân vật Boss lái bằng phím
+(mặc định `agent`). Chỉ là **thông tin ai lái mặc định**: lệnh nào cũng gọi
+được lên cả hai, agent không bị cấm điều khiển `owner`. `actor.spawn` nhận
+thêm tham số cùng tên.
+
+Góc máy thêm **`theo-owner`** (xem mục 3.3): bám mượt theo nhân vật có
+`controlledBy: "owner"`, giữ nguyên góc 3/4 nhìn xuống.
+
 ### 3.3 Đồ vật, cảnh, camera
 | Lệnh | Args |
 | --- | --- |
@@ -135,7 +176,7 @@ Chuyển động cơ thể lấy từ Mixamo (miễn phí) đổi sang VRMA bằ
 | `prop.set` | `{ prop, state }` — vd màn hình `{ screen: "on", text: "Đang chạy test…" }` |
 | `scene.light` | `{ preset: "sang" \| "toi" \| "am" }` |
 | `camera.focus` | `{ target, distance? }` |
-| `camera.preset` | `{ name: "toan-canh" \| "ban-1" \| "hop" }` |
+| `camera.preset` | `{ name: "toan-canh" \| "theo-owner" \| "ban-dieu-khien" \| "ban-1" \| "ban-2" \| "hop" \| "truoc-mat" }` — **Sửa spec (25/10, B1):** thêm `theo-owner` (bám mượt nhân vật `controlledBy: "owner"`) |
 
 ### 3.4b Phòng lab viễn tưởng: màn hình hologram, chế tạo module (Boss quyết 03/10)
 
@@ -193,7 +234,7 @@ Ví dụ kịch bản Boss dán vào ô kịch bản (hoặc agent gửi):
 ```
 
 ### 3.5 Sự kiện sân khấu → agent
-`actor.arrived`, `actor.clipDone`, `actor.sayDone`, `actor.emoteDone`, `script.done`, `user.speech` (Boss nói, đã chuyển thành chữ), `user.click` (Boss bấm vào actor/prop), `user.text` (Boss gõ).
+`actor.arrived`, `actor.steerDone`, `actor.clipDone`, `actor.sayDone`, `actor.emoteDone`, `script.done`, `user.speech` (Boss nói, đã chuyển thành chữ), `user.click` (Boss bấm vào actor/prop), `user.text` (Boss gõ).
 
 ## 4. Giao diện test thủ công (bắt buộc có từ đợt A)
 - Bảng bên phải liệt kê **tự động** mọi lệnh từ `stage.bootstrap` → mỗi lệnh 1 form nhỏ + nút Chạy. Không viết tay nút nào.

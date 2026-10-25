@@ -25,3 +25,5 @@ docs/a2/.da-chay
 
 # B2 — cờ khoá "đã chạy kiem-b2.mjs" (xoá bằng --lai)
 docs/b2/.da-chay
+# B1 — cờ khoá "đã chạy kiem-b1.mjs" (xoá bằng --lai)
+docs/b1/.da-chay

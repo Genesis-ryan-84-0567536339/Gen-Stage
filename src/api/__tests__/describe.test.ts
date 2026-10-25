@@ -14,7 +14,7 @@ let world: SanKhauGia;
 let d: Dispatcher;
 
 beforeEach(() => {
-  world = new SanKhauGia(['lan']);
+  world = new SanKhauGia(['gen']);
   d = new Dispatcher({ registry: taoRegistry(), world, bus: new EventBus() });
 });
 
@@ -50,7 +50,7 @@ describe('khuôn stage.describe', () => {
     const st = await moTa();
     const a = st.actors[0]!;
     expect(a).toMatchObject({
-      id: 'lan',
+      id: 'gen',
       pos: expect.any(Array),
       facing: expect.any(Number),
       state: expect.stringMatching(/^(idle|walking|sitting|playing|speaking|emoting|building)$/),
@@ -103,7 +103,7 @@ describe('khuôn stage.describe', () => {
 
   it('moveTo làm pos và distances thay đổi thật', async () => {
     const truoc = await moTa();
-    await d.run('actor.moveTo', { actor: 'lan', to: 'ban-2' });
+    await d.run('actor.moveTo', { actor: 'gen', to: 'ban-2' });
     await new Promise((r) => setTimeout(r, NHIP_MS * 3));
     const sau = await moTa();
 
@@ -115,7 +115,7 @@ describe('khuôn stage.describe', () => {
   });
 
   it('state đổi theo máy trạng thái khi đang đi', async () => {
-    void d.run('actor.moveTo', { actor: 'lan', to: 'cua' });
+    void d.run('actor.moveTo', { actor: 'gen', to: 'cua' });
     await new Promise((r) => setTimeout(r, 5));
     const st = await moTa();
     expect(st.actors[0]!.state).toBe('walking');
@@ -130,7 +130,7 @@ describe('khuôn stage.describe', () => {
     expect(dung.actors[0]!.state).toBe('idle');
     expect(dung.actors[0]!.at).toBe(dung.actors[0]!.nearest.place);
 
-    void d.run('actor.moveTo', { actor: 'lan', to: 'cua' });
+    void d.run('actor.moveTo', { actor: 'gen', to: 'cua' });
     await new Promise((r) => setTimeout(r, 5));
     const dangDi = await moTa();
     expect(dangDi.actors[0]!.state).toBe('walking');
@@ -143,7 +143,7 @@ describe('khuôn stage.describe', () => {
   });
 
   it('`nearest` LUÔN có, kể cả khi đang đi hay đứng giữa phòng', async () => {
-    void d.run('actor.moveTo', { actor: 'lan', to: 'cua' });
+    void d.run('actor.moveTo', { actor: 'gen', to: 'cua' });
     await new Promise((r) => setTimeout(r, 5));
     const dangDi = await moTa();
     expect(dangDi.actors[0]!.at).toBeNull();
@@ -152,7 +152,7 @@ describe('khuôn stage.describe', () => {
 
     await new Promise((r) => setTimeout(r, NHIP_MS * 3));
     // đứng giữa phòng, ngoài bán kính mọi place: at null nhưng nearest vẫn có
-    await d.run('actor.moveTo', { actor: 'lan', to: [0, 0, 1.6] });
+    await d.run('actor.moveTo', { actor: 'gen', to: [0, 0, 1.6] });
     await new Promise((r) => setTimeout(r, NHIP_MS * 3));
     const giua = await moTa();
     const a = giua.actors[0]!;
@@ -166,12 +166,12 @@ describe('khuôn stage.describe', () => {
   });
 
   it('place không bị ai "chiếm" khi người đó chỉ đang đi ngang qua', async () => {
-    void d.run('actor.moveTo', { actor: 'lan', to: 'cua' });
+    void d.run('actor.moveTo', { actor: 'gen', to: 'cua' });
     await new Promise((r) => setTimeout(r, 5));
     const st = await moTa();
     expect(st.places.every((p) => p.occupiedBy === null)).toBe(true);
     await new Promise((r) => setTimeout(r, NHIP_MS * 3));
-    expect((await moTa()).places.find((p) => p.id === 'cua')!.occupiedBy).toBe('lan');
+    expect((await moTa()).places.find((p) => p.id === 'cua')!.occupiedBy).toBe('gen');
   });
 
   it('lastEvents là mảng, và bus giữ lại sự kiện gần nhất cho sân khấu thật', async () => {
@@ -182,7 +182,7 @@ describe('khuôn stage.describe', () => {
     // `World.describe()` lấy từ đó — nên kiểm bus là kiểm đúng nguồn dữ liệu
     const bus = new EventBus();
     const d2 = new Dispatcher({ registry: taoRegistry(), world: new SanKhauGia(), bus });
-    await d2.run('actor.express', { actor: 'lan', expression: 'happy' });
+    await d2.run('actor.express', { actor: 'gen', expression: 'happy' });
     await d2.run('prop.spawn', { id: 'so-tay', shape: 'book' });
     const ten = bus.recent(10).map((e) => e.event);
     expect(ten).toContain('prop.spawned');
@@ -235,7 +235,7 @@ describe('stage.bootstrap là sách hướng dẫn tự sinh', () => {
     };
     const moveTo = boot.commands.find((c) => c.cmd === 'actor.moveTo')!;
     const pActor = moveTo.params.find((p) => p.name === 'actor')!;
-    expect(pActor.values).toEqual(['lan', 'minh']);
+    expect(pActor.values).toEqual(['gen', 'minh']);
     const pTo = moveTo.params.find((p) => p.name === 'to')!;
     expect(pTo.values).toContain('ke-module');
   });
@@ -283,7 +283,7 @@ describe('stage.bootstrap là sách hướng dẫn tự sinh', () => {
       }
       const kq = await d.run(c.example.cmd, c.example.args);
       expect(kq.ok, `ví dụ của ${c.cmd} chạy lỗi: ${kq.ok ? '' : kq.error}`).toBe(true);
-      await d.run('actor.stop', { actor: 'lan' });
+      await d.run('actor.stop', { actor: 'gen' });
     }
   });
 });

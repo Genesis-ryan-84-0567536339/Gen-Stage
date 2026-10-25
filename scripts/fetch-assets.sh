@@ -12,6 +12,14 @@ mkdir -p "$PUB/models" "$PUB/kenney" "$TMP"
 VRM_URL="https://raw.githubusercontent.com/pixiv/ChatVRM/main/public/AvatarSample_B.vrm"
 VRM_OUT="$PUB/models/avatar.vrm"
 
+# Nhân vật NAM cho `owner` (B1, Issue #18 mục 3): "Biz Dude" trong bộ 100 Avatars
+# R3 của Polygonal Mind / ToxSam — giấy phép **CC0 ghi ngay trong metadata VRM**
+# (licenseName: CC0, allowRedistribution: true, commercialUsage: allow,
+# creditNotation: unnecessary). Registry nguồn: github.com/ToxSam/open-source-avatars,
+# file nằm trên Arweave nên curl tải trực tiếp được, không cần đăng nhập.
+OWNER_URL="https://arweave.net/k-_vw28ADGy2jPwnq02Tc98wC0Ey10Ia3JVYQ8qiaxM"
+OWNER_OUT="$PUB/models/owner.vrm"
+
 KENNEY_URL="https://kenney.nl/media/pages/assets/furniture-kit/440e0608a4-1677580847/kenney_furniture-kit.zip"
 KENNEY_ZIP="$TMP/kenney_furniture-kit.zip"
 
@@ -35,6 +43,27 @@ else
     echo "    !! Không tải được VRM. Tải tay 1 file VRM miễn phí rồi lưu thành:"
     echo "       $VRM_OUT"
     echo "       Nguồn dự phòng: https://hub.vroid.com/en/characters (sample), hoặc repo pixiv/three-vrm"
+  fi
+fi
+
+# --- 1b. Nhân vật NAM cho owner (CC0, 100 Avatars R3) ---
+say "Tải nhân vật NAM cho owner (CC0)"
+if [ -s "$OWNER_OUT" ]; then
+  echo "    đã có $OWNER_OUT, bỏ qua"
+else
+  ok=0
+  for i in 1 2 3; do
+    echo "    lần thử $i: $OWNER_URL"
+    if curl -fL --retry 2 --connect-timeout 20 -o "$OWNER_OUT.part" "$OWNER_URL"; then
+      mv "$OWNER_OUT.part" "$OWNER_OUT"; ok=1; break
+    fi
+    sleep 2
+  done
+  if [ "$ok" -ne 1 ]; then
+    rm -f "$OWNER_OUT.part"
+    echo "    !! Không tải được VRM nam. App sẽ tự dùng tạm models/avatar.vrm cho owner."
+    echo "       Tải tay một VRM nam CC0 rồi lưu thành: $OWNER_OUT"
+    echo "       Nguồn: https://opensourceavatars.com (bộ 100 Avatars, CC0)"
   fi
 fi
 

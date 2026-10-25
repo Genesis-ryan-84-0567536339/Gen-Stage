@@ -46,7 +46,7 @@ export const LENH_ACTOR: CommandSpec[] = [
     events: ['actor.spawned'],
     desc: 'Thêm một nhân vật VRM vào sân khấu',
     params: [
-      { name: 'id', type: 'string', desc: 'Mã ngắn, vd "lan"', required: true },
+      { name: 'id', type: 'string', desc: 'Mã ngắn, vd "gen"', required: true },
       {
         name: 'model',
         type: 'string',
@@ -62,6 +62,10 @@ export const LENH_ACTOR: CommandSpec[] = [
         tuDo: true,
         default: 'buc-trung-tam',
       },
+      pEnum('controlledBy', 'Ai điều khiển: owner (phím của Boss) hay agent', {
+        values: ['owner', 'agent'],
+        default: 'agent',
+      }),
     ],
     example: {
       cmd: 'actor.spawn',
@@ -73,6 +77,7 @@ export const LENH_ACTOR: CommandSpec[] = [
         model: a.model === undefined ? undefined : s(a.model),
         name: a.name === undefined ? undefined : s(a.name),
         at: a.at as string | Vec3 | undefined,
+        controlledBy: a.controlledBy === 'owner' ? 'owner' : 'agent',
       });
       ctx.bus.emit('actor.spawned', { actor: snap.id, at: snap.at, pos: snap.pos });
       return ngay({ actor: snap });
@@ -127,7 +132,7 @@ export const LENH_ACTOR: CommandSpec[] = [
       },
       pSo('speed', 'Tốc độ đi (m/s)', { min: 0.1, max: 4 }),
     ],
-    example: { cmd: 'actor.moveTo', args: { actor: 'lan', to: 'ban-2' } },
+    example: { cmd: 'actor.moveTo', args: { actor: 'gen', to: 'ban-2' } },
     handler(a, ctx) {
       const hd = ctx.world.actorMoveTo(
         s(a.actor),
@@ -146,6 +151,64 @@ export const LENH_ACTOR: CommandSpec[] = [
   },
 
   {
+    cmd: 'actor.steer',
+    group: 'actor',
+    events: ['actor.steerDone'],
+    desc:
+      'Lái bằng vận tốc: đi theo (vx, vz) m/s trong ms rồi tự hết. Gọi lại để ' +
+      'kéo dài; lệnh mới THAY lệnh cũ, không xếp hàng',
+    /**
+     * CỐ TÌNH KHÔNG khai `chiemActor` — và đây là một quyết định thiết kế, không
+     * phải sơ sót (ghi trong spec mục 3.2c):
+     *
+     * `chiemActor` nghĩa là "actor bận thì XẾP HÀNG". Với điều khiển tay thì xếp
+     * hàng là sai hẳn: Boss giữ phím W, cứ 100 ms một lệnh `actor.steer` bay
+     * vào — xếp hàng thì nhả phím rồi nhân vật vẫn còn lết hết hàng đợi. Lệnh
+     * này phải **thay** lệnh trước, tức thì.
+     *
+     * Vẫn là hành động **chiếm thân**: `NhanVat.lai()` giữ `NhanVat.viec`
+     * (nguồn sự thật duy nhất của `state` theo CLAUDE.md) nên `state` là
+     * `walking` khi đang đi, `at` trả `null`, và mỗi lần lái có token riêng —
+     * steer mới huỷ steer cũ bằng token, không bằng tên lệnh.
+     */
+    params: [
+      P_ACTOR,
+      pSo('vx', 'Vận tốc theo trục X (m/s, + là sang phải)', {
+        required: true,
+        min: -4,
+        max: 4,
+      }),
+      pSo('vz', 'Vận tốc theo trục Z (m/s, + là về phía camera)', {
+        required: true,
+        min: -4,
+        max: 4,
+      }),
+      pSo('ms', 'Giữ vận tốc này bao lâu (ms) rồi tự dừng êm', {
+        min: 0,
+        max: 5000,
+        default: 150,
+      }),
+    ],
+    example: { cmd: 'actor.steer', args: { actor: 'gen', vx: 0, vz: -1.6, ms: 150 } },
+    handler(a, ctx) {
+      const id = s(a.actor);
+      if (!ctx.world.coActor(id)) {
+        throw new Error(
+          `Không có actor "${id}". Đang có: ${ctx.world.actorIds().join(', ') || '(chưa có ai)'}`,
+        );
+      }
+      const vx = Number(a.vx);
+      const vz = Number(a.vz);
+      const ms = a.ms === undefined ? 150 : Number(a.ms);
+      const hd = ctx.world.actorSteer(id, vx, vz, ms);
+      void hd.done.then(() =>
+        ctx.bus.emit('actor.steerDone', { actor: id, vx, vz, ms }),
+      );
+      return tuHanhDong(hd, { actor: id, vx, vz, ms });
+    },
+  },
+
+  {
     cmd: 'actor.lookAt',
     group: 'actor',
     desc: 'Nhìn về actor / prop / place / camera / cursor (null = thả)',
@@ -160,7 +223,7 @@ export const LENH_ACTOR: CommandSpec[] = [
         default: 'camera',
       },
     ],
-    example: { cmd: 'actor.lookAt', args: { actor: 'lan', target: 'camera' } },
+    example: { cmd: 'actor.lookAt', args: { actor: 'gen', target: 'camera' } },
     handler(a, ctx) {
       const id = s(a.actor);
       if (!ctx.world.coActor(id)) throw new Error(`Không có actor "${id}"`);
@@ -187,7 +250,7 @@ export const LENH_ACTOR: CommandSpec[] = [
         tuDo: true,
       },
     ],
-    example: { cmd: 'actor.turnTo', args: { actor: 'lan', target: 'cua' } },
+    example: { cmd: 'actor.turnTo', args: { actor: 'gen', target: 'cua' } },
     handler(a, ctx) {
       const hd = ctx.world.actorTurnTo(s(a.actor), a.target as string | Vec3);
       void hd.done.then(() =>
@@ -207,7 +270,7 @@ export const LENH_ACTOR: CommandSpec[] = [
       P_ACTOR,
       pEnum('seat', 'Place loại ghế', { required: true, goiY: 'places' }),
     ],
-    example: { cmd: 'actor.sit', args: { actor: 'lan', seat: 'ghe-2' } },
+    example: { cmd: 'actor.sit', args: { actor: 'gen', seat: 'ghe-2' } },
     handler(a, ctx) {
       const hd = ctx.world.actorSit(s(a.actor), s(a.seat));
       void hd.done.then(() =>
@@ -224,7 +287,7 @@ export const LENH_ACTOR: CommandSpec[] = [
     desc: 'Đứng lên',
     chiemActor: 'actor',
     params: [P_ACTOR],
-    example: { cmd: 'actor.stand', args: { actor: 'lan' } },
+    example: { cmd: 'actor.stand', args: { actor: 'gen' } },
     handler(a, ctx) {
       const hd = ctx.world.actorStand(s(a.actor));
       void hd.done.then(() => ctx.bus.emit('actor.stood', { actor: s(a.actor) }));
@@ -244,7 +307,7 @@ export const LENH_ACTOR: CommandSpec[] = [
       { name: 'loop', type: 'boolean', desc: 'Lặp mãi', default: false },
       pSo('speed', 'Nhân tốc độ', { min: 0.1, max: 4, default: 1 }),
     ],
-    example: { cmd: 'actor.play', args: { actor: 'lan', clip: 'wave' } },
+    example: { cmd: 'actor.play', args: { actor: 'gen', clip: 'wave' } },
     handler(a, ctx) {
       const loop = a.loop === true;
       const hd = ctx.world.actorPlay(
@@ -268,7 +331,7 @@ export const LENH_ACTOR: CommandSpec[] = [
     events: ['actor.stopped', 'cmd.interrupted'],
     desc: 'Dừng mọi thứ đang làm, bỏ hàng đợi, về idle',
     params: [P_ACTOR],
-    example: { cmd: 'actor.stop', args: { actor: 'lan' } },
+    example: { cmd: 'actor.stop', args: { actor: 'gen' } },
     handler(a, ctx) {
       const id = s(a.actor);
       if (!ctx.world.coActor(id)) throw new Error(`Không có actor "${id}"`);
@@ -295,7 +358,7 @@ export const LENH_ACTOR: CommandSpec[] = [
     ],
     example: {
       cmd: 'actor.express',
-      args: { actor: 'lan', expression: 'happy', weight: 1, durationMs: 3000 },
+      args: { actor: 'gen', expression: 'happy', weight: 1, durationMs: 3000 },
     },
     handler(a, ctx) {
       const id = s(a.actor);
@@ -332,7 +395,7 @@ export const LENH_ACTOR: CommandSpec[] = [
     ],
     example: {
       cmd: 'actor.say',
-      args: { actor: 'lan', text: 'Sếp ơi, test xanh rồi!', emotion: 'vui', voice: 'nu' },
+      args: { actor: 'gen', text: 'Sếp ơi, test xanh rồi!', emotion: 'vui', voice: 'nu' },
     },
     async handler(a, ctx) {
       const id = s(a.actor);
@@ -368,7 +431,7 @@ export const LENH_ACTOR: CommandSpec[] = [
     ],
     example: {
       cmd: 'actor.bubble',
-      args: { actor: 'lan', text: 'Đang nghĩ…', durationMs: 2000 },
+      args: { actor: 'gen', text: 'Đang nghĩ…', durationMs: 2000 },
     },
     handler(a, ctx) {
       const hd = ctx.world.actorBubble(
@@ -398,7 +461,7 @@ export const LENH_ACTOR: CommandSpec[] = [
     ],
     example: {
       cmd: 'actor.hold',
-      args: { actor: 'lan', prop: 'so-tay', hand: 'right' },
+      args: { actor: 'gen', prop: 'so-tay', hand: 'right' },
     },
     handler(a, ctx) {
       const id = s(a.actor);
@@ -423,7 +486,7 @@ export const LENH_ACTOR: CommandSpec[] = [
       pSo('intensity', 'Độ mạnh 0–1', { min: 0, max: 1, default: 1 }),
       { name: 'say', type: 'text', desc: 'Nói kèm (tuỳ chọn)' },
     ],
-    example: { cmd: 'actor.emote', args: { actor: 'lan', emote: 'vui', intensity: 1 } },
+    example: { cmd: 'actor.emote', args: { actor: 'gen', emote: 'vui', intensity: 1 } },
     async handler(a, ctx) {
       const id = s(a.actor);
       if (!ctx.world.coActor(id)) throw new Error(`Không có actor "${id}"`);
@@ -458,7 +521,7 @@ export const LENH_ACTOR: CommandSpec[] = [
       P_ACTOR,
       pEnum('style', 'Kiểu đứng chờ', { required: true, values: IDLE_STYLES }),
     ],
-    example: { cmd: 'actor.idleStyle', args: { actor: 'lan', style: 'hao-hung' } },
+    example: { cmd: 'actor.idleStyle', args: { actor: 'gen', style: 'hao-hung' } },
     handler(a, ctx) {
       const id = s(a.actor);
       if (!ctx.world.coActor(id)) throw new Error(`Không có actor "${id}"`);
@@ -473,7 +536,7 @@ export const LENH_ACTOR: CommandSpec[] = [
     events: ['actor.dropped'],
     desc: 'Thả đồ đang cầm xuống chân',
     params: [P_ACTOR],
-    example: { cmd: 'actor.drop', args: { actor: 'lan' } },
+    example: { cmd: 'actor.drop', args: { actor: 'gen' } },
     handler(a, ctx) {
       const id = s(a.actor);
       if (!ctx.world.coActor(id)) throw new Error(`Không có actor "${id}"`);
