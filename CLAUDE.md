@@ -13,15 +13,17 @@ A2 bộ hành vi → A3 lab viễn tưởng.
 
 ```bash
 pnpm install              # cài phụ thuộc
-pnpm assets               # tải asset (VRM + Kenney CC0) — chạy 1 lần sau khi clone
+pnpm assets                # tải asset (VRM + Kenney Furniture Kit CC0) — 1 lần sau khi clone
+pnpm assets:lab             # tải Kenney Space Kit CC0 cho lab A3 (public/kenney-sci-fi/)
 pnpm dev                  # chạy dev, mở http://localhost:5173
 pnpm dev --host           # cho điện thoại cùng wifi vào xem
 pnpm build                # tsc + vite build, phải không lỗi trước khi mở PR
-pnpm test                 # vitest: dispatcher, hàng đợi, kịch bản, stage.describe
+pnpm test                 # vitest: dispatcher, hàng đợi, kịch bản, stage.describe, A3 screen/module/fx
 pnpm bridge               # bridge WebSocket cho agent (xem bridge/README.md)
 pnpm preview              # xem thử bản build
 
 node scripts/kiem-a1.mjs      # bằng chứng A1: bấm từng lệnh + chụp ảnh vào docs/a1/
+node scripts/kiem-a3.mjs      # bằng chứng A3: screen/module/fx/preset + kịch bản mẫu + FPS vào docs/a3/
 node scripts/kiem-bridge.mjs  # bằng chứng bridge: moveTo qua ws → nhận actor.arrived
 ```
 
@@ -62,11 +64,13 @@ biết registry, **giao diện** không gọi thẳng vào sân khấu.
 | `src/api/registry.ts` | Sổ đăng ký lệnh (tên, mô tả, tham số, ví dụ) → nguồn cho `stage.bootstrap` và bảng lệnh UI |
 | `src/api/validate.ts` | Kiểm + chuẩn hoá tham số trước khi chạm sân khấu |
 | `src/api/dispatcher.ts` | **Một hàm `run(cmd, args)`** cho mọi đường vào: kiểm tham số, hàng đợi khi actor bận, `interrupt`, nhật ký |
-| `src/api/commands/*.ts` | Mỗi nhóm một file: `stage`, `actor`, `prop`, `scene`, `camera`, `script`, `stubs` (A2/A3) |
-| `src/stage/world.ts` | Thi công `StageWorld` bằng Three.js: renderer, camera, đèn, actor, prop, bong bóng chữ, vòng lặp |
+| `src/api/commands/*.ts` | Mỗi nhóm một file: `stage`, `actor`, `prop`, `scene`, `camera`, `script`, `screen`, `module`, `fx` (A3), `stubs` (A2) |
+| `src/stage/world.ts` | Thi công `StageWorld` bằng Three.js: renderer, camera, đèn, bloom (A3), actor, prop, màn hình hologram, bong bóng chữ, vòng lặp |
 | `src/stage/nhanvat.ts` | Một nhân vật VRM: máy trạng thái + clip thủ công (procedural) + nhép miệng |
-| `src/stage/phong.ts` | Dựng phòng: sàn, tường, cửa sổ, bàn ghế (Kenney hoặc fallback box bo tròn) |
-| `src/stage/noi-dung.ts` | Dữ liệu cảnh v0.1: places, clips, biểu cảm, emote, preset đèn/máy quay |
+| `src/stage/phong.ts` | Dựng LAB VIỄN TƯỞNG (A3): sàn vân sáng, bục trung tâm, bàn điều khiển cong, kệ module, cột kính, trần đèn dải (Kenney Space Kit hoặc fallback geometry emissive) |
+| `src/stage/man-hinh.ts` | Màn hình hologram A3: CanvasTexture + scan-line, stream chữ chạy dần |
+| `src/fx/*.ts` | A3: hiệu ứng kết tinh module (`hat-ket-tinh.ts`) + `fx.play` (`hieu-ung.ts`) |
+| `src/stage/noi-dung.ts` | Dữ liệu cảnh v0.1: places (gồm `ban-dieu-khien` A3), clips, biểu cảm, emote, preset đèn/máy quay |
 | `src/stage/hanh-dong.ts` | Tiện ích `Action` (hành động có `durationMs` + `done` + `cancel`) |
 | `src/ui/panel.ts` | Bảng lệnh **tự sinh** từ `stage.bootstrap` — không viết tay nút nào |
 | `src/ui/script-box.ts` | Ô kịch bản: JSON hoặc dạng ngắn `lan moveTo ban-2` |
@@ -74,7 +78,7 @@ biết registry, **giao diện** không gọi thẳng vào sân khấu.
 | `src/events.ts` · `src/log.ts` | Bus sự kiện · nhật ký JSON mọi lệnh và sự kiện |
 | `src/bridge-client.ts` | Nối trình duyệt với bridge (bật bằng `?bridge=1`) |
 | `bridge/server.ts` | Bridge WebSocket Node (chưa MCP) — mặc định chỉ nghe `127.0.0.1`; mở ra ngoài phải có `--host` + `GEN_STAGE_TOKEN` |
-| `src/api/__tests__/` | `san-khau-gia.ts` (sân khấu giả, không WebGL) + 3 file test |
+| `src/api/__tests__/` | `san-khau-gia.ts` (sân khấu giả, không WebGL) + test dispatcher/describe/script/A3 |
 
 ### Thêm một lệnh mới
 
@@ -92,7 +96,12 @@ biết registry, **giao diện** không gọi thẳng vào sân khấu.
   bridge WebSocket. `actor.say` = bong bóng + nhép miệng giả + Web Speech nếu có.
 - **A2**: `actor.emote`, `actor.idleStyle`, chuyển động thật (retarget VRMA thay
   cho procedural trong `nhanvat.ts`), cử chỉ theo cảm xúc khi nói.
-- **A3**: `screen.*`, `module.*`, `fx.*`, cảnh lab + bloom.
+- **A3 (xong)**: cảnh lab viễn tưởng (`phong.ts`, Kenney Space Kit CC0 hoặc
+  fallback emissive), `UnrealBloomPass` nửa độ phân giải + tự tắt khi FPS thấp,
+  `screen.*` (hologram, CanvasTexture, stream theo `chunks` hoặc `source:"agent"`
+  qua `window.stage.feed`), `module.build` (kết tinh hạt `src/fx/hat-ket-tinh.ts`
+  + tự `actor.hold` qua dispatcher) + `module.open`/`module.store`, `fx.play`
+  (`src/fx/hieu-ung.ts`), `camera.preset` thêm `ban-dieu-khien`.
 
-Lệnh của A2/A3 **đã đăng ký sẵn** dưới dạng stub (`src/api/commands/stubs.ts`):
+Lệnh của A2 **đã đăng ký sẵn** dưới dạng stub (`src/api/commands/stubs.ts`):
 `stage.bootstrap` liệt kê đủ bộ v0.1, gọi vào thì trả `ok:false` nói rõ đợt nào.

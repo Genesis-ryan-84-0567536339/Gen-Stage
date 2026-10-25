@@ -20,10 +20,24 @@ export interface DinhNghiaPlace {
 }
 
 /**
- * Places v0.1 của cảnh văn phòng hiện có (`phong.ts`: phòng 7,2 × 7,2 m,
- * bàn 1 ở (-1,85, 0, -1,75), bàn 2 ở (1,85, 0, -1,75), kệ sách sát tường trái).
+ * Places v0.1 của cảnh LAB VIỄN TƯỞNG (A3, `phong.ts`: phòng 7,2 × 7,2 m).
+ *
+ * Spec mục 3.4b chốt 4 place bắt buộc: `ban-dieu-khien`, `buc-trung-tam`,
+ * `ke-module`, `cua`. Giữ nguyên id + toạ độ của `ban-1/ban-2/ghe-1/ghe-2`
+ * (console phụ + ghế thao tác viên hai bên bệ trung tâm) vì `kiem-a1.mjs` và
+ * bộ test A1 (`src/api/__tests__/`, `scripts/kiem-a1.mjs`) viết theo đúng
+ * hình học này — đổi tên sẽ phá vỡ bằng chứng A1 đã chốt, nên A3 CHỈ THÊM
+ * `ban-dieu-khien` (bàn điều khiển cong chính, nơi đặt 3 màn hình hologram)
+ * chứ không xoá/đổi tên place cũ.
  */
 export const PLACES: readonly DinhNghiaPlace[] = [
+  {
+    id: 'ban-dieu-khien',
+    pos: [0, 0, -2.6],
+    kind: 'desk',
+    standAt: [0, 0, -1.55],
+    facing: 180,
+  },
   {
     id: 'ban-1',
     pos: [-1.85, 0, -1.75],
@@ -118,7 +132,14 @@ export const EMOTES = [
 ] as const;
 
 export const PRESET_DEN = ['sang', 'toi', 'am'] as const;
-export const PRESET_MAY = ['toan-canh', 'ban-1', 'ban-2', 'hop'] as const;
+/**
+ * Góc máy v0.1 lab (spec 3.3): toàn cảnh · bàn điều khiển · cận (hộp).
+ *
+ * A3 CHỈ THÊM `ban-dieu-khien` — `ban-1`/`ban-2` của A1 vẫn còn (spec mục 3
+ * đầu bài: "thêm thì tăng version, không đổi nghĩa lệnh cũ"); cả hai rơi vào
+ * nhánh `cameraFocus` fallthrough ở `world.ts` nên không cần code riêng.
+ */
+export const PRESET_MAY = ['toan-canh', 'ban-dieu-khien', 'ban-1', 'ban-2', 'hop'] as const;
 
 export function timPlace(id: string): DinhNghiaPlace | undefined {
   return PLACES.find((p) => p.id === id);

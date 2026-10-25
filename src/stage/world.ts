@@ -11,6 +11,11 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { VRMUtils } from '@pixiv/three-vrm';
 import type {
   Action,
   ActorSnapshot,
@@ -19,12 +24,14 @@ import type {
   ScreenSnapshot,
   StageState,
   StageWorld,
+  ThamSoModuleBuild,
   ThamSoSpawnActor,
   ThamSoSpawnProp,
+  ThamSoSpawnScreen,
   Vec3,
 } from '../api/types';
 import type { EventBus } from '../events';
-import { dungPhong } from './phong';
+import { dungPhong, haiSuongBuc, MAU_CAM, MAU_CYAN } from './phong';
 import { NhanVat, TOC_DO_DI, uocThoiLuongNoi } from './nhanvat';
 import {
   BIEU_CAM,
@@ -37,12 +44,19 @@ import {
   timPlace,
   type DinhNghiaPlace,
 } from './noi-dung';
-import { noiTiep } from './hanh-dong';
+import { noiTiep, hanhDongHenGio } from './hanh-dong';
+import { ManHinh, MAC_DINH_MAN_HINH } from './man-hinh';
+import { KetTinh, maySurfacePoints } from '../fx/hat-ket-tinh';
+import { taoHieuUng, type HieuUng } from '../fx/hieu-ung';
 
-const MAU_KEM = 0xfdf3e3;
+/** Lab viễn tưởng: tông tối, cyan + điểm cam (spec 3.4b). */
+const MAU_NEN_LAB = 0x070b10;
 /** Bán kính coi là "đang ở" một place. */
 const BAN_KINH_AT = 0.9;
 export const ACTOR_MAC_DINH = { id: 'lan', ten: 'Lan', model: 'models/avatar.vrm' };
+
+/** FPS trung bình dưới mức này trong > 2 s thì tự tắt bloom. */
+const FPS_TU_TAT_BLOOM = 24;
 
 interface DoVat {
   id: string;
@@ -78,10 +92,21 @@ export class World implements StageWorld {
   private bongBongLop: HTMLElement;
   private bongBongEl = new Map<string, HTMLElement>();
 
+  /* A3 — màn hình hologram, hiệu ứng kết tinh, fx ngắn */
+  private screens = new Map<string, ManHinh>();
+  private ketTinhDangChay = new Map<string, KetTinh>();
+  private fxDangChay: HieuUng[] = [];
+
   private troi!: THREE.HemisphereLight;
   private nang!: THREE.DirectionalLight;
   private vien!: THREE.DirectionalLight;
   private denPreset = 'sang';
+
+  /* A3 — hậu kỳ (bloom) + tự tắt khi FPS thấp (spec mục 5) */
+  private composer!: EffectComposer;
+  private bloom!: UnrealBloomPass;
+  private bloomDangBat = true;
+  private fpsThapTu = 0;
 
   private dongHo = new THREE.Timer();
   private chuotNDC = new THREE.Vector2(0, 0);
@@ -100,10 +125,10 @@ export class World implements StageWorld {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 0.92;
+    this.renderer.toneMappingExposure = 1.0;
 
-    this.scene.background = new THREE.Color(MAU_KEM);
-    this.scene.fog = new THREE.Fog(MAU_KEM, 14, 30);
+    this.scene.background = new THREE.Color(MAU_NEN_LAB);
+    this.scene.fog = new THREE.FogExp2(MAU_NEN_LAB, 0.025);
 
     this.camera = new THREE.PerspectiveCamera(
       38,
@@ -129,18 +154,47 @@ export class World implements StageWorld {
       this.lanCuoiBossHoatDong = Date.now();
     });
 
+    this.dungHauKy();
     this.dungAnhSang();
     this.datGocMay();
   }
 
   /* ------------------------------------------------------------ dựng cảnh */
 
+  /**
+   * Hậu kỳ A3: `UnrealBloomPass` nửa độ phân giải (hiệu năng, spec mục 5) +
+   * `OutputPass` (ACES/sRGB đã khai ở renderer). Tắt được bằng `coBloom`
+   * khi FPS tụt (`motKhung` tự gọi), không cần dựng lại composer.
+   */
+  private dungHauKy(): void {
+    this.composer = new EffectComposer(this.renderer);
+    const kichThuoc = new THREE.Vector2(window.innerWidth, window.innerHeight);
+    this.composer.addPass(new RenderPass(this.scene, this.camera));
+    // threshold cao + strength vừa phải: chỉ viền/đèn thật sự sáng mới nở ra,
+    // nhân vật đứng dưới ánh sáng thường không bị "cháy" (yêu cầu spec mục 1).
+    this.bloom = new UnrealBloomPass(kichThuoc, 0.3, 0.35, 0.92);
+    this.bloom.resolution.set(
+      Math.max(1, Math.floor(kichThuoc.x / 2)),
+      Math.max(1, Math.floor(kichThuoc.y / 2)),
+    );
+    this.composer.addPass(this.bloom);
+    this.composer.addPass(new OutputPass());
+  }
+
+  /** Bật/tắt bloom (giữ composer, chỉ đổi cường độ — rẻ hơn dựng lại pass). */
+  private coBloom(bat: boolean): void {
+    if (this.bloomDangBat === bat) return;
+    this.bloomDangBat = bat;
+    this.bloom.strength = bat ? 0.3 : 0;
+  }
+
   private dungAnhSang(): void {
-    this.troi = new THREE.HemisphereLight(0xfff3dd, 0xcdb79a, 0.62);
+    // lab tối, ánh sáng chính từ bục trung tâm + đèn dải trần + viền cyan/cam
+    this.troi = new THREE.HemisphereLight(0x3a6a7a, 0x0a0f14, 0.85);
     this.scene.add(this.troi);
 
-    this.nang = new THREE.DirectionalLight(0xffe0ae, 1.45);
-    this.nang.position.set(5.2, 6.4, 3.0);
+    this.nang = new THREE.DirectionalLight(0x9fd8ff, 0.8);
+    this.nang.position.set(2.2, 4.4, 1.2);
     this.nang.castShadow = true;
     this.nang.shadow.mapSize.set(2048, 2048);
     this.nang.shadow.camera.near = 0.5;
@@ -154,19 +208,20 @@ export class World implements StageWorld {
     this.nang.shadow.radius = 2.5;
     this.scene.add(this.nang);
 
-    this.vien = new THREE.DirectionalLight(0xbfd8ff, 0.3);
-    this.vien.position.set(-4.5, 3.2, -2.5);
+    this.vien = new THREE.DirectionalLight(MAU_CAM, 0.35);
+    this.vien.position.set(-3.5, 2.6, -2.0);
     this.scene.add(this.vien);
 
     const pmrem = new THREE.PMREMGenerator(this.renderer);
     this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-    this.scene.environmentIntensity = 0.22;
+    this.scene.environmentIntensity = 0.14;
   }
 
-  /** Nạp phòng + nhân vật mặc định. Gọi một lần lúc khởi động. */
+  /** Nạp phòng + nhân vật mặc định + 3 màn hình hologram cố định. Gọi một lần lúc khởi động. */
   async napCanh(tienTrinh?: (chu: string) => void): Promise<{ dungKenney: boolean }> {
-    tienTrinh?.('Đang dựng văn phòng…');
+    tienTrinh?.('Đang dựng lab viễn tưởng…');
     const phong = await dungPhong(this.scene);
+    haiSuongBuc(this.scene);
 
     tienTrinh?.('Đang nạp nhân vật…');
     await this.actorSpawn({
@@ -175,6 +230,9 @@ export class World implements StageWorld {
       model: ACTOR_MAC_DINH.model,
       at: 'ban-1',
     });
+
+    tienTrinh?.('Đang dựng màn hình hologram…');
+    for (const id of Object.keys(MAC_DINH_MAN_HINH)) await this.screenSpawn({ id });
 
     return { dungKenney: phong.dungKenney };
   }
@@ -187,6 +245,11 @@ export class World implements StageWorld {
       this.datGocMay();
       this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       this.renderer.setSize(window.innerWidth, window.innerHeight);
+      this.composer.setSize(window.innerWidth, window.innerHeight);
+      this.bloom.resolution.set(
+        Math.max(1, Math.floor(window.innerWidth / 2)),
+        Math.max(1, Math.floor(window.innerHeight / 2)),
+      );
     });
     window.addEventListener('pointermove', (e) => {
       this.chuotNDC.set(
@@ -230,9 +293,30 @@ export class World implements StageWorld {
       if (this.camera.position.distanceTo(this.tamTuBay.vt) < 0.02) this.tamTuBay = null;
     }
 
+    for (const mh of this.screens.values()) mh.capNhat(dt);
+
+    for (const [id, kt] of [...this.ketTinhDangChay]) {
+      if (kt.capNhat()) this.ketTinhDangChay.delete(id);
+    }
+    this.fxDangChay = this.fxDangChay.filter((hu) => !hu.capNhat());
+
     this.capNhatBongBong();
     this.controls.update();
-    this.renderer.render(this.scene, this.camera);
+    this.composer.render();
+    this.theoDoiFps(dt);
+  }
+
+  /** Hiệu năng (spec mục 5): FPS tụt dưới ngưỡng quá 2 s thì tự tắt bloom. */
+  private theoDoiFps(dt: number): void {
+    if (dt <= 0) return;
+    const fps = 1 / dt;
+    if (fps < FPS_TU_TAT_BLOOM) {
+      this.fpsThapTu += dt * 1000;
+      if (this.fpsThapTu > 2000) this.coBloom(false);
+    } else {
+      this.fpsThapTu = 0;
+      if (fps > FPS_TU_TAT_BLOOM + 8) this.coBloom(true);
+    }
   }
 
   private datGocMay(): void {
@@ -308,9 +392,12 @@ export class World implements StageWorld {
     return [...this.props.keys()];
   }
 
-  /** A1 chưa có màn hình hologram (A3 làm) — trả rỗng, không bịa. */
   screenIds(): string[] {
-    return [];
+    return [...this.screens.keys()];
+  }
+
+  coScreen(id: string): boolean {
+    return this.screens.has(id);
   }
 
   clips(): string[] {
@@ -338,6 +425,8 @@ export class World implements StageWorld {
     if (a) return [a.goc.position.x, a.goc.position.y, a.goc.position.z];
     const d = this.props.get(ten);
     if (d) return [d.obj.position.x, d.obj.position.y, d.obj.position.z];
+    const mh = this.screens.get(ten);
+    if (mh) return [mh.group.position.x, mh.group.position.y, mh.group.position.z];
     return null;
   }
 
@@ -378,6 +467,10 @@ export class World implements StageWorld {
     nv.dung();
     this.scene.remove(nv.goc);
     this.scene.remove(nv.diemNhin);
+    // rò rỉ nặng nhất nếu thiếu: mỗi actorRemove (và mỗi stage.reset gọi lại
+    // actorSpawn ngay sau) nạp một avatar VRM mới mà không dọn avatar cũ —
+    // skinned mesh + skeleton + toàn bộ texture rò vĩnh viễn theo phiên.
+    VRMUtils.deepDispose(nv.vrm.scene);
     this.actors.delete(id);
     const el = this.bongBongEl.get(id);
     if (el) {
@@ -550,6 +643,9 @@ export class World implements StageWorld {
       }
     }
     this.scene.remove(d.obj);
+    // module (`moduleBuild`) gắn thêm 1 sprite nhãn (CanvasTexture riêng) vào
+    // obj — dispose đệ quy cả cây, không chỉ mesh gốc, để không rò texture/geo.
+    dispose3D(d.obj);
     this.props.delete(id);
   }
 
@@ -609,6 +705,7 @@ export class World implements StageWorld {
 
   /* ------------------------------------------------------- cảnh + camera */
 
+  /** 3 preset đèn lab (spec 3.3): `sang` làm việc · `toi` nghỉ/ban đêm · `am` cảnh báo/ấm cúng. */
   sceneLight(preset: string): void {
     if (!(PRESET_DEN as readonly string[]).includes(preset)) {
       throw new Error(`Không có preset đèn "${preset}". Có: ${PRESET_DEN.join(', ')}`);
@@ -617,31 +714,31 @@ export class World implements StageWorld {
     const bg = this.scene.background as THREE.Color;
     switch (preset) {
       case 'sang':
-        this.troi.intensity = 0.62;
-        this.nang.intensity = 1.45;
-        this.nang.color.setHex(0xffe0ae);
-        this.vien.intensity = 0.3;
-        bg.setHex(MAU_KEM);
-        this.renderer.toneMappingExposure = 0.92;
+        this.troi.intensity = 0.5;
+        this.nang.intensity = 0.55;
+        this.nang.color.setHex(0x9fd8ff);
+        this.vien.intensity = 0.35;
+        bg.setHex(MAU_NEN_LAB);
+        this.renderer.toneMappingExposure = 1.0;
         break;
       case 'toi':
-        this.troi.intensity = 0.14;
-        this.nang.intensity = 0.3;
-        this.nang.color.setHex(0x9fb6ff);
+        this.troi.intensity = 0.16;
+        this.nang.intensity = 0.12;
+        this.nang.color.setHex(0x3f6fa0);
         this.vien.intensity = 0.5;
-        bg.setHex(0x1d2330);
-        this.renderer.toneMappingExposure = 0.78;
+        bg.setHex(0x030508);
+        this.renderer.toneMappingExposure = 0.85;
         break;
       case 'am':
-        this.troi.intensity = 0.34;
-        this.nang.intensity = 0.95;
-        this.nang.color.setHex(0xffb366);
-        this.vien.intensity = 0.14;
-        bg.setHex(0x3b2a20);
-        this.renderer.toneMappingExposure = 0.88;
+        this.troi.intensity = 0.3;
+        this.nang.intensity = 0.4;
+        this.nang.color.setHex(MAU_CAM);
+        this.vien.intensity = 0.2;
+        bg.setHex(0x120a06);
+        this.renderer.toneMappingExposure = 0.95;
         break;
     }
-    if (this.scene.fog instanceof THREE.Fog) this.scene.fog.color.copy(bg);
+    if (this.scene.fog instanceof THREE.FogExp2) this.scene.fog.color.copy(bg);
   }
 
   cameraFocus(target: string, distance = 2.6): void {
@@ -674,9 +771,225 @@ export class World implements StageWorld {
     this.cameraFocus(name, 2.4);
   }
 
+  /* ------------------------------------------------- A3: màn hình hologram */
+
+  async screenSpawn(p: ThamSoSpawnScreen): Promise<ScreenSnapshot> {
+    if (!p.id.trim()) throw new Error('"id" không được rỗng');
+    if (this.screens.has(p.id)) throw new Error(`Màn hình "${p.id}" đã có`);
+
+    const mac = MAC_DINH_MAN_HINH[p.id as keyof typeof MAC_DINH_MAN_HINH];
+    let pos: THREE.Vector3;
+    let rotY: number;
+    if (p.at !== undefined) {
+      const v = this.viTriMucTieu(p.at);
+      if (!v) throw new Error(`Không biết "${String(p.at)}" ở đâu`);
+      pos = new THREE.Vector3(v[0], Math.max(1.2, v[1] + 1.35), v[2]);
+      rotY = Math.PI; // mặt hướng về phía bục trung tâm / phòng
+    } else if (mac) {
+      pos = mac.pos;
+      rotY = mac.rotY;
+    } else {
+      pos = new THREE.Vector3(0, 1.75, -1.0 - this.screens.size * 0.6);
+      rotY = 0;
+    }
+
+    const mh = new ManHinh(p.id, p.size ?? 2.2, pos, rotY, p.tilt ?? -4);
+    this.scene.add(mh.group);
+    this.screens.set(p.id, mh);
+    return this.snapScreen(mh);
+  }
+
+  screenRemove(id: string): void {
+    const mh = this.screens.get(id);
+    if (!mh) throw new Error(`Không có màn hình "${id}"`);
+    this.scene.remove(mh.group);
+    mh.dispose();
+    this.screens.delete(id);
+  }
+
+  private manHinh(id: string): ManHinh {
+    const mh = this.screens.get(id);
+    if (!mh) throw new Error(`Không có màn hình "${id}"`);
+    return mh;
+  }
+
+  screenShow(id: string, kind: string, content: string): void {
+    this.manHinh(id).hien(kind, content);
+  }
+
+  screenStartStream(id: string, kind: string): void {
+    this.manHinh(id).batDauStream(kind);
+  }
+
+  screenAppend(id: string, chunk: string): void {
+    this.manHinh(id).noi(chunk);
+  }
+
+  screenEndStream(id: string): void {
+    this.manHinh(id).ketThucStream();
+  }
+
+  screenClear(id: string): void {
+    this.manHinh(id).xoa();
+  }
+
+  screenContent(id: string): string {
+    return this.manHinh(id).noiDung;
+  }
+
+  screenFocus(id: string): Action {
+    const mh = this.manHinh(id);
+    const dich = new THREE.Vector3(0, 1.72, 0.55);
+    const rotDich = 0;
+    const tu = { pos: mh.group.position.clone(), rot: mh.group.rotation.y };
+    const dai = 650;
+    let huy = false;
+    const batDau = Date.now();
+    const hd = hanhDongHenGio(dai, () => {
+      if (!huy) {
+        mh.group.position.copy(dich);
+        mh.group.rotation.y = rotDich;
+      }
+    });
+    const capNhat = () => {
+      if (huy) return;
+      const t = Math.min(1, (Date.now() - batDau) / dai);
+      mh.group.position.lerpVectors(tu.pos, dich, t);
+      mh.group.rotation.y = THREE.MathUtils.lerp(tu.rot, rotDich, t);
+      if (t < 1) requestAnimationFrame(capNhat);
+    };
+    requestAnimationFrame(capNhat);
+    const cancelGoc = hd.cancel;
+    return {
+      durationMs: hd.durationMs,
+      done: hd.done,
+      cancel: () => {
+        huy = true;
+        cancelGoc();
+      },
+    };
+  }
+
+  private snapScreen(mh: ManHinh): ScreenSnapshot {
+    return {
+      id: mh.id,
+      pos: [tron(mh.group.position.x), tron(mh.group.position.y), tron(mh.group.position.z)],
+      showing: mh.kind,
+      streaming: mh.streaming,
+      lines: mh.soDong(),
+    };
+  }
+
+  /* ------------------------------------------------------- A3: module + fx */
+
+  moduleBuild(p: ThamSoModuleBuild): Action {
+    if (this.props.has(p.id)) throw new Error(`Prop "${p.id}" đã có trên sân khấu`);
+    const durationMs = Math.max(400, p.durationMs ?? 2600);
+
+    const obj = dungHinhProp(p.shape);
+    obj.name = `prop:${p.id}`;
+    obj.visible = false;
+    obj.scale.setScalar(0.001);
+    this.scene.add(obj);
+
+    const nhan = dungNhanModule(p.label);
+    nhan.position.y = 0.2;
+    obj.add(nhan);
+
+    const d: DoVat = {
+      id: p.id,
+      kind: 'module',
+      shape: p.shape,
+      obj,
+      state: { label: p.label, building: true, from: p.from ?? null },
+      camBoi: null,
+    };
+    this.props.set(p.id, d);
+
+    // đích: giữa bục trung tâm, cao ngang tay — nơi vật "rơi vào tay nhân vật"
+    const dich = timPlace('buc-trung-tam')!;
+    const tamDich = new THREE.Vector3(dich.pos[0], 1.05, dich.pos[2]);
+    obj.position.copy(tamDich);
+
+    const nguon = p.from ? this.viTriMucTieu(p.from) : null;
+    const tuDiem = nguon
+      ? new THREE.Vector3(nguon[0], nguon[1], nguon[2])
+      : tamDich.clone().add(new THREE.Vector3(0, 0.6, 0));
+
+    // lấy mẫu thô bề mặt hình đích (toạ độ cục bộ, tâm 0,0,0) — `KetTinh` tự
+    // cộng `tamDich` để ra toạ độ thật trong scene, không hardcode hình dạng
+    const diemDich = maySurfacePoints((obj as THREE.Mesh).geometry, 400);
+
+    let huy = false;
+    const kt = new KetTinh({
+      scene: this.scene,
+      tu: tuDiem,
+      mauChinh: p.shape === 'crystal' || p.shape === 'orb' ? MAU_CYAN : MAU_CAM,
+      diemDich,
+      tamDich,
+      durationMs,
+      khiXong: () => {
+        if (huy) return;
+        obj.visible = true;
+        obj.scale.setScalar(1);
+        d.state = { ...d.state, building: false };
+      },
+    });
+    this.ketTinhDangChay.set(p.id, kt);
+
+    const done = new Promise<void>((resolve) => {
+      const kiemTra = () => {
+        if (!this.ketTinhDangChay.has(p.id)) {
+          resolve();
+          return;
+        }
+        setTimeout(kiemTra, 40);
+      };
+      kiemTra();
+    });
+
+    return {
+      durationMs,
+      done,
+      cancel: () => {
+        huy = true;
+        kt.huy();
+        this.ketTinhDangChay.delete(p.id);
+        this.scene.remove(obj);
+        this.props.delete(p.id);
+      },
+    };
+  }
+
+  fxPlay(name: string, at?: string | Vec3, durationMs?: number): Action {
+    const v = at !== undefined ? this.viTriMucTieu(at) : null;
+    const tam = v
+      ? new THREE.Vector3(v[0], v[1] + 1.2, v[2])
+      : (() => {
+          const bt = timPlace('buc-trung-tam')!;
+          return new THREE.Vector3(bt.pos[0], 1.3, bt.pos[2]);
+        })();
+
+    const hu = taoHieuUng(this.scene, name, tam, durationMs);
+    this.fxDangChay.push(hu);
+    const dai = durationMs ?? 1000;
+    // `hanhDongHenGio` dùng hẹn giờ HUỶ ĐƯỢC (clearTimeout khi cancel) — bản
+    // cũ tự tạo setTimeout rời, cancel() không clear nên hẹn giờ vẫn rò và
+    // resolve `done` muộn sau khi hành động đã bị cắt (trái bất biến CLAUDE.md).
+    return hanhDongHenGio(dai, () => {
+      hu.huy();
+      this.fxDangChay = this.fxDangChay.filter((x) => x !== hu);
+    });
+  }
+
   async reset(): Promise<void> {
     for (const id of [...this.actors.keys()]) this.actorRemove(id);
     for (const id of [...this.props.keys()]) this.propRemove(id);
+    for (const id of [...this.screens.keys()]) this.screenRemove(id);
+    for (const kt of this.ketTinhDangChay.values()) kt.huy();
+    this.ketTinhDangChay.clear();
+    for (const hu of this.fxDangChay) hu.huy();
+    this.fxDangChay = [];
     this.sceneLight('sang');
     this.bossDaXoay = false;
     this.tamTuBay = { vt: MAY_NGANG.vt.clone(), tam: MAY_NGANG.tam.clone() };
@@ -687,6 +1000,7 @@ export class World implements StageWorld {
       model: ACTOR_MAC_DINH.model,
       at: 'ban-1',
     });
+    for (const id of Object.keys(MAC_DINH_MAN_HINH)) await this.screenSpawn({ id });
   }
 
   /* -------------------------------------------------------------- describe */
@@ -703,7 +1017,7 @@ export class World implements StageWorld {
       },
       actors: dsActor,
       places: this.snapPlaces(dsActor),
-      screens: [] as ScreenSnapshot[],
+      screens: [...this.screens.values()].map((mh) => this.snapScreen(mh)),
       props: [...this.props.values()].map((d) => this.snapProp(d)),
       lastEvents: this.bus.recent(10),
       scene: { light: this.denPreset },
@@ -787,6 +1101,42 @@ function tron(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
+/** Tên map chứa texture trên vật liệu — dọn hết để không rò GPU memory. */
+const TEN_MAP_VAT_LIEU = [
+  'map',
+  'emissiveMap',
+  'normalMap',
+  'roughnessMap',
+  'metalnessMap',
+  'alphaMap',
+  'aoMap',
+  'bumpMap',
+] as const;
+
+function disposeVatLieu(mat: THREE.Material): void {
+  const m = mat as unknown as Record<string, { dispose?: () => void } | undefined>;
+  for (const ten of TEN_MAP_VAT_LIEU) m[ten]?.dispose?.();
+  mat.dispose();
+}
+
+/**
+ * Dispose đệ quy cả cây Object3D: geometry + material + texture của mọi
+ * mesh/sprite con. Dùng cho `propRemove` — `module.build` gắn thêm sprite
+ * nhãn (CanvasTexture riêng) vào prop nên không thể chỉ dispose mesh gốc.
+ */
+function dispose3D(obj: THREE.Object3D): void {
+  obj.traverse((o) => {
+    const geo = (o as THREE.Mesh | THREE.Sprite).geometry as THREE.BufferGeometry | undefined;
+    geo?.dispose();
+    const mat = (o as THREE.Mesh | THREE.Sprite).material as
+      | THREE.Material
+      | THREE.Material[]
+      | undefined;
+    if (Array.isArray(mat)) mat.forEach(disposeVatLieu);
+    else if (mat) disposeVatLieu(mat);
+  });
+}
+
 function khoangCach(a: THREE.Vector3, b: Vec3 | readonly number[]): number {
   const dx = a.x - (b[0] ?? 0);
   const dz = a.z - (b[2] ?? 0);
@@ -830,10 +1180,10 @@ function dungHinhProp(shape: string): THREE.Mesh {
   };
   const mat = new THREE.MeshStandardMaterial({
     color: mau[shape] ?? 0x8fb8e8,
-    roughness: 0.42,
-    metalness: 0.08,
-    emissive: new THREE.Color(mau[shape] ?? 0x8fb8e8).multiplyScalar(0.35),
-    emissiveIntensity: 0.5,
+    roughness: 0.3,
+    metalness: 0.15,
+    emissive: new THREE.Color(mau[shape] ?? 0x8fb8e8).multiplyScalar(0.6),
+    emissiveIntensity: 0.9,
   });
 
   let geo: THREE.BufferGeometry;
@@ -857,4 +1207,28 @@ function dungHinhProp(shape: string): THREE.Mesh {
   m.castShadow = true;
   m.receiveShadow = true;
   return m;
+}
+
+/** Nhãn chữ nổi trên module (sprite luôn quay về camera) — spec 3.4b: "emissive + nhãn". */
+function dungNhanModule(label: string): THREE.Sprite {
+  const cv = document.createElement('canvas');
+  cv.width = 256;
+  cv.height = 64;
+  const g = cv.getContext('2d')!;
+  g.fillStyle = 'rgba(6,16,20,0.78)';
+  g.fillRect(0, 0, cv.width, cv.height);
+  g.strokeStyle = 'rgba(95,224,255,0.9)';
+  g.lineWidth = 3;
+  g.strokeRect(2, 2, cv.width - 4, cv.height - 4);
+  g.fillStyle = '#eafcff';
+  g.font = '600 28px sans-serif';
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.fillText(label.slice(0, 18), cv.width / 2, cv.height / 2);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+  const sp = new THREE.Sprite(mat);
+  sp.scale.set(0.5, 0.125, 1);
+  return sp;
 }

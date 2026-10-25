@@ -67,9 +67,10 @@ describe('khuôn stage.describe', () => {
     });
   });
 
-  it('places v0.1 đủ 7 điểm của cảnh hiện tại, kèm toạ độ mét', async () => {
+  it('places v0.1 đủ 8 điểm của cảnh lab hiện tại, kèm toạ độ mét', async () => {
     const st = await moTa();
     expect(st.places.map((p) => p.id)).toEqual([
+      'ban-dieu-khien',
       'ban-1',
       'ban-2',
       'ghe-1',
@@ -208,7 +209,7 @@ describe('stage.bootstrap là sách hướng dẫn tự sinh', () => {
       quyUocDo: Record<string, unknown>;
     };
     expect(boot.version).toBe('0.1');
-    expect(boot.places.length).toBe(7);
+    expect(boot.places.length).toBe(8);
     expect(boot.clips).toContain('wave');
     expect(boot.expressions).toContain('happy');
     expect(boot.emotes.length).toBe(15);
@@ -274,6 +275,11 @@ describe('stage.bootstrap là sách hướng dẫn tự sinh', () => {
       // chuẩn bị prop cho các lệnh cần
       if (c.cmd === 'prop.remove' || c.cmd.startsWith('prop.') || c.cmd === 'actor.hold') {
         await d.run('prop.spawn', { id: 'so-tay', shape: 'book' });
+      }
+      // A3: đảm bảo màn hình "main" đang có trước mọi ví dụ screen.*/module.build
+      // (ví dụ screen.remove tự xoá "main" đi ngay trước đó trong vòng lặp này)
+      if ((c.cmd.startsWith('screen.') && c.cmd !== 'screen.spawn') || c.cmd === 'module.build') {
+        await d.run('screen.spawn', { id: 'main' });
       }
       const kq = await d.run(c.example.cmd, c.example.args);
       expect(kq.ok, `ví dụ của ${c.cmd} chạy lỗi: ${kq.ok ? '' : kq.error}`).toBe(true);

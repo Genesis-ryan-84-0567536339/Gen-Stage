@@ -30,6 +30,8 @@ export const SU_KIEN_HE_THONG = [
   'user.text',
   'bridge.connected',
   'bridge.disconnected',
+  /** A3 — `window.stage.feed(screen, chunk)` đẩy mẩu khi `screen.stream` source:"agent". */
+  'screen.fed',
 ] as const;
 
 export class Registry implements RegistryLike {

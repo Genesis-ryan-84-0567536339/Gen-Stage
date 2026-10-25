@@ -9,13 +9,25 @@ import type {
   Action,
   ActorSnapshot,
   PropSnapshot,
+  ScreenSnapshot,
   StageState,
   StageWorld,
+  ThamSoModuleBuild,
   ThamSoSpawnActor,
   ThamSoSpawnProp,
+  ThamSoSpawnScreen,
   Vec3,
 } from '../types';
 import { BIEU_CAM, CLIPS, EMOTES, PLACES, timPlace } from '../../stage/noi-dung';
+
+/** A3 — màn hình hologram giả: chỉ đủ số liệu cho test logic `screen.*`. */
+interface ManHinhGia {
+  id: string;
+  pos: Vec3;
+  kind: string | null;
+  content: string;
+  streaming: boolean;
+}
 
 interface ActorGia {
   id: string;
@@ -37,6 +49,8 @@ export const NHIP_MS = 20;
 export class SanKhauGia implements StageWorld {
   private actors = new Map<string, ActorGia>();
   private props = new Map<string, PropSnapshot>();
+  /** A3 — màn hình hologram giả. */
+  private screens = new Map<string, ManHinhGia>();
   /** Lịch sử lệnh sân khấu nhận được — test kiểm thứ tự bằng cái này. */
   readonly lichSu: string[] = [];
   den = 'sang';
@@ -127,7 +141,10 @@ export class SanKhauGia implements StageWorld {
     return [...this.props.keys()];
   }
   screenIds(): string[] {
-    return [];
+    return [...this.screens.keys()];
+  }
+  coScreen(id: string): boolean {
+    return this.screens.has(id);
   }
   clips(): string[] {
     return [...CLIPS];
@@ -312,6 +329,121 @@ export class SanKhauGia implements StageWorld {
     return d;
   }
 
+  /* ------------------------------------------------- A3: màn hình hologram */
+
+  private manHinh(id: string): ManHinhGia {
+    const mh = this.screens.get(id);
+    if (!mh) throw new Error(`Không có màn hình "${id}"`);
+    return mh;
+  }
+
+  async screenSpawn(p: ThamSoSpawnScreen): Promise<ScreenSnapshot> {
+    if (this.screens.has(p.id)) throw new Error(`Màn hình "${p.id}" đã có`);
+    const mh: ManHinhGia = {
+      id: p.id,
+      pos: this.viTri(p.at ?? [0, 1.8, -1]),
+      kind: null,
+      content: '',
+      streaming: false,
+    };
+    this.screens.set(p.id, mh);
+    this.lichSu.push(`screen.spawn:${p.id}`);
+    return this.snapScreen(mh);
+  }
+
+  screenRemove(id: string): void {
+    this.manHinh(id);
+    this.screens.delete(id);
+    this.lichSu.push(`screen.remove:${id}`);
+  }
+
+  screenShow(id: string, kind: string, content: string): void {
+    const mh = this.manHinh(id);
+    mh.kind = kind;
+    mh.content = content;
+    mh.streaming = false;
+    this.lichSu.push(`screen.show:${id}`);
+  }
+
+  screenStartStream(id: string, kind: string): void {
+    const mh = this.manHinh(id);
+    mh.kind = kind;
+    mh.content = '';
+    mh.streaming = true;
+    this.lichSu.push(`screen.startStream:${id}`);
+  }
+
+  screenAppend(id: string, chunk: string): void {
+    const mh = this.manHinh(id);
+    mh.content += chunk;
+    this.lichSu.push(`screen.append:${id}`);
+  }
+
+  screenEndStream(id: string): void {
+    this.manHinh(id).streaming = false;
+    this.lichSu.push(`screen.endStream:${id}`);
+  }
+
+  screenClear(id: string): void {
+    const mh = this.manHinh(id);
+    mh.kind = null;
+    mh.content = '';
+    mh.streaming = false;
+    this.lichSu.push(`screen.clear:${id}`);
+  }
+
+  screenContent(id: string): string {
+    return this.manHinh(id).content;
+  }
+
+  screenFocus(id: string): Action {
+    this.manHinh(id);
+    return this.hdDon(`screen.focus:${id}`);
+  }
+
+  private snapScreen(mh: ManHinhGia): ScreenSnapshot {
+    return {
+      id: mh.id,
+      pos: mh.pos,
+      showing: mh.kind,
+      streaming: mh.streaming,
+      lines: mh.content ? mh.content.split('\n').length : 0,
+    };
+  }
+
+  /* ------------------------------------------------------- A3: module + fx */
+
+  moduleBuild(p: ThamSoModuleBuild): Action {
+    if (this.props.has(p.id)) throw new Error(`Prop "${p.id}" đã có trên sân khấu`);
+    const dai = Math.min(NHIP_MS, p.durationMs ?? NHIP_MS);
+    this.lichSu.push(`module.build:${p.id}`);
+    // đăng ký prop NGAY (như sân khấu thật): coProp() đúng ngay khi lệnh trả
+    // lời, chỉ "building" cập nhật thành false khi hiệu ứng xong.
+    const snap: PropSnapshot = {
+      id: p.id,
+      kind: 'module',
+      shape: p.shape,
+      at: null,
+      pos: this.viTri('buc-trung-tam'),
+      state: { label: p.label, building: true, from: p.from ?? null },
+    };
+    this.props.set(p.id, snap);
+    return hdTamThoi(dai, () => {
+      snap.state = { ...snap.state, building: false };
+    });
+  }
+
+  fxPlay(name: string, at?: string | Vec3): Action {
+    if (at !== undefined) this.viTri(at);
+    this.lichSu.push(`fx.play:${name}`);
+    return this.hdDon(`fx:${name}`);
+  }
+
+  /** Hành động giả không gắn actor (screen/fx): xong sau `NHIP_MS`, huỷ được. */
+  private hdDon(ten: string): Action {
+    return hdTamThoi(NHIP_MS, () => this.lichSu.push(`${ten}:done`));
+  }
+
   /* --------------------------------------------------------- cảnh + camera */
 
   sceneLight(preset: string): void {
@@ -328,6 +460,7 @@ export class SanKhauGia implements StageWorld {
   async reset(): Promise<void> {
     this.actors.clear();
     this.props.clear();
+    this.screens.clear();
     this.lichSu.length = 0;
     this.den = 'sang';
     this.may = 'toan-canh';
@@ -348,7 +481,7 @@ export class SanKhauGia implements StageWorld {
         kind: p.kind,
         occupiedBy: dsActor.find((a) => a.at === p.id)?.id ?? null,
       })),
-      screens: [],
+      screens: [...this.screens.values()].map((mh) => this.snapScreen(mh)),
       props: [...this.props.values()],
       lastEvents: [],
       scene: { light: this.den },
@@ -395,4 +528,29 @@ function kc(a: Vec3, b: Vec3 | readonly number[]): number {
   const dx = a[0] - (b[0] ?? 0);
   const dz = a[2] - (b[2] ?? 0);
   return Math.sqrt(dx * dx + dz * dz);
+}
+
+/** Hành động giả KHÔNG gắn actor (screen/module/fx): xong sau `durationMs`, huỷ được. */
+function hdTamThoi(durationMs: number, khiXong?: () => void): Action {
+  let xong = false;
+  let giaiQuyet: () => void = () => undefined;
+  const done = new Promise<void>((r) => {
+    giaiQuyet = r;
+  });
+  const hen = setTimeout(() => {
+    if (xong) return;
+    xong = true;
+    khiXong?.();
+    giaiQuyet();
+  }, Math.max(0, durationMs));
+  return {
+    durationMs,
+    done,
+    cancel: () => {
+      if (xong) return;
+      xong = true;
+      clearTimeout(hen);
+      giaiQuyet();
+    },
+  };
 }

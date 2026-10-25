@@ -40,6 +40,21 @@ Quyền ghi trong metadata của chính file VRM (đọc trực tiếp từ file
 
 File `License.txt` gốc của Kenney được copy sang `public/kenney/License.txt` khi tải.
 
+## 2b. Lab viễn tưởng (A3) — Kenney "Space Kit" → `public/kenney-sci-fi/*.glb`
+
+| Mục | Nội dung |
+| --- | --- |
+| Trang gốc | https://kenney.nl/assets/space-kit |
+| Link zip trực tiếp | `https://kenney.nl/media/pages/assets/space-kit/20874c75ac-1677698978/kenney_space-kit.zip` (~6.4 MB) |
+| Tải bằng | `bash scripts/fetch-lab-assets.sh` (hoặc `pnpm assets:lab`) |
+| Tác giả | Kenney (kenney.nl) |
+| Giấy phép | **CC0 1.0 Universal** (public domain) |
+| Dùng gì | `desk_computerCorner` (bàn điều khiển cong), `desk_chairStool`/`desk_chair` (ghế), `platform_center`/`platform_large` (bệ trung tâm), `pipe_supportHigh`/`pipe_ringHigh` (cột kính/ống phát sáng), `structure`/`structure_closed` (kệ module), `rock_crystals*` (tinh thể trang trí), `gate_simple` (khung cửa) |
+
+File `License.txt` gốc của Kenney được copy sang `public/kenney-sci-fi/License.txt` khi tải.
+Không tải được thì `src/stage/phong.ts` tự dựng toàn bộ bằng `RoundedBoxGeometry` + vật liệu
+emissive (cyan/cam), không bịa asset.
+
 ## 3. Animation (VRMA)
 
 **Chưa dùng.** Không tìm được file `.vrma` miễn phí có link tải ổn định tại thời điểm làm demo,
