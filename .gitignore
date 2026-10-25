@@ -8,3 +8,7 @@ assets/models/
 assets/kenney/
 public/models/
 public/kenney/
+
+# A3 — lab viễn tưởng: tải bằng scripts/fetch-lab-assets.sh
+public/kenney-sci-fi/
+public/lab/

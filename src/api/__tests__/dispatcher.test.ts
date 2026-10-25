@@ -84,18 +84,20 @@ describe('tìm lệnh', () => {
     }
   });
 
-  it('lệnh A2/A3 chỉ là stub, trả ok:false nói rõ đợt nào', async () => {
+  it('lệnh A2 chỉ là stub, trả ok:false nói rõ đợt nào', async () => {
     const r = await d.run('actor.emote', { actor: 'lan', emote: 'vui' });
     expect(r.ok).toBe(false);
     if (r.ok) return;
     expect(r.error).toMatch(/^A2:/);
+  });
+
+  it('A3 (module.build) đã thi công thật, không còn là stub', async () => {
     const r2 = await d.run('module.build', {
       id: 'm1',
       shape: 'book',
       label: 'Baserow',
     });
-    expect(r2.ok).toBe(false);
-    if (!r2.ok) expect(r2.error).toMatch(/^A3:/);
+    expect(r2.ok).toBe(true);
   });
 });
 

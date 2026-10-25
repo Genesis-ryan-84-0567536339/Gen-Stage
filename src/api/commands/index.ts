@@ -11,6 +11,9 @@ import { LENH_SCENE } from './scene';
 import { LENH_CAMERA } from './camera';
 import { LENH_SCRIPT } from './script';
 import { LENH_STUB } from './stubs';
+import { LENH_SCREEN } from './screen';
+import { LENH_MODULE } from './module';
+import { LENH_FX } from './fx';
 
 export function taoRegistry(): Registry {
   return new Registry().dangKy(
@@ -20,6 +23,9 @@ export function taoRegistry(): Registry {
     ...LENH_SCENE,
     ...LENH_CAMERA,
     ...LENH_SCRIPT,
+    ...LENH_SCREEN,
+    ...LENH_MODULE,
+    ...LENH_FX,
     ...LENH_STUB,
   );
 }

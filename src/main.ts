@@ -25,6 +25,13 @@ export interface CuaStage {
   log(): string;
   bridge(bat: boolean): void;
   san: boolean;
+  /**
+   * A3 — agent đẩy từng mẩu nội dung khi `screen.stream` có `source: "agent"`
+   * (spec mục 3.4b). Gọi trực tiếp (không qua dispatcher): vẽ lên màn hình
+   * NGAY và bắn `screen.fed` để Action đang chờ của `screen.stream` biết còn
+   * sống, tự lùi hẹn giờ kết thúc.
+   */
+  feed(screen: string, chunk: string): void;
 }
 
 declare global {
@@ -69,6 +76,10 @@ window.stage = {
   bridge: (bat) => (bat ? bridge.bat() : bridge.tat()),
   get san() {
     return sanSang;
+  },
+  feed: (screen, chunk) => {
+    world.screenAppend(screen, chunk);
+    bus.emit('screen.fed', { screen, chunk });
   },
 } as CuaStage;
 

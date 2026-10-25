@@ -238,6 +238,23 @@ export interface ThamSoSpawnProp {
   at?: string | Vec3;
 }
 
+/** A3 — tham số `screen.spawn` (spec mục 3.4b). */
+export interface ThamSoSpawnScreen {
+  id: string;
+  at?: string | Vec3;
+  size?: number;
+  tilt?: number;
+}
+
+/** A3 — tham số `module.build` (spec mục 3.4b). */
+export interface ThamSoModuleBuild {
+  id: string;
+  shape: string;
+  label: string;
+  from?: string | null;
+  durationMs?: number;
+}
+
 /**
  * Giao diện sân khấu mà lệnh nhìn thấy.
  *
@@ -296,6 +313,28 @@ export interface StageWorld {
   sceneLight(preset: string): void;
   cameraFocus(target: string, distance?: number): void;
   cameraPreset(name: string): void;
+
+  /* A3 — màn hình hologram (spec 3.4b) */
+  coScreen(id: string): boolean;
+  screenSpawn(p: ThamSoSpawnScreen): Promise<ScreenSnapshot>;
+  screenRemove(id: string): void;
+  screenShow(id: string, kind: string, content: string): void;
+  /** Bắt đầu một phiên stream mới (xoá nội dung cũ, đặt `streaming: true`). */
+  screenStartStream(id: string, kind: string): void;
+  /** Nối thêm một mẩu nội dung vào phiên stream đang chạy. */
+  screenAppend(id: string, chunk: string): void;
+  screenEndStream(id: string): void;
+  screenClear(id: string): void;
+  /** Bay màn hình tới trước mặt nhân vật/camera. */
+  screenFocus(id: string): Action;
+  /** Nội dung tĩnh/đã stream hiện có trên màn hình (module.open dùng lại). */
+  screenContent(id: string): string;
+
+  /* A3 — kết tinh module (spec 3.4b) */
+  moduleBuild(p: ThamSoModuleBuild): Action;
+
+  /* A3 — hiệu ứng ánh sáng/âm ngắn (spec 3.4b) */
+  fxPlay(name: string, at?: string | Vec3, durationMs?: number): Action;
 
   reset(): Promise<void>;
 }
