@@ -81,6 +81,24 @@ const NHAN_MOOD: Record<string, { tho: number; dungDua: number }> = {
 export const MOOD_MAC_DINH = 'binh-thuong';
 
 /**
+ * Ngồi theo mặt ghế (review PR #10 vòng 4, chặn 2.1): độ hạ gốc khi ngồi
+ * KHÔNG còn là hằng số × tỉ lệ chân — phải đặt hips theo đúng cao độ mặt ghế
+ * của `place` (`seatY`, xem `noi-dung.ts`), vì hằng số cũ không biết ghế cao
+ * bao nhiêu nên hạ bao nhiêu cũng chỉ là đoán (ở trạng thái ổn định lún
+ * −0,107 m, mặt ghế cắt ngang đùi).
+ */
+/** Mặt ghế mặc định (m) khi `actor.sit` không được truyền `seatY` (place lỗi cũ/không đo được). */
+const MAT_GHE_MAC_DINH = 0.45;
+/**
+ * Đáy mông ước lượng thấp hơn tâm xương `hips` bao nhiêu mét — ước lượng hình
+ * học pelvis người lớn (~9 cm), co theo đúng tỉ lệ chân chibi `tyLeNgoi` cho
+ * đồng bộ với mọi hệ số khác trong file này.
+ */
+const DAY_MONG_DUOI_HIP = 0.09;
+/** Ngưỡng sàn — `bbox.min.y` không được thấp hơn mức này ở MỌI thời điểm khi ngồi. */
+const NGUONG_SAN_NGOI = -0.01;
+
+/**
  * Chibi hoá bằng bone scale (spec A2 mục 4): phóng đầu, rút thân/chân để tỉ
  * lệ đầu/người về khoảng **1/2,5–1/3** (vòng 1 chỉ đạt ~1/4,5 — review PR #10
  * mục 2.4). Mọi hệ số đều `setScalar` (scale ĐỀU, không bóp méo trục) và
@@ -284,6 +302,11 @@ export class NhanVat {
     // (review PR #10 mục 2.1: mông lún xuyên mặt ghế vì chân chibi ngắn hơn
     // độ hạ gốc tính cho chân người lớn).
     this.tyLeNgoi = daiChanTruoc > 0.001 ? daiChanSau / daiChanTruoc : 1;
+    // Đo `hips.y` khi đứng thẳng, gốc tại 0 — mốc để tính độ hạ gốc theo
+    // ĐÚNG cao độ mặt ghế (review vòng 4), không phải hằng số đoán.
+    this.goc.updateMatrixWorld(true);
+    const hips0 = this.xuong('hips');
+    if (hips0) this.hipStandY = hips0.getWorldPosition(new THREE.Vector3()).y;
   }
 
   /** Khoảng cách dọc hips → bàn chân trái trong không gian, đo trên chính model. */
@@ -372,6 +395,10 @@ export class NhanVat {
   private tyLeChest = 1;
   /** Tỉ lệ co độ hạ gốc khi ngồi theo chân thật sau chibi scale (xem constructor). */
   private tyLeNgoi = 1;
+  /** `hips.y` trong không gian khi đứng thẳng, `goc.position.y = 0` (đo một lần lúc nạp). */
+  private hipStandY = 0.85;
+  /** Cao độ mặt ghế (m) của place đang ngồi — set bởi `ngoi(seatY)`, đọc trong `capNhat`. */
+  private seatYHienTai = MAT_GHE_MAC_DINH;
   private apDungChibi(): void {
     for (const [xuong, ty] of Object.entries(TY_LE_CHIBI)) {
       this.xuong(xuong as TenXuong)?.scale.setScalar(ty!);
@@ -617,9 +644,11 @@ export class NhanVat {
     return hd;
   }
 
-  ngoi(): Action {
+  /** `seatY` = cao độ mặt ghế (m) của place đang ngồi — xem `DinhNghiaPlace.seatY`. */
+  ngoi(seatY = MAT_GHE_MAC_DINH): Action {
     this.huyViec();
     this.dangNgoi = true;
+    this.seatYHienTai = seatY;
     this.chuyenNgoi = 'sit';
     let hd!: HanhDongCoTay;
     hd = hanhDongHenGio(DAI_CLIP.sit!, (biHuy) => {
@@ -629,6 +658,21 @@ export class NhanVat {
     });
     this.batDauViec(hd, 'playing');
     return hd;
+  }
+
+  /**
+   * Kẹp cứng đáy mông ≥ `NGUONG_SAN_NGOI`: đo bbox thật (đúng cách
+   * `doXuong()`/`kiem-a2.mjs` đo — `Box3.setFromObject` tính theo xương đã
+   * tạo dáng, không phải bind-pose) rồi đẩy gốc lên nếu vẫn lún. Chạy mỗi
+   * khung hình trong lúc ngồi nên bắt được cả lúc crossfade/blend đẩy dáng
+   * xuống thấp hơn công thức tính trước.
+   */
+  private kepKhongLunGhe(): void {
+    this.goc.updateMatrixWorld(true);
+    const b = new THREE.Box3().setFromObject(this.goc);
+    if (b.min.y < NGUONG_SAN_NGOI) {
+      this.goc.position.y += NGUONG_SAN_NGOI - b.min.y;
+    }
   }
 
   dungLen(): Action {
@@ -881,8 +925,17 @@ export class NhanVat {
     if (dangDi) {
       this.goc.position.y = Math.abs(Math.sin(this.phaBuoc)) * 0.022;
     } else if (this.dangNgoi) {
-      const mucHa = -0.32 * this.tyLeNgoi;
+      // Hạ gốc theo ĐÚNG cao độ mặt ghế (seatY), không còn hằng số đoán: đặt
+      // hips sao cho đáy mông (ước lượng DAY_MONG_DUOI_HIP dưới tâm hips, co
+      // theo tỉ lệ chân chibi) nằm đúng mặt ghế. Chân gập theo clip sit (lớp
+      // nền) hoặc dáng thủ tục ở trên — không viết đè góc chân ở đây.
+      const hipMucTieu = this.seatYHienTai + DAY_MONG_DUOI_HIP * this.tyLeNgoi;
+      const mucHa = hipMucTieu - this.hipStandY;
       this.goc.position.y = THREE.MathUtils.lerp(this.goc.position.y, mucHa, Math.min(1, dt * 6));
+      // Kẹp cứng: dù công thức trên hay chính lúc blend crossfade đẩy đáy
+      // mông xuống dưới sàn/mặt ghế, bbox thật KHÔNG BAO GIỜ được âm quá
+      // ngưỡng (review vòng 4: "kẹp ở MỌI thời điểm, kể cả khi đang blend").
+      this.kepKhongLunGhe();
     } else {
       this.goc.position.y = THREE.MathUtils.lerp(this.goc.position.y, 0, Math.min(1, dt * 8));
     }

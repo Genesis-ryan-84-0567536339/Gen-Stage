@@ -38,6 +38,7 @@ import {
   CLIPS,
   DAI_CLIP,
   EMOTES,
+  layMatGhe,
   PLACES,
   PRESET_DEN,
   PRESET_MAY,
@@ -531,11 +532,12 @@ export class World implements StageWorld {
       new THREE.Vector3(nv.goc.position.x, 0, nv.goc.position.z),
     );
     const uoc = (kc / TOC_DO_DI) * 1000 + DAI_CLIP.sit! + 400;
+    const matGhe = layMatGhe(seat);
     return noiTiep(
       [
         () => nv.diToi(dich),
         () => nv.xoayVe(p.facing ?? 180),
-        () => nv.ngoi(),
+        () => nv.ngoi(matGhe),
       ],
       Math.round(uoc),
     );

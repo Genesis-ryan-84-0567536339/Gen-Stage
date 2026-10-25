@@ -93,6 +93,25 @@ function ganLoi(page, tien = '') {
   page.on('requestfailed', (r) => loi.push(`${tien}[requestfailed] ${r.url()} — ${r.failure()?.errorText}`));
 }
 
+/**
+ * `camera.focus` chuẩn vào ĐÚNG actor, nâng điểm nhắm lên `themCao` m (vòng 4:
+ * review vòng 3 thấy ảnh `rat-vui.png` cắt cụt đầu + tay vì khung hình thấp
+ * quá) — dùng toạ độ `[x,y+themCao,z]` thay vì tên actor vì `camera.focus`
+ * không có tham số chỉnh độ cao riêng (xem `world.ts#cameraFocus`).
+ */
+async function layCameraVaoActor(page, distance, themCao = 0) {
+  const d = await page.evaluate(async () => {
+    const r = await window.stage.describe();
+    const a = r.ok ? r.result.actors.find((x) => x.id === 'lan') : null;
+    return a ? a.pos : [0, 0, 0];
+  });
+  const target = themCao === 0 ? 'lan' : [d[0], d[1] + themCao, d[2]];
+  await page.evaluate(
+    ({ target, distance }) => window.stage.run('camera.focus', { target, distance }),
+    { target, distance },
+  );
+}
+
 /** Mở app, quay mặt về camera, đặt góc máy TOÀN THÂN CHÍNH DIỆN. */
 async function moApp(ctx, tien = '') {
   const page = await ctx.newPage();
@@ -105,12 +124,14 @@ async function moApp(ctx, tien = '') {
   await page.evaluate(() => window.stage.run('scene.light', { preset: 'toi' }));
   // Quay mặt về phía CỬA (`cua`, +Z, xa bàn điều khiển) — KHÔNG quay về
   // 'camera': camera mặc định nằm phía bàn điều khiển (-Z) nên turnTo
-  // 'camera' quay actor úp mặt vào đúng cái bàn, rồi 'truoc-mat' lùi camera
-  // theo hướng đó và lọt vào trong bàn cong, che nửa dưới người (review
-  // PR #10 mục 2.2).
+  // 'camera' quay actor úp mặt vào đúng cái bàn, rồi camera lùi theo hướng
+  // đó và lọt vào trong bàn cong, che nửa dưới người (review PR #10 mục 2.2).
   await page.evaluate(() => window.stage.run('actor.turnTo', { actor: 'lan', target: 'cua' }));
   await page.waitForTimeout(900);
-  await page.evaluate(() => window.stage.run('camera.preset', { name: 'truoc-mat' }));
+  // Ảnh emote toàn thân KHÔNG cắt đầu/tay (review vòng 3 mục 3: `rat-vui.png`
+  // cắt ngang eo) — `camera.focus` vào actor, distance 3, điểm nhắm cao hơn
+  // 0,3 m so với mặc định (không dùng preset `truoc-mat` cho ảnh toàn thân).
+  await layCameraVaoActor(page, 3, 0.3);
   await page.waitForTimeout(4000);
   return page;
 }
@@ -183,23 +204,49 @@ async function moApp(ctx, tien = '') {
   await page.evaluate(() => window.stage.run('actor.play', { actor: 'lan', clip: 'stand', interrupt: true }));
   await page.waitForTimeout(900);
 
-  in_('\n--- lỗi chặn vòng 3 mục 2.1: ngồi KHÔNG xuyên ghế (bbox.min.y) ---');
+  in_('\n--- lỗi chặn vòng 4 mục 2.1: ngồi KHÔNG lún xuyên ghế/sàn, đo ở trạng thái ỔN ĐỊNH ---');
+  // Vòng 3 đo quá sớm (durationMs + 300 ms, ~1,7 s) trong khi goc.position.y
+  // còn đang lerp xuống — review đo thật thấy hội tụ ở ~6-20 s. Giờ lấy mẫu
+  // 50 ms suốt 6 s SAU khi actor.sit báo xong, 3 lần/ghế (ngồi → đứng → ngồi),
+  // yêu cầu bbox.min.y ≥ −0,01 ở MỌI mẫu.
   const doNgoi = [];
   for (const ghe of ['ghe-1', 'ghe-2']) {
-    const r = await page.evaluate(
-      (g) => window.stage.run('actor.sit', { actor: 'lan', seat: g }),
-      ghe,
-    );
-    ghi(`actor.sit ${ghe}`, r.ok === true, r.ok ? `durationMs=${r.result.durationMs}` : r.error);
-    await page.waitForTimeout(r.ok ? r.result.durationMs + 300 : 1500);
-    const m = await page.evaluate(() => window.stage.doXuong('lan'));
-    await page.screenshot({ path: `${THU_MUC}/clip-sit-${ghe}.png` });
-    const minY = m.bbox[0];
-    ghi(`${ghe}: ngồi không lún — bbox.min.y ≥ −0,01`, minY >= -0.01,
-      `bbox.min.y=${minY}`, { ghe, minY });
-    doNgoi.push({ ghe, minY });
-    await page.evaluate(() => window.stage.run('actor.stand', { actor: 'lan' }));
-    await page.waitForTimeout(900);
+    for (let lan = 1; lan <= 3; lan++) {
+      const r = await page.evaluate(
+        (g) => window.stage.run('actor.sit', { actor: 'lan', seat: g }),
+        ghe,
+      );
+      ghi(`actor.sit ${ghe} (lần ${lan}/3)`, r.ok === true, r.ok ? `durationMs=${r.result.durationMs}` : r.error);
+      await page.waitForTimeout(r.ok ? r.result.durationMs + 300 : 1500);
+
+      if (lan === 1) {
+        // Ảnh bằng chứng GÓC NGANG toàn thân, không bị bàn điều khiển che:
+        // camera.focus thẳng vào actor, distance 2,5 (review vòng 4).
+        await layCameraVaoActor(page, 2.5);
+        // Camera bay tới theo lerp (k = dt·3,2 trong world.ts) — nhảy vài mét
+        // (ghế bên này sang ghế bên kia) cần ~1,6 s mới ổn định hẳn, 500 ms là
+        // chưa tới nơi (review vòng 4 tự phát hiện: ảnh ghe-2 chụp giữa chừng
+        // lúc camera còn đang bay, lọt ra ngoài, không thấy actor).
+        await page.waitForTimeout(1800);
+        await page.screenshot({ path: `${THU_MUC}/clip-sit-${ghe}.png` });
+      }
+
+      const mau = [];
+      const t0 = Date.now();
+      while (Date.now() - t0 < 6000) {
+        const m = await page.evaluate(() => window.stage.doXuong('lan'));
+        mau.push(+m.bbox[0].toFixed(4));
+        await page.waitForTimeout(50);
+      }
+      const minCuaLan = Math.min(...mau);
+      const dat = minCuaLan >= -0.01;
+      ghi(`${ghe} lần ${lan}: ngồi không lún — min(bbox.min.y) 6 s ≥ −0,01`, dat,
+        `min=${minCuaLan} (${mau.length} mẫu)`, { ghe, lan, min: minCuaLan, soMau: mau.length });
+      doNgoi.push({ ghe, lan, min: minCuaLan, mau });
+
+      await page.evaluate(() => window.stage.run('actor.stand', { actor: 'lan' }));
+      await page.waitForTimeout(900);
+    }
   }
   nhatKy.doNgoi = doNgoi;
 
