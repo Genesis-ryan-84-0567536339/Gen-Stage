@@ -50,7 +50,17 @@ const bus = new EventBus();
 const nhatKy = new NhatKy();
 nhatKy.theoBus(bus);
 
-const world = new World(canvas, bus, bongBongLop);
+let world: World;
+try {
+  world = new World(canvas, bus, bongBongLop);
+} catch (e) {
+  console.error('[Gen-Stage] Không tạo được WebGL:', e);
+  loadingText.textContent =
+    'Trình duyệt này không bật được WebGL (3D). Hãy mở bằng Chrome/Firefox thật trên máy, ' +
+    'không dùng khung xem trong app. Kiểm tra: chrome://gpu → WebGL phải là "Hardware accelerated".';
+  document.querySelector('#loading .spinner')?.remove();
+  throw e;
+}
 const registry = taoRegistry();
 const dispatcher = new Dispatcher({ registry, world, bus, nhatKy });
 const bridge = new BridgeClient(dispatcher, bus);
