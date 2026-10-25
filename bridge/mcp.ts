@@ -432,6 +432,15 @@ export function taoMcpServer(noi: NoiSanKhau): Server {
       };
     }
 
+    // Não KHÔNG được điều khiển nhân vật của Sếp: `actor.say owner` còn bắn
+    // `user.text` → não tự nói hộ rồi tự nghe, lặp vô hạn (review PR #26).
+    if (cmd.startsWith('actor.') && cmd !== 'actor.list' && String(args.actor ?? '') === 'owner') {
+      return {
+        isError: true,
+        content: [{ type: 'text' as const, text: 'Não không được điều khiển actor "owner" (nhân vật của Sếp). Chỉ điều khiển "gen".' }],
+      };
+    }
+
     const kq = await noi.goi(cmd, args);
     if (!kq.ok) {
       return { isError: true, content: [{ type: 'text' as const, text: kq.error ?? 'lỗi không rõ' }] };
