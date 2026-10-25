@@ -90,8 +90,8 @@ const MAY_NGANG: GocMay = {
  * xa đến mức nhân vật chỉ còn vài pixel.
  */
 const MAY_DOC: GocMay = {
-  vt: new THREE.Vector3(2.2, 4.8, 11.2),
-  tam: new THREE.Vector3(-0.3, 1.1, -1.8),
+  vt: new THREE.Vector3(2.2, 3.8, 11.2),
+  tam: new THREE.Vector3(-0.3, 1.5, -1.8),
   fov: 60,
 };
 
@@ -1146,7 +1146,7 @@ export class World implements StageWorld {
       id: ACTOR_MAC_DINH.id,
       name: ACTOR_MAC_DINH.ten,
       model: ACTOR_MAC_DINH.model,
-      at: 'ban-1',
+      at: 'buc-trung-tam',
     });
     for (const id of Object.keys(MAC_DINH_MAN_HINH)) await this.screenSpawn({ id });
   }

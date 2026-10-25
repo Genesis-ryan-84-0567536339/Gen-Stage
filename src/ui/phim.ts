@@ -92,9 +92,10 @@ export function batPhim(
   const { moONhap, dangNhap } = dungONhap((chu) => chay('actor.say', { actor: actorId, text: chu }));
 
   /** Cửa duy nhất: mọi phím đều qua đây → `dispatcher.run`. */
-  async function chay(cmd: string, args: Record<string, unknown>): Promise<void> {
+  async function chay(cmd: string, args: Record<string, unknown>): Promise<boolean> {
     const kq = await dispatcher.run(cmd, args, 'phim');
     if (!kq.ok) toast(`⌨ ${cmd}: ${kq.error}`);
+    return kq.ok;
   }
 
   async function docViTri(): Promise<{ pos: Vec3; facing: number } | null> {
@@ -133,13 +134,18 @@ export function batPhim(
       if (!tt) return;
       dich = [tt.pos[0], tt.pos[2]];
     }
-    dich = [dich[0] + dx, dich[1] + dz];
+    const GIOI_HAN = 7.4; // nửa phòng 16 m trừ lề, không đi xuyên tường
+    dich = [
+      Math.max(-GIOI_HAN, Math.min(GIOI_HAN, dich[0] + dx)),
+      Math.max(-GIOI_HAN, Math.min(GIOI_HAN, dich[1] + dz)),
+    ];
     lanCuoiDi = Date.now();
-    await chay('actor.moveTo', {
+    const ok = await chay('actor.moveTo', {
       actor: actorId,
       to: [dich[0], 0, dich[1]],
       interrupt: true,
     });
+    if (!ok) dich = null;
   }
 
   function batNhipGiu(): void {
@@ -273,8 +279,10 @@ function dungONhap(gui: (chu: string) => void): {
   let hop: HTMLElement | null = null;
 
   function dong(): void {
-    hop?.remove();
+    // Gán null TRƯỚC rồi mới xoá: remove() bắn blur đồng bộ → gọi lại dong()
+    const el = hop;
     hop = null;
+    el?.remove();
   }
 
   return {

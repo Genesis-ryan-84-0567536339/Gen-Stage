@@ -575,13 +575,13 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
   // thay vì đoán, vì `platform_center` của Kenney dày mỏng tuỳ bản.
   const caoBuc = new THREE.Box3().setFromObject(bucG).max.y;
   const vongBuc = new THREE.Mesh(
-    new THREE.RingGeometry(1.74, 1.92, 64),
+    new THREE.RingGeometry(1.15, 1.28, 64),
     new THREE.MeshStandardMaterial({
       color: MAU_CYAN,
       emissive: MAU_CYAN,
       // 0.45 chứ không 0.9: bloom threshold 0.95 vẫn bắt được viền, nhưng
       // vòng sáng không còn "cháy trắng" nuốt cả chân nhân vật (ảnh 25/10).
-      emissiveIntensity: 0.45,
+      emissiveIntensity: 0.32,
       side: THREE.DoubleSide,
       transparent: true,
       opacity: 0.7,
@@ -659,14 +659,14 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
 function dungBucTuDung(): THREE.Group {
   const g = new THREE.Group();
   const than = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.9, 2.1, 0.2, 48),
-    new THREE.MeshStandardMaterial({ color: 0x3a4556, roughness: 0.6, metalness: 0.3 }),
+    new THREE.CylinderGeometry(1.25, 1.4, 0.2, 48),
+    new THREE.MeshStandardMaterial({ color: 0x4a5566, roughness: 0.6, metalness: 0.3 }),
   );
   than.position.y = 0.1;
   than.receiveShadow = true;
   g.add(than);
   const mep = new THREE.Mesh(
-    new THREE.TorusGeometry(1.9, 0.035, 10, 64),
+    new THREE.TorusGeometry(1.25, 0.035, 10, 64),
     new THREE.MeshStandardMaterial({ color: MAU_CYAN, emissive: MAU_CYAN, emissiveIntensity: 1.3 }),
   );
   mep.rotation.x = Math.PI / 2;
