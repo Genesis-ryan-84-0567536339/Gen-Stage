@@ -12,7 +12,7 @@
  */
 import * as THREE from 'three';
 
-export const SO_HAT_TOI_DA = 700;
+export const SO_HAT_TOI_DA = 4000;
 
 export interface TuyChonKetTinh {
   scene: THREE.Scene;
@@ -26,11 +26,19 @@ export interface TuyChonKetTinh {
   khiXong: () => void;
 }
 
+/** Hạt "đuôi" trễ pha này so với hạt chính — tạo cảm giác có vệt sáng khi bay. */
+const DO_TRE_DUOI = 0.09;
+/** Flash ánh sáng ngắn đúng lúc hạt tụ xong (không bị huỷ). */
+const DAI_FLASH_MS = 150;
+
 export class KetTinh {
   private diem: THREE.Points;
+  private diemDuoi: THREE.Points;
   private goc: Float32Array;
   private dich: Float32Array;
   private pha: Float32Array;
+  private tamDich: THREE.Vector3;
+  private mauChinh: number;
   private scene: THREE.Scene;
   private batDau = Date.now();
   private durationMs: number;
@@ -42,6 +50,8 @@ export class KetTinh {
     this.scene = o.scene;
     this.durationMs = Math.max(200, o.durationMs);
     this.khiXong = o.khiXong;
+    this.tamDich = o.tamDich.clone();
+    this.mauChinh = o.mauChinh;
 
     const soHat = Math.min(SO_HAT_TOI_DA, Math.max(80, o.diemDich.length * 6));
     this.goc = new Float32Array(soHat * 3);
@@ -80,6 +90,23 @@ export class KetTinh {
     });
     this.diem = new THREE.Points(geo, mat);
     this.scene.add(this.diem);
+
+    // đuôi sáng nhẹ: cùng dữ liệu nhưng nội suy trễ pha + hạt to hơn, mờ hơn
+    // (spec thẩm mỹ A3: "kết tinh có đã" — không chỉ là lưới hạt tụ cứng).
+    const geoDuoi = new THREE.BufferGeometry();
+    geoDuoi.setAttribute('position', new THREE.BufferAttribute(this.goc.slice(), 3));
+    const matDuoi = new THREE.PointsMaterial({
+      color: o.mauChinh,
+      size: 0.05,
+      transparent: true,
+      opacity: 0.3,
+      sizeAttenuation: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      toneMapped: false,
+    });
+    this.diemDuoi = new THREE.Points(geoDuoi, matDuoi);
+    this.scene.add(this.diemDuoi);
   }
 
   /** Gọi mỗi khung hình; trả `true` khi hiệu ứng xong và đã dọn dẹp. */
@@ -87,7 +114,9 @@ export class KetTinh {
     if (this.xong) return true;
     const trai = Date.now() - this.batDau;
     const pos = this.diem.geometry.getAttribute('position') as THREE.BufferAttribute;
+    const posDuoi = this.diemDuoi.geometry.getAttribute('position') as THREE.BufferAttribute;
     const mat = this.diem.material as THREE.PointsMaterial;
+    const matDuoi = this.diemDuoi.material as THREE.PointsMaterial;
 
     let tMax = 0;
     for (let i = 0; i < pos.count; i++) {
@@ -100,13 +129,23 @@ export class KetTinh {
       pos.array[i * 3] = THREE.MathUtils.lerp(this.goc[i * 3]!, this.dich[i * 3]!, e);
       pos.array[i * 3 + 1] = THREE.MathUtils.lerp(this.goc[i * 3 + 1]!, this.dich[i * 3 + 1]!, e);
       pos.array[i * 3 + 2] = THREE.MathUtils.lerp(this.goc[i * 3 + 2]!, this.dich[i * 3 + 2]!, e);
+
+      // đuôi: đúng vị trí hạt chính cách đây DO_TRE_DUOI (theo tỉ lệ thời gian)
+      const eDuoi = easeOutCubic(Math.max(0, tRieng - DO_TRE_DUOI));
+      posDuoi.array[i * 3] = THREE.MathUtils.lerp(this.goc[i * 3]!, this.dich[i * 3]!, eDuoi);
+      posDuoi.array[i * 3 + 1] = THREE.MathUtils.lerp(this.goc[i * 3 + 1]!, this.dich[i * 3 + 1]!, eDuoi);
+      posDuoi.array[i * 3 + 2] = THREE.MathUtils.lerp(this.goc[i * 3 + 2]!, this.dich[i * 3 + 2]!, eDuoi);
+
       if (tRieng > tMax) tMax = tRieng;
     }
     pos.needsUpdate = true;
+    posDuoi.needsUpdate = true;
 
     const tToanCuc = THREE.MathUtils.clamp(trai / this.durationMs, 0, 1);
     // mờ dần ở 20% cuối, nhường chỗ cho prop thật
-    mat.opacity = tToanCuc > 0.8 ? 0.95 * (1 - (tToanCuc - 0.8) / 0.2) : 0.95;
+    const phaiMoDan = tToanCuc > 0.8 ? 1 - (tToanCuc - 0.8) / 0.2 : 1;
+    mat.opacity = 0.95 * phaiMoDan;
+    matDuoi.opacity = 0.3 * phaiMoDan;
 
     if (tMax >= 1 && tToanCuc >= 1) {
       this.ketThuc(false);
@@ -126,7 +165,24 @@ export class KetTinh {
     this.scene.remove(this.diem);
     this.diem.geometry.dispose();
     (this.diem.material as THREE.Material).dispose();
-    if (!biHuy) this.khiXong();
+    this.scene.remove(this.diemDuoi);
+    this.diemDuoi.geometry.dispose();
+    (this.diemDuoi.material as THREE.Material).dispose();
+    if (!biHuy) {
+      this.nhayFlash();
+      this.khiXong();
+    }
+  }
+
+  /** Nháy một PointLight ngắn đúng lúc hạt tụ xong — tự dọn sau `DAI_FLASH_MS`. */
+  private nhayFlash(): void {
+    const den = new THREE.PointLight(this.mauChinh, 6, 1.6, 2);
+    den.position.copy(this.tamDich);
+    this.scene.add(den);
+    setTimeout(() => {
+      this.scene.remove(den);
+      den.dispose();
+    }, DAI_FLASH_MS);
   }
 
   get daHuy(): boolean {

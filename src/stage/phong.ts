@@ -227,7 +227,7 @@ function cotKinhTuDung(cao = 2.8): THREE.Group {
     new THREE.MeshBasicMaterial({
       color: 0x9be8ff,
       transparent: true,
-      opacity: 0.16,
+      opacity: 0.3,
       side: THREE.DoubleSide,
       toneMapped: false,
     }),
@@ -312,6 +312,19 @@ async function napKenneyLab(loader: GLTFLoader): Promise<KhoSciFi> {
   const caoGoc = bb.max.y - bb.min.y;
   const tyLe = caoGoc > 0.001 ? CAO_BAN / caoGoc : 1;
 
+  // Kenney Space Kit gốc là xám-kem phẳng lì, không ăn neon lab — nhuộm lại
+  // về palette lab (xám-xanh đậm) + viền emissive cyan mảnh quanh mép khối
+  // (phản hồi review thẩm mỹ: "khối Kenney chắn khung hình, trông như xốp").
+  // Vật liệu/đường viền dùng CHUNG một instance cho mọi mesh để không nhân
+  // bản n lần (n = số lần `lay()` được gọi) — mutate tại chỗ là đủ, vì mọi
+  // bản đều cần tông màu giống nhau.
+  const matVienKenney = new THREE.LineBasicMaterial({
+    color: MAU_CYAN,
+    transparent: true,
+    opacity: 0.55,
+    toneMapped: false,
+  });
+
   return {
     co: true,
     tyLe,
@@ -334,8 +347,18 @@ async function napKenneyLab(loader: GLTFLoader): Promise<KhoSciFi> {
           // nên bóng đổ của NHÂN VẬT (quan trọng nhất) lên sàn vẫn rõ.
           m.castShadow = false;
           m.receiveShadow = true;
-          const mat = m.material as THREE.MeshStandardMaterial;
-          if (mat && 'emissiveIntensity' in mat) mat.emissiveIntensity ||= 0;
+          for (const mat of Array.isArray(m.material) ? m.material : [m.material]) {
+            const mh = mat as THREE.MeshStandardMaterial;
+            if (!mh) continue;
+            mh.color?.setHex(0x1a2430);
+            if ('metalness' in mh) mh.metalness = 0.6;
+            if ('roughness' in mh) mh.roughness = 0.35;
+            if ('emissiveIntensity' in mh) mh.emissiveIntensity = 0;
+          }
+          if (m.geometry) {
+            const vien = new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry, 25), matVienKenney);
+            m.add(vien);
+          }
         }
       });
       return boc;
@@ -404,7 +427,7 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
   // thật cho cả trần — hiệu năng (spec mục 5): mỗi light động cộng dồn chi phí
   // mỗi fragment, 5 light riêng cho 5 dải là phí trên thiết bị yếu.
   for (let i = -2; i <= 2; i++) {
-    const strip = khoiSang(0.22, 0.05, 5.6, i % 2 === 0 ? MAU_CYAN : 0xeaf6ff, 1.6);
+    const strip = khoiSang(0.22, 0.05, 5.6, i % 2 === 0 ? MAU_CYAN : 0xeaf6ff, 0.85);
     strip.position.set(i * 1.2, CAO_TUONG - 0.04, 0);
     nhom.add(strip);
   }
@@ -486,7 +509,7 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
     new THREE.MeshStandardMaterial({
       color: MAU_CYAN,
       emissive: MAU_CYAN,
-      emissiveIntensity: 1.6,
+      emissiveIntensity: 0.9,
       side: THREE.DoubleSide,
       transparent: true,
       opacity: 0.85,

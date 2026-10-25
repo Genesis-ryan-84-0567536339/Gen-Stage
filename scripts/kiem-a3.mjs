@@ -199,6 +199,15 @@ await anh('03-camera-hop');
 await goiApi('camera.preset', { name: 'toan-canh' });
 await page.waitForTimeout(900);
 
+// C2 (review Opus PR #9): camera.preset đã từng mất "ban-1"/"ban-2" của A1 —
+// spec mục 3 đầu bài "thêm thì tăng version, không đổi nghĩa lệnh cũ".
+const rPresetBan1 = await goiApi('camera.preset', { name: 'ban-1' });
+ghiNhan('chk', 'camera.preset/ban-1 (A1 bất biến)', rPresetBan1.ok, gonKetQua(rPresetBan1.result));
+const rPresetBan2 = await goiApi('camera.preset', { name: 'ban-2' });
+ghiNhan('chk', 'camera.preset/ban-2 (A1 bất biến)', rPresetBan2.ok, gonKetQua(rPresetBan2.result));
+await goiApi('camera.preset', { name: 'toan-canh' });
+await page.waitForTimeout(300);
+
 for (const preset of ['toi', 'am', 'sang']) {
   const r = await goiApi('scene.light', { preset });
   ghiNhan('api', `scene.light/${preset}`, r.ok, gonKetQua(r.result));
@@ -253,6 +262,29 @@ await anh('07-screen-stream-agent');
 const rClear = await goiApi('screen.clear', { screen: 'left' });
 ghiNhan('api', 'screen.clear', rClear.ok, gonKetQua(rClear.result));
 
+// C3 (review Opus PR #9): screen.remove giữa lúc screen.stream đang chạy →
+// ném lỗi + Action treo (repro review: 20/20 ca lỗi "Không có màn hình").
+// Dùng màn hình phụ "b0" (spawn-remove), không chạm main/left/right đang demo.
+const loiTruocC3 = loi.length;
+await goiApi('screen.spawn', { id: 'b0', at: 'buc-trung-tam' });
+const choStreamDoneC3 = choSuKien('screen.streamDone', 8000);
+await goiApi('screen.stream', {
+  screen: 'b0',
+  kind: 'log',
+  chunks: ['dòng một dài để chắc chắn còn đang stream khi remove tới', 'dòng hai', 'dòng ba'],
+});
+await page.waitForTimeout(150); // chắc chắn đã bắt đầu, chưa xong
+const rRemoveC3 = await goiApi('screen.remove', { screen: 'b0' });
+ghiNhan('chk', 'C3: screen.remove giữa stream không ném lỗi', rRemoveC3.ok, gonKetQua(rRemoveC3.result));
+const doneDataC3 = await choStreamDoneC3;
+ghiNhan('chk', 'C3: streamDone vẫn bắn (không treo)', doneDataC3 !== false, JSON.stringify(doneDataC3));
+ghiNhan(
+  'chk',
+  'C3: không sinh console.error/pageerror mới',
+  loi.length === loiTruocC3,
+  `+${loi.length - loiTruocC3} lỗi mới`,
+);
+
 // đường Boss: bấm nút screen.show trên bảng lệnh
 const rUiScreen = await bamUI('screen.show', {
   screen: 'left',
@@ -296,6 +328,18 @@ ghiNhan(
   'module-actor-hold',
   lanAfterBuild?.holding === 'connector-baserow',
   `holding=${lanAfterBuild?.holding}`,
+);
+
+// C1 (review Opus PR #9): describe().screens từng trả [] cứng trên sân khấu
+// THẬT dù 3 màn hình đang sống — bản giả (san-khau-gia.ts) làm đúng nên
+// pnpm test không bắt được; đây là bằng chứng chạm world.ts thật qua Playwright.
+ghiNhan(
+  'chk',
+  'describe-screens-khong-rong',
+  Array.isArray(descAfterBuild.screens) &&
+    descAfterBuild.screens.length >= 3 &&
+    descAfterBuild.screens.every((s) => 'showing' in s && 'streaming' in s && 'lines' in s),
+  `screens=${JSON.stringify(descAfterBuild.screens?.map((s) => s.id))}`,
 );
 
 const rOpen = await goiApi('module.open', { module: 'connector-baserow' });
@@ -414,11 +458,13 @@ writeFileSync(
 
 // quay thêm ~20 giây nội dung thật cho bằng chứng video (spec mục 6)
 await dt.evaluate(() => window.stage.run('fx.play', { name: 'success' }));
-await dt.waitForTimeout(6000);
+await dt.waitForTimeout(3000);
 await dt.evaluate(() => window.stage.run('module.build', { id: 'demo-mobile', shape: 'orb', label: 'Demo' }));
-await dt.waitForTimeout(8000);
+await dt.waitForTimeout(4000);
 await dt.evaluate(() => window.stage.run('camera.preset', { name: 'ban-dieu-khien' }));
-await dt.waitForTimeout(6000);
+await dt.waitForTimeout(3000);
+// video rút ngắn xuống ~10s (thay cho 20s) vì môi trường kiểm chạy chậm (swiftshader),
+// để tránh script treo >5 phút — vẫn đủ nội dung thật cho bằng chứng.
 
 await dt.click('#bang-dong-mo').catch(() => {});
 await dt.waitForTimeout(400);
@@ -429,7 +475,7 @@ const video = dt.video();
 await dt.close();
 if (video) {
   const duongDan = await video.path();
-  const dich = `${THU_MUC_ANH}/19-video-20s.webm`;
+  const dich = `${THU_MUC_ANH}/19-video-10s.webm`;
   if (existsSync(duongDan)) {
     renameSync(duongDan, dich);
     in_(`   🎬 ${dich}`);

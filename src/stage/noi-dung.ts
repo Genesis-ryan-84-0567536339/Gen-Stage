@@ -132,8 +132,14 @@ export const EMOTES = [
 ] as const;
 
 export const PRESET_DEN = ['sang', 'toi', 'am'] as const;
-/** Góc máy v0.1 lab (spec 3.3): toàn cảnh · bàn điều khiển · cận (hộp). */
-export const PRESET_MAY = ['toan-canh', 'ban-dieu-khien', 'hop'] as const;
+/**
+ * Góc máy v0.1 lab (spec 3.3): toàn cảnh · bàn điều khiển · cận (hộp).
+ *
+ * A3 CHỈ THÊM `ban-dieu-khien` — `ban-1`/`ban-2` của A1 vẫn còn (spec mục 3
+ * đầu bài: "thêm thì tăng version, không đổi nghĩa lệnh cũ"); cả hai rơi vào
+ * nhánh `cameraFocus` fallthrough ở `world.ts` nên không cần code riêng.
+ */
+export const PRESET_MAY = ['toan-canh', 'ban-dieu-khien', 'ban-1', 'ban-2', 'hop'] as const;
 
 export function timPlace(id: string): DinhNghiaPlace | undefined {
   return PLACES.find((p) => p.id === id);

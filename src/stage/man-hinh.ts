@@ -12,7 +12,7 @@ import * as THREE from 'three';
 const DOI_MAU: Record<string, { vien: number; chu: number; nen: number }> = {
   text: { vien: 0x5fe0ff, chu: 0xdfffff, nen: 0x02181f },
   code: { vien: 0x5fe0ff, chu: 0x9dffb0, nen: 0x02181f },
-  log: { vien: 0xff9d5f, chu: 0xffd9a8, nen: 0x1f1002 },
+  log: { vien: 0xff9d5f, chu: 0xffd9a8, nen: 0x2a1a08 },
   chart: { vien: 0x5fe0ff, chu: 0xdfffff, nen: 0x02181f },
   image: { vien: 0x5fe0ff, chu: 0xdfffff, nen: 0x041018 },
 };
@@ -29,6 +29,7 @@ export class ManHinh {
   readonly group = new THREE.Group();
   readonly panel: THREE.Mesh;
   readonly khung: THREE.LineSegments;
+  private chan: THREE.Mesh;
   private canvas = document.createElement('canvas');
   private ctx: CanvasRenderingContext2D;
   private tex: THREE.CanvasTexture;
@@ -72,12 +73,12 @@ export class ManHinh {
     this.group.add(this.khung);
 
     // chân đế hologram mỏng, phát sáng nhẹ dưới màn hình
-    const chan = new THREE.Mesh(
+    this.chan = new THREE.Mesh(
       new THREE.CylinderGeometry(0.02, 0.09, 0.05, 16),
       new THREE.MeshBasicMaterial({ color: 0x5fe0ff, transparent: true, opacity: 0.5, toneMapped: false }),
     );
-    chan.position.y = -h / 2 - 0.06;
-    this.group.add(chan);
+    this.chan.position.y = -h / 2 - 0.06;
+    this.group.add(this.chan);
 
     this.group.position.copy(pos);
     this.group.rotation.y = rotY;
@@ -139,6 +140,9 @@ export class ManHinh {
   dispose(): void {
     this.panel.geometry.dispose();
     this.khung.geometry.dispose();
+    (this.khung.material as THREE.Material).dispose();
+    this.chan.geometry.dispose();
+    (this.chan.material as THREE.Material).dispose();
     this.mat.dispose();
     this.tex.dispose();
   }
@@ -198,29 +202,30 @@ export class ManHinh {
     bang: { vien: number; chu: number },
   ): void {
     const coChu = this.kind === 'code' || this.kind === 'log';
-    c.font = `${coChu ? '400' : '600'} 26px "Courier New", monospace`;
+    // 34px (từ 26px) + lineHeight 42 (từ 32) để đọc được ở 390×844 (spec mục 5).
+    c.font = `${coChu ? '400' : '600'} 34px "Courier New", monospace`;
     const lePhai = 32;
-    const caoDong = 32;
+    const caoDong = 42;
     const soHang = Math.floor((h - 48) / caoDong);
     const dong = this.noiDung.split('\n');
     // cuộn: chỉ hiện `soHang` dòng cuối, giống terminal
     const hien = dong.slice(Math.max(0, dong.length - soHang));
     hien.forEach((d, i) => {
       if (this.kind === 'log') {
-        if (/lỗi|error|fail/i.test(d)) c.fillStyle = 'rgba(255,110,110,0.95)';
-        else if (/ok|xong|success|✓/i.test(d)) c.fillStyle = 'rgba(140,255,170,0.95)';
-        else c.fillStyle = rgba(bang.chu, 0.9);
+        if (/lỗi|error|fail/i.test(d)) c.fillStyle = 'rgba(255,130,130,1)';
+        else if (/ok|xong|success|✓/i.test(d)) c.fillStyle = 'rgba(160,255,185,1)';
+        else c.fillStyle = rgba(bang.chu, 1);
       } else {
-        c.fillStyle = rgba(bang.chu, 0.92);
+        c.fillStyle = rgba(bang.chu, 1);
       }
-      c.fillText(d.slice(0, 90), lePhai, 24 + i * caoDong);
+      c.fillText(d.slice(0, 64), lePhai, 24 + i * caoDong);
     });
     if (this.streaming && Math.floor(this.tGian * 3) % 2 === 0) {
       const dongCuoi = hien[hien.length - 1] ?? '';
-      const x = lePhai + c.measureText(dongCuoi.slice(0, 90)).width + 4;
+      const x = lePhai + c.measureText(dongCuoi.slice(0, 64)).width + 4;
       const y = 24 + (hien.length - 1) * caoDong;
       c.fillStyle = rgba(bang.vien, 0.95);
-      c.fillRect(x, y, 14, 24);
+      c.fillRect(x, y, 16, 30);
     }
   }
 

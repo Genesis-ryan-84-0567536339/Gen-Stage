@@ -110,6 +110,64 @@ describe('screen.*', () => {
     expect(r.ok).toBe(true);
     if (r.ok) expect((r.result as { durationMs: number }).durationMs).toBeGreaterThan(0);
   });
+
+  it('stage.describe().screens không rỗng khi có màn hình đang sống (C1)', async () => {
+    await d.run('screen.spawn', { id: 'main', at: 'buc-trung-tam' });
+    await d.run('screen.spawn', { id: 'left' });
+    const st = await d.run('stage.describe');
+    if (!st.ok) throw new Error(st.error);
+    const sc = (st.result as { screens: Array<{ id: string }> }).screens;
+    expect(sc.map((s) => s.id).sort()).toEqual(['left', 'main']);
+  });
+
+  it('C3: remove giữa lúc stream (chunks) không ném lỗi, không treo, bắn streamDone{cancelled:true}', async () => {
+    await d.run('screen.spawn', { id: 'main' });
+    const suKien: Array<{ screen: string; cancelled?: boolean }> = [];
+    bus.on('screen.streamDone', (e) => suKien.push(e.data as { screen: string; cancelled?: boolean }));
+
+    // chunk đủ dài để còn đang stream khi remove tới
+    const chay = d.run('screen.stream', {
+      screen: 'main',
+      kind: 'log',
+      chunks: ['dòng một dài để stream còn chạy khi remove tới', 'dòng hai', 'dòng ba'],
+    });
+    await cho(30); // chắc chắn đã bắt đầu, chưa xong
+    const xoa = await d.run('screen.remove', { screen: 'main' });
+    expect(xoa.ok).toBe(true);
+
+    // không ném lỗi ra ngoài, Action của stream phải resolve (không treo)
+    const r = await chay;
+    expect(r.ok).toBe(true);
+    expect(suKien.some((e) => e.screen === 'main' && e.cancelled === true)).toBe(true);
+    expect(world.coScreen('main')).toBe(false);
+  });
+
+  it('C3: remove giữa lúc stream (source agent) không ném lỗi, không treo', async () => {
+    await d.run('screen.spawn', { id: 'main' });
+    const suKien: Array<{ screen: string; cancelled?: boolean }> = [];
+    bus.on('screen.streamDone', (e) => suKien.push(e.data as { screen: string; cancelled?: boolean }));
+
+    const chay = d.run('screen.stream', { screen: 'main', kind: 'log', source: 'agent' });
+    await cho(20);
+    world.screenAppend('main', 'đang gõ…');
+    bus.emit('screen.fed', { screen: 'main' });
+
+    const xoa = await d.run('screen.remove', { screen: 'main' });
+    expect(xoa.ok).toBe(true);
+
+    const r = await chay;
+    expect(r.ok).toBe(true);
+    expect(suKien.some((e) => e.screen === 'main' && e.cancelled === true)).toBe(true);
+  });
+});
+
+describe('camera.preset — A1 bất biến (C2)', () => {
+  it('"ban-1"/"ban-2" của A1 vẫn chạy được, "ban-dieu-khien" của A3 vẫn còn', async () => {
+    for (const name of ['toan-canh', 'ban-dieu-khien', 'ban-1', 'ban-2', 'hop']) {
+      const r = await d.run('camera.preset', { name });
+      expect(r.ok, `camera.preset ${name} phải chạy được`).toBe(true);
+    }
+  });
 });
 
 describe('module.build / module.open / module.store', () => {

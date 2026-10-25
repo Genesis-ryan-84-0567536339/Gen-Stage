@@ -118,17 +118,27 @@ export const LENH_SCREEN: CommandSpec[] = [
 
       ctx.world.screenStartStream(id, kind);
 
-      let huy = false;
+      let xongRoi = false;
       let giaiQuyet: () => void = () => undefined;
       const done = new Promise<void>((r) => {
         giaiQuyet = r;
       });
-      const xong = () => {
-        if (huy) return;
-        ctx.world.screenEndStream(id);
-        ctx.bus.emit('screen.streamDone', { screen: id });
+      // `xong(cancelled)` chạy đúng một lần, từ 3 nguồn có thể đến bất cứ lúc
+      // nào: hết chunks/nguồn im lặng, `cancel()` do interrupt, hoặc màn hình
+      // bị `screen.remove` giữa lúc đang stream (C3) — nguồn thứ 3 không đi
+      // qua `cancel()` nên phải tự nghe sự kiện, và LUÔN kiểm `coScreen` trước
+      // khi gọi `screenEndStream` để không ném lỗi vào màn hình đã mất.
+      const xong = (cancelled = false) => {
+        if (xongRoi) return;
+        xongRoi = true;
+        boTheoDoiXoa();
+        if (ctx.world.coScreen(id)) ctx.world.screenEndStream(id);
+        ctx.bus.emit('screen.streamDone', { screen: id, cancelled });
         giaiQuyet();
       };
+      const boTheoDoiXoa = ctx.bus.on('screen.removed', (e) => {
+        if ((e.data as { screen?: string }).screen === id) xong(true);
+      });
 
       if (chunks.length > 0) {
         const tongMs = chunks.reduce(
@@ -137,7 +147,7 @@ export const LENH_SCREEN: CommandSpec[] = [
         );
         void (async () => {
           for (const c of chunks) {
-            if (huy) return;
+            if (xongRoi) return;
             ctx.world.screenAppend(id, c);
             await ngu(90 + Math.min(c.length * 18, 900));
           }
@@ -147,11 +157,7 @@ export const LENH_SCREEN: CommandSpec[] = [
           result: { screen: id, chunks: chunks.length },
           durationMs: Math.max(200, Math.round(tongMs)),
           done,
-          cancel: () => {
-            huy = true;
-            ctx.world.screenEndStream(id);
-            giaiQuyet();
-          },
+          cancel: () => xong(true),
         };
       }
 
@@ -160,10 +166,10 @@ export const LENH_SCREEN: CommandSpec[] = [
       let henRanh: ReturnType<typeof setTimeout>;
       const datLaiRanh = () => {
         clearTimeout(henRanh);
-        henRanh = setTimeout(xong, IDLE_MS_AGENT);
+        henRanh = setTimeout(() => xong(), IDLE_MS_AGENT);
       };
       datLaiRanh();
-      const henTran = setTimeout(xong, TRAN_MS_AGENT);
+      const henTran = setTimeout(() => xong(), TRAN_MS_AGENT);
       const boDangKy = ctx.bus.on('screen.fed', (e) => {
         if ((e.data as { screen?: string }).screen === id) datLaiRanh();
       });
@@ -173,12 +179,10 @@ export const LENH_SCREEN: CommandSpec[] = [
         durationMs: IDLE_MS_AGENT,
         done,
         cancel: () => {
-          huy = true;
           clearTimeout(henRanh);
           clearTimeout(henTran);
           boDangKy();
-          ctx.world.screenEndStream(id);
-          giaiQuyet();
+          xong(true);
         },
       };
     },

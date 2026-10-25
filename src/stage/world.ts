@@ -15,6 +15,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { VRMUtils } from '@pixiv/three-vrm';
 import type {
   Action,
   ActorSnapshot,
@@ -124,7 +125,7 @@ export class World implements StageWorld {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.05;
+    this.renderer.toneMappingExposure = 0.92;
 
     this.scene.background = new THREE.Color(MAU_NEN_LAB);
     this.scene.fog = new THREE.FogExp2(MAU_NEN_LAB, 0.05);
@@ -171,7 +172,7 @@ export class World implements StageWorld {
     this.composer.addPass(new RenderPass(this.scene, this.camera));
     // threshold cao + strength vừa phải: chỉ viền/đèn thật sự sáng mới nở ra,
     // nhân vật đứng dưới ánh sáng thường không bị "cháy" (yêu cầu spec mục 1).
-    this.bloom = new UnrealBloomPass(kichThuoc, 0.45, 0.35, 0.86);
+    this.bloom = new UnrealBloomPass(kichThuoc, 0.3, 0.35, 0.92);
     this.bloom.resolution.set(
       Math.max(1, Math.floor(kichThuoc.x / 2)),
       Math.max(1, Math.floor(kichThuoc.y / 2)),
@@ -184,7 +185,7 @@ export class World implements StageWorld {
   private coBloom(bat: boolean): void {
     if (this.bloomDangBat === bat) return;
     this.bloomDangBat = bat;
-    this.bloom.strength = bat ? 0.45 : 0;
+    this.bloom.strength = bat ? 0.3 : 0;
   }
 
   private dungAnhSang(): void {
@@ -466,6 +467,10 @@ export class World implements StageWorld {
     nv.dung();
     this.scene.remove(nv.goc);
     this.scene.remove(nv.diemNhin);
+    // rò rỉ nặng nhất nếu thiếu: mỗi actorRemove (và mỗi stage.reset gọi lại
+    // actorSpawn ngay sau) nạp một avatar VRM mới mà không dọn avatar cũ —
+    // skinned mesh + skeleton + toàn bộ texture rò vĩnh viễn theo phiên.
+    VRMUtils.deepDispose(nv.vrm.scene);
     this.actors.delete(id);
     const el = this.bongBongEl.get(id);
     if (el) {
@@ -638,6 +643,9 @@ export class World implements StageWorld {
       }
     }
     this.scene.remove(d.obj);
+    // module (`moduleBuild`) gắn thêm 1 sprite nhãn (CanvasTexture riêng) vào
+    // obj — dispose đệ quy cả cây, không chỉ mesh gốc, để không rò texture/geo.
+    dispose3D(d.obj);
     this.props.delete(id);
   }
 
@@ -711,7 +719,7 @@ export class World implements StageWorld {
         this.nang.color.setHex(0x9fd8ff);
         this.vien.intensity = 0.35;
         bg.setHex(MAU_NEN_LAB);
-        this.renderer.toneMappingExposure = 1.05;
+        this.renderer.toneMappingExposure = 0.92;
         break;
       case 'toi':
         this.troi.intensity = 0.16;
@@ -910,7 +918,7 @@ export class World implements StageWorld {
 
     // lấy mẫu thô bề mặt hình đích (toạ độ cục bộ, tâm 0,0,0) — `KetTinh` tự
     // cộng `tamDich` để ra toạ độ thật trong scene, không hardcode hình dạng
-    const diemDich = maySurfacePoints((obj as THREE.Mesh).geometry, 90);
+    const diemDich = maySurfacePoints((obj as THREE.Mesh).geometry, 400);
 
     let huy = false;
     const kt = new KetTinh({
@@ -965,20 +973,13 @@ export class World implements StageWorld {
     const hu = taoHieuUng(this.scene, name, tam, durationMs);
     this.fxDangChay.push(hu);
     const dai = durationMs ?? 1000;
-    let huy = false;
-    const done = new Promise<void>((resolve) => {
-      setTimeout(resolve, dai);
+    // `hanhDongHenGio` dùng hẹn giờ HUỶ ĐƯỢC (clearTimeout khi cancel) — bản
+    // cũ tự tạo setTimeout rời, cancel() không clear nên hẹn giờ vẫn rò và
+    // resolve `done` muộn sau khi hành động đã bị cắt (trái bất biến CLAUDE.md).
+    return hanhDongHenGio(dai, () => {
+      hu.huy();
+      this.fxDangChay = this.fxDangChay.filter((x) => x !== hu);
     });
-    return {
-      durationMs: dai,
-      done,
-      cancel: () => {
-        if (huy) return;
-        huy = true;
-        hu.huy();
-        this.fxDangChay = this.fxDangChay.filter((x) => x !== hu);
-      },
-    };
   }
 
   async reset(): Promise<void> {
@@ -1016,7 +1017,7 @@ export class World implements StageWorld {
       },
       actors: dsActor,
       places: this.snapPlaces(dsActor),
-      screens: [] as ScreenSnapshot[],
+      screens: [...this.screens.values()].map((mh) => this.snapScreen(mh)),
       props: [...this.props.values()].map((d) => this.snapProp(d)),
       lastEvents: this.bus.recent(10),
       scene: { light: this.denPreset },
@@ -1098,6 +1099,42 @@ export class World implements StageWorld {
 
 function tron(n: number): number {
   return Math.round(n * 100) / 100;
+}
+
+/** Tên map chứa texture trên vật liệu — dọn hết để không rò GPU memory. */
+const TEN_MAP_VAT_LIEU = [
+  'map',
+  'emissiveMap',
+  'normalMap',
+  'roughnessMap',
+  'metalnessMap',
+  'alphaMap',
+  'aoMap',
+  'bumpMap',
+] as const;
+
+function disposeVatLieu(mat: THREE.Material): void {
+  const m = mat as unknown as Record<string, { dispose?: () => void } | undefined>;
+  for (const ten of TEN_MAP_VAT_LIEU) m[ten]?.dispose?.();
+  mat.dispose();
+}
+
+/**
+ * Dispose đệ quy cả cây Object3D: geometry + material + texture của mọi
+ * mesh/sprite con. Dùng cho `propRemove` — `module.build` gắn thêm sprite
+ * nhãn (CanvasTexture riêng) vào prop nên không thể chỉ dispose mesh gốc.
+ */
+function dispose3D(obj: THREE.Object3D): void {
+  obj.traverse((o) => {
+    const geo = (o as THREE.Mesh | THREE.Sprite).geometry as THREE.BufferGeometry | undefined;
+    geo?.dispose();
+    const mat = (o as THREE.Mesh | THREE.Sprite).material as
+      | THREE.Material
+      | THREE.Material[]
+      | undefined;
+    if (Array.isArray(mat)) mat.forEach(disposeVatLieu);
+    else if (mat) disposeVatLieu(mat);
+  });
 }
 
 function khoangCach(a: THREE.Vector3, b: Vec3 | readonly number[]): number {
