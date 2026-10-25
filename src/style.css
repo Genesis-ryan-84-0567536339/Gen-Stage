@@ -565,3 +565,71 @@ input[type="checkbox"] { width: 17px; height: 17px; min-height: 0; accent-color:
 @media (max-width: 900px) {
   #goi-y-phim { display: none; }
 }
+
+/* ------------------------------------------- B3: ô chat Boss → Gen (#21) */
+
+/*
+ * Nằm sát đáy, giữa vùng sân khấu (trừ bề rộng bảng lệnh bên phải) nên không
+ * bao giờ trùng với bảng; `#o-noi-nhanh` của Space ở trên nó 72 px.
+ */
+#o-chat {
+  position: fixed;
+  left: 0;
+  right: var(--bang-rong);
+  bottom: max(12px, env(safe-area-inset-bottom));
+  z-index: 6;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: min(560px, calc(100% - 28px));
+  padding: 8px 10px;
+  border-radius: var(--bo);
+  background: var(--kinh-dam);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--vien);
+  box-shadow: 0 10px 30px rgba(64, 55, 46, 0.16);
+}
+#o-chat label {
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muc-nhat);
+}
+#o-chat input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 34px;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--muc);
+  background: rgba(64, 55, 46, 0.05);
+  border: 1px solid var(--vien);
+  border-radius: 9px;
+  padding: 0 10px;
+}
+#o-chat input:focus {
+  outline: none;
+  border-color: var(--xanh);
+  background: rgba(47, 125, 98, 0.06);
+}
+#o-chat button {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 0 14px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--xanh);
+  border: 0;
+  border-radius: 9px;
+  cursor: pointer;
+}
+#o-chat button:hover { filter: brightness(1.08); }
+
+/* Điện thoại: bảng lệnh chiếm cả bề rộng khi mở, nên ô chat bám full width */
+@media (max-width: 760px) {
+  #o-chat { right: 0; width: calc(100% - 20px); }
+  #o-chat label { display: none; }
+}

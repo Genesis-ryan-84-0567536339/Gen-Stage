@@ -19,7 +19,9 @@ pnpm dev                  # chạy dev, mở http://localhost:5173
 pnpm dev --host           # cho điện thoại cùng wifi vào xem
 pnpm build                # tsc + vite build, phải không lỗi trước khi mở PR
 pnpm test                 # vitest: dispatcher, hàng đợi, kịch bản, stage.describe, A3 screen/module/fx
-pnpm bridge               # bridge: ws lệnh (8787) + HTTP giọng tiếng Việt (8788)
+pnpm bridge               # bridge: ws lệnh (8787) + giọng tiếng Việt (8788) + MCP HTTP (8789)
+pnpm mcp                  # MCP qua stdio cho agy CLI (`agy mcp add gen-stage …`)
+pnpm nao-demo             # não mẫu rule-based (không LLM) nối MCP stdio — vòng kín khi không có agy
 pnpm preview              # xem thử bản build
 
 node scripts/kiem-a1.mjs      # bằng chứng A1: bấm từng lệnh + chụp ảnh vào docs/a1/
@@ -30,6 +32,7 @@ node scripts/kiem-b2.mjs      # bằng chứng B2: giọng tiếng Việt + nhé
 node scripts/kiem-a2.mjs      # bằng chứng A2: 15 emote + 13 clip + say + idleStyle, ảnh/video/log số vào docs/a2/
 node scripts/kiem-a2.mjs --chi-anh  # bản NHANH lúc đang làm (chỉ ảnh + số đo, không quay video, không đo FPS)
 node scripts/kiem-b1.mjs      # bằng chứng B1: bố cục 3 vùng + steer mượt + owner/gen vào docs/b1/ (CHẠY MỘT LẦN)
+node scripts/kiem-b3.mjs      # bằng chứng B3: Owner gõ → MCP → Gen diễn + nói, vào docs/b3/ (CHẠY MỘT LẦN)
 bash scripts/fetch-anim.sh    # tải bộ chuyển động CC0 (Quaternius) về public/anim/ — chạy 1 lần sau khi clone
 ```
 
@@ -109,7 +112,11 @@ biết registry, **giao diện** không gọi thẳng vào sân khấu.
 | `src/ui/phim.ts` | Điều khiển bằng phím (WASD/1–0/Space/C/E/R/?) — **mọi phím gọi `dispatcher.run`**, tắt khi con trỏ đang ở ô nhập. B1: WASD gửi `actor.steer` mỗi 100 ms cho actor `controlledBy: "owner"` |
 | `src/events.ts` · `src/log.ts` | Bus sự kiện · nhật ký JSON mọi lệnh và sự kiện |
 | `src/bridge-client.ts` | Nối trình duyệt với bridge (bật bằng `?bridge=1`) |
-| `bridge/server.ts` | Bridge WebSocket Node (chưa MCP) — mặc định chỉ nghe `127.0.0.1`; mở ra ngoài phải có `--host` + `GEN_STAGE_TOKEN` |
+| `bridge/server.ts` | Bridge WebSocket Node — mặc định chỉ nghe `127.0.0.1`; mở ra ngoài phải có `--host` + `GEN_STAGE_TOKEN`. Bật luôn TTS (8788) và MCP HTTP (8789) |
+| `bridge/mcp.ts` | **B3** — MCP server: tool **sinh tự động** từ registry (`a.b` → `a_b`) + `stage_events` (long-poll). Hai cửa: stdio (`pnpm mcp`) và HTTP streamable `127.0.0.1:8789/mcp`. Cả hai nói với sân khấu bằng **vai client ws** của bridge |
+| `src/ui/o-chat.ts` | **B3** — ô chat dưới màn hình: Enter = `actor.say` lên nhân vật `owner`, y như `Space` |
+| `skills/gen-stage-nao/SKILL.md` | **B3** — skill cho agy CLI: vòng `stage_events` → `stage_describe` → 1–3 lệnh → `actor_say` |
+| `scripts/nao-demo.mjs` | **B3** — não mẫu rule-based (không LLM) chạy qua MCP stdio thật, làm bằng chứng vòng kín khi không có agy |
 | `bridge/tts.ts` | **B2** — giọng tiếng Việt: `GET /tts` (cổng 8788) gọi thẳng WebSocket Edge, trả mp3, cache `.cache/tts/<sha1>.mp3` |
 | `src/audio/tts-client.ts` | **B2** — tải + giải mã mp3, đo `durationMs` thật, phát bằng Web Audio, đẩy biên độ RMS mỗi 50 ms sang nhân vật |
 | `src/audio/so-tieng.ts` | **B2** — sổ nối sân khấu ↔ lớp tiếng (không phụ thuộc gì): sổ miệng, thời lượng thật, cờ chặn Web Speech |
@@ -160,6 +167,16 @@ biết registry, **giao diện** không gọi thẳng vào sân khấu.
   mặc định **`owner` (VRM nam CC0) + `gen`** (nữ, `idleStyle: cham-chu` ở bàn
   điều khiển), `stage.describe` thêm **`controlledBy`**, và chibi hoá xương raw
   (Issue #17 — tỉ lệ đầu/người đo thật ~1/2,5–1/2,8).
+
+- **B3 (xong, #21)**: `bridge/mcp.ts` — **42 tool = 41 lệnh + `stage_events`**,
+  sinh thẳng từ registry nên thêm lệnh là có tool mới; `stage_bootstrap` qua MCP
+  trả thêm `huongDanAgent` (vai diễn của Gen); `actor.say` lên nhân vật
+  `controlledBy: "owner"` bắn **`user.text`** → vòng hội thoại Owner ⇄ Gen;
+  **ô chat** dưới màn hình (`src/ui/o-chat.ts`); `docs/BOOTSTRAP-AGENT.md` +
+  `skills/gen-stage-nao/SKILL.md` cho agy; `scripts/nao-demo.mjs` (não mẫu
+  không LLM). Đã chạy thật **cả hai não**: agy CLI (8 tool call MCP, log
+  `docs/b3/agy-tool-calls.json`) và nao-demo (16 tool call,
+  `docs/b3/nao-demo-log.json`).
 
 `src/api/commands/stubs.ts` giờ **rỗng**: cả A2 lẫn A3 đã thi công thật, không
 còn lệnh nào trả `ok:false` kiểu "chưa làm". File được giữ lại làm chỗ khai
@@ -251,3 +268,34 @@ lệnh mới cho các đợt sau — `stage.bootstrap` vẫn liệt kê đủ b�
   handler của cú bấm, rồi nhớ vào `localStorage` — phiên sau không hiện nút
   nữa, chỉ cần cú tương tác đầu tiên bất kỳ là tự mở khoá. Script bằng chứng
   gọi `window.stage.batTieng()` + cờ `--autoplay-policy=no-user-gesture-required`.
+
+## Quyết định B3 — não cho Gen qua MCP (25/10, Issue #21)
+
+- **MCP là ảnh chiếu của registry, không phải bộ lệnh thứ hai.** Tool sinh
+  bằng vòng lặp trên `registry.all()`; chỉ `stage_events` khai tay vì nó không
+  phải lệnh sân khấu mà là cửa để não *nghe*. Test giữ bất biến
+  **số tool = số lệnh + 1** — thêm lệnh mà quên gì đó là test đỏ ngay.
+- **MCP không có đường riêng vào dispatcher.** Cả stdio lẫn HTTP đều nối vào
+  bridge bằng **vai client ws**, kể cả bản HTTP chạy *trong chính tiến trình
+  bridge*. Chậm hơn vài mili giây, đổi lại không bao giờ lệch hành vi với
+  đường ws mà Boss vẫn dùng (hàng đợi, timeout, token y hệt).
+- **`user.text` có đúng một nguồn**: `actor.say` lên nhân vật `controlledBy:
+  "owner"`. Space, ô chat và bảng lệnh đều chảy qua đó, nên không cửa nào phải
+  tự nhớ bắn sự kiện, và não chỉ nghe một cái tên.
+- **Tham số `vec3`/`target`/`json` khai là chuỗi trong JSON Schema.**
+  `validate.ts` đọc được cả mảng, object lẫn `"x, y, z"`, nhưng khai nhiều kiểu
+  thì client MCP khó tính (và não) phải đoán; một kiểu + mô tả rõ là xong.
+- **Module rơi vào tay người LÀM**, không phải tay Boss: `module.build` chọn
+  actor `controlledBy: "agent"` đầu tiên. A3 lấy `actorIds()[0]`, mà từ B1
+  nhân vật đầu tiên là `owner`.
+- **Cạm bẫy đã đo: client MCP stdio KHÔNG truyền biến môi trường tuỳ ý.**
+  `StdioClientTransport` chỉ cho con thừa hưởng một danh sách an toàn, nên
+  `GEN_STAGE_PORT` bị rơi và `bridge/mcp.ts` lặng lẽ nối về 8787 — não nghe mãi
+  không thấy câu nào mà không báo lỗi gì. Phải truyền `env` tay (xem
+  `scripts/nao-demo.mjs`), và khi `agy mcp add` bản stdio với cổng khác mặc
+  định thì phải khai `--env`.
+- **agy giữ cấu hình MCP ở `~/.gemini/config/mcp_config.json`** (khoá
+  `serverUrl` cho bản http), thêm bằng `agy mcp add gen-stage http://127.0.0.1:8789/mcp`.
+- **Bằng chứng chạy trên bộ cổng riêng 8797/8798/8799** vì máy Boss thường đã
+  có `pnpm bridge` thật ở 8787 — script bằng chứng không được dùng chung lẫn
+  giết bridge đó.

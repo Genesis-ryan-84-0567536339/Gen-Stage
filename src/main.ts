@@ -12,6 +12,8 @@ import { Dispatcher } from './api/dispatcher';
 import { World } from './stage/world';
 import { dungGiaoDien } from './ui/index';
 import { batPhim } from './ui/phim';
+// B3 (#21) — ô chat dưới màn hình: cùng đường với Space, bắn `user.text`.
+import { batOChat } from './ui/o-chat';
 import { BridgeClient, coBatBridge, urlTts } from './bridge-client';
 // B2 (#20) — giọng tiếng Việt thật + nút mở khoá autoplay.
 import { lopTieng } from './audio/tts-client';
@@ -50,6 +52,11 @@ export interface CuaStage {
    * `{ soMau, soMauDuong, dinh }`. `soMauDuong > 0` = miệng đã chạy theo âm thật.
    */
   doTieng(actor: string): { soMau: number; soMauDuong: number; dinh: number };
+  /**
+   * B3 — gõ một câu vào ô chat như Boss (bằng chứng `scripts/kiem-b3.mjs`).
+   * Đi đúng đường của ô chat → `actor.say` owner → sự kiện `user.text`.
+   */
+  guiChat(chu: string): Promise<boolean>;
 }
 
 declare global {
@@ -97,6 +104,8 @@ function toast(chu: string): void {
 /* --------------------------------------------------------- cửa window.stage */
 
 let sanSang = false;
+/** B3 — ô chat (gán sau khi giao diện dựng xong). */
+let oChat: { gui(chu: string): Promise<boolean> } | null = null;
 window.stage = {
   run: (cmd, args) => dispatcher.run(cmd, args, 'window.stage'),
   runCommand: (c) => dispatcher.runCommand(c, 'window.stage'),
@@ -112,6 +121,7 @@ window.stage = {
   get san() {
     return sanSang;
   },
+  guiChat: (chu) => oChat?.gui(chu) ?? Promise.resolve(false),
   feed: (screen, chunk) => {
     world.screenAppend(screen, chunk);
     bus.emit('screen.fed', { screen, chunk });
@@ -145,6 +155,9 @@ async function khoiDong(): Promise<void> {
 
   // Issue #14 — bàn phím là mặt thứ ba của cùng bộ lệnh, vẫn qua dispatcher.
   batPhim(dispatcher, toast);
+
+  // B3 (#21) — chỗ Boss gõ cho Gen: cùng `actor.say` lên nhân vật owner.
+  oChat = batOChat(dispatcher, toast);
 
   // B2 (#20) — nút "🔊 Bật tiếng" (ẩn nếu Boss đã đồng ý ở phiên trước).
   if (tieng) {

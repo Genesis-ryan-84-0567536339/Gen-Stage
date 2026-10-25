@@ -18,10 +18,14 @@
 import { WebSocketServer, WebSocket } from 'ws';
 // B2 (#20) — giọng tiếng Việt: `pnpm bridge` bật cả ws lẫn HTTP /tts.
 import { batTts } from './tts';
+// B3 (#21) — MCP 1:1 với Actor API: `pnpm bridge` bật luôn bản HTTP streamable.
+import { batMcpHttp, CONG_MCP_MAC_DINH, noiBridgeWs } from './mcp';
 
 const CONG = Number(process.env.GEN_STAGE_PORT ?? 8787);
 /** Cổng HTTP cho TTS (B2) — khác cổng ws để không đụng `WebSocketServer`. */
 const CONG_TTS = Number(process.env.GEN_STAGE_TTS_PORT ?? 8788);
+/** Cổng HTTP cho MCP (B3) — bind cùng chính sách với ws, mặc định 127.0.0.1. */
+const CONG_MCP = Number(process.env.GEN_STAGE_MCP_PORT ?? CONG_MCP_MAC_DINH);
 /** Hạn chờ trình duyệt trả lời một lệnh. */
 const HAN_MS = Number(process.env.GEN_STAGE_TIMEOUT ?? 30000);
 
@@ -258,10 +262,20 @@ ghi(
 // B2 — cùng một lệnh `pnpm bridge` bật luôn giọng nói, cùng chính sách bind.
 const svTts = batTts(HOST, CONG_TTS);
 
+/**
+ * B3 — MCP HTTP streamable. Nó nói với sân khấu bằng **chính vai client ws ở
+ * trên** (`noiBridgeWs`), không có đường tắt riêng vào trình duyệt: cùng hàng
+ * đợi, cùng timeout, cùng cửa token. Cổng khác nên bind lại cùng chính sách.
+ */
+const noiMcp = noiBridgeWs({ url: `ws://${HOST}:${CONG}/`, token: TOKEN || undefined });
+const svMcp = batMcpHttp({ host: HOST, cong: CONG_MCP, noi: noiMcp, token: TOKEN || undefined });
+
 for (const tin of ['SIGINT', 'SIGTERM'] as const) {
   process.on(tin, () => {
     ghi('đóng bridge…');
     svTts.close();
+    svMcp.close();
+    noiMcp.dong();
     wss.close(() => process.exit(0));
   });
 }

@@ -89,7 +89,7 @@ Kết luận thiết kế: khi A xong, "gắn não" = viết 1 skill cho agent C
 | `actor.play` | `{ actor, clip, loop?, speed? }` | sự kiện `actor.clipDone` khi hết (nếu không loop) |
 | `actor.stop` | `{ actor }` | về `idle` |
 | `actor.express` | `{ actor, expression, weight?, durationMs? }` | weight 0–1, mặc định 1; durationMs = tự về neutral sau đó |
-| `actor.say` | `{ actor, text, emotion?, voice? }` | TTS + nhép miệng + bong bóng chữ; trả `durationMs`; sự kiện `actor.sayDone`. **Sửa spec (B2 #20):** `voice` nhận `"nu"` \| `"nam"` \| tên giọng đầy đủ (vd `vi-VN-HoaiMyNeural`); bỏ trống thì theo actor — `owner` → **nam**, còn lại → **nữ**. Giọng là edge-tts `vi-VN` thật qua bridge, `durationMs` = **thời lượng audio thật**; bridge tắt thì rơi về Web Speech `vi-VN` như cũ |
+| `actor.say` | `{ actor, text, emotion?, voice? }` | TTS + nhép miệng + bong bóng chữ; trả `durationMs`; sự kiện `actor.sayDone`. **Sửa spec (B2 #20):** `voice` nhận `"nu"` \| `"nam"` \| tên giọng đầy đủ (vd `vi-VN-HoaiMyNeural`); bỏ trống thì theo actor — `owner` → **nam**, còn lại → **nữ**. Giọng là edge-tts `vi-VN` thật qua bridge, `durationMs` = **thời lượng audio thật**; bridge tắt thì rơi về Web Speech `vi-VN` như cũ **Sửa spec (B3 #21):** nếu actor có `controlledBy: "owner"` thì lệnh bắn thêm **`user.text { actor, text }`** — đó là cách não nghe được Sếp (Space, ô chat, hay agent gọi hộ đều như nhau). Gen nói thì KHÔNG bắn, để não không tự nghe lời mình |
 | `actor.bubble` | `{ actor, text, durationMs? }` | chỉ chữ, không tiếng |
 | `actor.hold` | `{ actor, prop, hand }` | cầm đồ vật (`left`/`right`) |
 | `actor.drop` | `{ actor }` | |
@@ -189,7 +189,7 @@ Bối cảnh chốt: **phòng nghiên cứu khoa học viễn tưởng**, không
 | `screen.stream` | `{ screen, kind, chunks[] \| source }` | Chữ/code chạy dần như đang được gõ; agent có thể đẩy từng mẩu khi đang sinh |
 | `screen.clear` | `{ screen }` | |
 | `screen.focus` | `{ screen }` | Bay tới trước mặt nhân vật/camera |
-| `module.build` | `{ id, shape: "book" \| "cube" \| "tool" \| "crystal" \| "orb", label, from?: screen, durationMs? }` | **Hiệu ứng kết tinh**: hạt sáng/khối voxel từ màn hình tụ lại thành vật thể rồi rơi vào tay nhân vật (tự gọi `actor.hold`). Trả về prop id. Sự kiện `module.built` |
+| `module.build` | `{ id, shape: "book" \| "cube" \| "tool" \| "crystal" \| "orb", label, from?: screen, durationMs? }` | **Hiệu ứng kết tinh**: hạt sáng/khối voxel từ màn hình tụ lại thành vật thể rồi rơi vào tay nhân vật (tự gọi `actor.hold`). Trả về prop id. Sự kiện `module.built`. **Sửa spec (B3 #21):** module rơi vào tay actor **`controlledBy: "agent"`** đầu tiên (người đang làm việc), không phải `actorIds()[0]` — từ B1 nhân vật đầu tiên là `owner`, để nguyên thì Gen làm xong mà module nằm trên tay Sếp |
 | `module.open` | `{ module }` | Mở ra thành màn hình nhỏ hiện nội dung bên trong |
 | `module.store` | `{ module, to: place }` | Đặt lên kệ/bàn lưu trữ |
 | `fx.play` | `{ name: "scan" \| "pulse" \| "alert" \| "success", at?, durationMs? }` | Hiệu ứng ánh sáng/âm ngắn |
@@ -236,6 +236,11 @@ Ví dụ kịch bản Boss dán vào ô kịch bản (hoặc agent gửi):
 ### 3.5 Sự kiện sân khấu → agent
 `actor.arrived`, `actor.steerDone`, `actor.clipDone`, `actor.sayDone`, `actor.emoteDone`, `script.done`, `user.speech` (Boss nói, đã chuyển thành chữ), `user.click` (Boss bấm vào actor/prop), `user.text` (Boss gõ).
 
+**Sửa spec (25/10, B3 — Issue #21):** `user.text` có **đúng một nguồn**: lệnh
+`actor.say` chạy lên nhân vật `controlledBy: "owner"`. Nhờ vậy ba cửa của Boss
+(phím `Space`, ô chat dưới màn hình, bảng lệnh) đều bắn cùng một sự kiện mà
+không cửa nào phải tự nhớ bắn — và não chỉ cần nghe một cái tên.
+
 ## 4. Giao diện test thủ công (bắt buộc có từ đợt A)
 - Bảng bên phải liệt kê **tự động** mọi lệnh từ `stage.bootstrap` → mỗi lệnh 1 form nhỏ + nút Chạy. Không viết tay nút nào.
 - Ô "Kịch bản": dán JSON (hoặc dạng ngắn 1 dòng/1 lệnh: `lan moveTo ban-2`) → Chạy.
@@ -244,6 +249,31 @@ Ví dụ kịch bản Boss dán vào ô kịch bản (hoặc agent gửi):
 ## 5. MCP cho agent
 - Bridge Node phơi MCP tools **1:1 với bộ lệnh** (tool `stage_bootstrap`, `actor_moveTo`…), cộng tool `stage_events` để đọc sự kiện mới.
 - Đăng ký vào Gen-hub làm connector `gen-stage`. Hướng dẫn kèm theo (`docs/BOOTSTRAP-AGENT.md`) chỉ có 1 câu: *"Gọi `stage_bootstrap` trước, làm theo nó."*
+
+**Sửa spec (25/10, B3 — Issue #21):** thi công trong `bridge/mcp.ts`, chốt thêm 4 điều.
+
+1. **Tool sinh tự động từ registry, không viết tay.** Lệnh `a.b` → tool `a_b`
+   (MCP không cho dấu chấm trong tên tool); `inputSchema` dịch từ `params`
+   (kiểu, `enum` khi giá trị cố định, `min`/`max`, danh sách bắt buộc,
+   `additionalProperties: false` vì `validate.ts` từ chối tham số lạ);
+   `description` = `desc` + danh sách `events` + `example.args`. Tham số kiểu
+   `vec3`/`target`/`json` khai **một kiểu duy nhất là chuỗi** — `validate.ts`
+   đọc được `"x, y, z"` và JSON dạng chuỗi, nên não không phải đoán giữa nhiều
+   dạng. Hệ quả: **số tool = số lệnh + 1**, thêm lệnh vào Actor API là có tool
+   mới ngay (có test giữ đúng con số này).
+2. **`stage_events { since?, waitMs? }`** — long-poll. Mỗi sự kiện mang `seq`
+   tăng dần; trả `{ events, latest }`, lượt sau truyền `since: latest`. `waitMs`
+   > 0 thì chờ tới khi có sự kiện mới (trả **ngay** lúc đó, không ngồi hết hạn),
+   trần 60 000 ms. Giữ 500 sự kiện gần nhất.
+3. **`stage_bootstrap` qua MCP trả thêm khoá `huongDanAgent`** — một đoạn dặn
+   vai diễn (bạn là Gen, chỉ điều khiển actor `gen`, không lái `owner`, trả lời
+   bằng `actor_say` tiếng Việt câu ngắn, diễn bằng emote/screen/module). Bản
+   `stage.bootstrap` gọi thẳng qua ws/UI **không đổi**.
+4. **Hai đường vào, cùng một ruột**: stdio (`pnpm mcp`, cho `agy mcp add`) và
+   HTTP streamable (`pnpm bridge` → `127.0.0.1:8789/mcp`, không giữ phiên). Cả
+   hai đều là **client ws của bridge**, không có đường tắt riêng vào dispatcher.
+   Bảo mật y hệt ws: chỉ `127.0.0.1`; mở ra ngoài phải có `GEN_STAGE_TOKEN` và
+   mọi yêu cầu mang `Authorization: Bearer <token>`.
 
 ## 6. Ngoài phạm vi v0.1
 Nhiều người xem cùng lúc, vật lý, chỉnh ngoại hình trong game (làm bằng VRoid Studio rồi nạp VRM), giọng nói thời gian thực hai chiều (đợt C).

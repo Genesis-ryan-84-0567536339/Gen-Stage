@@ -376,9 +376,10 @@ export const LENH_ACTOR: CommandSpec[] = [
   {
     cmd: 'actor.say',
     group: 'actor',
-    events: ['actor.sayDone', 'cmd.queued'],
+    events: ['actor.sayDone', 'user.text', 'cmd.queued'],
     desc:
-      'Nói: bong bóng chữ + nhép miệng + giọng trình duyệt nếu có. Bắn actor.sayDone',
+      'Nói: bong bóng chữ + nhép miệng + giọng trình duyệt nếu có. Bắn actor.sayDone; ' +
+      'nếu actor là người Boss lái (controlledBy "owner") thì bắn thêm user.text để não nghe',
     chiemActor: 'actor',
     params: [
       P_ACTOR,
@@ -404,6 +405,20 @@ export const LENH_ACTOR: CommandSpec[] = [
       const chu = s(a.text);
       const camXuc = a.emotion === undefined ? undefined : s(a.emotion);
       const giong = a.voice === undefined ? undefined : s(a.voice);
+
+      /**
+       * B3 (#21) — Owner nói là **sự kiện cho não**, không chỉ là lời thoại.
+       *
+       * Space / ô chat của Boss đi qua đúng lệnh này (`src/ui/phim.ts`,
+       * `src/ui/o-chat.ts`), nên chỗ duy nhất biết "ai vừa nói" là đây. Nhân
+       * vật `controlledBy: "owner"` mở miệng → bắn `user.text` để `stage_events`
+       * của MCP đẩy sang não (spec mục 3.5). Agent nói thì KHÔNG bắn, không thì
+       * Gen tự nghe lời mình rồi trả lời vòng vo mãi.
+       */
+      const nguoiNoi = ctx.world.describe().actors.find((x) => x.id === id);
+      if (nguoiNoi?.controlledBy === 'owner') {
+        ctx.bus.emit('user.text', { actor: id, text: chu });
+      }
 
       const tieng = await chuanBiGiong(id, chu, giong, camXuc);
       const hd = ctx.world.actorSay(id, chu, camXuc, giong);
