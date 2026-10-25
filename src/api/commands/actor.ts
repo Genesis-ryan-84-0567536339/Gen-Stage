@@ -372,7 +372,7 @@ export const LENH_ACTOR: CommandSpec[] = [
   {
     cmd: 'actor.emote',
     group: 'actor',
-    events: ['actor.emoteDone', 'cmd.queued'],
+    events: ['actor.emoteDone', 'actor.emoteCancelled', 'cmd.queued'],
     desc:
       'Cảm xúc trọn gói: mặt + chuỗi chuyển động cơ thể + âm ngắn + (tuỳ chọn) nói',
     chiemActor: 'actor',
@@ -390,8 +390,13 @@ export const LENH_ACTOR: CommandSpec[] = [
         a.intensity as number | undefined,
         a.say === undefined ? undefined : s(a.say),
       );
+      // Bị cắt giữa chừng KHÔNG được coi là xong: bắn `actor.emoteCancelled`
+      // để agent đọc sự kiện không tưởng emote chạy trọn (review PR #10 1.3).
       void hd.done.then(() =>
-        ctx.bus.emit('actor.emoteDone', { actor: s(a.actor), emote: s(a.emote) }),
+        ctx.bus.emit(
+          hd.cancelled?.() ? 'actor.emoteCancelled' : 'actor.emoteDone',
+          { actor: s(a.actor), emote: s(a.emote) },
+        ),
       );
       return tuHanhDong(hd, { actor: s(a.actor), emote: s(a.emote) });
     },

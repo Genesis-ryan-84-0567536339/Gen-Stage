@@ -18,6 +18,7 @@ import type {
   ThamSoSpawnScreen,
   Vec3,
 } from '../types';
+import { DINH_NGHIA_EMOTE } from '../../behavior/emotes';
 import { BIEU_CAM, CLIPS, EMOTES, PLACES, timPlace } from '../../stage/noi-dung';
 import { IDLE_STYLES } from '../../behavior/idle-styles';
 
@@ -29,6 +30,20 @@ interface ManHinhGia {
   content: string;
   streaming: boolean;
 }
+
+/** emote → tâm trạng sau khi chạy xong (bản gọn của `MOOD_TU_EMOTE` thật). */
+const MOOD_GIA: Record<string, string> = {
+  vui: 'vui',
+  'rat-vui': 'vui',
+  'dong-y': 'vui',
+  chao: 'vui',
+  'thanh-cong': 'vui',
+  buon: 'buon',
+  'tu-choi': 'buon',
+  'that-bai': 'buon',
+  gian: 'gian',
+  met: 'met',
+};
 
 interface ActorGia {
   id: string;
@@ -42,6 +57,8 @@ interface ActorGia {
   hd: Action | null;
   /** Đang ở tư thế ngồi (sau khi `actor.sit` chạy xong trọn vẹn). */
   ngoi: boolean;
+  /** Tâm trạng — chỉ ghi khi emote chạy XONG THẬT, `actor.stop` xoá ngay. */
+  mood: string;
 }
 
 /** Mỗi hành động mất đúng `nhip` ms để test chạy nhanh và đoán được. */
@@ -70,6 +87,7 @@ export class SanKhauGia implements StageWorld {
         lookingAt: 'camera',
         hd: null,
         ngoi: false,
+        mood: 'binh-thuong',
       });
     }
   }
@@ -114,7 +132,16 @@ export class SanKhauGia implements StageWorld {
       giaiQuyet();
     };
     const hen = setTimeout(() => ket(false), NHIP_MS);
-    const action: Action = { durationMs: NHIP_MS, done, cancel: () => ket(true) };
+    let biCat = false;
+    const action: Action = {
+      durationMs: NHIP_MS,
+      done,
+      cancel: () => {
+        biCat = true;
+        ket(true);
+      },
+      cancelled: () => biCat,
+    };
     x.hd = action;
     return action;
   }
@@ -178,6 +205,7 @@ export class SanKhauGia implements StageWorld {
       lookingAt: 'camera',
       hd: null,
       ngoi: false,
+      mood: 'binh-thuong',
     });
     this.lichSu.push(`spawn:${p.id}`);
     return this.snap(this.a(p.id));
@@ -251,10 +279,16 @@ export class SanKhauGia implements StageWorld {
     return this.hd(id, `play.${clip}`, 'playing');
   }
 
+  /**
+   * `actor.stop` dọn **cả cảm xúc**: biểu cảm về `neutral`, `mood` về mặc định
+   * ngay — y như sân khấu thật (`NhanVat.dung`), review PR #10 mục 1.2.
+   */
   actorStop(id: string): void {
     const x = this.a(id);
     x.hd?.cancel();
     x.state = x.ngoi ? 'sitting' : 'idle';
+    x.expression = 'neutral';
+    x.mood = 'binh-thuong';
     this.lichSu.push(`stop:${id}`);
   }
 
@@ -293,7 +327,15 @@ export class SanKhauGia implements StageWorld {
       throw new Error(`Không có emote "${emote}"`);
     }
     this.lichSu.push(`emote:${emote}:${intensity}${say ? ':' + say : ''}`);
-    return this.hd(id, `emote.${emote}`, 'emoting');
+    const x = this.a(id);
+    const dn = DINH_NGHIA_EMOTE[emote];
+    // `khiXong` của `hd()` chỉ chạy khi hết giờ thật, nên emote bị cắt KHÔNG
+    // ghi `mood` — giống sân khấu thật.
+    const hd = this.hd(id, `emote.${emote}`, 'emoting', () => {
+      x.mood = MOOD_GIA[emote] ?? x.mood;
+    });
+    if (dn) x.expression = dn.expression;
+    return hd;
   }
 
   actorIdleStyle(id: string, style: string): void {
@@ -531,7 +573,7 @@ export class SanKhauGia implements StageWorld {
       nearest: { place: ganNhat, distance: Math.round(gan * 100) / 100 },
       state: x.state,
       busy: x.state !== 'idle' && x.state !== 'sitting',
-      mood: 'binh-thuong',
+      mood: x.mood,
       expression: x.expression,
       holding: x.holding,
       lookingAt: x.lookingAt,

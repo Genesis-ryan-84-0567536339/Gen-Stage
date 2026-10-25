@@ -219,8 +219,19 @@ export interface StageState {
 /** Một hành động có thời lượng trên sân khấu. */
 export interface Action {
   durationMs: number;
+  /**
+   * Resolve khi hành động kết thúc — **kể cả khi bị cắt**, vì dispatcher (lõi
+   * A1, không sửa) dùng chính `done` để giải phóng hàng đợi.
+   *
+   * Muốn biết "xong thật" hay "bị cắt" thì đọc `cancelled()`: nơi nào dọn dẹp
+   * sau hành động (tắt giọng, ghi `mood`, bắn sự kiện `*Done`) đều phải kiểm
+   * cờ này trước, không thì một emote bị cắt sẽ giết giọng của emote mới và
+   * bắn sự kiện giả (review PR #10 mục 1.3).
+   */
   done: Promise<void>;
   cancel: () => void;
+  /** `true` nếu hành động đã bị `cancel()` thay vì chạy hết. */
+  cancelled?: () => boolean;
 }
 
 export interface ThamSoSpawnActor {

@@ -87,9 +87,11 @@ export const DINH_NGHIA_EMOTE: Record<string, DinhNghiaEmote> = {
     am: [vang(220, 160, 0.4), vang(180, 160, 0.4)],
   },
   'suy-nghi': {
+    // spec ghi "neutral + nheo mắt": dùng neutral, phần nheo mắt do `blink`
+    // nhẹ + đầu nghiêng trong cử chỉ lo (review PR #10 mục 2.5)
     id: 'suy-nghi',
-    expression: 'relaxed',
-    weightMat: 0.4,
+    expression: 'neutral',
+    weightMat: 0.2,
     body: 'suy-nghi',
     durationMs: 2600,
     nhan: 'Suy nghĩ',

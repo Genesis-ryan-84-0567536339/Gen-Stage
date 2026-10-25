@@ -138,8 +138,19 @@ export const PRESET_DEN = ['sang', 'toi', 'am'] as const;
  * A3 CHỈ THÊM `ban-dieu-khien` — `ban-1`/`ban-2` của A1 vẫn còn (spec mục 3
  * đầu bài: "thêm thì tăng version, không đổi nghĩa lệnh cũ"); cả hai rơi vào
  * nhánh `cameraFocus` fallthrough ở `world.ts` nên không cần code riêng.
+ *
+ * `truoc-mat` (A2 vòng 2) là góc **chính diện, thấy TRỌN NGƯỜI** — bắt buộc
+ * cho ảnh bằng chứng emote: vòng 1 đóng khung ngang ngực nên che đúng vùng
+ * tay đang sai (review PR #10 mục 2.6).
  */
-export const PRESET_MAY = ['toan-canh', 'ban-dieu-khien', 'ban-1', 'ban-2', 'hop'] as const;
+export const PRESET_MAY = [
+  'toan-canh',
+  'ban-dieu-khien',
+  'ban-1',
+  'ban-2',
+  'hop',
+  'truoc-mat',
+] as const;
 
 export function timPlace(id: string): DinhNghiaPlace | undefined {
   return PLACES.find((p) => p.id === id);

@@ -55,25 +55,33 @@ File `License.txt` gốc của Kenney được copy sang `public/kenney-sci-fi/L
 Không tải được thì `src/stage/phong.ts` tự dựng toàn bộ bằng `RoundedBoxGeometry` + vật liệu
 emissive (cyan/cam), không bịa asset.
 
-## 3. Animation (VRMA)
+## 3. Chuyển động — Quaternius "Universal Animation Library" → `public/anim/`
 
-**Chưa dùng.** Không tìm được file `.vrma` miễn phí có link tải ổn định tại thời điểm làm demo,
-nên toàn bộ chuyển động (đi, đung đưa tay/chân, thở, chớp mắt, vẫy tay) là **thủ tục (procedural)**
-— tính bằng code trong `src/main.ts` qua `vrm.humanoid.getNormalizedBoneNode(...)`.
+**Đã dùng thật từ A2 vòng 2.** Tải bằng `bash scripts/fetch-anim.sh`, không commit (gitignore).
 
-### 3b. Cập nhật A2 (vẫn chưa dùng file chuyển động thật)
+| Mục | Nội dung |
+| --- | --- |
+| Trang gốc | https://quaternius.com — "Universal Animation Library" (bản FREE) |
+| Nguồn tải bằng script | `https://github.com/J-Ponzo/gltf-universal-animation-library` (mirror glTF; itch.io chặn curl bằng Cloudflare challenge) |
+| Tác giả | Quaternius |
+| Giấy phép | **CC0 1.0 Universal** (public domain) — bản `LICENSE` trong repo mirror, chép sang `public/anim/LICENSE-CC0.txt` khi tải |
+| Định dạng | `.gltf` + `.bin` (~4 MB), 46 animation clip, bộ xương Rigify (`DEF-*`) |
+| Dùng gì | 12 clip làm **dáng nền**: `Idle_Loop`, `Walk_Loop`, `Sitting_Enter`, `Sitting_Exit`, `Sitting_Idle_Loop`, `Idle_Talking_Loop`, `Sitting_Talking_Loop`, `Dance_Loop`, `Driving_Loop`, `Punch_Cross`, `Crouch_Idle_Loop`, `Hit_Chest` (+ `A_TPose` làm tư thế gốc để retarget) |
 
-Đã tìm ra nguồn CC0 thật — mirror GitHub của Quaternius "Universal Animation
-Library": https://github.com/J-Ponzo/gltf-universal-animation-library
-(CC0 1.0, file `.gltf`, tải được bằng `scripts/fetch-anim.sh`). **Chưa bật**
-vì bộ 46 clip của thư viện này là action/RPG (idle, walk, sit, chiến đấu, bắn,
-phép thuật, bơi…), không có wave/clap/nod/shake/think/point/celebrate/type/
-sleep mà spec Gen-Stage cần, và retarget đúng (bù lệch tư thế gốc giữa rig
-nguồn và `vrm.humanoid` normalized bones) không kịp làm + tự kiểm bằng mắt an
-toàn trong thời lượng A2. Lý do đầy đủ: đầu `scripts/fetch-anim.sh`. Toàn bộ
-13 clip + 15 emote của A2 (`src/stage/nhanvat.ts`, `src/behavior/emotes.ts`)
-vẫn là thủ tục — làm kỹ hơn A1 (mỗi emote một dáng riêng + lớp hành vi nhỏ
-không bao giờ đứng im).
+Retarget sang `vrm.humanoid` làm trong `src/behavior/chuyen-dong.ts` (giải thích
+cách tính ở đầu file), phát bằng `THREE.AnimationMixer`, crossfade 0,25 s.
+
+### 3b. Clip spec nào KHÔNG có trong bộ CC0
+
+Bộ 46 clip của Quaternius là action/RPG nên **không có** `wave`, `clap`, `nod`,
+`shake`, `think`, `point`, `sleep`, `type`, và các cử chỉ emote kiểu che miệng /
+gãi đầu / chống cằm / giơ ngón cái. Những cái đó = **clip gần nhất làm nền +
+lớp cử chỉ thủ tục nhỏ** (`src/behavior/cu-chi.ts`), bảng ghép đầy đủ ghi trong
+`NEN_CLIP` / `NEN_EMOTE` (`src/behavior/chuyen-dong.ts`). Ví dụ: `wave` = nền
+`Idle_Talking_Loop` + tay vẫy thủ tục; `that-bai` = nền `Crouch_Idle_Loop`
+(ngồi thụp thật) + ôm đầu thủ tục.
+
+Không có file `.vrma` nào được dùng.
 
 ## 4. Thư viện
 
