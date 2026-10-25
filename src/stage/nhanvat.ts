@@ -276,7 +276,25 @@ export class NhanVat {
     }
     this.dungBoXuong();
     this.datDangDung();
+    const daiChanTruoc = this.doDaiChan();
     if (chibi) this.apDungChibi();
+    const daiChanSau = this.doDaiChan();
+    // TY_LE_CHIBI rút chân ngắn hơn thân — độ hạ gốc khi ngồi (NGOI_HA_GOC)
+    // phải co theo đúng tỉ lệ chân thật sau scale, không phải hằng số cố định
+    // (review PR #10 mục 2.1: mông lún xuyên mặt ghế vì chân chibi ngắn hơn
+    // độ hạ gốc tính cho chân người lớn).
+    this.tyLeNgoi = daiChanTruoc > 0.001 ? daiChanSau / daiChanTruoc : 1;
+  }
+
+  /** Khoảng cách dọc hips → bàn chân trái trong không gian, đo trên chính model. */
+  private doDaiChan(): number {
+    this.goc.updateMatrixWorld(true);
+    const hips = this.xuong('hips');
+    const chan = this.xuong('leftFoot');
+    if (!hips || !chan) return 1;
+    const a = hips.getWorldPosition(new THREE.Vector3());
+    const b = chan.getWorldPosition(new THREE.Vector3());
+    return Math.max(0.001, a.y - b.y);
   }
 
   static async nap(
@@ -352,6 +370,8 @@ export class NhanVat {
   }
 
   private tyLeChest = 1;
+  /** Tỉ lệ co độ hạ gốc khi ngồi theo chân thật sau chibi scale (xem constructor). */
+  private tyLeNgoi = 1;
   private apDungChibi(): void {
     for (const [xuong, ty] of Object.entries(TY_LE_CHIBI)) {
       this.xuong(xuong as TenXuong)?.scale.setScalar(ty!);
@@ -861,7 +881,8 @@ export class NhanVat {
     if (dangDi) {
       this.goc.position.y = Math.abs(Math.sin(this.phaBuoc)) * 0.022;
     } else if (this.dangNgoi) {
-      this.goc.position.y = THREE.MathUtils.lerp(this.goc.position.y, -0.32, Math.min(1, dt * 6));
+      const mucHa = -0.32 * this.tyLeNgoi;
+      this.goc.position.y = THREE.MathUtils.lerp(this.goc.position.y, mucHa, Math.min(1, dt * 6));
     } else {
       this.goc.position.y = THREE.MathUtils.lerp(this.goc.position.y, 0, Math.min(1, dt * 8));
     }

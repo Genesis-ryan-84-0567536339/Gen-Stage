@@ -99,7 +99,16 @@ async function moApp(ctx, tien = '') {
   ganLoi(page, tien);
   await page.goto(url, { waitUntil: 'load', timeout: 120000 });
   await page.waitForFunction(() => window.stage?.san === true, null, { timeout: 120000 });
-  await page.evaluate(() => window.stage.run('actor.turnTo', { actor: 'lan', target: 'camera' }));
+  // Giảm bloom trước khi chụp: preset mặc định 'sang' làm bục trung tâm
+  // bloom thổi trắng nhân vật, không đọc được mặt — 'toi' hạ đèn + exposure
+  // (review PR #10 mục 2.2, dùng preset `scene.light` có sẵn, không đụng A3).
+  await page.evaluate(() => window.stage.run('scene.light', { preset: 'toi' }));
+  // Quay mặt về phía CỬA (`cua`, +Z, xa bàn điều khiển) — KHÔNG quay về
+  // 'camera': camera mặc định nằm phía bàn điều khiển (-Z) nên turnTo
+  // 'camera' quay actor úp mặt vào đúng cái bàn, rồi 'truoc-mat' lùi camera
+  // theo hướng đó và lọt vào trong bàn cong, che nửa dưới người (review
+  // PR #10 mục 2.2).
+  await page.evaluate(() => window.stage.run('actor.turnTo', { actor: 'lan', target: 'cua' }));
   await page.waitForTimeout(900);
   await page.evaluate(() => window.stage.run('camera.preset', { name: 'truoc-mat' }));
   await page.waitForTimeout(4000);
@@ -173,6 +182,26 @@ async function moApp(ctx, tien = '') {
   }
   await page.evaluate(() => window.stage.run('actor.play', { actor: 'lan', clip: 'stand', interrupt: true }));
   await page.waitForTimeout(900);
+
+  in_('\n--- lỗi chặn vòng 3 mục 2.1: ngồi KHÔNG xuyên ghế (bbox.min.y) ---');
+  const doNgoi = [];
+  for (const ghe of ['ghe-1', 'ghe-2']) {
+    const r = await page.evaluate(
+      (g) => window.stage.run('actor.sit', { actor: 'lan', seat: g }),
+      ghe,
+    );
+    ghi(`actor.sit ${ghe}`, r.ok === true, r.ok ? `durationMs=${r.result.durationMs}` : r.error);
+    await page.waitForTimeout(r.ok ? r.result.durationMs + 300 : 1500);
+    const m = await page.evaluate(() => window.stage.doXuong('lan'));
+    await page.screenshot({ path: `${THU_MUC}/clip-sit-${ghe}.png` });
+    const minY = m.bbox[0];
+    ghi(`${ghe}: ngồi không lún — bbox.min.y ≥ −0,01`, minY >= -0.01,
+      `bbox.min.y=${minY}`, { ghe, minY });
+    doNgoi.push({ ghe, minY });
+    await page.evaluate(() => window.stage.run('actor.stand', { actor: 'lan' }));
+    await page.waitForTimeout(900);
+  }
+  nhatKy.doNgoi = doNgoi;
 
   in_('\n--- 3 lỗi chặn vòng 1: kiểm lại trên app THẬT ---');
   // 1.2 actor.stop reset biểu cảm + mood ngay
