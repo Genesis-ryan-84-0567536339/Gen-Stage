@@ -28,16 +28,16 @@ Quyền ghi trong metadata của chính file VRM (đọc trực tiếp từ file
 - `creditNotation`: `unnecessary` — không bắt buộc ghi credit
 - `allowAntisocialOrHateUsage`: `false` — **cấm** dùng cho nội dung phản xã hội / thù hận
 
-## 1b. Nhân vật NAM `owner` — "Bruno" (100 Avatars R3) → `public/models/owner.vrm`
+## 1b. Nhân vật NAM `owner` — "Biz Dude" (102_Bizdude, 100 Avatars R3) → `public/models/owner.vrm`
 
 Thêm ở B1 (Issue #18 mục 3): Boss điều khiển một nhân vật NAM.
 
 | Mục | Nội dung |
 | --- | --- |
-| Nguồn tải | `https://arweave.net/WR_xW_yGKwubTj-kdlyw5jNVx5m2ldMxwg_enz_Znbw` (tải bằng `pnpm assets`) |
+| Nguồn tải | `https://arweave.net/k-_vw28ADGy2jPwnq02Tc98wC0Ey10Ia3JVYQ8qiaxM` (tải bằng `pnpm assets`) |
 | Registry nguồn | https://github.com/ToxSam/open-source-avatars — `data/avatars/100avatars-r3.json`; trang gốc https://opensourceavatars.com |
 | Tác giả | dự án "100 Avatars" Round 3 — Polygonal Mind / ToxSam |
-| Định dạng | VRM 0.x (`VRM` 0.0), 52 xương humanoid, ~13,7 MB |
+| Định dạng | VRM 0.x (`VRM` 0.0), 52 xương humanoid, ~2,2 MB |
 | Giấy phép | **CC0 1.0 Universal** — ghi ngay trong `meta` của file VRM |
 
 Quyền đọc trực tiếp từ metadata của chính file:
@@ -47,7 +47,7 @@ Quyền đọc trực tiếp từ metadata của chính file:
 - `allowRedistribution`: `true` · `modification`: `ALLOW`
 - `creditNotation`: `UNNECESSARY`
 
-**Ghi rõ điểm chưa đẹp**: Bruno là model *low-poly kiểu người thật*, không
+**Ghi rõ điểm chưa đẹp**: Biz Dude là model *low-poly kiểu người thật*, không
 cùng gu anime với `avatar.vrm` (VRoid) của `gen` — hai nhân vật đứng cạnh nhau
 thấy lệch style. Đã tra và loại các bản VRoid `AvatarSample_A` (nam, anime,
 đúng gu) vì mirror duy nhất tải được (`madjin/vrm-samples`) **không có file
