@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "start": "bash scripts/chay.sh",
+    "stop": "bash scripts/chay.sh tat",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "assets": "bash scripts/fetch-assets.sh",

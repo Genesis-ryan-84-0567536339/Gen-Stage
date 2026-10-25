@@ -10,11 +10,10 @@ Hết. Mọi thứ khác dưới đây chỉ là cách nối dây.
 
 ```bash
 cd ~/Documents/Games\ 3d/Gen-Stage
-pnpm bridge          # ws 8787 (lệnh) + HTTP 8788 (giọng Việt) + MCP 8789
-pnpm dev             # rồi mở http://localhost:5173/?bridge=1
+pnpm start           # MỘT LỆNH: bridge (ws 8787 + giọng 8788 + MCP 8789) + sân khấu + não agy (tmux gen-stage-nao) + mở Firefox
 ```
 
-Trình duyệt **phải** mở bằng `?bridge=1`, không thì mọi tool trả đúng một câu
+Trình duyệt mặc định tự nối bridge (tắt bằng `?bridge=0`); chưa nối thì mọi tool trả đúng một câu
 lỗi: *"Sân khấu chưa nối. Mở http://localhost:5173/?bridge=1…"*.
 
 ## 2. Đăng ký MCP vào agy CLI (Antigravity CLI)

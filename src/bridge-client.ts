@@ -135,7 +135,8 @@ export function urlTts(): string {
 }
 
 /** Có bật bridge lúc mở app không. */
+/** Mặc định BẬT (bridge chưa chạy thì tự thử lại, không lỗi); tắt bằng `?bridge=0`. */
 export function coBatBridge(): boolean {
   const q = new URLSearchParams(location.search).get('bridge');
-  return q === '1' || q === 'true';
+  return !(q === '0' || q === 'false');
 }
