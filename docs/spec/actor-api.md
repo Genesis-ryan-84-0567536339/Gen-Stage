@@ -241,6 +241,98 @@ Ví dụ kịch bản Boss dán vào ô kịch bản (hoặc agent gửi):
 (phím `Space`, ô chat dưới màn hình, bảng lệnh) đều bắn cùng một sự kiện mà
 không cửa nào phải tự nhớ bắn — và não chỉ cần nghe một cái tên.
 
+### 3.6 Lệnh giọng: gọi tên rồi ra lệnh (Sửa spec 26/10 — C2, Issue #32)
+
+Boss 26/10: *"làm thật hoàn thiện là tôi có thể dùng giọng nói để ra lệnh cho
+tất cả nhân vật trong giao diện, nhân vật nam tên Javis"*.
+
+v0.1 **không thêm lệnh nào**: lệnh giọng là một **lớp dịch** đứng trước
+dispatcher (`src/behavior/hieu-lenh.ts` + bảng ngữ pháp `ngu-phap.ts`), nghe
+`user.text` / `user.speech` rồi gọi đúng bộ lệnh có sẵn với nguồn `giong`.
+Không LLM, không gọi mạng, chạy trong trình duyệt.
+
+**Tên nhân vật.** Nhân vật nam có **tên hiển thị "Javis"**; `id` vẫn là `owner`
+(đổi id là phá `controlledBy`, phím WASD, camera `theo-owner`, nguồn `user.text`
+và mọi tool MCP). Bảng tên + bí danh giọng nằm trong `src/stage/noi-dung.ts`
+(`TEN_HIEN_THI`, `BI_DANH_NHAN_VAT`), nên `stage.describe().actors[].name` trả
+`"Javis"` và bong bóng chữ cũng vậy. Gen giữ tên `Gen`.
+
+**Người nhận.** Lớp này tách người nhận trước khi đọc mệnh lệnh:
+
+| Sếp gọi | Người nhận |
+| --- | --- |
+| `Javis…` (kể cả "Ja-vít", "Gia vít", "Jarvis") | `owner` |
+| `Gen…` (kể cả "Ghen", "Gien") | `gen` |
+| `mọi người` · `cả hai` · `tất cả` · `hai người` | **cả hai**, Javis diễn trước |
+| không gọi tên | `gen` (mặc định) |
+
+Có hai tên trong câu ("Gen, nhìn Javis") thì **tên sớm nhất** là người nhận,
+tên còn lại là mục tiêu của lệnh.
+
+**Ngữ pháp là DỮ LIỆU.** `BANG_MAU_CAU` trong `src/behavior/ngu-phap.ts`: mỗi
+dòng gồm các cách nói (viết **không dấu**, slot `<place>` / `<emote>` /
+`<man hinh>` / `<module>` / `<muc tieu>` / `<ten>` / `<loi>`), mô tả, câu ví dụ,
+và hàm sinh lệnh. Danh sách place / emote / màn hình / module **không chôn
+trong bảng** — lấy động từ `stage.bootstrap`, nên thêm place là lệnh giọng tự
+biết. Tab **"Giọng"** trên bảng lệnh sinh thẳng từ bảng này (spec mục 4: không
+viết tay dòng nào).
+
+Nhóm lệnh hiểu được: đi tới `<place>` · lại đây · quay lại · nhìn `<ai>` ·
+ngồi / ngồi `<ghế>` · đứng lên · dừng · `<emote>` (15 emote, có đồng nghĩa:
+"vui lên", "ăn mừng", "bất ngờ"…) · mở/tắt màn hình `<main/trái/phải>` ·
+dựng / kết tinh `<tên>` · cầm / cất module `<tên>` · đổi góc máy · dựng lại sân
+khấu · nói "`<câu>`" · **nói với `<ai>` "`<câu>`"**.
+
+**Nói với ai (đồng bộ C0 — phản xạ nhìn người đang nói).** `actor.say` nhận
+thêm `to?: actorId | "camera"` (mặc định `camera`, tức nói với Sếp). Lệnh giọng
+dịch: *"Javis, nói với Gen «…»"* → `actor.say { actor: "owner", text, to: "gen" }`;
+câu **xác nhận ngắn** ("Dạ" / "Rõ Sếp") luôn dùng `to: "camera"`. `validate.ts`
+**chặn tham số lạ**, nên lớp hiểu lệnh chỉ gửi `to` khi registry thật sự có
+tham số đó — nhánh C0 chưa merge thì nó tự bỏ `to`, lệnh vẫn chạy đúng.
+
+**Chịu lỗi STT.** Câu của Sếp và mẫu câu đều được **bỏ dấu** trước khi so, mỗi
+từ cho lệch **Levenshtein ≤ 2** (từ ≤ 3 ký tự phải đúng y, 4–5 ký tự lệch ≤ 1),
+và **số đếm bằng chữ** tính như chữ số ("bàn một" = `ban-1`). Từ lạ giữa câu bị
+bỏ qua có trừ điểm, nên "Javis ơi, đi tới cái bàn điều khiển giúp em nhé" vẫn
+khớp `di toi <place>`. Mẫu **cụ thể hơn** luôn thắng ("dựng lại sân khấu" ≠
+"dừng lại").
+
+**Khớp rồi thì sao.** Nhân vật xác nhận ngắn bằng **giọng** ("Dạ" / "Rõ Sếp" /
+"Vâng ạ") kèm **nhắc lại lệnh đã hiểu** trong bong bóng chữ ("Rõ Sếp, đi tới
+bàn điều khiển"), rồi lệnh thật chạy qua `dispatcher.run(cmd, args, 'giong')` —
+xếp hàng, nhật ký, kiểm tham số y như mọi đường vào khác. Giọng theo actor:
+Javis → **nam**, Gen → **nữ** (mục 3.2, B2).
+
+**KHÔNG bắn `user.text` hai lần.** Lớp này không bắn lại sự kiện nào. Khớp được
+thì nó:
+
+1. thêm **`handled: true`** vào chính `data` của `user.text`/`user.speech` đang
+   chảy (đánh dấu **đồng bộ**, trước khi sự kiện ra tới bridge/MCP), và
+2. bắn thêm **`user.command`** `{ text, actors, cmd, args, mau, matched, nhacLai }`.
+
+> **Giao kèo cho não (C-não, `scripts/nao-demo.mjs`, skill agy):** bỏ qua mọi
+> `user.text` / `user.speech` có `handled: true` — câu đó đã thành lệnh và nhân
+> vật đã làm xong. Chỉ trả lời những câu **không** có cờ đó.
+
+**Không khớp mẫu nào** (câu tự do):
+
+- người nhận là **Gen** → giữ nguyên luồng mục 3.5: `user.text` chảy tới não
+  qua `stage_events`, lớp này không chạm vào (không `handled`, không
+  `user.command`);
+- người nhận là **Javis** → Javis không có não, nên lớp này cho Javis nói
+  *"Em chưa hiểu lệnh này, Sếp nói rõ hơn ạ"* (giọng nam) và đánh dấu `handled`
+  để não không trả lời chồng lên.
+
+**`stage.describe` thêm `lastCommand`:**
+
+```json
+{ "lastCommand": { "text": "Javis, đi tới bàn điều khiển", "actor": "owner",
+                   "cmd": "actor.moveTo", "matched": true, "t": 1761000000000 } }
+```
+
+`matched: false` nghĩa là câu đó là câu tự do (đã chuyển cho não, hoặc Javis
+nói chưa hiểu).
+
 ## 4. Giao diện test thủ công (bắt buộc có từ đợt A)
 - Bảng bên phải liệt kê **tự động** mọi lệnh từ `stage.bootstrap` → mỗi lệnh 1 form nhỏ + nút Chạy. Không viết tay nút nào.
 - Ô "Kịch bản": dán JSON (hoặc dạng ngắn 1 dòng/1 lệnh: `lan moveTo ban-2`) → Chạy.

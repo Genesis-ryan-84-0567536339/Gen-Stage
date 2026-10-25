@@ -1,0 +1,571 @@
+{
+  "so": 30,
+  "dungAi": 30,
+  "dungLenh": 30,
+  "sai": [],
+  "cau": [
+    {
+      "cau": "Javis, đi tới bàn điều khiển",
+      "aiMongDoi": [
+        "owner"
+      ],
+      "aiThay": [
+        "owner"
+      ],
+      "cmdMongDoi": "actor.moveTo",
+      "cmdThay": "actor.moveTo",
+      "args": {
+        "actor": "owner",
+        "to": "ban-dieu-khien"
+      },
+      "mau": "moveTo",
+      "nhacLai": "đi tới bàn điều khiển",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "Gen, đi tới kệ module",
+      "aiMongDoi": [
+        "gen"
+      ],
+      "aiThay": [
+        "gen"
+      ],
+      "cmdMongDoi": "actor.moveTo",
+      "cmdThay": "actor.moveTo",
+      "args": {
+        "actor": "gen",
+        "to": "ke-module"
+      },
+      "mau": "moveTo",
+      "nhacLai": "đi tới kệ module",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "Javis ơi, đi ra cửa giúp em nhé",
+      "aiMongDoi": [
+        "owner"
+      ],
+      "aiThay": [
+        "owner"
+      ],
+      "cmdMongDoi": "actor.moveTo",
+      "cmdThay": "actor.moveTo",
+      "args": {
+        "actor": "owner",
+        "to": "cua"
+      },
+      "mau": "moveTo",
+      "nhacLai": "đi tới cửa",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "Gen qua bàn hai",
+      "aiMongDoi": [
+        "gen"
+      ],
+      "aiThay": [
+        "gen"
+      ],
+      "cmdMongDoi": "actor.moveTo",
+      "cmdThay": "actor.moveTo",
+      "args": {
+        "actor": "gen",
+        "to": "ban-2"
+      },
+      "mau": "moveTo",
+      "nhacLai": "đi tới bàn hai",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "Gen, đi tới bàn một",
+      "aiMongDoi": [
+        "gen"
+      ],
+      "aiThay": [
+        "gen"
+      ],
+      "cmdMongDoi": "actor.moveTo",
+      "cmdThay": "actor.moveTo",
+      "args": {
+        "actor": "gen",
+        "to": "ban-1"
+      },
+      "mau": "moveTo",
+      "nhacLai": "đi tới bàn một",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "đi tới bục trung tâm",
+      "aiMongDoi": [
+        "gen"
+      ],
+      "aiThay": [
+        "gen"
+      ],
+      "cmdMongDoi": "actor.moveTo",
+      "cmdThay": "actor.moveTo",
+      "args": {
+        "actor": "gen",
+        "to": "buc-trung-tam"
+      },
+      "mau": "moveTo",
+      "nhacLai": "đi tới bục trung tâm",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "Gen, lại đây",
+      "aiMongDoi": [
+        "gen"
+      ],
+      "aiThay": [
+        "gen"
+      ],
+      "cmdMongDoi": "actor.moveTo",
+      "cmdThay": "actor.moveTo",
+      "args": {
+        "actor": "gen",
+        "to": "@cho-sep"
+      },
+      "mau": "laiDay",
+      "nhacLai": "lại chỗ Sếp",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "Javis quay lại",
+      "aiMongDoi": [
+        "owner"
+      ],
+      "aiThay": [
+        "owner"
+      ],
+      "cmdMongDoi": "actor.moveTo",
+      "cmdThay": "actor.moveTo",
+      "args": {
+        "actor": "owner",
+        "to": "buc-trung-tam"
+      },
+      "mau": "quayLai",
+      "nhacLai": "quay về chỗ cũ",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "Gen, ngồi xuống",
+      "aiMongDoi": [
+        "gen"
+      ],
+      "aiThay": [
+        "gen"
+      ],
+      "cmdMongDoi": "actor.sit",
+      "cmdThay": "actor.sit",
+      "args": {
+        "actor": "gen",
+        "seat": "@ghe-gan-nhat"
+      },
+      "mau": "ngoi",
+      "nhacLai": "ngồi xuống",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "Gen ngồi ghế hai",
+      "aiMongDoi": [
+        "gen"
+      ],
+      "aiThay": [
+        "gen"
+      ],
+      "cmdMongDoi": "actor.sit",
+      "cmdThay": "actor.sit",
+      "args": {
+        "actor": "gen",
+        "seat": "ghe-2"
+      },
+      "mau": "ngoiGhe",
+      "nhacLai": "ngồi ghế hai",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "Javis, đứng lên",
+      "aiMongDoi": [
+        "owner"
+      ],
+      "aiThay": [
+        "owner"
+      ],
+      "cmdMongDoi": "actor.stand",
+      "cmdThay": "actor.stand",
+      "args": {
+        "actor": "owner"
+      },
+      "mau": "dungLen",
+      "nhacLai": "đứng lên",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "Gen, dừng lại",
+      "aiMongDoi": [
+        "gen"
+      ],
+      "aiThay": [
+        "gen"
+      ],
+      "cmdMongDoi": "actor.stop",
+      "cmdThay": "actor.stop",
+      "args": {
+        "actor": "gen"
+      },
+      "mau": "dungLai",
+      "nhacLai": "dừng lại",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "Javis dừng",
+      "aiMongDoi": [
+        "owner"
+      ],
+      "aiThay": [
+        "owner"
+      ],
+      "cmdMongDoi": "actor.stop",
+      "cmdThay": "actor.stop",
+      "args": {
+        "actor": "owner"
+      },
+      "mau": "dungLai",
+      "nhacLai": "dừng lại",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "Gen, nhìn Javis",
+      "aiMongDoi": [
+        "gen"
+      ],
+      "aiThay": [
+        "gen"
+      ],
+      "cmdMongDoi": "actor.lookAt",
+      "cmdThay": "actor.lookAt",
+      "args": {
+        "actor": "gen",
+        "target": "owner"
+      },
+      "mau": "nhin",
+      "nhacLai": "nhìn Javis",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "Javis, nhìn vào bàn điều khiển",
+      "aiMongDoi": [
+        "owner"
+      ],
+      "aiThay": [
+        "owner"
+      ],
+      "cmdMongDoi": "actor.lookAt",
+      "cmdThay": "actor.lookAt",
+      "args": {
+        "actor": "owner",
+        "target": "ban-dieu-khien"
+      },
+      "mau": "nhin",
+      "nhacLai": "nhìn bàn điều khiển",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "Gen, vui lên",
+      "aiMongDoi": [
+        "gen"
+      ],
+      "aiThay": [
+        "gen"
+      ],
+      "cmdMongDoi": "actor.emote",
+      "cmdThay": "actor.emote",
+      "args": {
+        "actor": "gen",
+        "emote": "vui"
+      },
+      "mau": "emote",
+      "nhacLai": "vui lên",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "Javis, chào",
+      "aiMongDoi": [
+        "owner"
+      ],
+      "aiThay": [
+        "owner"
+      ],
+      "cmdMongDoi": "actor.emote",
+      "cmdThay": "actor.emote",
+      "args": {
+        "actor": "owner",
+        "emote": "chao"
+      },
+      "mau": "emote",
+      "nhacLai": "chào",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "Gen ngạc nhiên đi",
+      "aiMongDoi": [
+        "gen"
+      ],
+      "aiThay": [
+        "gen"
+      ],
+      "cmdMongDoi": "actor.emote",
+      "cmdThay": "actor.emote",
+      "args": {
+        "actor": "gen",
+        "emote": "ngac-nhien"
+      },
+      "mau": "emote",
+      "nhacLai": "ngạc nhiên",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "Gen, suy nghĩ đi",
+      "aiMongDoi": [
+        "gen"
+      ],
+      "aiThay": [
+        "gen"
+      ],
+      "cmdMongDoi": "actor.emote",
+      "cmdThay": "actor.emote",
+      "args": {
+        "actor": "gen",
+        "emote": "suy-nghi"
+      },
+      "mau": "emote",
+      "nhacLai": "suy nghĩ",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "Javis, ăn mừng",
+      "aiMongDoi": [
+        "owner"
+      ],
+      "aiThay": [
+        "owner"
+      ],
+      "cmdMongDoi": "actor.emote",
+      "cmdThay": "actor.emote",
+      "args": {
+        "actor": "owner",
+        "emote": "thanh-cong"
+      },
+      "mau": "emote",
+      "nhacLai": "ăn mừng",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "Gen mệt rồi",
+      "aiMongDoi": [
+        "gen"
+      ],
+      "aiThay": [
+        "gen"
+      ],
+      "cmdMongDoi": "actor.emote",
+      "cmdThay": "actor.emote",
+      "args": {
+        "actor": "gen",
+        "emote": "met"
+      },
+      "mau": "emote",
+      "nhacLai": "mệt",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "mọi người chào",
+      "aiMongDoi": [
+        "owner",
+        "gen"
+      ],
+      "aiThay": [
+        "owner",
+        "gen"
+      ],
+      "cmdMongDoi": "actor.emote",
+      "cmdThay": "actor.emote",
+      "args": {
+        "actor": "owner",
+        "emote": "chao"
+      },
+      "mau": "emote",
+      "nhacLai": "chào",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "cả hai vui lên",
+      "aiMongDoi": [
+        "owner",
+        "gen"
+      ],
+      "aiThay": [
+        "owner",
+        "gen"
+      ],
+      "cmdMongDoi": "actor.emote",
+      "cmdThay": "actor.emote",
+      "args": {
+        "actor": "owner",
+        "emote": "vui"
+      },
+      "mau": "emote",
+      "nhacLai": "vui lên",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "tất cả đi tới bục trung tâm",
+      "aiMongDoi": [
+        "owner",
+        "gen"
+      ],
+      "aiThay": [
+        "owner",
+        "gen"
+      ],
+      "cmdMongDoi": "actor.moveTo",
+      "cmdThay": "actor.moveTo",
+      "args": {
+        "actor": "owner",
+        "to": "buc-trung-tam"
+      },
+      "mau": "moveTo",
+      "nhacLai": "đi tới bục trung tâm",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "mở màn hình trái",
+      "aiMongDoi": [
+        "gen"
+      ],
+      "aiThay": [
+        "gen"
+      ],
+      "cmdMongDoi": "screen.show",
+      "cmdThay": "screen.show",
+      "args": {
+        "screen": "left",
+        "kind": "text",
+        "content": "Gen-Stage · lệnh giọng của Sếp"
+      },
+      "mau": "moManHinh",
+      "nhacLai": "mở màn hình trái",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "tắt màn hình phải",
+      "aiMongDoi": [
+        "gen"
+      ],
+      "aiThay": [
+        "gen"
+      ],
+      "cmdMongDoi": "screen.clear",
+      "cmdThay": "screen.clear",
+      "args": {
+        "screen": "right"
+      },
+      "mau": "tatManHinh",
+      "nhacLai": "tắt màn hình phải",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "đổi góc máy",
+      "aiMongDoi": [
+        "gen"
+      ],
+      "aiThay": [
+        "gen"
+      ],
+      "cmdMongDoi": "camera.preset",
+      "cmdThay": "camera.preset",
+      "args": {
+        "name": "@goc-may-ke"
+      },
+      "mau": "doiGocMay",
+      "nhacLai": "đổi góc máy",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "dựng lại sân khấu",
+      "aiMongDoi": [
+        "gen"
+      ],
+      "aiThay": [
+        "gen"
+      ],
+      "cmdMongDoi": "stage.reset",
+      "cmdThay": "stage.reset",
+      "args": {},
+      "mau": "dungLaiSanKhau",
+      "nhacLai": "dựng lại sân khấu",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "Gen, hôm nay làm gì",
+      "aiMongDoi": [
+        "gen"
+      ],
+      "aiThay": [
+        "gen"
+      ],
+      "cmdMongDoi": null,
+      "cmdThay": null,
+      "args": null,
+      "mau": null,
+      "nhacLai": null,
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "Gen, dự án Gen-Harness tới đâu rồi em",
+      "aiMongDoi": [
+        "gen"
+      ],
+      "aiThay": [
+        "gen"
+      ],
+      "cmdMongDoi": null,
+      "cmdThay": null,
+      "args": null,
+      "mau": null,
+      "nhacLai": null,
+      "aiOk": true,
+      "lenhOk": true
+    }
+  ]
+}

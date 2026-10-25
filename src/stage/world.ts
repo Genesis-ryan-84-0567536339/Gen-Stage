@@ -42,6 +42,7 @@ import {
   PLACES,
   PRESET_DEN,
   PRESET_MAY,
+  TEN_HIEN_THI,
   timPlace,
   type DinhNghiaPlace,
 } from './noi-dung';
@@ -68,7 +69,9 @@ const BAN_KINH_AT = 0.9;
  * Thiếu `owner.vrm` (chưa chạy `pnpm assets`) thì `actorSpawn` tự rơi về
  * `models/avatar.vrm` chứ không làm sập cảnh — xem `napCanh`.
  */
-export const OWNER = { id: 'owner', ten: 'Boss', model: 'models/owner.vrm' } as const;
+// C2 (#32): tên hiển thị lấy từ BẢNG `TEN_HIEN_THI` trong `noi-dung.ts`
+// (Boss 26/10: nhân vật nam tên **Javis**); `id` vẫn là `owner`.
+export const OWNER = { id: 'owner', ten: TEN_HIEN_THI.owner, model: 'models/owner.vrm' } as const;
 export const GEN = { id: 'gen', ten: 'Gen', model: 'models/avatar.vrm' } as const;
 /** Giữ tên cũ cho mã/kịch bản A1–A3 còn tham chiếu: nay trỏ vào `gen`. */
 export const ACTOR_MAC_DINH = { id: GEN.id, ten: GEN.ten, model: GEN.model };

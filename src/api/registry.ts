@@ -28,6 +28,8 @@ export const SU_KIEN_HE_THONG = [
   'user.click',
   'user.speech',
   'user.text',
+  /** C2 (#32) — lớp hiểu lệnh giọng đã khớp một mệnh lệnh cố định. */
+  'user.command',
   'bridge.connected',
   'bridge.disconnected',
   /** A3 — `window.stage.feed(screen, chunk)` đẩy mẩu khi `screen.stream` source:"agent". */

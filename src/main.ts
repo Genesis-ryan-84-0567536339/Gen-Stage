@@ -14,6 +14,8 @@ import { dungGiaoDien } from './ui/index';
 import { batPhim } from './ui/phim';
 // B3 (#21) — ô chat dưới màn hình: cùng đường với Space, bắn `user.text`.
 import { batOChat } from './ui/o-chat';
+// C2 (#32) — lớp hiểu lệnh giọng: nghe `user.text`/`user.speech` trên bus.
+import { batHieuLenh } from './behavior/hieu-lenh';
 import { BridgeClient, coBatBridge, urlTts } from './bridge-client';
 // B2 (#20) — giọng tiếng Việt thật + nút mở khoá autoplay.
 import { lopTieng } from './audio/tts-client';
@@ -88,6 +90,12 @@ try {
 }
 const registry = taoRegistry();
 const dispatcher = new Dispatcher({ registry, world, bus, nhatKy });
+/**
+ * C2 (#32) — BẬT TRƯỚC cầu nối: lớp hiểu lệnh phải là người nghe `user.text`
+ * ĐẦU TIÊN để kịp đánh dấu `handled: true` trước khi sự kiện đi ra bridge/MCP
+ * (xem `src/behavior/hieu-lenh.ts`).
+ */
+const hieuLenh = batHieuLenh(dispatcher, bus, (chu) => toast(chu));
 const bridge = new BridgeClient(dispatcher, bus);
 // B2 — lớp tiếng dùng chung; `null` nếu trình duyệt không có Web Audio.
 const tieng = lopTieng();
@@ -169,6 +177,9 @@ async function khoiDong(): Promise<void> {
   sanSang = true;
   bus.emit('stage.ready', { actors: world.actorIds(), places: world.placeIds() });
   toast('WASD để đi · 1–0 emote · Space nói · ? xem bảng phím');
+
+  // C2 — nạp danh sách place/emote/màn hình cho lớp hiểu lệnh (sinh từ bootstrap)
+  await hieuLenh.lamMoi();
 
   if (coBatBridge()) bridge.bat();
 }

@@ -1,0 +1,712 @@
+{
+  "chay": "2026-10-25T23:53:20.147Z",
+  "cong": {
+    "ws": 8817,
+    "tts": 8818,
+    "mcp": 8819
+  },
+  "buoc": [
+    {
+      "nhan": "bridge bật cả ws + tts + mcp (cổng riêng)",
+      "ok": true,
+      "chiTiet": "ws 8817 · tts 8818 · mcp 8819"
+    },
+    {
+      "nhan": "nhân vật nam hiện tên \"Javis\" (id vẫn là owner)",
+      "ok": true,
+      "chiTiet": "[{\"id\":\"owner\",\"name\":\"Javis\"},{\"id\":\"gen\",\"name\":\"Gen\"}]",
+      "so": [
+        {
+          "id": "owner",
+          "name": "Javis"
+        },
+        {
+          "id": "gen",
+          "name": "Gen"
+        }
+      ]
+    },
+    {
+      "nhan": "lớp hiểu lệnh khớp mẫu và bắn user.command",
+      "ok": true,
+      "chiTiet": "{\"text\":\"Javis, đi tới bàn điều khiển\",\"actors\":[\"owner\"],\"cmd\":\"actor.moveTo\",\"args\":{\"actor\":\"owner\",\"to\":\"ban-dieu-khien\"},\"mau\":\"moveTo\",\"matched\":true,\"nhacLai\":\"đi tới bàn điều khiển\"}",
+      "so": {
+        "text": "Javis, đi tới bàn điều khiển",
+        "actors": [
+          "owner"
+        ],
+        "cmd": "actor.moveTo",
+        "args": {
+          "actor": "owner",
+          "to": "ban-dieu-khien"
+        },
+        "mau": "moveTo",
+        "matched": true,
+        "nhacLai": "đi tới bàn điều khiển"
+      }
+    },
+    {
+      "nhan": "user.text của câu lệnh được đánh dấu handled (não bỏ qua)",
+      "ok": true,
+      "chiTiet": "[{\"text\":\"Javis, đi tới bàn điều khiển\",\"handled\":true},{\"text\":\"Dạ, đi tới bàn điều khiển\",\"handled\":true}]",
+      "so": {
+        "userText": [
+          {
+            "text": "Javis, đi tới bàn điều khiển",
+            "handled": true
+          },
+          {
+            "text": "Dạ, đi tới bàn điều khiển",
+            "handled": true
+          }
+        ]
+      }
+    },
+    {
+      "nhan": "Javis đi tới bàn điều khiển thật",
+      "ok": true,
+      "chiTiet": "arrived={\"actor\":\"owner\",\"to\":\"ban-dieu-khien\",\"pos\":[4.8,0,-1]} · at=ban-dieu-khien",
+      "so": {
+        "at": "ban-dieu-khien",
+        "nearest": {
+          "place": "ban-dieu-khien",
+          "distance": 0
+        }
+      }
+    },
+    {
+      "nhan": "Javis xác nhận ngắn bằng GIỌNG NAM, nhắc lại lệnh đã hiểu",
+      "ok": true,
+      "chiTiet": "text=\"Dạ, đi tới bàn điều khiển\" · voice=nam",
+      "so": {
+        "text": "Dạ, đi tới bàn điều khiển",
+        "voice": "nam"
+      }
+    },
+    {
+      "nhan": "Gen diễn emote \"vui\"",
+      "ok": true,
+      "chiTiet": "user.command={\"actor\":\"gen\",\"emote\":\"vui\"} · emote=vui"
+    },
+    {
+      "nhan": "\"mọi người chào\" → CẢ HAI nhân vật cùng chào",
+      "ok": true,
+      "chiTiet": "người nhận=[\"owner\",\"gen\"] · lệnh=owner:chao · gen:chao · emoteDone owner=true gen=true",
+      "so": {
+        "actors": [
+          "owner",
+          "gen"
+        ],
+        "lenh": [
+          {
+            "actor": "owner",
+            "emote": "chao",
+            "intensity": 1
+          },
+          {
+            "actor": "gen",
+            "emote": "chao",
+            "intensity": 1
+          }
+        ]
+      }
+    },
+    {
+      "nhan": "tab \"Giọng\" liệt kê mẫu câu, sinh từ bảng ngữ pháp",
+      "ok": true,
+      "chiTiet": "{\"nhom\":6,\"mau\":18,\"cuoi\":\"“mọi người chào” → Javis + Gen · actor.emote\"}",
+      "so": {
+        "nhom": 6,
+        "mau": 18,
+        "cuoi": "“mọi người chào” → Javis + Gen · actor.emote"
+      }
+    },
+    {
+      "nhan": "stage.describe trả lastCommand",
+      "ok": true,
+      "chiTiet": "{\"text\":\"mọi người chào\",\"actor\":\"owner\",\"cmd\":\"actor.emote\",\"matched\":true,\"t\":1792972472952}",
+      "so": {
+        "text": "mọi người chào",
+        "actor": "owner",
+        "cmd": "actor.emote",
+        "matched": true,
+        "t": 1792972472952
+      }
+    },
+    {
+      "nhan": "mọi lệnh của lớp hiểu lệnh đi qua dispatcher (nguồn \"giong\")",
+      "ok": true,
+      "chiTiet": "11 lệnh: stage.bootstrap, stage.describe, actor.say, actor.moveTo, actor.emote"
+    },
+    {
+      "nhan": "não nối MCP stdio và bắt đầu nghe",
+      "ok": true,
+      "chiTiet": null
+    },
+    {
+      "nhan": "câu tự do KHÔNG bị lớp hiểu lệnh ăn (không handled, không user.command)",
+      "ok": true,
+      "chiTiet": "user.text={\"actor\":\"owner\",\"text\":\"Gen, hôm nay làm gì\"} · user.command=null",
+      "so": {
+        "userText": {
+          "actor": "owner",
+          "text": "Gen, hôm nay làm gì"
+        }
+      }
+    },
+    {
+      "nhan": "não (nao-demo) nghe được câu đó và Gen diễn trên sân khấu",
+      "ok": true,
+      "chiTiet": "emote=ra-lenh"
+    },
+    {
+      "nhan": "nhật ký của não: nghe ĐÚNG câu tự do rồi tự chọn lệnh",
+      "ok": true,
+      "chiTiet": "10 tool call · câu nghe được: [\"Gen, hôm nay làm gì\"]"
+    },
+    {
+      "nhan": "Gen trả lời bằng giọng thật (durationMs audio) theo lệnh của não",
+      "ok": true,
+      "chiTiet": "\"Xong rồi Sếp, gì đã kết tinh thành module. Em cất \" 5208 ms"
+    },
+    {
+      "nhan": "0 lỗi console",
+      "ok": true,
+      "chiTiet": ""
+    },
+    {
+      "nhan": "30 câu: 100 % đúng người nhận",
+      "ok": true,
+      "chiTiet": "30/30"
+    },
+    {
+      "nhan": "30 câu: ≥ 95 % đúng lệnh",
+      "ok": true,
+      "chiTiet": "30/30 = 100.0 %"
+    },
+    {
+      "nhan": "5 câu lỗi STT giả vẫn hiểu",
+      "ok": true,
+      "chiTiet": "5/5"
+    }
+  ],
+  "cauNoi": [
+    {
+      "cau": "Javis, đi tới bàn điều khiển",
+      "userCommand": {
+        "text": "Javis, đi tới bàn điều khiển",
+        "actors": [
+          "owner"
+        ],
+        "cmd": "actor.moveTo",
+        "args": {
+          "actor": "owner",
+          "to": "ban-dieu-khien"
+        },
+        "mau": "moveTo",
+        "matched": true,
+        "nhacLai": "đi tới bàn điều khiển"
+      },
+      "bongBong": null
+    },
+    {
+      "cau": "Gen, vui lên",
+      "userCommand": {
+        "text": "Gen, vui lên",
+        "actors": [
+          "gen"
+        ],
+        "cmd": "actor.emote",
+        "args": {
+          "actor": "gen",
+          "emote": "vui"
+        },
+        "mau": "emote",
+        "matched": true,
+        "nhacLai": "vui lên"
+      },
+      "emote": {
+        "actor": "gen",
+        "emote": "vui"
+      }
+    },
+    {
+      "cau": "mọi người chào",
+      "userCommand": {
+        "text": "mọi người chào",
+        "actors": [
+          "owner",
+          "gen"
+        ],
+        "cmd": "actor.emote",
+        "args": {
+          "actor": "owner",
+          "emote": "chao"
+        },
+        "mau": "emote",
+        "matched": true,
+        "nhacLai": "chào"
+      },
+      "lenh": [
+        {
+          "actor": "owner",
+          "emote": "chao",
+          "intensity": 1
+        },
+        {
+          "actor": "gen",
+          "emote": "chao",
+          "intensity": 1
+        }
+      ]
+    },
+    {
+      "cau": "Gen, hôm nay làm gì",
+      "userText": {
+        "actor": "owner",
+        "text": "Gen, hôm nay làm gì"
+      },
+      "genDien": {
+        "actor": "gen",
+        "emote": "ra-lenh"
+      }
+    }
+  ],
+  "lenhGiong": [
+    {
+      "cmd": "stage.bootstrap",
+      "args": {},
+      "ok": true,
+      "nguon": "giong"
+    },
+    {
+      "cmd": "stage.bootstrap",
+      "args": {},
+      "ok": true,
+      "nguon": "giong"
+    },
+    {
+      "cmd": "stage.describe",
+      "args": {},
+      "ok": true,
+      "nguon": "giong"
+    },
+    {
+      "cmd": "stage.describe",
+      "args": {},
+      "ok": true,
+      "nguon": "giong"
+    },
+    {
+      "cmd": "actor.say",
+      "args": {
+        "actor": "owner",
+        "text": "Dạ, đi tới bàn điều khiển"
+      },
+      "ok": true,
+      "nguon": "giong"
+    },
+    {
+      "cmd": "actor.moveTo",
+      "args": {
+        "actor": "owner",
+        "to": "ban-dieu-khien"
+      },
+      "ok": true,
+      "nguon": "giong"
+    },
+    {
+      "cmd": "actor.say",
+      "args": {
+        "actor": "gen",
+        "text": "Rõ Sếp, vui lên"
+      },
+      "ok": true,
+      "nguon": "giong"
+    },
+    {
+      "cmd": "actor.emote",
+      "args": {
+        "actor": "gen",
+        "emote": "vui",
+        "intensity": 1
+      },
+      "ok": true,
+      "nguon": "giong"
+    },
+    {
+      "cmd": "actor.say",
+      "args": {
+        "actor": "owner",
+        "text": "Vâng ạ, chào"
+      },
+      "ok": true,
+      "nguon": "giong"
+    },
+    {
+      "cmd": "actor.emote",
+      "args": {
+        "actor": "owner",
+        "emote": "chao",
+        "intensity": 1
+      },
+      "ok": true,
+      "nguon": "giong"
+    },
+    {
+      "cmd": "actor.emote",
+      "args": {
+        "actor": "gen",
+        "emote": "chao",
+        "intensity": 1
+      },
+      "ok": true,
+      "nguon": "giong"
+    }
+  ],
+  "nao": {
+    "soToolCall": 10,
+    "tenToolDaGoi": [
+      "stage_bootstrap",
+      "stage_events",
+      "stage_describe",
+      "actor_emote",
+      "screen_stream",
+      "module_build",
+      "actor_say"
+    ],
+    "cauNghe": [
+      "Gen, hôm nay làm gì"
+    ]
+  },
+  "suKien": [
+    {
+      "t": 1792972434018,
+      "event": "bridge.connected",
+      "data": {
+        "url": "ws://localhost:8817/?role=stage"
+      }
+    },
+    {
+      "t": 1792972437311,
+      "event": "scene.lightChanged",
+      "data": {
+        "preset": "am"
+      }
+    },
+    {
+      "t": 1792972438856,
+      "event": "user.command",
+      "data": {
+        "text": "Javis, đi tới bàn điều khiển",
+        "actors": [
+          "owner"
+        ],
+        "cmd": "actor.moveTo",
+        "args": {
+          "actor": "owner",
+          "to": "ban-dieu-khien"
+        },
+        "mau": "moveTo",
+        "matched": true,
+        "nhacLai": "đi tới bàn điều khiển"
+      }
+    },
+    {
+      "t": 1792972438817,
+      "event": "user.text",
+      "data": {
+        "actor": "owner",
+        "text": "Javis, đi tới bàn điều khiển",
+        "handled": true
+      }
+    },
+    {
+      "t": 1792972438869,
+      "event": "cmd.interrupted",
+      "data": {
+        "actor": "owner",
+        "catLenh": "actor.say",
+        "boHangDoi": 0
+      }
+    },
+    {
+      "t": 1792972438870,
+      "event": "user.text",
+      "data": {
+        "actor": "owner",
+        "text": "Dạ, đi tới bàn điều khiển",
+        "handled": true
+      }
+    },
+    {
+      "t": 1792972439018,
+      "event": "cmd.queued",
+      "data": {
+        "cmd": "actor.moveTo",
+        "actor": "owner",
+        "position": 1,
+        "dangChay": "actor.say"
+      }
+    },
+    {
+      "t": 1792972439027,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "owner",
+        "text": "Dạ, đi tới bàn điều khiển"
+      }
+    },
+    {
+      "t": 1792972439029,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "owner",
+        "text": "Javis, đi tới bàn điều khiển"
+      }
+    },
+    {
+      "t": 1792972445845,
+      "event": "actor.arrived",
+      "data": {
+        "actor": "owner",
+        "to": "ban-dieu-khien",
+        "pos": [
+          4.8,
+          0,
+          -1
+        ]
+      }
+    },
+    {
+      "t": 1792972454868,
+      "event": "user.command",
+      "data": {
+        "text": "Gen, vui lên",
+        "actors": [
+          "gen"
+        ],
+        "cmd": "actor.emote",
+        "args": {
+          "actor": "gen",
+          "emote": "vui"
+        },
+        "mau": "emote",
+        "matched": true,
+        "nhacLai": "vui lên"
+      }
+    },
+    {
+      "t": 1792972454865,
+      "event": "user.text",
+      "data": {
+        "actor": "owner",
+        "text": "Gen, vui lên",
+        "handled": true
+      }
+    },
+    {
+      "t": 1792972454987,
+      "event": "cmd.queued",
+      "data": {
+        "cmd": "actor.emote",
+        "actor": "gen",
+        "position": 1,
+        "dangChay": "actor.say"
+      }
+    },
+    {
+      "t": 1792972457176,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "owner",
+        "text": "Gen, vui lên"
+      }
+    },
+    {
+      "t": 1792972457259,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "gen",
+        "text": "Rõ Sếp, vui lên"
+      }
+    },
+    {
+      "t": 1792972459081,
+      "event": "actor.emoteDone",
+      "data": {
+        "actor": "gen",
+        "emote": "vui"
+      }
+    },
+    {
+      "t": 1792972472952,
+      "event": "user.command",
+      "data": {
+        "text": "mọi người chào",
+        "actors": [
+          "owner",
+          "gen"
+        ],
+        "cmd": "actor.emote",
+        "args": {
+          "actor": "owner",
+          "emote": "chao"
+        },
+        "mau": "emote",
+        "matched": true,
+        "nhacLai": "chào"
+      }
+    },
+    {
+      "t": 1792972472951,
+      "event": "user.text",
+      "data": {
+        "actor": "owner",
+        "text": "mọi người chào",
+        "handled": true
+      }
+    },
+    {
+      "t": 1792972472957,
+      "event": "cmd.interrupted",
+      "data": {
+        "actor": "owner",
+        "catLenh": "actor.say",
+        "boHangDoi": 0
+      }
+    },
+    {
+      "t": 1792972472958,
+      "event": "user.text",
+      "data": {
+        "actor": "owner",
+        "text": "Vâng ạ, chào",
+        "handled": true
+      }
+    },
+    {
+      "t": 1792972473044,
+      "event": "cmd.queued",
+      "data": {
+        "cmd": "actor.emote",
+        "actor": "owner",
+        "position": 1,
+        "dangChay": "actor.say"
+      }
+    },
+    {
+      "t": 1792972473054,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "owner",
+        "text": "Vâng ạ, chào"
+      }
+    },
+    {
+      "t": 1792972473058,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "owner",
+        "text": "mọi người chào"
+      }
+    },
+    {
+      "t": 1792972475058,
+      "event": "actor.emoteDone",
+      "data": {
+        "actor": "owner",
+        "emote": "chao"
+      }
+    },
+    {
+      "t": 1792972475061,
+      "event": "actor.emoteDone",
+      "data": {
+        "actor": "gen",
+        "emote": "chao"
+      }
+    },
+    {
+      "t": 1792972487119,
+      "event": "camera.moved",
+      "data": {
+        "preset": "toan-canh"
+      }
+    },
+    {
+      "t": 1792972518352,
+      "event": "user.text",
+      "data": {
+        "actor": "owner",
+        "text": "Gen, hôm nay làm gì"
+      }
+    },
+    {
+      "t": 1792972520109,
+      "event": "actor.emoteDone",
+      "data": {
+        "actor": "gen",
+        "emote": "ra-lenh"
+      }
+    },
+    {
+      "t": 1792972521002,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "owner",
+        "text": "Gen, hôm nay làm gì"
+      }
+    },
+    {
+      "t": 1792972523615,
+      "event": "screen.streamDone",
+      "data": {
+        "screen": "main",
+        "cancelled": false
+      }
+    },
+    {
+      "t": 1792972535861,
+      "event": "cmd.queued",
+      "data": {
+        "cmd": "actor.say",
+        "actor": "gen",
+        "position": 1,
+        "dangChay": "actor.emote"
+      }
+    },
+    {
+      "t": 1792972539615,
+      "event": "actor.held",
+      "data": {
+        "actor": "gen",
+        "prop": "gi-1",
+        "hand": "right"
+      }
+    },
+    {
+      "t": 1792972539617,
+      "event": "module.built",
+      "data": {
+        "module": "gi-1",
+        "shape": "book",
+        "label": "gì"
+      }
+    },
+    {
+      "t": 1792972539621,
+      "event": "actor.emoteDone",
+      "data": {
+        "actor": "gen",
+        "emote": "thanh-cong"
+      }
+    }
+  ],
+  "loiConsole": [],
+  "tongKet": {
+    "soBuoc": 20,
+    "soOk": 20,
+    "thatBai": []
+  }
+}
