@@ -1,5 +1,5 @@
 /**
- * idle-styles.ts — 4 kiểu đứng chờ (`actor.idleStyle`, spec mục 3.2b).
+ * idle-styles.ts — 5 kiểu đứng chờ (`actor.idleStyle`, spec mục 3.2b).
  *
  * Mỗi kiểu chỉ là vài số nhân vào lớp hành vi nhỏ trong `nhanvat.ts` (thở,
  * đổi chân, nhìn quanh, chớp mắt) — không có dáng riêng, nên không bao giờ
@@ -28,6 +28,11 @@ export const IDLE_STYLES = [
   'hao-hung',
   'met',
   'cang-thang',
+  // B1 (Issue #18 mục 3): Boss chốt Gen đứng bàn điều khiển dáng `cham-chu`.
+  // Tên này trước đó CHỈ có trong bảng emote (`actor.emote cham-chu`), nên
+  // `actor.idleStyle { style: 'cham-chu' }` trả lỗi — thêm hẳn một kiểu đứng
+  // chờ thay vì mượn `cang-thang` cho gần gần.
+  'cham-chu',
 ] as const;
 
 export type IdleStyle = (typeof IDLE_STYLES)[number];
@@ -37,4 +42,7 @@ export const THONG_SO_IDLE: Record<IdleStyle, ThongSoIdle> = {
   'hao-hung': { tho: 1.5, dungDua: 1.8, doiChan: 3, nhinQuanh: 3.2, chop: 0.8, gapVai: 0.03, cuiDau: -0.03 },
   met: { tho: 0.65, dungDua: 0.5, doiChan: 8.5, nhinQuanh: 11, chop: 1.8, gapVai: -0.09, cuiDau: 0.1 },
   'cang-thang': { tho: 1.25, dungDua: 0.7, doiChan: 2.4, nhinQuanh: 2.1, chop: 0.55, gapVai: 0.07, cuiDau: 0.02 },
+  // Chăm chú: thở đều, thân gần như không đung đưa, ít đổi chân, RẤT ít nhìn
+  // quanh (đang dán mắt vào màn hình), hơi chúi đầu về trước.
+  'cham-chu': { tho: 0.95, dungDua: 0.35, doiChan: 7.5, nhinQuanh: 14, chop: 1.25, gapVai: 0.02, cuiDau: 0.07 },
 };

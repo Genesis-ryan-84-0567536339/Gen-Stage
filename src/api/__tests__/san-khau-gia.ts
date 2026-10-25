@@ -8,6 +8,7 @@
 import type {
   Action,
   ActorSnapshot,
+  DieuKhienBoi,
   PropSnapshot,
   ScreenSnapshot,
   StageState,
@@ -20,6 +21,7 @@ import type {
 } from '../types';
 import { DINH_NGHIA_EMOTE } from '../../behavior/emotes';
 import { BIEU_CAM, CLIPS, EMOTES, PLACES, timPlace } from '../../stage/noi-dung';
+import { truotVaCham } from '../../stage/bo-cuc';
 import { IDLE_STYLES } from '../../behavior/idle-styles';
 
 /** A3 — màn hình hologram giả: chỉ đủ số liệu cho test logic `screen.*`. */
@@ -59,6 +61,11 @@ interface ActorGia {
   ngoi: boolean;
   /** Tâm trạng — chỉ ghi khi emote chạy XONG THẬT, `actor.stop` xoá ngay. */
   mood: string;
+  /** B1 — ai điều khiển (`stage.describe` → `controlledBy`). */
+  dieuKhienBoi: DieuKhienBoi;
+  /** B1 — vận tốc lái hiện tại (m/s), `actor.steer` đặt. */
+  vx: number;
+  vz: number;
 }
 
 /** Mỗi hành động mất đúng `nhip` ms để test chạy nhanh và đoán được. */
@@ -88,6 +95,9 @@ export class SanKhauGia implements StageWorld {
         hd: null,
         ngoi: false,
         mood: 'binh-thuong',
+        dieuKhienBoi: id === 'owner' ? 'owner' : 'agent',
+        vx: 0,
+        vz: 0,
       });
     }
   }
@@ -206,6 +216,9 @@ export class SanKhauGia implements StageWorld {
       hd: null,
       ngoi: false,
       mood: 'binh-thuong',
+      dieuKhienBoi: p.controlledBy ?? 'agent',
+      vx: 0,
+      vz: 0,
     });
     this.lichSu.push(`spawn:${p.id}`);
     return this.snap(this.a(p.id));
@@ -231,6 +244,44 @@ export class SanKhauGia implements StageWorld {
     }
     return this.hd(id, 'moveTo', 'walking', () => {
       x.pos = v;
+    });
+  }
+
+  /**
+   * `actor.steer` giả — đủ để test LOGIC (không mô phỏng gia tốc).
+   *
+   * Điểm bắt buộc phải giống sân khấu thật:
+   *   · steer mới **thay** steer cũ (`hd.cancel()` của lượt trước),
+   *   · `state` là `walking` khi đang lái nên `at` trả `null`,
+   *   · dời vị trí đúng `v · ms` khi chạy hết giờ (không bị cắt).
+   */
+  actorSteer(id: string, vx: number, vz: number, ms: number): Action {
+    const x = this.a(id);
+    const toc = Math.hypot(vx, vz);
+    // kẹp 1,6 m/s như `TOC_DO_STEER` thật
+    const he = toc > 1.6 ? 1.6 / toc : 1;
+    x.vx = vx * he;
+    x.vz = vz * he;
+    this.lichSu.push(`steer:${id}:${x.vx.toFixed(2)},${x.vz.toFixed(2)}`);
+    if (x.vx === 0 && x.vz === 0) {
+      x.hd?.cancel();
+      x.state = x.ngoi ? 'sitting' : 'idle';
+      return { durationMs: 0, done: Promise.resolve(), cancel: () => undefined };
+    }
+    x.ngoi = false;
+    const giay = Math.max(0, ms) / 1000;
+    return this.hd(id, `steerChay:${id}`, 'walking', () => {
+      // kẹp trong phòng + tránh bàn/kệ bằng ĐÚNG hàm của cảnh thật
+      const [nx, nz] = truotVaCham(
+        x.pos[0],
+        x.pos[2],
+        x.pos[0] + x.vx * giay,
+        x.pos[2] + x.vz * giay,
+      );
+      x.pos = [nx, 0, nz];
+      x.facing = Math.round(((Math.atan2(x.vx, x.vz) * 180) / Math.PI + 360) % 360);
+      x.vx = 0;
+      x.vz = 0;
     });
   }
 
@@ -289,6 +340,8 @@ export class SanKhauGia implements StageWorld {
     x.state = x.ngoi ? 'sitting' : 'idle';
     x.expression = 'neutral';
     x.mood = 'binh-thuong';
+    x.vx = 0;
+    x.vz = 0;
     this.lichSu.push(`stop:${id}`);
   }
 
@@ -579,6 +632,7 @@ export class SanKhauGia implements StageWorld {
       lookingAt: x.lookingAt,
       distances,
       queued: 0,
+      controlledBy: x.dieuKhienBoi,
     };
   }
 }

@@ -57,7 +57,21 @@ import { taoHieuUng, type HieuUng } from '../fx/hieu-ung';
 const MAU_NEN_LAB = 0x101a24;
 /** Bán kính coi là "đang ở" một place. */
 const BAN_KINH_AT = 0.9;
-export const ACTOR_MAC_DINH = { id: 'lan', ten: 'Lan', model: 'models/avatar.vrm' };
+/**
+ * Hai nhân vật mặc định của sân khấu (B1, Issue #18 mục 3).
+ *
+ * `owner` = Boss điều khiển bằng phím (VRM NAM, `public/models/owner.vrm`),
+ * spawn trên bục trung tâm. `gen` = nhân vật nữ cũ (`lan` đổi id thành `gen`
+ * theo đúng tên trong spec mục 3.4b), đứng ở bàn điều khiển, idle `cham-chu`,
+ * để đợt B3 gắn não agy.
+ *
+ * Thiếu `owner.vrm` (chưa chạy `pnpm assets`) thì `actorSpawn` tự rơi về
+ * `models/avatar.vrm` chứ không làm sập cảnh — xem `napCanh`.
+ */
+export const OWNER = { id: 'owner', ten: 'Boss', model: 'models/owner.vrm' } as const;
+export const GEN = { id: 'gen', ten: 'Gen', model: 'models/avatar.vrm' } as const;
+/** Giữ tên cũ cho mã/kịch bản A1–A3 còn tham chiếu: nay trỏ vào `gen`. */
+export const ACTOR_MAC_DINH = { id: GEN.id, ten: GEN.ten, model: GEN.model };
 
 /** FPS trung bình dưới mức này trong > 2 s thì tự tắt bloom. */
 const FPS_TU_TAT_BLOOM = 24;
@@ -80,8 +94,12 @@ type GocMay = { vt: THREE.Vector3; tam: THREE.Vector3; fov: number };
  * ảnh từ trên nóc.
  */
 const MAY_NGANG: GocMay = {
-  vt: new THREE.Vector3(5.2, 5.4, 10.6),
-  tam: new THREE.Vector3(0, 1.1, -1.4),
+  // B1 (Issue #18 mục 1): "camera toàn cảnh thấy 3 vùng". Bản cũ đứng lệch hẳn
+  // sang phải (x 5,2) nên vùng B nằm ngoài khung; bản này lùi ra 12,4 m, lên
+  // 6,8 m và nhắm hơi sâu vào trong phòng → thấy trọn bục ở giữa, bàn điều
+  // khiển bên phải, kệ + máy phát bên trái trong CÙNG một khung hình.
+  vt: new THREE.Vector3(3.2, 6.8, 12.4),
+  tam: new THREE.Vector3(0, 1.2, -2),
   fov: 40,
 };
 /**
@@ -89,9 +107,15 @@ const MAY_NGANG: GocMay = {
  * bao xa — chọn ôm khu trung tâm (bục + bàn điều khiển + hologram) thay vì lùi
  * xa đến mức nhân vật chỉ còn vài pixel.
  */
+/**
+ * Lệch camera so với chủ khi bám (`theo-owner`): chéo 3/4 sau-phải, cao 3,4 m
+ * — cùng gu với `MAY_NGANG` nhưng gần hơn để thấy rõ nhân vật lúc đi.
+ */
+const LECH_THEO_OWNER = /* @__PURE__ */ new THREE.Vector3(2.6, 3.4, 4.6);
+
 const MAY_DOC: GocMay = {
-  vt: new THREE.Vector3(2.2, 3.8, 11.2),
-  tam: new THREE.Vector3(-0.3, 1.5, -1.8),
+  vt: new THREE.Vector3(1.6, 5.4, 12.6),
+  tam: new THREE.Vector3(0, 1.3, -2.2),
   fov: 60,
 };
 
@@ -127,6 +151,14 @@ export class World implements StageWorld {
   private chuotNDC = new THREE.Vector2(0, 0);
   private diemChuot = new THREE.Vector3();
   private tamTuBay: { vt: THREE.Vector3; tam: THREE.Vector3 } | null = null;
+  /**
+   * Preset `theo-owner`: id actor camera đang BÁM (null = không bám).
+   *
+   * Khác `tamTuBay` (bay một lần tới chỗ cố định rồi thôi): mỗi khung hình
+   * tính lại đích theo vị trí chủ rồi lerp — nên nhân vật đi tới đâu camera
+   * theo tới đó mà vẫn giữ đúng góc 3/4 nhìn xuống.
+   */
+  private theoOwner: string | null = null;
   private bossDaXoay = false;
   private lanCuoiBossHoatDong = Date.now();
 
@@ -258,15 +290,24 @@ export class World implements StageWorld {
     haiSuongBuc(this.scene);
 
     tienTrinh?.('Đang nạp nhân vật…');
+    // 1) Boss (nam) trên bục trung tâm, quay mặt về camera — phím WASD lái người này
     await this.actorSpawn({
-      id: ACTOR_MAC_DINH.id,
-      name: ACTOR_MAC_DINH.ten,
-      model: ACTOR_MAC_DINH.model,
-      // 25/10: đã bỏ bàn/ghế văn phòng khỏi cảnh theo ý Boss, nên nhân vật
-      // mặc định đứng trên bục trung tâm (facing 0 = quay về phía camera)
-      // thay vì đứng giữa khoảng trống nơi `ban-1` từng có bàn.
+      id: OWNER.id,
+      name: OWNER.ten,
+      model: OWNER.model,
       at: 'buc-trung-tam',
+      controlledBy: 'owner',
     });
+    // 2) Gen (nữ) đứng ở bàn điều khiển, dáng chờ `cham-chu` (Issue #18 mục 3)
+    await this.actorSpawn({
+      id: GEN.id,
+      name: GEN.ten,
+      model: GEN.model,
+      at: 'ban-dieu-khien',
+      controlledBy: 'agent',
+    });
+    this.actorIdleStyle(GEN.id, 'cham-chu');
+    this.actorLookAt(GEN.id, 'ban-dieu-khien');
 
     tienTrinh?.('Đang dựng màn hình hologram…');
     for (const id of Object.keys(MAC_DINH_MAN_HINH)) await this.screenSpawn({ id });
@@ -321,6 +362,22 @@ export class World implements StageWorld {
         if (v) nv.diemNhin.position.set(v[0], v[1] + 1.25, v[2]);
       }
       nv.capNhat(dt);
+    }
+
+    /* --- camera bám owner (preset `theo-owner`) --- */
+    if (this.theoOwner) {
+      const nv = this.actors.get(this.theoOwner);
+      if (!nv) {
+        this.theoOwner = null;
+      } else {
+        const p = nv.goc.position;
+        const dich = new THREE.Vector3(p.x, 0, p.z).add(LECH_THEO_OWNER);
+        const tam = new THREE.Vector3(p.x, 1.1, p.z);
+        // lerp êm: 2,6/s đủ bám sát khi đi 1,6 m/s mà không rung theo bước chân
+        const k = Math.min(1, dt * 2.6);
+        this.camera.position.lerp(dich, k);
+        this.controls.target.lerp(tam, k);
+      }
     }
 
     if (this.tamTuBay) {
@@ -486,7 +543,22 @@ export class World implements StageWorld {
     if (!p.id.trim()) throw new Error('"id" không được rỗng');
     if (this.actors.has(p.id)) throw new Error(`Actor "${p.id}" đã có trên sân khấu`);
 
-    const nv = await NhanVat.nap(p.id, p.name ?? p.id, p.model ?? ACTOR_MAC_DINH.model);
+    const duongDan = p.model ?? ACTOR_MAC_DINH.model;
+    let nv: NhanVat;
+    try {
+      nv = await NhanVat.nap(p.id, p.name ?? p.id, duongDan);
+    } catch (e) {
+      // Thiếu đúng file VRM đã yêu cầu (vd chưa tải `owner.vrm`) thì rơi về
+      // avatar mặc định và nói rõ ở console — cảnh vẫn dựng xong, Boss vẫn
+      // điều khiển được, chỉ là nhân vật chưa đúng model.
+      if (duongDan === ACTOR_MAC_DINH.model) throw e;
+      console.warn(
+        `[Gen-Stage] Không nạp được "${duongDan}" (${e instanceof Error ? e.message : e}) — ` +
+          `dùng tạm "${ACTOR_MAC_DINH.model}". Chạy: bash scripts/fetch-assets.sh`,
+      );
+      nv = await NhanVat.nap(p.id, p.name ?? p.id, ACTOR_MAC_DINH.model);
+    }
+    nv.dieuKhienBoi = p.controlledBy ?? 'agent';
     this.scene.add(nv.goc);
     this.scene.add(nv.diemNhin);
 
@@ -527,6 +599,17 @@ export class World implements StageWorld {
       });
     }
     return hd;
+  }
+
+  /**
+   * `actor.steer` — lái bằng vận tốc (Issue #18 mục 2).
+   *
+   * Không kẹp toạ độ ở đây: việc kẹp trong phòng + trượt dọc bàn/kệ nằm trong
+   * `NhanVat.capNhat` (dùng `bo-cuc.ts`), vì nó phải xảy ra **mỗi khung hình**
+   * theo vận tốc thật, không phải một lần lúc nhận lệnh.
+   */
+  actorSteer(id: string, vx: number, vz: number, ms: number): Action {
+    return this.nv(id).lai(vx, vz, ms);
   }
 
   actorLookAt(id: string, target: string | null): void {
@@ -809,6 +892,7 @@ export class World implements StageWorld {
   }
 
   cameraFocus(target: string, distance = 3.0): void {
+    this.theoOwner = null;
     const v = this.viTriMucTieu(target);
     if (!v) throw new Error(`Không biết "${target}" ở đâu`);
     const tam = new THREE.Vector3(v[0], v[1] + 1.1, v[2]);
@@ -827,6 +911,7 @@ export class World implements StageWorld {
    * Không nằm trong Actor/Scene API, chỉ phơi qua `window.stage.datMay`.
    */
   datMayThu(vt: Vec3, tam: Vec3): void {
+    this.theoOwner = null;
     this.tamTuBay = null;
     this.bossDaXoay = true;
     this.camera.position.set(vt[0], vt[1], vt[2]);
@@ -838,6 +923,18 @@ export class World implements StageWorld {
   cameraPreset(name: string): void {
     if (!(PRESET_MAY as readonly string[]).includes(name)) {
       throw new Error(`Không có góc máy "${name}". Có: ${PRESET_MAY.join(', ')}`);
+    }
+    this.theoOwner = null;
+    if (name === 'theo-owner') {
+      // bám nhân vật có controlledBy = 'owner' (không có thì actor đầu tiên)
+      const chu =
+        [...this.actors.values()].find((nv) => nv.dieuKhienBoi === 'owner') ??
+        [...this.actors.values()][0];
+      if (!chu) throw new Error('Chưa có nhân vật nào để camera bám theo');
+      this.theoOwner = chu.id;
+      this.bossDaXoay = true;
+      this.tamTuBay = null;
+      return;
     }
     if (name === 'toan-canh') {
       this.bossDaXoay = false;
@@ -1142,12 +1239,23 @@ export class World implements StageWorld {
     this.bossDaXoay = false;
     this.tamTuBay = { vt: MAY_NGANG.vt.clone(), tam: MAY_NGANG.tam.clone() };
     this.bus.emit('stage.resetting', {});
+    this.theoOwner = null;
     await this.actorSpawn({
-      id: ACTOR_MAC_DINH.id,
-      name: ACTOR_MAC_DINH.ten,
-      model: ACTOR_MAC_DINH.model,
+      id: OWNER.id,
+      name: OWNER.ten,
+      model: OWNER.model,
       at: 'buc-trung-tam',
+      controlledBy: 'owner',
     });
+    await this.actorSpawn({
+      id: GEN.id,
+      name: GEN.ten,
+      model: GEN.model,
+      at: 'ban-dieu-khien',
+      controlledBy: 'agent',
+    });
+    this.actorIdleStyle(GEN.id, 'cham-chu');
+    this.actorLookAt(GEN.id, 'ban-dieu-khien');
     for (const id of Object.keys(MAC_DINH_MAN_HINH)) await this.screenSpawn({ id });
   }
 
@@ -1228,6 +1336,7 @@ export class World implements StageWorld {
       lookingAt: nv.nhinTen,
       distances,
       queued: 0,
+      controlledBy: nv.dieuKhienBoi,
     };
   }
 

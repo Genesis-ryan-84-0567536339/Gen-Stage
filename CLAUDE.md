@@ -29,6 +29,7 @@ node scripts/kiem-bridge.mjs  # bằng chứng bridge: moveTo qua ws → nhận 
 node scripts/kiem-b2.mjs      # bằng chứng B2: giọng tiếng Việt + nhép miệng theo âm vào docs/b2/
 node scripts/kiem-a2.mjs      # bằng chứng A2: 15 emote + 13 clip + say + idleStyle, ảnh/video/log số vào docs/a2/
 node scripts/kiem-a2.mjs --chi-anh  # bản NHANH lúc đang làm (chỉ ảnh + số đo, không quay video, không đo FPS)
+node scripts/kiem-b1.mjs      # bằng chứng B1: bố cục 3 vùng + steer mượt + owner/gen vào docs/b1/ (CHẠY MỘT LẦN)
 bash scripts/fetch-anim.sh    # tải bộ chuyển động CC0 (Quaternius) về public/anim/ — chạy 1 lần sau khi clone
 ```
 
@@ -64,6 +65,16 @@ bash scripts/fetch-anim.sh    # tải bộ chuyển động CC0 (Quaternius) v�
   là hành động hiện tại không" trước khi ghi.
 - **Nhận diện hành động bằng token, không bằng tên lệnh** — cắt `actor.play`
   bằng đúng `actor.play` là chuyện thường ở A2.
+- **Bố cục cảnh nằm trong BẢNG, không trong code dựng** (`src/stage/bo-cuc.ts`).
+  `phong.ts` chỉ đọc bảng rồi dựng. Mọi toạ độ trên lưới nửa ô 0,5 m, có test
+  canh lưới + canh hành lang ≥ 3 m. Thêm đồ = thêm một dòng vào bảng.
+- **Chuẩn hoá model Kenney phải kẹp CẢ HAI chiều.** Chỉ chuẩn theo chiều cao
+  thì model bè ngang (`structure`, `desk_computerCorner`) phình ra 3–4 m — dùng
+  `rongToiDa` trong bảng bố cục.
+- **Chibi hoá phải đặt scale lên XƯƠNG RAW** (`getRawBoneNode`), và vì xương
+  raw là cây thật nên bảng tỉ lệ là **tuyệt đối**, chia cho tổ tiên gần nhất mới
+  ra scale cục bộ. Scale rig normalized là **no-op** (Issue #17). Scale xong
+  phải gọi `springBoneManager.setInitState()` không thì tóc bung thành chùm gai.
 - **`at` là câu trả lời dứt khoát**: chỉ mang tên place khi actor đã đứng yên
   tại đó; đang `walking` thì luôn `null`, kể cả khi đi ngang qua place khác.
   Muốn biết "đang gần cái gì" thì đọc `nearest: { place, distance }` (luôn có).
@@ -86,15 +97,16 @@ biết registry, **giao diện** không gọi thẳng vào sân khấu.
 | `src/stage/nhanvat.ts` | Một nhân vật VRM: máy trạng thái + 3 lớp chuyển động (clip thật → cử chỉ → vi mô) + nhép miệng |
 | `src/behavior/chuyen-dong.ts` | Nạp bộ clip CC0, **retarget sang `vrm.humanoid`**, `AnimationMixer` + crossfade 0,25 s; bảng `DANG_NEN`/`NEN_CLIP`/`NEN_EMOTE` |
 | `src/behavior/cu-chi.ts` | Lớp cử chỉ thủ tục trộn lên clip thật; **hướng tay khai bằng hình học** (`huongTay(doCao, raTruoc)`), không viết số euler |
+| `src/stage/bo-cuc.ts` | **BẢNG BỐ CỤC** (B1): cái gì đặt ở đâu theo lưới 1 m (3 vùng), hộp chắn đường + `truotVaCham` cho `actor.steer`. Dữ liệu thuần, KHÔNG import three |
 | `src/stage/phong.ts` | Dựng LAB VIỄN TƯỞNG (A3): phòng 16 × 16 m, trần 5,6 m, sàn vân sáng, bục trung tâm, bàn điều khiển cong, kệ module, máy phát, trần đèn dải (Kenney Space Kit chuẩn hoá theo mét, hoặc fallback geometry emissive) |
 | `src/stage/man-hinh.ts` | Màn hình hologram A3: CanvasTexture + scan-line, stream chữ chạy dần |
 | `src/fx/*.ts` | A3: hiệu ứng kết tinh module (`hat-ket-tinh.ts`) + `fx.play` (`hieu-ung.ts`) |
 | `src/stage/noi-dung.ts` | Dữ liệu cảnh v0.1: places (gồm `ban-dieu-khien` A3), clips, biểu cảm, emote, preset đèn/máy quay (gồm `truoc-mat` A2) |
 | `src/stage/hanh-dong.ts` | Tiện ích `Action` (hành động có `durationMs` + `done` + `cancel`) |
 | `src/ui/panel.ts` | Bảng lệnh **tự sinh** từ `stage.bootstrap` — không viết tay nút nào |
-| `src/ui/script-box.ts` | Ô kịch bản: JSON hoặc dạng ngắn `lan moveTo ban-2` |
+| `src/ui/script-box.ts` | Ô kịch bản: JSON hoặc dạng ngắn `gen moveTo ban-2` |
 | `src/ui/log-view.ts` | Nhật ký cuộn + Sao chép / Xuất JSON |
-| `src/ui/phim.ts` | Điều khiển bằng phím (WASD/1–0/Space/C/E/R/?) — **mọi phím gọi `dispatcher.run`**, tắt khi con trỏ đang ở ô nhập |
+| `src/ui/phim.ts` | Điều khiển bằng phím (WASD/1–0/Space/C/E/R/?) — **mọi phím gọi `dispatcher.run`**, tắt khi con trỏ đang ở ô nhập. B1: WASD gửi `actor.steer` mỗi 100 ms cho actor `controlledBy: "owner"` |
 | `src/events.ts` · `src/log.ts` | Bus sự kiện · nhật ký JSON mọi lệnh và sự kiện |
 | `src/bridge-client.ts` | Nối trình duyệt với bridge (bật bằng `?bridge=1`) |
 | `bridge/server.ts` | Bridge WebSocket Node (chưa MCP) — mặc định chỉ nghe `127.0.0.1`; mở ra ngoài phải có `--host` + `GEN_STAGE_TOKEN` |
@@ -140,6 +152,14 @@ biết registry, **giao diện** không gọi thẳng vào sân khấu.
   bỏ bàn gỗ + ghế văn phòng cũ (place `ban-*`/`ghe-*` giữ nguyên làm mốc test),
   Kenney chuẩn hoá theo mét, và **điều khiển bằng phím** (`src/ui/phim.ts`:
   WASD/1–0/Space/C/E/R/?) — mọi phím đi qua `dispatcher.run`.
+
+- **B1 (xong, #18)**: `src/stage/bo-cuc.ts` (bảng bố cục 3 vùng theo lưới 1 m,
+  hành lang 3,2 m, dãy tủ sát tường sau), **`actor.steer`** (lái bằng vận tốc,
+  KHÔNG xếp hàng, kẹp 1,6 m/s, lerp 0,15 s, trượt dọc bàn/kệ), phím WASD gửi
+  steer mỗi 100 ms qua dispatcher, camera preset **`theo-owner`**, hai nhân vật
+  mặc định **`owner` (VRM nam CC0) + `gen`** (nữ, `idleStyle: cham-chu` ở bàn
+  điều khiển), `stage.describe` thêm **`controlledBy`**, và chibi hoá xương raw
+  (Issue #17 — tỉ lệ đầu/người đo thật ~1/2,5–1/2,8).
 
 `src/api/commands/stubs.ts` giờ **rỗng**: cả A2 lẫn A3 đã thi công thật, không
 còn lệnh nào trả `ok:false` kiểu "chưa làm". File được giữ lại làm chỗ khai

@@ -58,44 +58,48 @@ export function layMatGhe(id: string): number {
  * để `actor.moveTo` / `actor.sit` / test A1 dùng).
  */
 export const PLACES: readonly DinhNghiaPlace[] = [
+  // Vùng B — điều khiển (bên phải). Bàn cong áp tường phải, mặt bàn hướng −X;
+  // người vận hành (Gen) đứng ở `standAt` quay mặt về +X, tức nhìn vào bàn.
   {
     id: 'ban-dieu-khien',
-    pos: [0, 0, -6],
+    // phải khớp `BAN_CONG.tai` trong `bo-cuc.ts` — có test canh (`b1-*.test.ts`)
+    pos: [6, 0, -1],
     kind: 'desk',
-    standAt: [0, 0, -4.6],
-    facing: 180,
+    standAt: [4.8, 0, -1],
+    facing: 90,
   },
+  // `ban-1`/`ban-2` của A1: không còn bàn thật trong cảnh (Boss "gọn"), giữ
+  // làm MỐC TEST ở hai bên khoảng trống phía trước — nơi duy nhất còn rộng.
   {
     id: 'ban-1',
-    pos: [-4.4, 0, -4.2],
+    pos: [-3, 0, 3],
     kind: 'desk',
-    standAt: [-4.4, 0, -3.1],
+    standAt: [-3, 0, 2],
     facing: 180,
   },
   {
     id: 'ban-2',
-    pos: [4.4, 0, -4.2],
+    pos: [3, 0, 3],
     kind: 'desk',
-    standAt: [4.4, 0, -3.1],
+    standAt: [3, 0, 2],
     facing: 180,
   },
-  // Ghế dời theo phòng 16 × 16 m (sát rìa). `seatY` ở đây chỉ là FALLBACK:
+  // Hai ghế đẩu trước bàn cong (vùng B). `seatY` ở đây chỉ là FALLBACK:
   // `phong.ts` đo mặt ghế thật trên model vừa dựng rồi ghi đè qua `datSeatY()`.
-  { id: 'ghe-1', pos: [-4.4, 0, -2.4], kind: 'seat', facing: 180, seatY: 0.45 },
-  { id: 'ghe-2', pos: [4.4, 0, -2.4], kind: 'seat', facing: 180, seatY: 0.45 },
-  // bục ở ĐÚNG gốc toạ độ: tâm phòng, và là mốc mặc định của sân khấu giả
-  // trong test (`SanKhauGia` đặt actor mới ở [0,0,0]).
+  { id: 'ghe-1', pos: [5, 0, -2.5], kind: 'seat', facing: 90, seatY: 0.45 },
+  { id: 'ghe-2', pos: [5, 0, 0.5], kind: 'seat', facing: 90, seatY: 0.45 },
+  // Vùng A — bục ở ĐÚNG gốc toạ độ: tâm phòng, và là mốc mặc định của sân
+  // khấu giả trong test (`SanKhauGia` đặt actor mới ở [0,0,0]).
   { id: 'buc-trung-tam', pos: [0, 0, 0], kind: 'stage', facing: 0 },
-  // Cửa chuyển sang TƯỜNG TRÁI phía trước (không còn ở mép trước phòng): máy
-  // quay toàn cảnh đứng ngoài mép trước, cửa đặt ở đó thì khung cửa cao 3,4 m
-  // chắn ngay tiền cảnh (ảnh thử 25/10). `facing: 90` = quay mặt về +X, tức
-  // nhìn vào trong phòng khi vừa bước qua cửa.
-  { id: 'cua', pos: [-7.4, 0, 4.6], kind: 'door', standAt: [-6.2, 0, 4.6], facing: 90 },
+  // Vùng C — cửa áp TƯỜNG TRÁI phía trước (không ở mép trước phòng): máy quay
+  // toàn cảnh đứng ngoài mép trước, cửa đặt ở đó thì khung cửa cao 3,4 m chắn
+  // ngay tiền cảnh. `facing: 90` = quay mặt về +X, nhìn vào trong phòng.
+  { id: 'cua', pos: [-7.5, 0, 5], kind: 'door', standAt: [-6.2, 0, 5], facing: 90 },
   {
     id: 'ke-module',
-    pos: [-7.3, 0, -1],
+    pos: [-7, 0, -1],
     kind: 'shelf',
-    standAt: [-6.1, 0, -1],
+    standAt: [-5.5, 0, -1],
     facing: 270,
   },
 ] as const;
@@ -177,9 +181,15 @@ export const PRESET_DEN = ['sang', 'toi', 'am'] as const;
  * `truoc-mat` (A2 vòng 2) là góc **chính diện, thấy TRỌN NGƯỜI** — bắt buộc
  * cho ảnh bằng chứng emote: vòng 1 đóng khung ngang ngực nên che đúng vùng
  * tay đang sai (review PR #10 mục 2.6).
+ *
+ * `theo-owner` (B1, Issue #18) **bám mượt** theo nhân vật có
+ * `controlledBy: "owner"`: giữ nguyên góc 3/4 nhìn xuống, chỉ lerp vị trí theo
+ * chủ — khác `camera.focus` (bay một lần rồi đứng im) ở chỗ nó bám LIÊN TỤC
+ * mỗi khung hình cho tới khi đổi góc máy khác.
  */
 export const PRESET_MAY = [
   'toan-canh',
+  'theo-owner',
   'ban-dieu-khien',
   'ban-1',
   'ban-2',

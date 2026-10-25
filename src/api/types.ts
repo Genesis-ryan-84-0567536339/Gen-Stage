@@ -149,6 +149,15 @@ export type ActorState =
   | 'emoting'
   | 'building';
 
+/**
+ * Ai đang điều khiển nhân vật (B1, Issue #18).
+ *
+ * `owner` = Boss điều khiển bằng phím/chuột (phím WASD chỉ lái actor này);
+ * `agent` = do agent/kịch bản ra lệnh. Nhân vật nào cũng nhận đủ bộ lệnh như
+ * nhau — cờ này chỉ nói **mặc định phím của Boss nhắm vào ai**.
+ */
+export type DieuKhienBoi = 'owner' | 'agent';
+
 export interface ActorSnapshot {
   id: string;
   name: string;
@@ -176,6 +185,8 @@ export interface ActorSnapshot {
   distances: Record<string, number>;
   /** Số lệnh đang xếp hàng chờ actor này. */
   queued: number;
+  /** Ai điều khiển: `owner` (Boss bằng phím) hay `agent`. */
+  controlledBy: DieuKhienBoi;
 }
 
 export interface PlaceSnapshot {
@@ -239,6 +250,8 @@ export interface ThamSoSpawnActor {
   model?: string;
   name?: string;
   at?: string | Vec3;
+  /** Mặc định `agent`. Chỉ một actor nên là `owner` (phím của Boss lái nó). */
+  controlledBy?: DieuKhienBoi;
 }
 
 export interface ThamSoSpawnProp {
@@ -288,6 +301,12 @@ export interface StageWorld {
   actorSpawn(p: ThamSoSpawnActor): Promise<ActorSnapshot>;
   actorRemove(id: string): void;
   actorMoveTo(id: string, to: string | Vec3, speed?: number): Action;
+  /**
+   * B1 — lái bằng VẬN TỐC (spec `actor.steer`): đi theo `[vx, vz]` m/s trong
+   * `ms` ms rồi tự hết. Gọi lại để kéo dài; lệnh mới **thay** lệnh cũ, không
+   * xếp hàng. Trả `Action` dài đúng `ms`.
+   */
+  actorSteer(id: string, vx: number, vz: number, ms: number): Action;
   actorLookAt(id: string, target: string | null): void;
   actorTurnTo(id: string, target: string | Vec3): Action;
   actorSit(id: string, seat: string): Action;

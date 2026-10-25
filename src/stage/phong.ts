@@ -19,6 +19,13 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { datSeatY } from './noi-dung';
+import {
+  BAN_CONG,
+  BAN_KINH_BUC,
+  KHOI_CANH,
+  TINH_THE_TREN_KE,
+  type KhoiCanh,
+} from './bo-cuc';
 
 /** Sàn vuông 16 × 16 m (Boss 25/10: phòng cũ 7,2 m quá chật). */
 export const KICH_THUOC_PHONG = 16;
@@ -176,33 +183,6 @@ function khoiSang(w: number, h: number, d: number, mau: number, cuong = 1.4): TH
   return new THREE.Mesh(geo, mat);
 }
 
-/** Bàn điều khiển cong tự dựng (fallback): dãy mô-đun ghép vòng cung, cỡ phòng mới. */
-function banDieuKhienTuDung(): THREE.Group {
-  const g = new THREE.Group();
-  const soManh = 7;
-  const banKinh = 2.6;
-  const goc = Math.PI * 0.5;
-  for (let i = 0; i < soManh; i++) {
-    const t = i / (soManh - 1) - 0.5;
-    const a = t * goc;
-    const than = hop(0.78, CAO_BAN, 0.62, 0x3a4556, 0.6, 0.3);
-    than.position.set(Math.sin(a) * banKinh, CAO_BAN / 2, -Math.cos(a) * banKinh + banKinh);
-    than.rotation.y = -a;
-    g.add(than);
-
-    const mat = khoiSang(0.66, 0.1, 0.42, i % 2 === 0 ? MAU_CYAN : MAU_CAM, 1.1);
-    mat.position.set(
-      Math.sin(a) * banKinh,
-      CAO_BAN + 0.02,
-      -Math.cos(a) * banKinh + banKinh - 0.02,
-    );
-    mat.rotation.y = -a;
-    mat.rotation.x = -Math.PI / 2;
-    g.add(mat);
-  }
-  return g;
-}
-
 /** Ghế đẩu dự phòng khi không có Kenney: mặt ghế ở 0,45 m cho khớp `seatY`. */
 function gheTuDung(): THREE.Group {
   const g = new THREE.Group();
@@ -316,18 +296,18 @@ type KhoSciFi = {
  * tải ít file hơn, khởi động nhanh hơn, và không còn khối nào chắn khung hình.
  */
 const TEN_KENNEY_LAB = [
-  'desk_computerCorner',
-  // ghế đẩu nhỏ: giữ lại DUY NHẤT model ghế (bỏ `desk_chair*` ghế văn phòng
+  // dãy tủ sát tường sau (B1): khối máy vuông vức, không phải mảnh vỏ tàu
+  'machine_barrel',
+  'machine_wireless',
+  'desk_computerScreen',
+  // ghế đẩu nhỏ: model ghế DUY NHẤT còn dùng (bỏ `desk_chair*` ghế văn phòng
   // cam) vì `actor.sit` của A2 cần hình học ghế thật để đo mặt ghế.
   'desk_chairStool',
-  'platform_center',
-  'platform_large',
-  'platform_small',
+  'desk_chair',
   'structure_closed',
   'structure',
   'pipe_supportHigh',
   'rock_crystals',
-  'rock_crystalsLargeA',
   'gate_simple',
   'machine_generator',
   'machine_generatorLarge',
@@ -347,7 +327,7 @@ async function napKenneyLab(loader: GLTFLoader): Promise<KhoSciFi> {
   );
   for (const [ten, obj] of ketQua) if (obj) kho.set(ten, obj);
 
-  if (!kho.get('desk_computerCorner')) {
+  if (!kho.get('desk_chairStool')) {
     return { co: false, layCao: () => null, layRong: () => null };
   }
 
@@ -504,83 +484,54 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
     nhom.add(cuaSo);
   }
 
-  /* --- nội thất Kenney Space Kit (hoặc fallback) --- */
+  /* ------------------------------------------------------------------------
+   * NỘI THẤT — ĐẶT THEO BẢNG BỐ CỤC (`bo-cuc.ts`), không toạ độ viết tay.
+   *
+   * Issue #18 mục 1: bố cục phải có chủ ý và kiểm được bằng số. Vòng trước mỗi
+   * khối có một toạ độ riêng viết ngay trong code dựng → không ai canh được
+   * thẳng hàng hay hành lang. Giờ `phong.ts` chỉ còn *đọc bảng và dựng*.
+   * ---------------------------------------------------------------------- */
   const loader = new GLTFLoader();
   const kho = await napKenneyLab(loader);
 
-  /**
-   * 1. BÀN ĐIỀU KHIỂN CONG — ban-dieu-khien (0,0,-6).
-   * Kenney không có sẵn bàn cong, nên ghép 5 khối `desk_computerCorner` (mỗi
-   * khối chuẩn hoá cao 0,95 m) thành vòng cung bán kính 3,2 m: đọc ra đúng
-   * "bàn điều khiển cong" mà vẫn là asset thật, không bịa.
-   */
-  if (kho.co) {
-    const soManh = 5;
-    const banKinh = 3.2;
-    for (let i = 0; i < soManh; i++) {
-      const t = i / (soManh - 1) - 0.5;
-      const g = kho.layCao('desk_computerCorner', CAO_BAN)!;
-      const a = t * Math.PI * 0.42;
-      g.position.set(Math.sin(a) * banKinh, 0, -6 + banKinh - Math.cos(a) * banKinh);
-      g.rotation.y = Math.PI - a;
-      nhom.add(g);
+  /** Dựng một khối theo đúng dòng trong bảng (hoặc fallback tự dựng). */
+  function dungKhoi(k: KhoiCanh, duPhong: () => THREE.Object3D): THREE.Object3D {
+    let obj: THREE.Object3D | null = null;
+    if (kho.co && k.kenney) {
+      if (k.cao !== undefined) {
+        obj = kho.layCao(k.kenney, k.cao) ?? (k.kenneyPhu ? kho.layCao(k.kenneyPhu, k.cao) : null);
+      } else if (k.rong !== undefined) {
+        obj = kho.layRong(k.kenney, k.rong) ?? (k.kenneyPhu ? kho.layRong(k.kenneyPhu, k.rong) : null);
+      }
     }
-  } else {
-    const g = banDieuKhienTuDung();
-    g.position.set(0, 0, -6);
-    g.rotation.y = Math.PI;
+    const g = obj ?? duPhong();
+    // trần bề ngang: xem `KhoiCanh.rongToiDa`
+    if (k.rongToiDa !== undefined) {
+      const b = new THREE.Box3().setFromObject(g);
+      const rong = Math.max(b.max.x - b.min.x, b.max.z - b.min.z);
+      if (rong > k.rongToiDa) g.scale.multiplyScalar(k.rongToiDa / rong);
+    }
+    g.position.set(k.tai[0], 0, k.tai[1]);
+    g.rotation.y = (k.quay * Math.PI) / 180;
+    g.name = `khoi:${k.id}`;
     nhom.add(g);
+    return g;
   }
 
-  /**
-   * 1b. GHẾ — ghe-1 / ghe-2, dời theo phòng 16 × 16 m (sát rìa, không chắn
-   * trục camera ↔ bục). Bàn gỗ + ghế văn phòng cũ đã bỏ theo ý Boss ("gọn"),
-   * nhưng `actor.sit` của A2 cần hình học ghế THẬT: đo cao độ mặt ghế trên
-   * chính model vừa dựng rồi ghi vào `noi-dung.ts` qua `datSeatY()` — hips đặt
-   * theo đúng số đo, không đoán bằng hằng số × tỉ lệ chân (review PR #10 mục
-   * 2.1). `desk_chairStool` không có lưng nên `bbox.max.y` ≈ đúng mặt ghế; kẹp
-   * trần 0,55 m cho trường hợp rơi về `desk_chair` có lưng cao hơn mặt ngồi.
-   */
-  for (const [id, x, z] of [
-    ['ghe-1', -4.4, -2.4],
-    ['ghe-2', 4.4, -2.4],
-  ] as const) {
-    const ghe = kho.co ? kho.layCao('desk_chairStool', 0.45) ?? kho.layCao('desk_chair', 0.45) : null;
-    const g = ghe ?? gheTuDung();
-    g.position.set(x, 0, z);
-    g.rotation.y = Math.PI;
-    nhom.add(g);
-    g.updateMatrixWorld(true);
-    const bb = new THREE.Box3().setFromObject(g);
-    const matGheDo = bb.max.y - bb.min.y > 0.01 ? Math.min(bb.max.y, 0.55) : 0;
-    if (matGheDo > 0) datSeatY(id, matGheDo);
-  }
-  // 2 đèn ấm rọi bàn điều khiển (Boss: "điểm sáng ấm ở bàn điều khiển")
-  for (const x of [-2.4, 2.4]) {
-    const den = new THREE.PointLight(MAU_DEN_AM, 16, 11, 2);
-    den.position.set(x, 2.2, -5.0);
-    nhom.add(den);
-  }
-
-  /**
-   * 2. BỤC TRUNG TÂM phát sáng — buc-trung-tam (0,0,0), đúng tâm phòng.
-   * Cố tình KHÔNG dùng `platform_center` của Kenney: model đó là tấm vuông
-   * phẳng, đặt dưới vòng sáng tròn trông cộc. Bục tự dựng là hình trụ tròn có
-   * viền emissive, hợp với vòng sáng và với bục "sân khấu" trong spec 3.4b.
-   */
+  /* --- VÙNG A: bục trung tâm TRỐNG, đúng gốc toạ độ --- */
+  // Cố tình KHÔNG dùng `platform_center` của Kenney: model đó là tấm vuông
+  // phẳng, đặt dưới vòng sáng tròn trông cộc.
   const bucG = dungBucTuDung();
   bucG.position.set(0, 0, 0);
   nhom.add(bucG);
-  // mặt bục cao bao nhiêu thì vòng sáng đặt ngay trên đó — đọc từ bounding box
-  // thay vì đoán, vì `platform_center` của Kenney dày mỏng tuỳ bản.
   const caoBuc = new THREE.Box3().setFromObject(bucG).max.y;
   const vongBuc = new THREE.Mesh(
-    new THREE.RingGeometry(1.15, 1.28, 64),
+    new THREE.RingGeometry(BAN_KINH_BUC - 0.25, BAN_KINH_BUC - 0.12, 64),
     new THREE.MeshStandardMaterial({
       color: MAU_CYAN,
       emissive: MAU_CYAN,
-      // 0.45 chứ không 0.9: bloom threshold 0.95 vẫn bắt được viền, nhưng
-      // vòng sáng không còn "cháy trắng" nuốt cả chân nhân vật (ảnh 25/10).
+      // 0.32 chứ không 0.9: bloom threshold 0.95 vẫn bắt được viền, nhưng vòng
+      // sáng không "cháy trắng" nuốt cả chân nhân vật (ảnh 25/10).
       emissiveIntensity: 0.32,
       side: THREE.DoubleSide,
       transparent: true,
@@ -591,69 +542,135 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
   vongBuc.position.set(0, caoBuc + 0.015, 0);
   vongBuc.name = 'vongBuc';
   nhom.add(vongBuc);
-  const denBuc = new THREE.PointLight(0xbfeaff, 7, 9, 2);
-  denBuc.position.set(0, 2.6, 0);
-  nhom.add(denBuc);
+  nhom.add(denDiem(0xbfeaff, 7, 9, 0, 2.6, 0));
 
-  /* 3. kệ module — ke-module (-7.3,0,-1), áp tường trái, cao 2,6 m */
-  const ke = kho.co
-    ? kho.layCao('structure_closed', 2.6) ?? kho.layCao('structure', 2.6)
-    : null;
-  const keG = ke ?? keModuleTuDung();
-  keG.position.set(-nua + 0.8, 0, -1);
-  keG.rotation.y = Math.PI / 2;
-  nhom.add(keG);
-  // đèn ấm rọi kệ (Boss: "điểm sáng ấm ở … kệ")
-  const denKe = new THREE.PointLight(MAU_DEN_AM, 13, 10, 2);
-  denKe.position.set(-nua + 1.8, 2.1, -1);
-  nhom.add(denKe);
-  // 3 tinh thể "module" trên kệ
-  for (let i = 0; i < 3; i++) {
-    const vien = kho.co ? kho.layCao('rock_crystals', 0.34) : null;
-    const g = vien ?? khoiSang(0.2, 0.3, 0.2, i % 2 === 0 ? MAU_CYAN : MAU_CAM, 1.0);
-    g.position.set(-nua + 0.85, 0.55 + i * 0.72, -1.8 + i * 0.8);
-    nhom.add(g);
-  }
-
-  /* 4–5. hai máy phát áp tường phải */
-  for (const [z, ten, cao] of [
-    [-4.6, 'machine_generatorLarge', 2.8],
-    [1.6, 'machine_generator', 2.1],
-  ] as const) {
-    const m = kho.co ? kho.layCao(ten, cao) ?? kho.layCao('machine_generator', cao) : null;
-    const g = m ?? mayPhatTuDung();
-    g.position.set(nua - 1.0, 0, z);
-    g.rotation.y = -Math.PI / 2;
-    nhom.add(g);
-  }
-
-  /* 6–7. hai cột trụ ở hai góc sau — đóng khung phòng, không chắn ai */
-  for (const x of [-nua + 1.2, nua - 1.2]) {
-    const cot = kho.co ? kho.layCao('pipe_supportHigh', 4.6) : null;
-    const g = cot ?? cotKinhTuDung();
-    g.position.set(x, 0, -nua + 1.2);
-    nhom.add(g);
-  }
-
-  /* 8. cụm tinh thể ở rìa phải phía trước — điểm nhấn, sát tường */
+  /* --- VÙNG B: bàn điều khiển cong + 2 ghế + 2 đèn ấm --- */
+  /**
+   * Bàn cong dựng bằng HÌNH HỌC TỰ DỰNG, không phải model Kenney — và đây là
+   * một lựa chọn có lý do, không phải vì thiếu asset:
+   *
+   * Space Kit không có bàn cong. Vòng A3 ghép 5 khối `desk_computerCorner`
+   * (bàn góc chữ L) thành vòng cung; chuẩn hoá theo chiều cao thì mỗi mảnh bè
+   * ngang 2,3 m, chuẩn hoá theo bề ngang thì mặt bàn tụt còn ~0,35 m — ảnh thử
+   * B1 cho ra một đống nêm nằm bẹp dưới sàn, không đọc ra "bàn điều khiển".
+   * Khối bo góc + mặt kính phát sáng tự dựng cao đúng 0,92 m, ghép liền mạch
+   * theo cung, và vẫn đúng gu "phim viễn tưởng sạch". Kenney vẫn lo ghế, kệ,
+   * máy phát, cột, cửa, tủ — những thứ nó có sẵn và đẹp.
+   */
   {
-    const tt = kho.co ? kho.layCao('rock_crystalsLargeA', 1.6) : null;
-    const g = tt ?? khoiSang(0.8, 1.6, 0.8, MAU_CYAN, 0.8);
-    g.position.set(nua - 1.1, 0, 5.2);
+    const huong = (BAN_CONG.quay * Math.PI) / 180;
+    // vector hướng mặt bàn (quay 0 = +Z)
+    const hx = Math.sin(huong);
+    const hz = Math.cos(huong);
+    // tâm cung = điểm giữa mặt bàn LÙI lại một bán kính theo hướng mặt bàn
+    const cx = BAN_CONG.tai[0] - hx * BAN_CONG.banKinh;
+    const cz = BAN_CONG.tai[1] - hz * BAN_CONG.banKinh;
+    for (let i = 0; i < BAN_CONG.soManh; i++) {
+      const t = i / (BAN_CONG.soManh - 1) - 0.5;
+      const a = huong + (t * BAN_CONG.gocMo * Math.PI) / 180;
+      const g = manhBanTuDung();
+      g.position.set(cx + Math.sin(a) * BAN_CONG.banKinh, 0, cz + Math.cos(a) * BAN_CONG.banKinh);
+      g.rotation.y = a;
+      nhom.add(g);
+      // 2 màn hình nhỏ Kenney đặt TRÊN mặt bàn (mảnh 1 và 3): để vùng B đọc ra
+      // ngay là "chỗ ngồi làm việc", không phải một quầy trống.
+      if (kho.co && (i === 1 || i === 3)) {
+        const mh = kho.layCao('desk_computerScreen', 0.42);
+        if (mh) {
+          mh.position.set(
+            cx + Math.sin(a) * (BAN_CONG.banKinh + 0.12),
+            BAN_CONG.cao,
+            cz + Math.cos(a) * (BAN_CONG.banKinh + 0.12),
+          );
+          mh.rotation.y = a + Math.PI;
+          nhom.add(mh);
+        }
+      }
+    }
+  }
+  for (const k of KHOI_CANH.filter((q) => q.id.startsWith('ghe-'))) {
+    const g = dungKhoi(k, gheTuDung);
+    g.updateMatrixWorld(true);
+    // `actor.sit` cần hình học ghế THẬT: đo cao độ mặt ghế trên chính model vừa
+    // dựng rồi ghi vào `noi-dung.ts` (review PR #10 mục 2.1). `desk_chairStool`
+    // không có lưng nên `bbox.max.y` ≈ đúng mặt ghế; kẹp trần 0,55 m cho
+    // trường hợp rơi về `desk_chair` có lưng cao hơn mặt ngồi.
+    const bb = new THREE.Box3().setFromObject(g);
+    const matGhe = bb.max.y - bb.min.y > 0.01 ? Math.min(bb.max.y, 0.55) : 0;
+    if (matGhe > 0) datSeatY(k.id, matGhe);
+  }
+  nhom.add(denDiem(MAU_DEN_AM, 16, 11, BAN_CONG.tai[0] - 1.2, 2.2, BAN_CONG.tai[1] - 1.6));
+  nhom.add(denDiem(MAU_DEN_AM, 16, 11, BAN_CONG.tai[0] - 1.2, 2.2, BAN_CONG.tai[1] + 1.6));
+
+  /* --- VÙNG C: kệ module + 2 máy phát + cột + cửa --- */
+  for (const k of KHOI_CANH.filter((q) => q.vung === 'kho')) {
+    const duPhong =
+      k.id === 'ke-module'
+        ? keModuleTuDung
+        : k.id === 'cua'
+          ? khungCuaTuDung
+          : k.id.startsWith('may-phat')
+            ? mayPhatTuDung
+            : cotKinhTuDung;
+    dungKhoi(k, duPhong);
+  }
+  nhom.add(denDiem(MAU_DEN_AM, 13, 10, -nua + 1.8, 2.1, -1));
+  // dải sáng dưới chân khung cửa (gợi lối ra)
+  {
+    const den = khoiSang(0.05, 0.05, 3.0, MAU_CAM, 1.0);
+    den.position.set(-nua + 0.8, 0.04, 5);
+    nhom.add(den);
+  }
+  // 3 tinh thể "module" ĐẶT TRÊN KỆ (bản cũ rải xuống sàn giữa phòng)
+  for (let i = 0; i < 3; i++) {
+    const vien = kho.co ? kho.layCao('rock_crystals', TINH_THE_TREN_KE.cao) : null;
+    const g = vien ?? khoiSang(0.2, 0.3, 0.2, i % 2 === 0 ? MAU_CYAN : MAU_CAM, 1.0);
+    g.position.set(
+      TINH_THE_TREN_KE.tai[0],
+      TINH_THE_TREN_KE.tang[i]!,
+      TINH_THE_TREN_KE.tai[1] + TINH_THE_TREN_KE.lech[i]!,
+    );
     nhom.add(g);
   }
 
-  /* 9. khung cửa — cua (-7.4,0,4.6), áp TƯỜNG TRÁI phía trước (xem noi-dung.ts) */
-  const cuaKhung = kho.co ? kho.layCao('gate_simple', 3.4) : null;
-  const cuaG = cuaKhung ?? khungCuaTuDung();
-  cuaG.position.set(-nua + 0.25, 0, 4.6);
-  cuaG.rotation.y = Math.PI / 2;
-  nhom.add(cuaG);
-  const denCua = khoiSang(0.05, 0.05, 3.0, MAU_CAM, 1.0);
-  denCua.position.set(-nua + 0.8, 0.04, 4.6);
-  nhom.add(denCua);
+  /* --- DÃY TỦ sát tường sau: chỗ dồn hết khối Kenney lẻ của bản cũ --- */
+  for (const k of KHOI_CANH.filter((q) => q.vung === 'tuong-sau')) {
+    dungKhoi(k, () => hop(1.2, 1.3, 0.7, 0x3a4556, 0.65, 0.25));
+  }
+
+  /* --- 2 cột ống ở hai góc sau (đóng khung phòng, thuộc vùng B/C) --- */
+  for (const k of KHOI_CANH.filter((q) => q.id.startsWith('cot-'))) {
+    dungKhoi(k, cotKinhTuDung);
+  }
 
   return { nhom, dungKenney: kho.co };
+}
+
+/** PointLight dựng gọn một dòng (bảng bố cục không quản ánh sáng). */
+function denDiem(
+  mau: number,
+  cuong: number,
+  xa: number,
+  x: number,
+  y: number,
+  z: number,
+): THREE.PointLight {
+  const d = new THREE.PointLight(mau, cuong, xa, 2);
+  d.position.set(x, y, z);
+  return d;
+}
+
+/** Một mảnh bàn điều khiển tự dựng (khi không có Kenney). */
+function manhBanTuDung(): THREE.Group {
+  const g = new THREE.Group();
+  const than = hop(0.86, CAO_BAN, 0.62, 0x3a4556, 0.6, 0.3);
+  than.position.y = CAO_BAN / 2;
+  g.add(than);
+  const mat = khoiSang(0.72, 0.1, 0.42, MAU_CYAN, 1.1);
+  mat.position.set(0, CAO_BAN + 0.02, -0.02);
+  mat.rotation.x = -Math.PI / 2;
+  g.add(mat);
+  return g;
 }
 
 function dungBucTuDung(): THREE.Group {

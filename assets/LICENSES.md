@@ -28,6 +28,36 @@ Quyền ghi trong metadata của chính file VRM (đọc trực tiếp từ file
 - `creditNotation`: `unnecessary` — không bắt buộc ghi credit
 - `allowAntisocialOrHateUsage`: `false` — **cấm** dùng cho nội dung phản xã hội / thù hận
 
+## 1b. Nhân vật NAM `owner` — "Biz Dude" (102_Bizdude, 100 Avatars R3) → `public/models/owner.vrm`
+
+Thêm ở B1 (Issue #18 mục 3): Boss điều khiển một nhân vật NAM.
+
+| Mục | Nội dung |
+| --- | --- |
+| Nguồn tải | `https://arweave.net/k-_vw28ADGy2jPwnq02Tc98wC0Ey10Ia3JVYQ8qiaxM` (tải bằng `pnpm assets`) |
+| Registry nguồn | https://github.com/ToxSam/open-source-avatars — `data/avatars/100avatars-r3.json`; trang gốc https://opensourceavatars.com |
+| Tác giả | dự án "100 Avatars" Round 3 — Polygonal Mind / ToxSam |
+| Định dạng | VRM 0.x (`VRM` 0.0), 52 xương humanoid, ~2,2 MB |
+| Giấy phép | **CC0 1.0 Universal** — ghi ngay trong `meta` của file VRM |
+
+Quyền đọc trực tiếp từ metadata của chính file:
+
+- `licenseName`: `CC0` (`licenseUrl`: creativecommons.org/publicdomain/zero/1.0)
+- `allowedUserName`: `Everyone` · `commercialUssageName`: `Allow`
+- `allowRedistribution`: `true` · `modification`: `ALLOW`
+- `creditNotation`: `UNNECESSARY`
+
+**Ghi rõ điểm chưa đẹp**: Biz Dude là model *low-poly kiểu người thật*, không
+cùng gu anime với `avatar.vrm` (VRoid) của `gen` — hai nhân vật đứng cạnh nhau
+thấy lệch style. Đã tra và loại các bản VRoid `AvatarSample_A` (nam, anime,
+đúng gu) vì mirror duy nhất tải được (`madjin/vrm-samples`) **không có file
+LICENSE**, tức không có quyền phân phối lại rõ ràng — CLAUDE.md đòi "nguồn rõ".
+Boss muốn đổi sang một VRM nam anime có giấy phép rõ thì chỉ cần thay `OWNER_URL`
+trong `scripts/fetch-assets.sh` và mục này; code không phải sửa gì.
+
+Thiếu file này (chưa chạy `pnpm assets`) thì `World.actorSpawn` tự rơi về
+`models/avatar.vrm` kèm cảnh báo console — cảnh vẫn dựng, vẫn điều khiển được.
+
 ## 2. Nội thất — Kenney "Furniture Kit" → `public/kenney/*.glb`
 
 | Mục | Nội dung |

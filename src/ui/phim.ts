@@ -11,7 +11,7 @@
  * crash — A2 merge xong là phím tự chạy, không phải sửa file này.
  *
  * Bảng phím:
- *   WASD / ↑←↓→  đi 1 m theo trục phòng (giữ phím thì đi liên tục)
+ *   WASD / ↑←↓→  LÁI nhân vật owner (giữ = đi liên tục, nhả = dừng êm)
  *   1…9, 0       10 emote đầu trong `EMOTES`
  *   Space        mở ô nhập nhanh để nói (Enter gửi, Esc huỷ)
  *   C            xoay vòng `camera.preset`
@@ -21,24 +21,33 @@
  */
 import type { Dispatcher } from '../api/dispatcher';
 import { EMOTES, PRESET_MAY } from '../stage/noi-dung';
-import type { StageState, Vec3 } from '../api/types';
+import type { ActorSnapshot, StageState } from '../api/types';
 
-/** Bấm nhả một lần = đi 1 m. */
-const BUOC = 1;
 /**
- * Giữ phím: cứ `NHIP_GIU` ms lại đẩy đích thêm `BUOC_GIU` m. Nhân vật đi
- * 0,95 m/s (`TOC_DO_DI`) nên 0,4 m mỗi 420 ms giữ đích luôn ở phía trước
- * chân nhân vật khoảng 1 m — đi liên tục, mượt, không "giật" từng bước và
- * cũng không để đích chạy mất hút so với thân.
+ * B1 (Issue #18 mục 2) — ĐIỀU KHIỂN BẰNG VẬN TỐC, không bằng từng bước đi.
+ *
+ * Bản #14 cũ gửi `actor.moveTo` tới một đích tích luỹ mỗi 420 ms kèm
+ * `interrupt: true`. Boss xem thật và chốt "điều khiển chạy không mượt": mỗi
+ * lệnh `moveTo` nội suy tuyến tính tới đích rồi lệnh sau cắt ngang giữa đường,
+ * nên vận tốc nhảy bậc từng nhịp (và lúc nhả phím thì nhân vật còn lết tới
+ * đích cũ).
+ *
+ * Giờ phím chỉ nói **hướng**: cứ `NHIP_STEER` ms gửi một `actor.steer` với
+ * vector của các phím đang giữ. Gia tốc, giảm tốc, xoay mặt, kẹp tường và
+ * tránh bàn đều nằm trong sân khấu (`NhanVat.lai` + `bo-cuc.ts`) — nơi duy
+ * nhất biết đồng hồ khung hình.
  */
-const NHIP_GIU = 420;
-const BUOC_GIU = 0.4;
+/** Nhịp gửi `actor.steer` khi đang giữ phím (ms) — Issue #18 chốt 100 ms. */
+const NHIP_STEER = 100;
 /**
- * Nhả phím xong còn bấy nhiêu ms thì phím tiếp theo vẫn TÍCH LUỸ lên đích cũ
- * thay vì đọc lại vị trí thân. Không có cửa sổ này, bấm W ba nhát liên tiếp
- * chỉ đi được 1 m vì nhát nào cũng neo lại vào chỗ nhân vật đang lết tới.
+ * Mỗi lệnh steer có hiệu lực 180 ms > nhịp 100 ms: hai lệnh gối nhau nên
+ * không có khe nào nhân vật bị "hết lệnh" mà Boss vẫn đang giữ phím. Nhưng
+ * cũng chỉ 180 ms, nên tab bị treo / mất focus giữa lúc giữ phím là nhân vật
+ * tự dừng êm sau chưa đến 0,2 s, không đi mãi.
  */
-const AN_HAN_DICH = 1200;
+const HIEU_LUC_STEER = 180;
+/** Tốc độ lái tối đa (m/s) — khớp `TOC_DO_STEER` trong `nhanvat.ts`. */
+const TOC_DO = 1.6;
 /** 10 emote đầu gắn vào phím 1…9, 0. */
 const EMOTE_PHIM = EMOTES.slice(0, 10);
 /** Câu mẫu khi Boss bấm Space rồi Enter mà ô nhập trống. */
@@ -79,17 +88,20 @@ export function batPhim(
   dispatcher: Dispatcher,
   toast: (chu: string) => void,
 ): BanPhim {
-  let actorId = 'lan';
-  /** Đích đang nhắm (x, z). Tích luỹ cục bộ để giữ phím đi liền mạch. */
-  let dich: [number, number] | null = null;
-  let lanCuoiDi = 0;
-  let henGiu = 0;
+  /** Actor đang được phím lái — mặc định nhân vật có `controlledBy: "owner"`. */
+  let actorId = 'owner';
+  /** Mã phím hướng đang được giữ. */
   const dangGiu = new Set<string>();
-  let iPreset = 0;
+  /** Hẹn giờ gửi steer theo nhịp (0 = không chạy). */
+  let henSteer = 0;
+  /** Vector đã gửi lần cuối — chỉ gửi lại khi đổi hoặc tới nhịp. */
+  let viPreset = 0;
   let soModule = 0;
 
   const { goiY, doiHienGoiY } = dungGoiY();
-  const { moONhap, dangNhap } = dungONhap((chu) => chay('actor.say', { actor: actorId, text: chu }));
+  const { moONhap, dangNhap, datTen } = dungONhap((chu) =>
+    chay('actor.say', { actor: actorId, text: chu }),
+  );
 
   /** Cửa duy nhất: mọi phím đều qua đây → `dispatcher.run`. */
   async function chay(cmd: string, args: Record<string, unknown>): Promise<boolean> {
@@ -98,23 +110,26 @@ export function batPhim(
     return kq.ok;
   }
 
-  async function docViTri(): Promise<{ pos: Vec3; facing: number } | null> {
+  /**
+   * Tìm nhân vật Boss điều khiển: `controlledBy === "owner"`.
+   *
+   * Đọc qua `stage.describe` (vẫn là dispatcher) chứ không hard-code id: đợt
+   * sau Boss đổi tên/đổi model thì phím tự bám đúng người, không phải sửa file
+   * này. Không thấy ai là `owner` thì lấy actor đầu tiên.
+   */
+  async function capNhatChu(): Promise<void> {
     const kq = await dispatcher.run('stage.describe', {}, 'phim');
-    if (!kq.ok) return null;
+    if (!kq.ok) return;
     const st = kq.result as StageState;
-    const a = st.actors.find((x) => x.id === actorId) ?? st.actors[0];
-    if (!a) return null;
-    actorId = a.id;
-    return { pos: a.pos, facing: a.facing };
+    const chu: ActorSnapshot | undefined =
+      st.actors.find((a) => a.controlledBy === 'owner') ?? st.actors[0];
+    if (!chu) return;
+    actorId = chu.id;
+    datTen(chu.name);
   }
 
-  /**
-   * Đi một bước. Đích được tích luỹ trong `dich` nên giữ phím là đi liên tục
-   * (mỗi lệnh mới `interrupt: true` cắt ngang lệnh đi đang chạy, không xếp hàng
-   * — nếu xếp hàng thì nhả phím rồi nhân vật vẫn còn lết thêm vài mét).
-   */
-  async function diMotBuoc(buoc: number): Promise<void> {
-    if (dangGiu.size === 0) return;
+  /** Vector hướng từ các phím đang giữ, đã chuẩn hoá về `TOC_DO` m/s. */
+  function vectorPhim(): [number, number] {
     let dx = 0;
     let dz = 0;
     for (const ma of dangGiu) {
@@ -124,41 +139,36 @@ export function batPhim(
         dz += h[1];
       }
     }
-    if (dx === 0 && dz === 0) return;
+    if (dx === 0 && dz === 0) return [0, 0];
+    // chuẩn hoá: đi chéo (W+D) KHÔNG được nhanh hơn đi thẳng
     const dai = Math.hypot(dx, dz);
-    dx = (dx / dai) * buoc;
-    dz = (dz / dai) * buoc;
-
-    if (!dich || Date.now() - lanCuoiDi > AN_HAN_DICH) {
-      const tt = await docViTri();
-      if (!tt) return;
-      dich = [tt.pos[0], tt.pos[2]];
-    }
-    const GIOI_HAN = 7.4; // nửa phòng 16 m trừ lề, không đi xuyên tường
-    dich = [
-      Math.max(-GIOI_HAN, Math.min(GIOI_HAN, dich[0] + dx)),
-      Math.max(-GIOI_HAN, Math.min(GIOI_HAN, dich[1] + dz)),
-    ];
-    lanCuoiDi = Date.now();
-    const ok = await chay('actor.moveTo', {
-      actor: actorId,
-      to: [dich[0], 0, dich[1]],
-      interrupt: true,
-    });
-    if (!ok) dich = null;
+    return [(dx / dai) * TOC_DO, (dz / dai) * TOC_DO];
   }
 
-  function batNhipGiu(): void {
-    if (henGiu) return;
-    void diMotBuoc(BUOC);
-    henGiu = window.setInterval(() => {
+  /** Gửi một lệnh steer theo vector hiện tại. */
+  function guiSteer(): void {
+    const [vx, vz] = vectorPhim();
+    void chay('actor.steer', { actor: actorId, vx, vz, ms: HIEU_LUC_STEER });
+  }
+
+  /**
+   * Một hẹn giờ DUY NHẤT cho cả bàn phím: bật khi phím hướng đầu tiên được
+   * nhấn, tắt khi nhả hết. Không tạo hẹn giờ theo từng phím (bản cũ dễ chồng
+   * nhiều interval khi bấm nhiều phím liền tay).
+   */
+  function batNhipSteer(): void {
+    if (henSteer) return;
+    guiSteer();
+    henSteer = window.setInterval(() => {
       if (dangGiu.size === 0) {
-        clearInterval(henGiu);
-        henGiu = 0;
+        clearInterval(henSteer);
+        henSteer = 0;
+        // nhả hết phím: một lệnh vận tốc 0 để nhân vật giảm tốc về 0 ngay
+        void chay('actor.steer', { actor: actorId, vx: 0, vz: 0, ms: 120 });
         return;
       }
-      void diMotBuoc(BUOC_GIU);
-    }, NHIP_GIU);
+      guiSteer();
+    }, NHIP_STEER);
   }
 
   function onKeyDown(e: KeyboardEvent): void {
@@ -169,7 +179,9 @@ export function batPhim(
       e.preventDefault();
       if (!dangGiu.has(e.code)) {
         dangGiu.add(e.code);
-        batNhipGiu();
+        // đổi vector là gửi NGAY (không đợi hết nhịp 100 ms) → bấm là đi liền
+        if (henSteer) guiSteer();
+        else batNhipSteer();
       }
       return;
     }
@@ -192,8 +204,8 @@ export function batPhim(
         break;
       case 'KeyC':
         e.preventDefault();
-        iPreset = (iPreset + 1) % PRESET_MAY.length;
-        void chay('camera.preset', { name: PRESET_MAY[iPreset] });
+        viPreset = (viPreset + 1) % PRESET_MAY.length;
+        void chay('camera.preset', { name: PRESET_MAY[viPreset] });
         break;
       case 'KeyE': {
         e.preventDefault();
@@ -208,8 +220,8 @@ export function batPhim(
       }
       case 'KeyR':
         e.preventDefault();
-        dich = null;
-        void chay('stage.reset', {});
+        dangGiu.clear();
+        void chay('stage.reset', {}).then(() => capNhatChu());
         break;
       case 'Slash':
       case 'IntlRo':
@@ -221,25 +233,27 @@ export function batPhim(
   }
 
   function onKeyUp(e: KeyboardEvent): void {
-    dangGiu.delete(e.code);
+    if (!dangGiu.delete(e.code)) return;
+    // nhả một phím trong tổ hợp (W+D → chỉ còn D): vector mới gửi ngay
+    if (dangGiu.size > 0) guiSteer();
   }
 
   /** Mất focus cửa sổ giữa lúc đang giữ phím → nhả hết, đừng đi mãi. */
   function onBlur(): void {
     dangGiu.clear();
-    dich = null;
   }
 
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup', onKeyUp);
   window.addEventListener('blur', onBlur);
+  void capNhatChu();
 
   return {
     thao() {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('blur', onBlur);
-      if (henGiu) clearInterval(henGiu);
+      if (henSteer) clearInterval(henSteer);
       goiY.remove();
       if (dangNhap()) moONhap(null);
     },
@@ -256,7 +270,7 @@ function dungGoiY(): { goiY: HTMLElement; doiHienGoiY: () => void } {
     `<li><kbd>${phim}</kbd><span>${y}</span></li>`;
   el.innerHTML =
     '<p>Phím điều khiển <kbd>?</kbd></p><ul>' +
-    dong('W A S D', 'đi 1 m (giữ để đi liên tục)') +
+    dong('W A S D', 'lái nhân vật (giữ để đi liên tục)') +
     dong('1 – 0', '10 emote đầu') +
     dong('Space', 'nói (Enter gửi)') +
     dong('C', 'đổi góc máy') +
@@ -275,8 +289,10 @@ function dungGoiY(): { goiY: HTMLElement; doiHienGoiY: () => void } {
 function dungONhap(gui: (chu: string) => void): {
   moONhap: (mau: string | null) => void;
   dangNhap: () => boolean;
+  datTen: (ten: string) => void;
 } {
   let hop: HTMLElement | null = null;
+  let tenChu = 'Boss';
 
   function dong(): void {
     // Gán null TRƯỚC rồi mới xoá: remove() bắn blur đồng bộ → gọi lại dong()
@@ -287,6 +303,9 @@ function dungONhap(gui: (chu: string) => void): {
 
   return {
     dangNhap: () => hop !== null,
+    datTen(ten) {
+      tenChu = ten;
+    },
     moONhap(mau) {
       if (hop) {
         dong();
@@ -295,7 +314,7 @@ function dungONhap(gui: (chu: string) => void): {
       if (mau === null) return;
       hop = document.createElement('div');
       hop.id = 'o-noi-nhanh';
-      hop.innerHTML = `<label>Lan nói:</label><input type="text" placeholder="${mau}" />`;
+      hop.innerHTML = `<label>${tenChu} nói:</label><input type="text" placeholder="${mau}" />`;
       document.body.appendChild(hop);
       const o = hop.querySelector('input')!;
       o.focus();
