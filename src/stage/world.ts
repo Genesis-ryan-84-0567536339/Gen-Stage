@@ -31,7 +31,7 @@ import type {
   Vec3,
 } from '../api/types';
 import type { EventBus } from '../events';
-import { dungPhong, haiSuongBuc, MAU_CAM, MAU_CYAN } from './phong';
+import { dungPhong, haiSuongBuc, KICH_THUOC_PHONG, MAU_CAM, MAU_CYAN } from './phong';
 import { NhanVat, TOC_DO_DI, uocThoiLuongNoi } from './nhanvat';
 import {
   BIEU_CAM,
@@ -50,8 +50,11 @@ import { ManHinh, MAC_DINH_MAN_HINH } from './man-hinh';
 import { KetTinh, maySurfacePoints } from '../fx/hat-ket-tinh';
 import { taoHieuUng, type HieuUng } from '../fx/hieu-ung';
 
-/** Lab viễn tưởng: tông tối, cyan + điểm cam (spec 3.4b). */
-const MAU_NEN_LAB = 0x070b10;
+/**
+ * Nền lab. Boss 25/10: bản cũ 0x070b10 "tối như Tron" — nâng lên xám-xanh
+ * đậm 0x101a24 để phòng có không khí, khối vẫn đọc được viền.
+ */
+const MAU_NEN_LAB = 0x101a24;
 /** Bán kính coi là "đang ở" một place. */
 const BAN_KINH_AT = 0.9;
 export const ACTOR_MAC_DINH = { id: 'lan', ten: 'Lan', model: 'models/avatar.vrm' };
@@ -70,15 +73,26 @@ interface DoVat {
 
 type GocMay = { vt: THREE.Vector3; tam: THREE.Vector3; fov: number };
 
+/**
+ * Góc máy "toàn cảnh" cho phòng 16 × 16 m (Boss 25/10: "không gian quá chật
+ * chội", "camera toàn cảnh lùi xa hơn"). Máy đứng chéo 23° bên phải, cao 5,4 m
+ * và chúi xuống ~18° — góc 3/4 nhìn xuống nhẹ, thấy trọn sàn mà không thành
+ * ảnh từ trên nóc.
+ */
 const MAY_NGANG: GocMay = {
-  vt: new THREE.Vector3(3.05, 2.75, 5.95),
-  tam: new THREE.Vector3(0.1, 1.05, -1.0),
-  fov: 38,
+  vt: new THREE.Vector3(5.2, 5.4, 10.6),
+  tam: new THREE.Vector3(0, 1.1, -1.4),
+  fov: 40,
 };
+/**
+ * Khung dọc 390 × 844: hfov chỉ ~30° nên KHÔNG thể ôm hết 16 m bề ngang dù lùi
+ * bao xa — chọn ôm khu trung tâm (bục + bàn điều khiển + hologram) thay vì lùi
+ * xa đến mức nhân vật chỉ còn vài pixel.
+ */
 const MAY_DOC: GocMay = {
-  vt: new THREE.Vector3(1.45, 2.55, 6.5),
-  tam: new THREE.Vector3(-0.85, 1.0, -1.2),
-  fov: 56,
+  vt: new THREE.Vector3(2.2, 4.8, 11.2),
+  tam: new THREE.Vector3(-0.3, 1.1, -1.8),
+  fov: 60,
 };
 
 export class World implements StageWorld {
@@ -126,16 +140,17 @@ export class World implements StageWorld {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.0;
+    this.renderer.toneMappingExposure = 1.1;
 
     this.scene.background = new THREE.Color(MAU_NEN_LAB);
-    this.scene.fog = new THREE.FogExp2(MAU_NEN_LAB, 0.025);
+    // fog rất nhẹ (0.015): cho chiều sâu, KHÔNG làm mờ khối ở cuối phòng 16 m
+    this.scene.fog = new THREE.FogExp2(MAU_NEN_LAB, 0.015);
 
     this.camera = new THREE.PerspectiveCamera(
-      38,
+      MAY_NGANG.fov,
       window.innerWidth / window.innerHeight,
       0.1,
-      100,
+      120,
     );
     this.camera.position.copy(MAY_NGANG.vt);
 
@@ -143,8 +158,9 @@ export class World implements StageWorld {
     this.controls.target.copy(MAY_NGANG.tam);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.07;
-    this.controls.minDistance = 1.2;
-    this.controls.maxDistance = 9.5;
+    this.controls.minDistance = 1.5;
+    // phòng 16 m: phải cho lùi xa hơn nhiều so với bản 7,2 m (cũ 9,5)
+    this.controls.maxDistance = 26;
     this.controls.maxPolarAngle = Math.PI * 0.49;
     this.controls.minPolarAngle = Math.PI * 0.12;
     this.controls.enablePan = false;
@@ -173,7 +189,9 @@ export class World implements StageWorld {
     this.composer.addPass(new RenderPass(this.scene, this.camera));
     // threshold cao + strength vừa phải: chỉ viền/đèn thật sự sáng mới nở ra,
     // nhân vật đứng dưới ánh sáng thường không bị "cháy" (yêu cầu spec mục 1).
-    this.bloom = new UnrealBloomPass(kichThuoc, 0.3, 0.35, 0.92);
+    // threshold 0.95: CHỈ emissive (đèn dải, viền bục, hologram) nở ra — nhân
+    // vật đứng dưới đèn ấm 1.0 không bao giờ bị cháy (Boss: "nhân vật không cháy").
+    this.bloom = new UnrealBloomPass(kichThuoc, 0.34, 0.4, 0.95);
     this.bloom.resolution.set(
       Math.max(1, Math.floor(kichThuoc.x / 2)),
       Math.max(1, Math.floor(kichThuoc.y / 2)),
@@ -186,36 +204,51 @@ export class World implements StageWorld {
   private coBloom(bat: boolean): void {
     if (this.bloomDangBat === bat) return;
     this.bloomDangBat = bat;
-    this.bloom.strength = bat ? 0.3 : 0;
+    this.bloom.strength = bat ? 0.34 : 0;
   }
 
+  /**
+   * Dàn đèn "sáng có khối" (Boss 25/10, Issue #11). Bản cũ hemi 0.85 / dir 0.8
+   * lạnh ngắt cho ra ảnh kiểu Tron. Bản này:
+   *   · hemisphere 1.2 — nền sáng đều, khối không chìm vào nền;
+   *   · directional ẤM 1.0 (0xffe6c4) có bóng mềm — tạo hướng và khối;
+   *   · fill cam yếu 0.3 từ phía sau-trái để mép khối không đen tịt.
+   * 3 point light ấm ở bàn điều khiển + kệ nằm trong `phong.ts` (thuộc phòng,
+   * không phải dàn đèn cảnh nên `scene.light` không đổi chúng).
+   */
   private dungAnhSang(): void {
-    // lab tối, ánh sáng chính từ bục trung tâm + đèn dải trần + viền cyan/cam
-    this.troi = new THREE.HemisphereLight(0x3a6a7a, 0x0a0f14, 0.85);
+    this.troi = new THREE.HemisphereLight(0xb7d4e4, 0x3d4b5c, 1.2);
     this.scene.add(this.troi);
 
-    this.nang = new THREE.DirectionalLight(0x9fd8ff, 0.8);
-    this.nang.position.set(2.2, 4.4, 1.2);
+    this.nang = new THREE.DirectionalLight(0xffe6c4, 1.0);
+    this.nang.position.set(6.5, 9.5, 6.0);
     this.nang.castShadow = true;
     this.nang.shadow.mapSize.set(2048, 2048);
-    this.nang.shadow.camera.near = 0.5;
-    this.nang.shadow.camera.far = 22;
-    this.nang.shadow.camera.left = -6;
-    this.nang.shadow.camera.right = 6;
-    this.nang.shadow.camera.top = 6;
-    this.nang.shadow.camera.bottom = -6;
-    this.nang.shadow.bias = -0.0006;
-    this.nang.shadow.normalBias = 0.022;
+    // Khoảng near/far PHẢI bó sát cảnh: để near 0.5 / far 42 cho phòng 16 m thì
+    // độ chính xác depth của shadow map loãng ra, cả mặt sàn tự che bóng chính
+    // mình (ảnh thử 25/10: sàn đen kịt trong khung bóng, sáng ở ngoài khung).
+    // Đèn ở (6.5, 9.5, 6) cách góc sàn xa nhất ~22 m → 6…30 là vừa đủ.
+    this.nang.shadow.camera.near = 6;
+    this.nang.shadow.camera.far = 30;
+    const nuaBong = KICH_THUOC_PHONG / 2 + 1.5;
+    this.nang.shadow.camera.left = -nuaBong;
+    this.nang.shadow.camera.right = nuaBong;
+    this.nang.shadow.camera.top = nuaBong;
+    this.nang.shadow.camera.bottom = -nuaBong;
+    this.nang.shadow.bias = -0.0015;
+    this.nang.shadow.normalBias = 0.05;
     this.nang.shadow.radius = 2.5;
     this.scene.add(this.nang);
 
-    this.vien = new THREE.DirectionalLight(MAU_CAM, 0.35);
-    this.vien.position.set(-3.5, 2.6, -2.0);
+    this.vien = new THREE.DirectionalLight(MAU_CAM, 0.3);
+    this.vien.position.set(-7.0, 4.2, -5.0);
     this.scene.add(this.vien);
 
     const pmrem = new THREE.PMREMGenerator(this.renderer);
     this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-    this.scene.environmentIntensity = 0.14;
+    // 0.25: môi trường chỉ để mép khối không đen tịt. Bản thử 0.42 cộng với
+    // hemisphere 1.2 làm cảnh bệt như phủ sương sữa — mất hết khối.
+    this.scene.environmentIntensity = 0.25;
   }
 
   /** Nạp phòng + nhân vật mặc định + 3 màn hình hologram cố định. Gọi một lần lúc khởi động. */
@@ -229,7 +262,10 @@ export class World implements StageWorld {
       id: ACTOR_MAC_DINH.id,
       name: ACTOR_MAC_DINH.ten,
       model: ACTOR_MAC_DINH.model,
-      at: 'ban-1',
+      // 25/10: đã bỏ bàn/ghế văn phòng khỏi cảnh theo ý Boss, nên nhân vật
+      // mặc định đứng trên bục trung tâm (facing 0 = quay về phía camera)
+      // thay vì đứng giữa khoảng trống nơi `ban-1` từng có bàn.
+      at: 'buc-trung-tam',
     });
 
     tienTrinh?.('Đang dựng màn hình hologram…');
@@ -745,34 +781,34 @@ export class World implements StageWorld {
     const bg = this.scene.background as THREE.Color;
     switch (preset) {
       case 'sang':
-        this.troi.intensity = 0.5;
-        this.nang.intensity = 0.55;
-        this.nang.color.setHex(0x9fd8ff);
-        this.vien.intensity = 0.35;
+        this.troi.intensity = 1.2;
+        this.nang.intensity = 1.0;
+        this.nang.color.setHex(0xffe6c4);
+        this.vien.intensity = 0.3;
         bg.setHex(MAU_NEN_LAB);
-        this.renderer.toneMappingExposure = 1.0;
+        this.renderer.toneMappingExposure = 1.1;
         break;
       case 'toi':
-        this.troi.intensity = 0.16;
-        this.nang.intensity = 0.12;
-        this.nang.color.setHex(0x3f6fa0);
-        this.vien.intensity = 0.5;
-        bg.setHex(0x030508);
-        this.renderer.toneMappingExposure = 0.85;
+        this.troi.intensity = 0.34;
+        this.nang.intensity = 0.22;
+        this.nang.color.setHex(0x6f9ec8);
+        this.vien.intensity = 0.45;
+        bg.setHex(0x060a0f);
+        this.renderer.toneMappingExposure = 0.92;
         break;
       case 'am':
-        this.troi.intensity = 0.3;
-        this.nang.intensity = 0.4;
+        this.troi.intensity = 0.8;
+        this.nang.intensity = 0.8;
         this.nang.color.setHex(MAU_CAM);
-        this.vien.intensity = 0.2;
-        bg.setHex(0x120a06);
-        this.renderer.toneMappingExposure = 0.95;
+        this.vien.intensity = 0.25;
+        bg.setHex(0x1c1208);
+        this.renderer.toneMappingExposure = 1.0;
         break;
     }
     if (this.scene.fog instanceof THREE.FogExp2) this.scene.fog.color.copy(bg);
   }
 
-  cameraFocus(target: string, distance = 2.6): void {
+  cameraFocus(target: string, distance = 3.0): void {
     const v = this.viTriMucTieu(target);
     if (!v) throw new Error(`Không biết "${target}" ở đâu`);
     const tam = new THREE.Vector3(v[0], v[1] + 1.1, v[2]);
@@ -842,12 +878,12 @@ export class World implements StageWorld {
     if (name === 'hop') {
       this.bossDaXoay = true;
       this.tamTuBay = {
-        vt: new THREE.Vector3(0, 2.0, 2.6),
-        tam: new THREE.Vector3(0, 1.1, -1.2),
+        vt: new THREE.Vector3(0, 2.3, 4.2),
+        tam: new THREE.Vector3(0, 1.1, 0.4),
       };
       return;
     }
-    this.cameraFocus(name, 2.4);
+    this.cameraFocus(name, 3.4);
   }
 
   /* ------------------------------------------------- A3: màn hình hologram */
@@ -916,10 +952,22 @@ export class World implements StageWorld {
     return this.manHinh(id).noiDung;
   }
 
+  /**
+   * Kéo một màn hình ra trước mặt máy quay.
+   *
+   * Bản cũ đặt cứng tại (0, 1.72, 0.55) — đúng với phòng 7,2 m nhưng sang
+   * phòng 16 m (máy lùi xa hơn) thì panel bé xíu, còn ở khung dọc 390 px thì
+   * dễ tràn mép. Giờ tính vị trí TỪ máy quay: lấy hfov thật của khung hình
+   * hiện tại rồi đặt panel ở khoảng cách sao cho bề ngang panel chiếm ~74 %
+   * bề ngang khung — luôn vừa khít, cả 1440×900 lẫn 390×844.
+   */
   screenFocus(id: string): Action {
     const mh = this.manHinh(id);
-    const dich = new THREE.Vector3(0, 1.72, 0.55);
-    const rotDich = 0;
+    const dich = this.choPanelTruocMay(mh.beRong());
+    const huongMay = new THREE.Vector3()
+      .subVectors(this.camera.position, dich)
+      .setY(0);
+    const rotDich = Math.atan2(huongMay.x, huongMay.z);
     const tu = { pos: mh.group.position.clone(), rot: mh.group.rotation.y };
     const dai = 650;
     let huy = false;
@@ -947,6 +995,27 @@ export class World implements StageWorld {
         cancelGoc();
       },
     };
+  }
+
+  /**
+   * Điểm đặt panel rộng `beRong` mét sao cho vừa khung hình hiện tại: giải
+   * `beRong * 1/0.74 = 2 * d * tan(hfov/2)` ra khoảng cách `d`, rồi đi theo
+   * hướng nhìn ngang của máy quay. Nhờ vậy `screen.focus` không tràn khung
+   * 390 px (yêu cầu Boss 25/10) mà cũng không bé li ti trên màn rộng.
+   */
+  private choPanelTruocMay(beRong: number): THREE.Vector3 {
+    const vfov = (this.camera.fov * Math.PI) / 180;
+    const tanNua = Math.tan(vfov / 2) * this.camera.aspect;
+    const d = THREE.MathUtils.clamp(beRong / 0.74 / (2 * tanNua), 1.8, 9);
+    // Đi theo TRỤC NHÌN THẬT (có cả thành phần y), không phải hướng ngang: máy
+    // đứng cao 4,8 m và chúi xuống, nên nếu đặt panel ở độ cao 1,6 m thì nó rơi
+    // xuống mép dưới khung 390 px (ảnh thử 25/10) thay vì nằm giữa khung.
+    const truoc = new THREE.Vector3()
+      .subVectors(this.controls.target, this.camera.position)
+      .normalize();
+    const vt = this.camera.position.clone().add(truoc.multiplyScalar(d));
+    vt.y = Math.max(1.2, vt.y);
+    return vt;
   }
 
   private snapScreen(mh: ManHinh): ScreenSnapshot {
