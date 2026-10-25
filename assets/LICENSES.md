@@ -55,11 +55,48 @@ File `License.txt` gốc của Kenney được copy sang `public/kenney-sci-fi/L
 Không tải được thì `src/stage/phong.ts` tự dựng toàn bộ bằng `RoundedBoxGeometry` + vật liệu
 emissive (cyan/cam), không bịa asset.
 
-## 3. Animation (VRMA)
+## 3. Chuyển động — Quaternius "Universal Animation Library" → `public/anim/`
 
-**Chưa dùng.** Không tìm được file `.vrma` miễn phí có link tải ổn định tại thời điểm làm demo,
-nên toàn bộ chuyển động (đi, đung đưa tay/chân, thở, chớp mắt, vẫy tay) là **thủ tục (procedural)**
-— tính bằng code trong `src/main.ts` qua `vrm.humanoid.getNormalizedBoneNode(...)`.
+**Đã dùng thật từ A2 vòng 2.** Tải bằng `bash scripts/fetch-anim.sh`, không commit (gitignore).
+
+| Mục | Nội dung |
+| --- | --- |
+| Trang gốc | https://quaternius.com — "Universal Animation Library" (bản FREE) |
+| Nguồn tải bằng script | `https://github.com/J-Ponzo/gltf-universal-animation-library` (mirror glTF; itch.io chặn curl bằng Cloudflare challenge) |
+| Tác giả | Quaternius |
+| Giấy phép | **CC0 1.0 Universal** (public domain) — bản `LICENSE` trong repo mirror, chép sang `public/anim/LICENSE-CC0.txt` khi tải |
+| Định dạng | `.gltf` + `.bin` (~4 MB), 46 animation clip, bộ xương Rigify (`DEF-*`) |
+| Dùng gì | 12 clip làm **dáng nền**: `Idle_Loop`, `Walk_Loop`, `Sitting_Enter`, `Sitting_Exit`, `Sitting_Idle_Loop`, `Idle_Talking_Loop`, `Sitting_Talking_Loop`, `Dance_Loop`, `Driving_Loop`, `Punch_Cross`, `Crouch_Idle_Loop`, `Hit_Chest` (+ `A_TPose` làm tư thế gốc để retarget) |
+
+Retarget sang `vrm.humanoid` làm trong `src/behavior/chuyen-dong.ts` (giải thích
+cách tính ở đầu file), phát bằng `THREE.AnimationMixer`, crossfade 0,25 s.
+
+### 3c. Clip NGỒI của bộ này TĨNH — hệ quả phải biết
+
+`Sitting_Enter` (1,29 s) / `Sitting_Exit` (1,00 s) / `Sitting_Idle_Loop`
+(1,67 s) đều có dáng ngồi đúng, nhưng `Sitting_Idle_Loop` **chỉ có 2 keyframe,
+nội suy STEP** — tức chân bất động suốt clip. Hai hệ quả đã cắn thật (PR #10):
+
+1. `THREE.PropertyMixer.apply()` chỉ ghi xuống scene graph khi giá trị trộn
+   **đổi** so với lần ghi trước của chính nó, nên với clip tĩnh mixer ngừng ghi
+   xương ngay sau khi crossfade xong. Code nào reset xương về 0 mỗi khung hình
+   (cho lớp cử chỉ cộng thêm) sẽ **xoá sạch dáng ngồi** — chân duỗi thẳng đứng
+   và đứng im như thế mãi. Cách tránh: giữ lại dáng nền khung trước rồi trả về
+   trước khi mixer chạy (`NhanVat.nenGoc`).
+2. Clip không biết ghế của cảnh cao bao nhiêu, nên hình học chân vẫn phải
+   chỉnh theo `seatY` thật của place (`NhanVat.gapChanNgoi`).
+
+### 3b. Clip spec nào KHÔNG có trong bộ CC0
+
+Bộ 46 clip của Quaternius là action/RPG nên **không có** `wave`, `clap`, `nod`,
+`shake`, `think`, `point`, `sleep`, `type`, và các cử chỉ emote kiểu che miệng /
+gãi đầu / chống cằm / giơ ngón cái. Những cái đó = **clip gần nhất làm nền +
+lớp cử chỉ thủ tục nhỏ** (`src/behavior/cu-chi.ts`), bảng ghép đầy đủ ghi trong
+`NEN_CLIP` / `NEN_EMOTE` (`src/behavior/chuyen-dong.ts`). Ví dụ: `wave` = nền
+`Idle_Talking_Loop` + tay vẫy thủ tục; `that-bai` = nền `Crouch_Idle_Loop`
+(ngồi thụp thật) + ôm đầu thủ tục.
+
+Không có file `.vrma` nào được dùng.
 
 ## 4. Thư viện
 

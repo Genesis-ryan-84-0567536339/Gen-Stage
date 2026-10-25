@@ -8,6 +8,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
+import { datSeatY } from './noi-dung';
 
 const KICH_THUOC_PHONG = 7.2; // phòng vuông 7.2 x 7.2 m, giữ đúng A1
 const CAO_TUONG = 3.5;
@@ -487,16 +488,25 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
     nhom.add(g);
   }
 
-  // ghế — ghe-1 / ghe-2
-  for (const [x, z] of [
-    [-1.85, -0.97],
-    [1.85, -0.97],
+  // ghế — ghe-1 / ghe-2 (vòng 4: đo cao độ mặt ghế THẬT trên chính hình học
+  // vừa dựng rồi ghi vào noi-dung.ts qua datSeatY() — actor.sit đặt hips theo
+  // đúng số này, không còn đoán bằng hằng số × tỉ lệ chân, review PR #10 mục
+  // 2.1). `desk_chairStool` không có lưng ghế nên bbox.max.y ≈ đúng mặt ghế;
+  // kẹp trần 0,55 m cho trường hợp rơi về `desk_chair` có lưng cao hơn mặt
+  // ngồi, để không đặt hips cao quá đầu ghế.
+  for (const [id, x, z] of [
+    ['ghe-1', -1.85, -0.97],
+    ['ghe-2', 1.85, -0.97],
   ] as const) {
     const ghe = kho.co ? kho.lay('desk_chairStool', 1.2) ?? kho.lay('desk_chair', 1.2) : null;
     const g = ghe ?? gheTuDung();
     g.position.set(x, 0, z);
     g.rotation.y = Math.PI;
     nhom.add(g);
+    g.updateMatrixWorld(true);
+    const bb = new THREE.Box3().setFromObject(g);
+    const matGheDo = bb.max.y - bb.min.y > 0.01 ? Math.min(bb.max.y, 0.55) : 0;
+    if (matGheDo > 0) datSeatY(id, matGheDo);
   }
 
   // bục trung tâm phát sáng — buc-trung-tam (0,0,0.35)

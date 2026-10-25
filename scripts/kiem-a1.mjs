@@ -86,10 +86,11 @@ const BUOC = [
   { nhom: '08-ra-canh', cmd: 'actor.remove', api: { actor: 'minh' }, ui: { actor: 'huy' } },
 ];
 
-/** Lệnh A2/A3 chỉ đăng ký — phải trả ok:false, nói rõ đợt nào. */
+/**
+ * Lệnh A3 chỉ đăng ký — phải trả ok:false, nói rõ đợt nào.
+ * (`actor.emote`/`actor.idleStyle` A2 đã thi công thật — xem `kiem-a2.mjs`.)
+ */
 const STUB = [
-  ['actor.emote', { actor: 'lan', emote: 'vui' }],
-  ['actor.idleStyle', { actor: 'lan', style: 'hao-hung' }],
   ['screen.spawn', { id: 'main', at: 'buc-trung-tam' }],
   ['screen.show', { screen: 'main', kind: 'code', content: 'const a = 1;' }],
   ['screen.stream', { screen: 'main', kind: 'code', source: 'agent' }],

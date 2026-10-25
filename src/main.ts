@@ -32,6 +32,10 @@ export interface CuaStage {
    * sống, tự lùi hẹn giờ kết thúc.
    */
   feed(screen: string, chunk: string): void;
+  /** Số đo xương (bằng chứng số cho `scripts/kiem-a2.mjs`). */
+  doXuong(actor: string): Record<string, unknown>;
+  /** Đặt góc máy thủ công, tức thì (ảnh bằng chứng — xem `World.datMayThu`). */
+  datMay(vt: [number, number, number], tam: [number, number, number]): void;
 }
 
 declare global {
@@ -84,6 +88,8 @@ window.stage = {
   on: (event, fn) => bus.on(event, fn),
   log: () => nhatKy.toJSON(),
   bridge: (bat) => (bat ? bridge.bat() : bridge.tat()),
+  doXuong: (actor) => world.doXuongActor(actor),
+  datMay: (vt, tam) => world.datMayThu(vt, tam),
   get san() {
     return sanSang;
   },

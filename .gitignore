@@ -12,3 +12,10 @@ public/kenney/
 # A3 — lab viễn tưởng: tải bằng scripts/fetch-lab-assets.sh
 public/kenney-sci-fi/
 public/lab/
+
+# A2 vòng 2 — clip chuyển động CC0: tải bằng scripts/fetch-anim.sh
+public/anim/
+.asset-tmp/
+
+# A2 vòng 5 — cờ khoá "đã chạy kiem-a2.mjs" (xoá bằng --lai)
+docs/a2/.da-chay

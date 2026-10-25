@@ -1,0 +1,1045 @@
+{
+  "chay": "2026-10-25T08:34:15.937Z",
+  "cheDo": "day-du",
+  "buoc": [
+    {
+      "nhan": "clip chuyển động THẬT đang chạy",
+      "ok": true,
+      "chiTiet": "dangNen=idle",
+      "so": {
+        "clipThat": true,
+        "dangNen": "idle"
+      }
+    },
+    {
+      "nhan": "tỉ lệ chibi đầu/người trong 1/2,5–1/3",
+      "ok": true,
+      "chiTiet": "1/3.03 (cao 1.569 m, đầu 0.518 m)",
+      "so": {
+        "tong": 1.5691,
+        "dauCao": 0.5176,
+        "tyLe": 3.031
+      }
+    },
+    {
+      "nhan": "actor.emote vui",
+      "ok": true,
+      "chiTiet": "durationMs=1800"
+    },
+    {
+      "nhan": "số đo tay vui",
+      "ok": true,
+      "chiTiet": "tayT−vai=-0.0242 tayP−vai=-0.0216 (nền nhay)",
+      "so": {
+        "emote": "vui",
+        "dangNen": "nhay",
+        "tayTraiTruVai": -0.0242,
+        "tayPhaiTruVai": -0.0216,
+        "giơTay": false
+      }
+    },
+    {
+      "nhan": "stage.describe sau vui",
+      "ok": true,
+      "chiTiet": "state=idle mood=vui expression=neutral"
+    },
+    {
+      "nhan": "actor.emote rat-vui",
+      "ok": true,
+      "chiTiet": "durationMs=2200"
+    },
+    {
+      "nhan": "CHIỀU TAY rat-vui: bàn tay phải CAO HƠN vai",
+      "ok": true,
+      "chiTiet": "max(tayT−vai, tayP−vai) = 0.1058 m (nền nhay)",
+      "so": {
+        "emote": "rat-vui",
+        "dangNen": "nhay",
+        "tayTraiTruVai": 0.1058,
+        "tayPhaiTruVai": 0.0954,
+        "giơTay": true
+      }
+    },
+    {
+      "nhan": "stage.describe sau rat-vui",
+      "ok": true,
+      "chiTiet": "state=idle mood=vui expression=neutral"
+    },
+    {
+      "nhan": "actor.emote buon",
+      "ok": true,
+      "chiTiet": "durationMs=2200"
+    },
+    {
+      "nhan": "số đo tay buon",
+      "ok": true,
+      "chiTiet": "tayT−vai=-0.101 tayP−vai=-0.096 (nền idle)",
+      "so": {
+        "emote": "buon",
+        "dangNen": "idle",
+        "tayTraiTruVai": -0.101,
+        "tayPhaiTruVai": -0.096,
+        "giơTay": false
+      }
+    },
+    {
+      "nhan": "stage.describe sau buon",
+      "ok": true,
+      "chiTiet": "state=idle mood=buon expression=neutral"
+    },
+    {
+      "nhan": "actor.emote ngac-nhien",
+      "ok": true,
+      "chiTiet": "durationMs=1400"
+    },
+    {
+      "nhan": "CHIỀU TAY ngac-nhien: bàn tay phải CAO HƠN vai",
+      "ok": true,
+      "chiTiet": "max(tayT−vai, tayP−vai) = 0.0535 m (nền giat)",
+      "so": {
+        "emote": "ngac-nhien",
+        "dangNen": "giat",
+        "tayTraiTruVai": -0.0998,
+        "tayPhaiTruVai": 0.0535,
+        "giơTay": true
+      }
+    },
+    {
+      "nhan": "stage.describe sau ngac-nhien",
+      "ok": true,
+      "chiTiet": "state=idle mood=binh-thuong expression=neutral"
+    },
+    {
+      "nhan": "actor.emote gian",
+      "ok": true,
+      "chiTiet": "durationMs=1900"
+    },
+    {
+      "nhan": "số đo tay gian",
+      "ok": true,
+      "chiTiet": "tayT−vai=-0.0158 tayP−vai=-0.0072 (nền dam)",
+      "so": {
+        "emote": "gian",
+        "dangNen": "dam",
+        "tayTraiTruVai": -0.0158,
+        "tayPhaiTruVai": -0.0072,
+        "giơTay": false
+      }
+    },
+    {
+      "nhan": "stage.describe sau gian",
+      "ok": true,
+      "chiTiet": "state=idle mood=gian expression=neutral"
+    },
+    {
+      "nhan": "actor.emote suy-nghi",
+      "ok": true,
+      "chiTiet": "durationMs=2600"
+    },
+    {
+      "nhan": "số đo tay suy-nghi",
+      "ok": true,
+      "chiTiet": "tayT−vai=-0.1057 tayP−vai=-0.0155 (nền idle)",
+      "so": {
+        "emote": "suy-nghi",
+        "dangNen": "idle",
+        "tayTraiTruVai": -0.1057,
+        "tayPhaiTruVai": -0.0155,
+        "giơTay": false
+      }
+    },
+    {
+      "nhan": "stage.describe sau suy-nghi",
+      "ok": true,
+      "chiTiet": "state=idle mood=binh-thuong expression=neutral"
+    },
+    {
+      "nhan": "actor.emote dong-y",
+      "ok": true,
+      "chiTiet": "durationMs=1300"
+    },
+    {
+      "nhan": "CHIỀU TAY dong-y: bàn tay phải CAO HƠN vai",
+      "ok": true,
+      "chiTiet": "max(tayT−vai, tayP−vai) = 0.0553 m (nền noi)",
+      "so": {
+        "emote": "dong-y",
+        "dangNen": "noi",
+        "tayTraiTruVai": -0.0627,
+        "tayPhaiTruVai": 0.0553,
+        "giơTay": true
+      }
+    },
+    {
+      "nhan": "stage.describe sau dong-y",
+      "ok": true,
+      "chiTiet": "state=idle mood=vui expression=neutral"
+    },
+    {
+      "nhan": "actor.emote tu-choi",
+      "ok": true,
+      "chiTiet": "durationMs=1300"
+    },
+    {
+      "nhan": "số đo tay tu-choi",
+      "ok": true,
+      "chiTiet": "tayT−vai=0.0217 tayP−vai=-0.0558 (nền noi)",
+      "so": {
+        "emote": "tu-choi",
+        "dangNen": "noi",
+        "tayTraiTruVai": 0.0217,
+        "tayPhaiTruVai": -0.0558,
+        "giơTay": false
+      }
+    },
+    {
+      "nhan": "stage.describe sau tu-choi",
+      "ok": true,
+      "chiTiet": "state=idle mood=buon expression=neutral"
+    },
+    {
+      "nhan": "actor.emote chao",
+      "ok": true,
+      "chiTiet": "durationMs=2000"
+    },
+    {
+      "nhan": "CHIỀU TAY chao: bàn tay phải CAO HƠN vai",
+      "ok": true,
+      "chiTiet": "max(tayT−vai, tayP−vai) = 0.0704 m (nền noi)",
+      "so": {
+        "emote": "chao",
+        "dangNen": "noi",
+        "tayTraiTruVai": 0.0704,
+        "tayPhaiTruVai": -0.058,
+        "giơTay": true
+      }
+    },
+    {
+      "nhan": "stage.describe sau chao",
+      "ok": true,
+      "chiTiet": "state=idle mood=vui expression=neutral"
+    },
+    {
+      "nhan": "actor.emote ra-lenh",
+      "ok": true,
+      "chiTiet": "durationMs=1600"
+    },
+    {
+      "nhan": "số đo tay ra-lenh",
+      "ok": true,
+      "chiTiet": "tayT−vai=-0.105 tayP−vai=-0.0006 (nền idle)",
+      "so": {
+        "emote": "ra-lenh",
+        "dangNen": "idle",
+        "tayTraiTruVai": -0.105,
+        "tayPhaiTruVai": -0.0006,
+        "giơTay": false
+      }
+    },
+    {
+      "nhan": "stage.describe sau ra-lenh",
+      "ok": true,
+      "chiTiet": "state=idle mood=binh-thuong expression=neutral"
+    },
+    {
+      "nhan": "actor.emote thanh-cong",
+      "ok": true,
+      "chiTiet": "durationMs=2000"
+    },
+    {
+      "nhan": "CHIỀU TAY thanh-cong: bàn tay phải CAO HƠN vai",
+      "ok": true,
+      "chiTiet": "max(tayT−vai, tayP−vai) = 0.0963 m (nền nhay)",
+      "so": {
+        "emote": "thanh-cong",
+        "dangNen": "nhay",
+        "tayTraiTruVai": -0.0498,
+        "tayPhaiTruVai": 0.0963,
+        "giơTay": true
+      }
+    },
+    {
+      "nhan": "stage.describe sau thanh-cong",
+      "ok": true,
+      "chiTiet": "state=idle mood=vui expression=neutral"
+    },
+    {
+      "nhan": "actor.emote that-bai",
+      "ok": true,
+      "chiTiet": "durationMs=2000"
+    },
+    {
+      "nhan": "số đo tay that-bai",
+      "ok": true,
+      "chiTiet": "tayT−vai=-0.1027 tayP−vai=-0.0971 (nền idle)",
+      "so": {
+        "emote": "that-bai",
+        "dangNen": "idle",
+        "tayTraiTruVai": -0.1027,
+        "tayPhaiTruVai": -0.0971,
+        "giơTay": false
+      }
+    },
+    {
+      "nhan": "stage.describe sau that-bai",
+      "ok": true,
+      "chiTiet": "state=idle mood=buon expression=neutral"
+    },
+    {
+      "nhan": "actor.emote boi-roi",
+      "ok": true,
+      "chiTiet": "durationMs=1800"
+    },
+    {
+      "nhan": "CHIỀU TAY boi-roi: bàn tay phải CAO HƠN vai",
+      "ok": true,
+      "chiTiet": "max(tayT−vai, tayP−vai) = 0.0765 m (nền idle)",
+      "so": {
+        "emote": "boi-roi",
+        "dangNen": "idle",
+        "tayTraiTruVai": -0.1046,
+        "tayPhaiTruVai": 0.0765,
+        "giơTay": true
+      }
+    },
+    {
+      "nhan": "stage.describe sau boi-roi",
+      "ok": true,
+      "chiTiet": "state=idle mood=binh-thuong expression=neutral"
+    },
+    {
+      "nhan": "actor.emote met",
+      "ok": true,
+      "chiTiet": "durationMs=2400"
+    },
+    {
+      "nhan": "số đo tay met",
+      "ok": true,
+      "chiTiet": "tayT−vai=0.084 tayP−vai=0.0889 (nền idle)",
+      "so": {
+        "emote": "met",
+        "dangNen": "idle",
+        "tayTraiTruVai": 0.084,
+        "tayPhaiTruVai": 0.0889,
+        "giơTay": false
+      }
+    },
+    {
+      "nhan": "stage.describe sau met",
+      "ok": true,
+      "chiTiet": "state=idle mood=met expression=neutral"
+    },
+    {
+      "nhan": "actor.emote cham-chu",
+      "ok": true,
+      "chiTiet": "durationMs=2200"
+    },
+    {
+      "nhan": "số đo tay cham-chu",
+      "ok": true,
+      "chiTiet": "tayT−vai=-0.1051 tayP−vai=-0.0988 (nền idle)",
+      "so": {
+        "emote": "cham-chu",
+        "dangNen": "idle",
+        "tayTraiTruVai": -0.1051,
+        "tayPhaiTruVai": -0.0988,
+        "giơTay": false
+      }
+    },
+    {
+      "nhan": "stage.describe sau cham-chu",
+      "ok": true,
+      "chiTiet": "state=idle mood=binh-thuong expression=neutral"
+    },
+    {
+      "nhan": "actor.play idle",
+      "ok": true,
+      "chiTiet": "durationMs=400"
+    },
+    {
+      "nhan": "clip idle dùng nền",
+      "ok": true,
+      "chiTiet": "idle"
+    },
+    {
+      "nhan": "actor.play walk",
+      "ok": true,
+      "chiTiet": "durationMs=1200"
+    },
+    {
+      "nhan": "clip walk dùng nền",
+      "ok": true,
+      "chiTiet": "idle"
+    },
+    {
+      "nhan": "actor.play wave",
+      "ok": true,
+      "chiTiet": "durationMs=2600"
+    },
+    {
+      "nhan": "clip wave dùng nền",
+      "ok": true,
+      "chiTiet": "idle"
+    },
+    {
+      "nhan": "actor.play nod",
+      "ok": true,
+      "chiTiet": "durationMs=1200"
+    },
+    {
+      "nhan": "clip nod dùng nền",
+      "ok": true,
+      "chiTiet": "idle"
+    },
+    {
+      "nhan": "actor.play shake",
+      "ok": true,
+      "chiTiet": "durationMs=1200"
+    },
+    {
+      "nhan": "clip shake dùng nền",
+      "ok": true,
+      "chiTiet": "idle"
+    },
+    {
+      "nhan": "actor.play think",
+      "ok": true,
+      "chiTiet": "durationMs=2400"
+    },
+    {
+      "nhan": "clip think dùng nền",
+      "ok": true,
+      "chiTiet": "idle"
+    },
+    {
+      "nhan": "actor.play clap",
+      "ok": true,
+      "chiTiet": "durationMs=1800"
+    },
+    {
+      "nhan": "clip clap dùng nền",
+      "ok": true,
+      "chiTiet": "idle"
+    },
+    {
+      "nhan": "actor.play point",
+      "ok": true,
+      "chiTiet": "durationMs=2000"
+    },
+    {
+      "nhan": "clip point dùng nền",
+      "ok": true,
+      "chiTiet": "idle"
+    },
+    {
+      "nhan": "actor.play celebrate",
+      "ok": true,
+      "chiTiet": "durationMs=2600"
+    },
+    {
+      "nhan": "clip celebrate dùng nền",
+      "ok": true,
+      "chiTiet": "nhay"
+    },
+    {
+      "nhan": "actor.play type",
+      "ok": true,
+      "chiTiet": "durationMs=3000"
+    },
+    {
+      "nhan": "clip type dùng nền",
+      "ok": true,
+      "chiTiet": "ban"
+    },
+    {
+      "nhan": "actor.play sleep",
+      "ok": true,
+      "chiTiet": "durationMs=4000"
+    },
+    {
+      "nhan": "clip sleep dùng nền",
+      "ok": true,
+      "chiTiet": "ngoi-giu"
+    },
+    {
+      "nhan": "actor.play sit",
+      "ok": true,
+      "chiTiet": "durationMs=800"
+    },
+    {
+      "nhan": "clip sit dùng nền",
+      "ok": true,
+      "chiTiet": "idle"
+    },
+    {
+      "nhan": "actor.play stand",
+      "ok": true,
+      "chiTiet": "durationMs=800"
+    },
+    {
+      "nhan": "clip stand dùng nền",
+      "ok": true,
+      "chiTiet": "ngoi-giu"
+    },
+    {
+      "nhan": "actor.sit ghe-1 (lượt 1/2)",
+      "ok": true,
+      "chiTiet": "durationMs=1432"
+    },
+    {
+      "nhan": "ghe-1 lượt 1: ĐÁY MÔNG chạm mặt ghế — |hipsY − (seatY + dày đùi)| ≤ 0,03",
+      "ok": true,
+      "chiTiet": "lệch tối đa 0.0000 m (hipsY mục tiêu 0.5652, 27 mẫu)",
+      "so": {
+        "ghe": "ghe-1",
+        "lan": 1,
+        "seatY": 0.4968,
+        "dayDui": 0.0684,
+        "hipMuc": 0.5652,
+        "lechHip": 0,
+        "kneeY": 0.5268,
+        "footY": 0.1446,
+        "footYMax": 0.1446,
+        "bboxChinhXacMinY": 0.0233,
+        "soMau": 27
+      }
+    },
+    {
+      "nhan": "ghe-1 lượt 1: ĐẦU GỐI trên mặt ghế — kneeY > seatY",
+      "ok": true,
+      "chiTiet": "kneeY nhỏ nhất 0.5268 > seatY 0.4968",
+      "so": {
+        "ghe": "ghe-1",
+        "lan": 1,
+        "seatY": 0.4968,
+        "dayDui": 0.0684,
+        "hipMuc": 0.5652,
+        "lechHip": 0,
+        "kneeY": 0.5268,
+        "footY": 0.1446,
+        "footYMax": 0.1446,
+        "bboxChinhXacMinY": 0.0233,
+        "soMau": 27
+      }
+    },
+    {
+      "nhan": "ghe-1 lượt 1: BÀN CHÂN không chui dưới sàn — footY ≥ −0,01",
+      "ok": true,
+      "chiTiet": "footY nhỏ nhất 0.1446 (đáy hộp bao chính xác 0.0233)",
+      "so": {
+        "ghe": "ghe-1",
+        "lan": 1,
+        "seatY": 0.4968,
+        "dayDui": 0.0684,
+        "hipMuc": 0.5652,
+        "lechHip": 0,
+        "kneeY": 0.5268,
+        "footY": 0.1446,
+        "footYMax": 0.1446,
+        "bboxChinhXacMinY": 0.0233,
+        "soMau": 27
+      }
+    },
+    {
+      "nhan": "ghe-1 lượt 1: BÀN CHÂN không đứng trên mặt ghế — footY ≤ seatY",
+      "ok": true,
+      "chiTiet": "footY lớn nhất 0.1446 ≤ seatY 0.4968",
+      "so": {
+        "ghe": "ghe-1",
+        "lan": 1,
+        "seatY": 0.4968,
+        "dayDui": 0.0684,
+        "hipMuc": 0.5652,
+        "lechHip": 0,
+        "kneeY": 0.5268,
+        "footY": 0.1446,
+        "footYMax": 0.1446,
+        "bboxChinhXacMinY": 0.0233,
+        "soMau": 27
+      }
+    },
+    {
+      "nhan": "actor.sit ghe-1 (lượt 2/2)",
+      "ok": true,
+      "chiTiet": "durationMs=1200"
+    },
+    {
+      "nhan": "ghe-1 lượt 2: ĐÁY MÔNG chạm mặt ghế — |hipsY − (seatY + dày đùi)| ≤ 0,03",
+      "ok": true,
+      "chiTiet": "lệch tối đa 0.0000 m (hipsY mục tiêu 0.5652, 27 mẫu)",
+      "so": {
+        "ghe": "ghe-1",
+        "lan": 2,
+        "seatY": 0.4968,
+        "dayDui": 0.0684,
+        "hipMuc": 0.5652,
+        "lechHip": 0,
+        "kneeY": 0.5268,
+        "footY": 0.1446,
+        "footYMax": 0.1446,
+        "bboxChinhXacMinY": 0.0233,
+        "soMau": 27
+      }
+    },
+    {
+      "nhan": "ghe-1 lượt 2: ĐẦU GỐI trên mặt ghế — kneeY > seatY",
+      "ok": true,
+      "chiTiet": "kneeY nhỏ nhất 0.5268 > seatY 0.4968",
+      "so": {
+        "ghe": "ghe-1",
+        "lan": 2,
+        "seatY": 0.4968,
+        "dayDui": 0.0684,
+        "hipMuc": 0.5652,
+        "lechHip": 0,
+        "kneeY": 0.5268,
+        "footY": 0.1446,
+        "footYMax": 0.1446,
+        "bboxChinhXacMinY": 0.0233,
+        "soMau": 27
+      }
+    },
+    {
+      "nhan": "ghe-1 lượt 2: BÀN CHÂN không chui dưới sàn — footY ≥ −0,01",
+      "ok": true,
+      "chiTiet": "footY nhỏ nhất 0.1446 (đáy hộp bao chính xác 0.0233)",
+      "so": {
+        "ghe": "ghe-1",
+        "lan": 2,
+        "seatY": 0.4968,
+        "dayDui": 0.0684,
+        "hipMuc": 0.5652,
+        "lechHip": 0,
+        "kneeY": 0.5268,
+        "footY": 0.1446,
+        "footYMax": 0.1446,
+        "bboxChinhXacMinY": 0.0233,
+        "soMau": 27
+      }
+    },
+    {
+      "nhan": "ghe-1 lượt 2: BÀN CHÂN không đứng trên mặt ghế — footY ≤ seatY",
+      "ok": true,
+      "chiTiet": "footY lớn nhất 0.1446 ≤ seatY 0.4968",
+      "so": {
+        "ghe": "ghe-1",
+        "lan": 2,
+        "seatY": 0.4968,
+        "dayDui": 0.0684,
+        "hipMuc": 0.5652,
+        "lechHip": 0,
+        "kneeY": 0.5268,
+        "footY": 0.1446,
+        "footYMax": 0.1446,
+        "bboxChinhXacMinY": 0.0233,
+        "soMau": 27
+      }
+    },
+    {
+      "nhan": "actor.sit ghe-2 (lượt 1/2)",
+      "ok": true,
+      "chiTiet": "durationMs=5095"
+    },
+    {
+      "nhan": "ghe-2 lượt 1: ĐÁY MÔNG chạm mặt ghế — |hipsY − (seatY + dày đùi)| ≤ 0,03",
+      "ok": true,
+      "chiTiet": "lệch tối đa 0.0000 m (hipsY mục tiêu 0.5652, 21 mẫu)",
+      "so": {
+        "ghe": "ghe-2",
+        "lan": 1,
+        "seatY": 0.4968,
+        "dayDui": 0.0684,
+        "hipMuc": 0.5652,
+        "lechHip": 0,
+        "kneeY": 0.5268,
+        "footY": 0.1446,
+        "footYMax": 0.1446,
+        "bboxChinhXacMinY": 0.0233,
+        "soMau": 21
+      }
+    },
+    {
+      "nhan": "ghe-2 lượt 1: ĐẦU GỐI trên mặt ghế — kneeY > seatY",
+      "ok": true,
+      "chiTiet": "kneeY nhỏ nhất 0.5268 > seatY 0.4968",
+      "so": {
+        "ghe": "ghe-2",
+        "lan": 1,
+        "seatY": 0.4968,
+        "dayDui": 0.0684,
+        "hipMuc": 0.5652,
+        "lechHip": 0,
+        "kneeY": 0.5268,
+        "footY": 0.1446,
+        "footYMax": 0.1446,
+        "bboxChinhXacMinY": 0.0233,
+        "soMau": 21
+      }
+    },
+    {
+      "nhan": "ghe-2 lượt 1: BÀN CHÂN không chui dưới sàn — footY ≥ −0,01",
+      "ok": true,
+      "chiTiet": "footY nhỏ nhất 0.1446 (đáy hộp bao chính xác 0.0233)",
+      "so": {
+        "ghe": "ghe-2",
+        "lan": 1,
+        "seatY": 0.4968,
+        "dayDui": 0.0684,
+        "hipMuc": 0.5652,
+        "lechHip": 0,
+        "kneeY": 0.5268,
+        "footY": 0.1446,
+        "footYMax": 0.1446,
+        "bboxChinhXacMinY": 0.0233,
+        "soMau": 21
+      }
+    },
+    {
+      "nhan": "ghe-2 lượt 1: BÀN CHÂN không đứng trên mặt ghế — footY ≤ seatY",
+      "ok": true,
+      "chiTiet": "footY lớn nhất 0.1446 ≤ seatY 0.4968",
+      "so": {
+        "ghe": "ghe-2",
+        "lan": 1,
+        "seatY": 0.4968,
+        "dayDui": 0.0684,
+        "hipMuc": 0.5652,
+        "lechHip": 0,
+        "kneeY": 0.5268,
+        "footY": 0.1446,
+        "footYMax": 0.1446,
+        "bboxChinhXacMinY": 0.0233,
+        "soMau": 21
+      }
+    },
+    {
+      "nhan": "actor.sit ghe-2 (lượt 2/2)",
+      "ok": true,
+      "chiTiet": "durationMs=1200"
+    },
+    {
+      "nhan": "ghe-2 lượt 2: ĐÁY MÔNG chạm mặt ghế — |hipsY − (seatY + dày đùi)| ≤ 0,03",
+      "ok": true,
+      "chiTiet": "lệch tối đa 0.0000 m (hipsY mục tiêu 0.5652, 30 mẫu)",
+      "so": {
+        "ghe": "ghe-2",
+        "lan": 2,
+        "seatY": 0.4968,
+        "dayDui": 0.0684,
+        "hipMuc": 0.5652,
+        "lechHip": 0,
+        "kneeY": 0.5268,
+        "footY": 0.1446,
+        "footYMax": 0.1446,
+        "bboxChinhXacMinY": 0.0233,
+        "soMau": 30
+      }
+    },
+    {
+      "nhan": "ghe-2 lượt 2: ĐẦU GỐI trên mặt ghế — kneeY > seatY",
+      "ok": true,
+      "chiTiet": "kneeY nhỏ nhất 0.5268 > seatY 0.4968",
+      "so": {
+        "ghe": "ghe-2",
+        "lan": 2,
+        "seatY": 0.4968,
+        "dayDui": 0.0684,
+        "hipMuc": 0.5652,
+        "lechHip": 0,
+        "kneeY": 0.5268,
+        "footY": 0.1446,
+        "footYMax": 0.1446,
+        "bboxChinhXacMinY": 0.0233,
+        "soMau": 30
+      }
+    },
+    {
+      "nhan": "ghe-2 lượt 2: BÀN CHÂN không chui dưới sàn — footY ≥ −0,01",
+      "ok": true,
+      "chiTiet": "footY nhỏ nhất 0.1446 (đáy hộp bao chính xác 0.0233)",
+      "so": {
+        "ghe": "ghe-2",
+        "lan": 2,
+        "seatY": 0.4968,
+        "dayDui": 0.0684,
+        "hipMuc": 0.5652,
+        "lechHip": 0,
+        "kneeY": 0.5268,
+        "footY": 0.1446,
+        "footYMax": 0.1446,
+        "bboxChinhXacMinY": 0.0233,
+        "soMau": 30
+      }
+    },
+    {
+      "nhan": "ghe-2 lượt 2: BÀN CHÂN không đứng trên mặt ghế — footY ≤ seatY",
+      "ok": true,
+      "chiTiet": "footY lớn nhất 0.1446 ≤ seatY 0.4968",
+      "so": {
+        "ghe": "ghe-2",
+        "lan": 2,
+        "seatY": 0.4968,
+        "dayDui": 0.0684,
+        "hipMuc": 0.5652,
+        "lechHip": 0,
+        "kneeY": 0.5268,
+        "footY": 0.1446,
+        "footYMax": 0.1446,
+        "bboxChinhXacMinY": 0.0233,
+        "soMau": 30
+      }
+    },
+    {
+      "nhan": "1.2 actor.stop → expression neutral + mood mặc định NGAY",
+      "ok": true,
+      "chiTiet": "expression=neutral mood=binh-thuong",
+      "so": {
+        "expression": "neutral",
+        "mood": "binh-thuong"
+      }
+    },
+    {
+      "nhan": "1.3 emote bị cắt bắn emoteCancelled, KHÔNG bắn emoteDone",
+      "ok": true,
+      "chiTiet": "[\"cancel:buon\",\"done:vui\"]",
+      "so": {
+        "suKien": [
+          "cancel:buon",
+          "done:vui"
+        ],
+        "moodSau": "vui"
+      }
+    },
+    {
+      "nhan": "1.3 emote bị cắt KHÔNG ghi mood của mình",
+      "ok": true,
+      "chiTiet": "mood=vui"
+    },
+    {
+      "nhan": "2.2 emote xong ĐÚNG GIỜ hứa (sai số < 400 ms dù renderer chậm)",
+      "ok": true,
+      "chiTiet": "hứa 2600 ms, thật 2602 ms, lệch 2 ms",
+      "so": {
+        "hua": 2600,
+        "that": 2602
+      }
+    },
+    {
+      "nhan": "actor.say emotion=vui",
+      "ok": true,
+      "chiTiet": "durationMs=3831"
+    },
+    {
+      "nhan": "actor.say emotion=buon",
+      "ok": true,
+      "chiTiet": "durationMs=3908"
+    },
+    {
+      "nhan": "actor.say emotion=gian",
+      "ok": true,
+      "chiTiet": "durationMs=3908"
+    },
+    {
+      "nhan": "actor.say emotion=ngac-nhien",
+      "ok": true,
+      "chiTiet": "durationMs=4369"
+    },
+    {
+      "nhan": "actor.idleStyle binh-thuong",
+      "ok": true,
+      "chiTiet": "ok"
+    },
+    {
+      "nhan": "actor.idleStyle hao-hung",
+      "ok": true,
+      "chiTiet": "ok"
+    },
+    {
+      "nhan": "actor.idleStyle met",
+      "ok": true,
+      "chiTiet": "ok"
+    },
+    {
+      "nhan": "actor.idleStyle cang-thang",
+      "ok": true,
+      "chiTiet": "ok"
+    },
+    {
+      "nhan": "video: 7 emote liền mạch ≤ 15 s",
+      "ok": true,
+      "chiTiet": "13.6 s nội dung",
+      "so": {
+        "giay": 13.6
+      }
+    }
+  ],
+  "doTay": [
+    {
+      "emote": "vui",
+      "dangNen": "nhay",
+      "tayTraiTruVai": -0.0242,
+      "tayPhaiTruVai": -0.0216,
+      "giơTay": false
+    },
+    {
+      "emote": "rat-vui",
+      "dangNen": "nhay",
+      "tayTraiTruVai": 0.1058,
+      "tayPhaiTruVai": 0.0954,
+      "giơTay": true
+    },
+    {
+      "emote": "buon",
+      "dangNen": "idle",
+      "tayTraiTruVai": -0.101,
+      "tayPhaiTruVai": -0.096,
+      "giơTay": false
+    },
+    {
+      "emote": "ngac-nhien",
+      "dangNen": "giat",
+      "tayTraiTruVai": -0.0998,
+      "tayPhaiTruVai": 0.0535,
+      "giơTay": true
+    },
+    {
+      "emote": "gian",
+      "dangNen": "dam",
+      "tayTraiTruVai": -0.0158,
+      "tayPhaiTruVai": -0.0072,
+      "giơTay": false
+    },
+    {
+      "emote": "suy-nghi",
+      "dangNen": "idle",
+      "tayTraiTruVai": -0.1057,
+      "tayPhaiTruVai": -0.0155,
+      "giơTay": false
+    },
+    {
+      "emote": "dong-y",
+      "dangNen": "noi",
+      "tayTraiTruVai": -0.0627,
+      "tayPhaiTruVai": 0.0553,
+      "giơTay": true
+    },
+    {
+      "emote": "tu-choi",
+      "dangNen": "noi",
+      "tayTraiTruVai": 0.0217,
+      "tayPhaiTruVai": -0.0558,
+      "giơTay": false
+    },
+    {
+      "emote": "chao",
+      "dangNen": "noi",
+      "tayTraiTruVai": 0.0704,
+      "tayPhaiTruVai": -0.058,
+      "giơTay": true
+    },
+    {
+      "emote": "ra-lenh",
+      "dangNen": "idle",
+      "tayTraiTruVai": -0.105,
+      "tayPhaiTruVai": -0.0006,
+      "giơTay": false
+    },
+    {
+      "emote": "thanh-cong",
+      "dangNen": "nhay",
+      "tayTraiTruVai": -0.0498,
+      "tayPhaiTruVai": 0.0963,
+      "giơTay": true
+    },
+    {
+      "emote": "that-bai",
+      "dangNen": "idle",
+      "tayTraiTruVai": -0.1027,
+      "tayPhaiTruVai": -0.0971,
+      "giơTay": false
+    },
+    {
+      "emote": "boi-roi",
+      "dangNen": "idle",
+      "tayTraiTruVai": -0.1046,
+      "tayPhaiTruVai": 0.0765,
+      "giơTay": true
+    },
+    {
+      "emote": "met",
+      "dangNen": "idle",
+      "tayTraiTruVai": 0.084,
+      "tayPhaiTruVai": 0.0889,
+      "giơTay": false
+    },
+    {
+      "emote": "cham-chu",
+      "dangNen": "idle",
+      "tayTraiTruVai": -0.1051,
+      "tayPhaiTruVai": -0.0988,
+      "giơTay": false
+    }
+  ],
+  "doNgoi": [
+    {
+      "ghe": "ghe-1",
+      "lan": 1,
+      "seatY": 0.4968,
+      "dayDui": 0.0684,
+      "hipMuc": 0.5652,
+      "lechHip": 0,
+      "kneeY": 0.5268,
+      "footY": 0.1446,
+      "footYMax": 0.1446,
+      "bboxChinhXacMinY": 0.0233,
+      "soMau": 27
+    },
+    {
+      "ghe": "ghe-1",
+      "lan": 2,
+      "seatY": 0.4968,
+      "dayDui": 0.0684,
+      "hipMuc": 0.5652,
+      "lechHip": 0,
+      "kneeY": 0.5268,
+      "footY": 0.1446,
+      "footYMax": 0.1446,
+      "bboxChinhXacMinY": 0.0233,
+      "soMau": 27
+    },
+    {
+      "ghe": "ghe-2",
+      "lan": 1,
+      "seatY": 0.4968,
+      "dayDui": 0.0684,
+      "hipMuc": 0.5652,
+      "lechHip": 0,
+      "kneeY": 0.5268,
+      "footY": 0.1446,
+      "footYMax": 0.1446,
+      "bboxChinhXacMinY": 0.0233,
+      "soMau": 21
+    },
+    {
+      "ghe": "ghe-2",
+      "lan": 2,
+      "seatY": 0.4968,
+      "dayDui": 0.0684,
+      "hipMuc": 0.5652,
+      "lechHip": 0,
+      "kneeY": 0.5268,
+      "footY": 0.1446,
+      "footYMax": 0.1446,
+      "bboxChinhXacMinY": 0.0233,
+      "soMau": 30
+    }
+  ],
+  "fpsMobile": 1.92,
+  "tongKet": {
+    "buoc": 93,
+    "ok": 93,
+    "consoleError": 0,
+    "loi": [],
+    "thatBai": []
+  }
+}

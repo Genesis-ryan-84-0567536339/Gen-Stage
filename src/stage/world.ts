@@ -38,6 +38,7 @@ import {
   CLIPS,
   DAI_CLIP,
   EMOTES,
+  layMatGhe,
   PLACES,
   PRESET_DEN,
   PRESET_MAY,
@@ -531,11 +532,12 @@ export class World implements StageWorld {
       new THREE.Vector3(nv.goc.position.x, 0, nv.goc.position.z),
     );
     const uoc = (kc / TOC_DO_DI) * 1000 + DAI_CLIP.sit! + 400;
+    const matGhe = layMatGhe(seat);
     return noiTiep(
       [
         () => nv.diToi(dich),
         () => nv.xoayVe(p.facing ?? 180),
-        () => nv.ngoi(),
+        () => nv.ngoi(matGhe),
       ],
       Math.round(uoc),
     );
@@ -572,7 +574,9 @@ export class World implements StageWorld {
     const nv = this.nv(id);
     // A1: cảm xúc chỉ ánh sang biểu cảm mặt; A2 làm trọn gói mặt + cơ thể + âm
     if (emotion) nv.datBieuCam(bieuCamTuCamXuc(emotion), 0.8, uocThoiLuongNoi(text) + 600);
-    return nv.noi(text, voice);
+    // A2 vòng 2: `emotion` đổi cả CỬ CHỈ (đầu + nhịp tay theo nhóm cảm xúc)
+    // và hướng mắt về người nghe, không chỉ đổi mặt — spec mục 3.2b.
+    return nv.noi(text, voice, emotion);
   }
 
   actorHold(id: string, prop: string, hand: 'left' | 'right'): void {
@@ -604,6 +608,33 @@ export class World implements StageWorld {
     nv.dangCam = null;
     nv.objCam = null;
     return prop;
+  }
+
+  actorEmote(id: string, emote: string, intensity = 1, say?: string): Action {
+    if (!(EMOTES as readonly string[]).includes(emote)) {
+      throw new Error(`Không có emote "${emote}". Đang có: ${EMOTES.join(', ')}`);
+    }
+    return this.nv(id).chayEmote(emote, intensity, say);
+  }
+
+  /**
+   * Số đo xương trong không gian + bộ clip thật đang dùng — **bằng chứng số**
+   * cho `scripts/kiem-a2.mjs` (kiểm `y` bàn tay > `y` vai khi giơ tay, đo tỉ
+   * lệ chibi). Không nằm trong Actor API, chỉ phơi qua `window.stage`.
+   */
+  doXuongActor(id: string): Record<string, unknown> {
+    const nv = this.nv(id);
+    return {
+      actor: id,
+      state: nv.state,
+      clipThat: nv.dungClipThat,
+      dangNen: nv.dangNen,
+      ...nv.doXuong(),
+    };
+  }
+
+  actorIdleStyle(id: string, style: string): void {
+    this.nv(id).datIdleStyle(style);
   }
 
   actorInterrupt(id: string): void {
@@ -751,6 +782,23 @@ export class World implements StageWorld {
     this.tamTuBay = { vt: tam.clone().add(huong), tam };
   }
 
+  /**
+   * Đặt góc máy **thủ công, tức thì** (không bay lerp) — dùng cho ảnh bằng
+   * chứng trong `scripts/kiem-a2.mjs`. `camera.focus` không dùng được cho
+   * việc này: nó bay dần (lerp `dt·3,2`) và `distance` thực tế không tới đúng
+   * khoảng cách yêu cầu, nên mọi ảnh bằng chứng trước đây hoặc chụp giữa lúc
+   * camera còn bay, hoặc actor lọt ra ngoài khung (review PR #10 vòng 4).
+   * Không nằm trong Actor/Scene API, chỉ phơi qua `window.stage.datMay`.
+   */
+  datMayThu(vt: Vec3, tam: Vec3): void {
+    this.tamTuBay = null;
+    this.bossDaXoay = true;
+    this.camera.position.set(vt[0], vt[1], vt[2]);
+    this.controls.target.set(tam[0], tam[1], tam[2]);
+    this.camera.lookAt(this.controls.target);
+    this.controls.update();
+  }
+
   cameraPreset(name: string): void {
     if (!(PRESET_MAY as readonly string[]).includes(name)) {
       throw new Error(`Không có góc máy "${name}". Có: ${PRESET_MAY.join(', ')}`);
@@ -758,6 +806,37 @@ export class World implements StageWorld {
     if (name === 'toan-canh') {
       this.bossDaXoay = false;
       this.tamTuBay = { vt: MAY_NGANG.vt.clone(), tam: MAY_NGANG.tam.clone() };
+      return;
+    }
+    if (name === 'truoc-mat') {
+      // chính diện, thấy trọn người: lấy hộp bao của actor đầu tiên rồi lùi
+      // camera đủ xa theo đúng hướng mặt nhân vật đang nhìn tới.
+      const nv = [...this.actors.values()][0];
+      this.bossDaXoay = true;
+      if (!nv) {
+        this.tamTuBay = {
+          vt: new THREE.Vector3(0, 1.1, 3.2),
+          tam: new THREE.Vector3(0, 0.9, 0),
+        };
+        return;
+      }
+      nv.goc.updateMatrixWorld(true);
+      const hop = new THREE.Box3().setFromObject(nv.goc);
+      const giua = (hop.min.y + hop.max.y) / 2;
+      const cao = Math.max(0.6, hop.max.y - hop.min.y);
+      const xa = cao * 1.45 + 0.35;
+      // hướng mặt THẬT: clip nền xoay hông nên chỉ lấy `goc.rotation.y` là
+      // lệch — lấy quay thế giới của xương hips rồi bỏ phần ngẩng/nghiêng.
+      const hips = nv.vrm.humanoid?.getNormalizedBoneNode('hips');
+      const q = (hips ?? nv.goc).getWorldQuaternion(new THREE.Quaternion());
+      const truoc = new THREE.Vector3(0, 0, 1).applyQuaternion(q);
+      truoc.y = 0;
+      if (truoc.lengthSq() < 1e-4) truoc.set(Math.sin(nv.goc.rotation.y), 0, Math.cos(nv.goc.rotation.y));
+      const huong = truoc.normalize().multiplyScalar(xa);
+      this.tamTuBay = {
+        vt: new THREE.Vector3(nv.goc.position.x, giua + cao * 0.1, nv.goc.position.z).add(huong),
+        tam: new THREE.Vector3(nv.goc.position.x, giua, nv.goc.position.z),
+      };
       return;
     }
     if (name === 'hop') {

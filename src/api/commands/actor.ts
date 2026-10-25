@@ -6,7 +6,8 @@
  * lệnh có `interrupt: true`.
  */
 import type { CommandSpec, Vec3 } from '../types';
-import { BIEU_CAM } from '../../stage/noi-dung';
+import { BIEU_CAM, EMOTES } from '../../stage/noi-dung';
+import { IDLE_STYLES } from '../../behavior/idle-styles';
 import { P_ACTOR, ngay, pEnum, pSo, tuHanhDong } from './tien-ich';
 
 const s = (v: unknown) => String(v);
@@ -365,6 +366,56 @@ export const LENH_ACTOR: CommandSpec[] = [
       ctx.world.actorHold(id, s(a.prop), hand);
       ctx.bus.emit('actor.held', { actor: id, prop: s(a.prop), hand });
       return ngay({ actor: id, prop: s(a.prop), hand });
+    },
+  },
+
+  {
+    cmd: 'actor.emote',
+    group: 'actor',
+    events: ['actor.emoteDone', 'actor.emoteCancelled', 'cmd.queued'],
+    desc:
+      'Cảm xúc trọn gói: mặt + chuỗi chuyển động cơ thể + âm ngắn + (tuỳ chọn) nói',
+    chiemActor: 'actor',
+    params: [
+      P_ACTOR,
+      pEnum('emote', 'Tên emote', { required: true, values: EMOTES }),
+      pSo('intensity', 'Độ mạnh 0–1', { min: 0, max: 1, default: 1 }),
+      { name: 'say', type: 'text', desc: 'Nói kèm (tuỳ chọn)' },
+    ],
+    example: { cmd: 'actor.emote', args: { actor: 'lan', emote: 'vui', intensity: 1 } },
+    handler(a, ctx) {
+      const hd = ctx.world.actorEmote(
+        s(a.actor),
+        s(a.emote),
+        a.intensity as number | undefined,
+        a.say === undefined ? undefined : s(a.say),
+      );
+      // Bị cắt giữa chừng KHÔNG được coi là xong: bắn `actor.emoteCancelled`
+      // để agent đọc sự kiện không tưởng emote chạy trọn (review PR #10 1.3).
+      void hd.done.then(() =>
+        ctx.bus.emit(
+          hd.cancelled?.() ? 'actor.emoteCancelled' : 'actor.emoteDone',
+          { actor: s(a.actor), emote: s(a.emote) },
+        ),
+      );
+      return tuHanhDong(hd, { actor: s(a.actor), emote: s(a.emote) });
+    },
+  },
+
+  {
+    cmd: 'actor.idleStyle',
+    group: 'actor',
+    desc: 'Đổi dáng đứng chờ để nhân vật không bao giờ đứng im',
+    params: [
+      P_ACTOR,
+      pEnum('style', 'Kiểu đứng chờ', { required: true, values: IDLE_STYLES }),
+    ],
+    example: { cmd: 'actor.idleStyle', args: { actor: 'lan', style: 'hao-hung' } },
+    handler(a, ctx) {
+      const id = s(a.actor);
+      if (!ctx.world.coActor(id)) throw new Error(`Không có actor "${id}"`);
+      ctx.world.actorIdleStyle(id, s(a.style));
+      return ngay({ actor: id, style: s(a.style) });
     },
   },
 

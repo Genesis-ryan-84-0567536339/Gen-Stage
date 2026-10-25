@@ -17,6 +17,30 @@ export interface DinhNghiaPlace {
   standAt?: Vec3;
   /** Hướng actor quay khi tới (độ). */
   facing?: number;
+  /**
+   * Cao độ mặt ghế (m, từ sàn) — CHỈ áp cho `kind: 'seat'`. `actor.sit` đặt
+   * hips theo đúng số này (xem `NhanVat.ngoi`, review PR #10 vòng 4: hạ gốc
+   * theo hằng số × tỉ lệ chân không biết ghế cao bao nhiêu nên lún xuyên).
+   * Giá trị ở đây là FALLBACK khi không đo được hình học ghế thật — ghế dựng
+   * bằng Kenney Space Kit (`phong.ts`) tự ghi đè số đo thật qua `datSeatY()`
+   * ngay khi ghế được dựng.
+   */
+  seatY?: number;
+}
+
+/** Cao độ mặt ghế đo ĐƯỢC từ hình học thật lúc dựng cảnh (ghi đè `seatY` khai tĩnh ở trên). */
+const seatYDoDuoc = new Map<string, number>();
+
+/** `phong.ts` gọi sau khi dựng xong một ghế, truyền cao độ mặt ghế đo trên chính model. */
+export function datSeatY(id: string, y: number): void {
+  if (Number.isFinite(y) && y > 0) seatYDoDuoc.set(id, y);
+}
+
+/** `world.ts`/`NhanVat.ngoi` đọc cao độ mặt ghế: đo thật > khai tĩnh > fallback. */
+export function layMatGhe(id: string): number {
+  const dat = seatYDoDuoc.get(id);
+  if (dat !== undefined) return dat;
+  return timPlace(id)?.seatY ?? 0.45;
 }
 
 /**
@@ -52,8 +76,8 @@ export const PLACES: readonly DinhNghiaPlace[] = [
     standAt: [1.85, 0, -0.75],
     facing: 180,
   },
-  { id: 'ghe-1', pos: [-1.85, 0, -0.97], kind: 'seat', facing: 180 },
-  { id: 'ghe-2', pos: [1.85, 0, -0.97], kind: 'seat', facing: 180 },
+  { id: 'ghe-1', pos: [-1.85, 0, -0.97], kind: 'seat', facing: 180, seatY: 0.45 },
+  { id: 'ghe-2', pos: [1.85, 0, -0.97], kind: 'seat', facing: 180, seatY: 0.45 },
   { id: 'buc-trung-tam', pos: [0, 0, 0.35], kind: 'stage', facing: 0 },
   { id: 'cua', pos: [0, 0, 3.3], kind: 'door', standAt: [0, 0, 2.6], facing: 0 },
   {
@@ -138,8 +162,19 @@ export const PRESET_DEN = ['sang', 'toi', 'am'] as const;
  * A3 CHỈ THÊM `ban-dieu-khien` — `ban-1`/`ban-2` của A1 vẫn còn (spec mục 3
  * đầu bài: "thêm thì tăng version, không đổi nghĩa lệnh cũ"); cả hai rơi vào
  * nhánh `cameraFocus` fallthrough ở `world.ts` nên không cần code riêng.
+ *
+ * `truoc-mat` (A2 vòng 2) là góc **chính diện, thấy TRỌN NGƯỜI** — bắt buộc
+ * cho ảnh bằng chứng emote: vòng 1 đóng khung ngang ngực nên che đúng vùng
+ * tay đang sai (review PR #10 mục 2.6).
  */
-export const PRESET_MAY = ['toan-canh', 'ban-dieu-khien', 'ban-1', 'ban-2', 'hop'] as const;
+export const PRESET_MAY = [
+  'toan-canh',
+  'ban-dieu-khien',
+  'ban-1',
+  'ban-2',
+  'hop',
+  'truoc-mat',
+] as const;
 
 export function timPlace(id: string): DinhNghiaPlace | undefined {
   return PLACES.find((p) => p.id === id);
