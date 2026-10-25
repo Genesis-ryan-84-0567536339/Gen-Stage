@@ -84,14 +84,10 @@ describe('tìm lệnh', () => {
     }
   });
 
-  it('lệnh A2 chỉ là stub, trả ok:false nói rõ đợt nào', async () => {
+  it('không còn lệnh nào là stub — A2 (actor.emote) và A3 (module.build) đã thi công thật', async () => {
     const r = await d.run('actor.emote', { actor: 'lan', emote: 'vui' });
-    expect(r.ok).toBe(false);
-    if (r.ok) return;
-    expect(r.error).toMatch(/^A2:/);
-  });
+    expect(r.ok, r.ok ? '' : r.error).toBe(true);
 
-  it('A3 (module.build) đã thi công thật, không còn là stub', async () => {
     const r2 = await d.run('module.build', {
       id: 'm1',
       shape: 'book',

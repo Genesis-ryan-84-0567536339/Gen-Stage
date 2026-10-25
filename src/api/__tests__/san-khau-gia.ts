@@ -19,6 +19,7 @@ import type {
   Vec3,
 } from '../types';
 import { BIEU_CAM, CLIPS, EMOTES, PLACES, timPlace } from '../../stage/noi-dung';
+import { IDLE_STYLES } from '../../behavior/idle-styles';
 
 /** A3 — màn hình hologram giả: chỉ đủ số liệu cho test logic `screen.*`. */
 interface ManHinhGia {
@@ -285,6 +286,22 @@ export class SanKhauGia implements StageWorld {
     const p = x.holding;
     x.holding = null;
     return p;
+  }
+
+  actorEmote(id: string, emote: string, intensity = 1, say?: string): Action {
+    if (!(EMOTES as readonly string[]).includes(emote)) {
+      throw new Error(`Không có emote "${emote}"`);
+    }
+    this.lichSu.push(`emote:${emote}:${intensity}${say ? ':' + say : ''}`);
+    return this.hd(id, `emote.${emote}`, 'emoting');
+  }
+
+  actorIdleStyle(id: string, style: string): void {
+    if (!(IDLE_STYLES as readonly string[]).includes(style)) {
+      throw new Error(`Không có idleStyle "${style}"`);
+    }
+    this.a(id);
+    this.lichSu.push(`idleStyle:${style}`);
   }
 
   actorInterrupt(id: string): void {

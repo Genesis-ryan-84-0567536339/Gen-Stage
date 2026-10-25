@@ -18,6 +18,57 @@ import {
   hanhDongXongNgay,
   type HanhDongCoTay,
 } from './hanh-dong';
+import { DINH_NGHIA_EMOTE } from '../behavior/emotes';
+import { phatAmNgan } from '../behavior/am-thanh';
+import { IDLE_STYLES, THONG_SO_IDLE, type IdleStyle } from '../behavior/idle-styles';
+
+/** Cảm xúc (tên emote) → tâm trạng ngắn ảnh hưởng dáng chờ sau đó. */
+const MOOD_TU_EMOTE: Record<string, string> = {
+  vui: 'vui',
+  'rat-vui': 'vui',
+  'dong-y': 'vui',
+  chao: 'vui',
+  'thanh-cong': 'vui',
+  buon: 'buon',
+  'tu-choi': 'buon',
+  'that-bai': 'buon',
+  gian: 'gian',
+  met: 'met',
+};
+/** Tâm trạng → độ nhân vào thở/đung đưa idle (xem `capNhat`). */
+const NHAN_MOOD: Record<string, { tho: number; dungDua: number }> = {
+  vui: { tho: 1.15, dungDua: 1.3 },
+  buon: { tho: 0.75, dungDua: 0.55 },
+  gian: { tho: 1.3, dungDua: 0.8 },
+  met: { tho: 0.7, dungDua: 0.5 },
+  'binh-thuong': { tho: 1, dungDua: 1 },
+};
+
+/**
+ * Chibi hoá nhân vật bằng bone scale (spec A2 mục 4): phóng đầu, rút thân —
+ * không cần model chibi riêng, Boss thay bằng VRM chibi thật lúc nào cũng được
+ * vì đây chỉ là hệ số nhân lên xương sẵn có, không đụng mesh/skin.
+ */
+const TY_LE_CHIBI: Partial<Record<TenXuong, number>> = {
+  head: 1.38,
+  neck: 0.74,
+  chest: 0.78,
+  upperChest: 0.8,
+  spine: 0.8,
+  hips: 0.88,
+  leftUpperArm: 0.76,
+  rightUpperArm: 0.76,
+  leftLowerArm: 0.78,
+  rightLowerArm: 0.78,
+  leftHand: 1.08,
+  rightHand: 1.08,
+  leftUpperLeg: 0.68,
+  rightUpperLeg: 0.68,
+  leftLowerLeg: 0.7,
+  rightLowerLeg: 0.7,
+  leftFoot: 1.05,
+  rightFoot: 1.05,
+};
 
 /** Tay buông xuống bao nhiêu radian so với T-pose. */
 const TAY_BUONG = 1.26;
@@ -34,6 +85,8 @@ interface ClipDangChay {
   dai: number;
   loop: boolean;
   hd: HanhDongCoTay;
+  /** Độ mạnh 0–1 — chỉ `actor.emote` dùng, clip thường luôn 1. */
+  manh?: number;
 }
 
 /** Một chuyến đi, nội suy theo đồng hồ thật. */
@@ -72,8 +125,19 @@ export class NhanVat {
   dangCam: string | null = null;
   /** Tay cầm. */
   tayCam: 'left' | 'right' = 'right';
-  /** Tâm trạng — A2 dùng, A1 giữ "binh-thuong". */
+  /** Tâm trạng — đổi khi chạy xong một `actor.emote`, tự rã về "binh-thuong". */
   mood = 'binh-thuong';
+  private hanMood = Infinity;
+
+  /** Kiểu đứng chờ (`actor.idleStyle`). */
+  idleKieu: IdleStyle = 'binh-thuong';
+
+  // nhìn quanh khi idle (lớp hành vi nhỏ, không chiếm thân)
+  private nhinQuanhHan = 0;
+  private nhinQuanhYaw = 0;
+  private nhinQuanhPitch = 0;
+  private nhinQuanhYawMuc = 0;
+  private nhinQuanhPitchMuc = 0;
 
   /**
    * Giây trôi qua theo **đồng hồ thật**, không cộng dồn `dt`.
@@ -129,7 +193,7 @@ export class NhanVat {
   /** Đồ vật đang gắn vào tay (do World gán). */
   objCam: THREE.Object3D | null = null;
 
-  constructor(id: string, ten: string, vrm: VRM) {
+  constructor(id: string, ten: string, vrm: VRM, chibi = true) {
     this.id = id;
     this.ten = ten;
     this.vrm = vrm;
@@ -153,9 +217,15 @@ export class NhanVat {
       vrm.lookAt.autoUpdate = true;
     }
     this.datDangDung();
+    if (chibi) this.apDungChibi();
   }
 
-  static async nap(id: string, ten: string, duongDan: string): Promise<NhanVat> {
+  static async nap(
+    id: string,
+    ten: string,
+    duongDan: string,
+    chibi = true,
+  ): Promise<NhanVat> {
     const loader = new GLTFLoader();
     loader.register((parser) => new VRMLoaderPlugin(parser));
     const gltf = await loader.loadAsync(duongDan);
@@ -163,7 +233,21 @@ export class NhanVat {
     VRMUtils.removeUnnecessaryVertices(gltf.scene);
     VRMUtils.combineSkeletons(gltf.scene);
     VRMUtils.combineMorphs(vrm);
-    return new NhanVat(id, ten, vrm);
+    return new NhanVat(id, ten, vrm, chibi);
+  }
+
+  /**
+   * Phóng đầu, rút thân bằng bone scale (spec A2 mục 4) — không cần model
+   * chibi riêng. Chạy một lần lúc nạp; `tyLeChest` lưu riêng vì `capNhat` vẽ
+   * thở bằng cách GHI ĐÈ scale của `chest` mỗi khung hình (phải nhân thêm hệ
+   * số chibi vào đó, không thì thở xong là mất chibi).
+   */
+  private tyLeChest = 1;
+  private apDungChibi(): void {
+    for (const [xuong, ty] of Object.entries(TY_LE_CHIBI)) {
+      this.xuong(xuong as TenXuong)?.scale.setScalar(ty!);
+    }
+    this.tyLeChest = TY_LE_CHIBI.chest ?? 1;
   }
 
   /* ----------------------------------------------------------- đọc trạng thái */
@@ -309,6 +393,61 @@ export class NhanVat {
     return hd;
   }
 
+  /** Đổi dáng đứng chờ (`actor.idleStyle`) — chỉ đổi hệ số, không chiếm thân. */
+  datIdleStyle(kieu: string): void {
+    if (!(IDLE_STYLES as readonly string[]).includes(kieu)) {
+      throw new Error(`Không có idleStyle "${kieu}". Đang có: ${IDLE_STYLES.join(', ')}`);
+    }
+    this.idleKieu = kieu as IdleStyle;
+  }
+
+  /** Clip thô theo tên tự do (emote dùng, không qua danh sách `CLIPS`). */
+  private chayClipTho(ten: string, dai: number, manh = 1): HanhDongCoTay {
+    this.huyViec();
+    let hd!: HanhDongCoTay;
+    hd = hanhDong(dai, () => {
+      this.clip = null;
+      this.traViec(hd);
+    });
+    this.clip = { ten, batDau: bayGio(), dai, loop: false, hd, manh };
+    this.batDauViec(hd, 'emoting');
+    return hd;
+  }
+
+  /**
+   * Cảm xúc trọn gói (spec mục 3.2b): mặt + chuỗi chuyển động cơ thể + âm
+   * ngắn + (tuỳ chọn) nói — một lệnh, không ghép tay nhiều lệnh.
+   */
+  chayEmote(ten: string, intensity = 1, say?: string): Action {
+    const dn = DINH_NGHIA_EMOTE[ten];
+    if (!dn) throw new Error(`Không có emote "${ten}"`);
+    const manh = THREE.MathUtils.clamp(intensity, 0, 1);
+    const daiNoi = say ? uocThoiLuongNoi(say) : 0;
+    const dai = Math.max(dn.durationMs, daiNoi);
+
+    this.datBieuCam(dn.expression, dn.weightMat * (0.4 + manh * 0.6), dai + 350);
+    phatAmNgan(dn.am, manh);
+
+    if (say) {
+      this.hdBong?.cancel();
+      this.bongBong = say;
+      this.hanBongBong = this.t + dai / 1000;
+      this.noiConLai = dai / 1000;
+      doc(say);
+    }
+
+    const hd = this.chayClipTho(`emote:${ten}`, dai, manh);
+    void hd.done.then(() => {
+      if (say) dungDoc();
+      const moodMoi = MOOD_TU_EMOTE[ten];
+      if (moodMoi) {
+        this.mood = moodMoi;
+        this.hanMood = this.t + 10 + Math.random() * 4;
+      }
+    });
+    return hd;
+  }
+
   ngoi(): Action {
     this.huyViec();
     this.dangNgoi = true;
@@ -411,6 +550,14 @@ export class NhanVat {
     this.t = (nay - this.t0) / 1000;
     const t = this.t;
 
+    // tâm trạng tạm (sau actor.emote) tự rã về "binh-thuong"
+    if (t >= this.hanMood) {
+      this.mood = 'binh-thuong';
+      this.hanMood = Infinity;
+    }
+    const st = THONG_SO_IDLE[this.idleKieu];
+    const moodSo = NHAN_MOOD[this.mood] ?? NHAN_MOOD['binh-thuong']!;
+
     /* --- reset xương về dáng đứng --- */
     this.datDangDung();
     const x = {
@@ -445,7 +592,7 @@ export class NhanVat {
     ]) {
       b?.rotation.set(0, 0, 0);
     }
-    if (x.chest) x.chest.scale.set(1, 1, 1);
+    if (x.chest) x.chest.scale.setScalar(this.tyLeChest);
 
     /* --- xoay người theo lệnh turnTo (nội suy theo đồng hồ thật) --- */
     if (this.xoay) {
@@ -511,30 +658,82 @@ export class NhanVat {
       if (x.canhP) x.canhP.rotation.x = -0.35;
     } else {
       this.goc.position.y = THREE.MathUtils.lerp(this.goc.position.y, 0, Math.min(1, dt * 8));
+      const bien = st.dungDua * moodSo.dungDua;
       const lac = Math.sin(t * 0.9);
-      if (x.spine) x.spine.rotation.z = lac * 0.018;
-      if (x.tayT) x.tayT.rotation.x = Math.sin(t * 0.8) * 0.05;
-      if (x.tayP) x.tayP.rotation.x = Math.sin(t * 0.8 + 1.2) * 0.05;
+      if (x.spine) x.spine.rotation.z = lac * 0.018 * bien;
+      if (x.tayT) x.tayT.rotation.x = Math.sin(t * 0.8) * 0.05 * bien;
+      if (x.tayP) x.tayP.rotation.x = Math.sin(t * 0.8 + 1.2) * 0.05 * bien;
       if (x.canhT) x.canhT.rotation.x = -0.18;
       if (x.canhP) x.canhP.rotation.x = -0.18;
+
+      /* --- đổi chân: trọng tâm chuyển dần qua lại, không bao giờ đứng
+         im một dáng — hai dao động lệch tần số để không lặp máy móc. */
+      const chu1 = (2 * Math.PI) / st.doiChan;
+      const chu2 = (2 * Math.PI) / (st.doiChan * 1.73);
+      const doiChan = (Math.sin(t * chu1) * 0.6 + Math.sin(t * chu2 + 1.1) * 0.4) * bien;
+      if (x.chanT) x.chanT.rotation.z += doiChan * 0.045;
+      if (x.chanP) x.chanP.rotation.z -= doiChan * 0.045;
+      if (x.ongT) x.ongT.rotation.x += Math.max(0, doiChan) * 0.08;
+      if (x.ongP) x.ongP.rotation.x += Math.max(0, -doiChan) * 0.08;
+      if (x.spine) x.spine.rotation.z += doiChan * 0.012;
     }
 
+    /* --- dáng tâm trạng/kiểu idle: vai hạ hay nhô, đầu cúi hay ngẩng — áp
+       mọi lúc (cả khi đi/ngồi/nói), không chỉ lúc đứng im. */
+    if (x.chest) x.chest.rotation.z += st.gapVai;
+    if (x.neck) x.neck.rotation.x += st.cuiDau;
+
     /* --- thở --- */
-    const tho = Math.sin(t * 1.55);
+    const tho = Math.sin(t * 1.55 * st.tho * moodSo.tho);
     if (x.spine) x.spine.rotation.x += tho * 0.028;
     if (x.chest) {
       x.chest.rotation.x += tho * 0.022;
-      const p = 1 + tho * 0.012;
-      x.chest.scale.set(p, 1 + tho * 0.008, p);
+      const p = (1 + tho * 0.012) * this.tyLeChest;
+      x.chest.scale.set(p, (1 + tho * 0.008) * this.tyLeChest, p);
     }
     if (x.neck) x.neck.rotation.x += -tho * 0.016;
+
+    /* --- nhìn quanh khi idle thật (không chiếm thân, không cãi lệnh
+       actor.lookAt khi Boss/agent đã chỉ một mục tiêu cụ thể) --- */
+    if (t >= this.nhinQuanhHan) {
+      this.nhinQuanhYawMuc = (Math.random() - 0.5) * 0.46;
+      this.nhinQuanhPitchMuc = (Math.random() - 0.5) * 0.18;
+      this.nhinQuanhHan = t + st.nhinQuanh * (0.6 + Math.random() * 0.9);
+    }
+    this.nhinQuanhYaw += (this.nhinQuanhYawMuc - this.nhinQuanhYaw) * Math.min(1, dt * 1.6);
+    this.nhinQuanhPitch += (this.nhinQuanhPitchMuc - this.nhinQuanhPitch) * Math.min(1, dt * 1.6);
+    const choNhinQuanh =
+      this.trangThai === 'idle' && (this.nhinTen === 'camera' || this.nhinTen === null);
+    if (choNhinQuanh) {
+      if (x.head) {
+        x.head.rotation.y += this.nhinQuanhYaw;
+        x.head.rotation.x += this.nhinQuanhPitch;
+      }
+      if (x.neck) x.neck.rotation.y += this.nhinQuanhYaw * 0.4;
+    }
+
+    /* --- gật đầu + cử chỉ nhịp tay khi đang nói (actor.say) --- */
+    if (this.trangThai === 'speaking') {
+      if (x.head) {
+        x.head.rotation.x += Math.sin(t * 5.1) * 0.045 + Math.sin(t * 1.6) * 0.03;
+        x.head.rotation.z += Math.sin(t * 0.85) * 0.035;
+      }
+      const nhip = Math.max(0, Math.sin(t * 3.1)) ** 3;
+      if (Math.sin(t * 0.37) > 0) {
+        if (x.canhP) x.canhP.rotation.x -= nhip * 0.22;
+        if (x.tayP) x.tayP.rotation.z -= nhip * 0.07;
+      } else {
+        if (x.canhT) x.canhT.rotation.x -= nhip * 0.22;
+        if (x.tayT) x.tayT.rotation.z += nhip * 0.07;
+      }
+    }
 
     /* --- clip thủ công đè lên --- */
     if (this.clip) {
       const c = this.clip;
       const troi = (nay - c.batDau) / 1000;
       const u = c.loop ? ((troi * 1000) % c.dai) / c.dai : Math.min(1, (troi * 1000) / c.dai);
-      apDungClip(c.ten, u, troi, x);
+      apDungClip(c.ten, u, troi, x, c.manh ?? 1);
       if (!c.loop && troi * 1000 >= c.dai) {
         const hd = c.hd;
         this.clip = null;
@@ -562,7 +761,7 @@ export class NhanVat {
         const KEO_DAI = 0.14;
         if (this.dangChop >= KEO_DAI) {
           this.dangChop = -1;
-          this.hanChop = t + 1.4 + Math.random() * 3.6;
+          this.hanChop = t + (1.4 + Math.random() * 3.6) * st.chop;
         } else {
           chop = Math.sin((this.dangChop / KEO_DAI) * Math.PI);
         }
@@ -612,12 +811,23 @@ function muot(u: number): number {
 type BoXuong = Record<string, THREE.Object3D | null>;
 
 /**
- * Áp một clip lên xương. `u` = 0…1 tiến độ clip, `t` = giây đã chạy.
- * A2 thay cả hàm này bằng `AnimationMixer` + file VRMA retarget.
+ * Áp một clip lên xương. `u` = 0…1 tiến độ clip, `t` = giây đã chạy, `manh`
+ * = độ mạnh 0–1 (chỉ `actor.emote` dùng, clip thường luôn 1).
+ *
+ * Không tìm được nguồn chuyển động thật miễn phí khớp đủ 13 clip + 15 emote
+ * của spec trong thời gian làm A2 (xem `scripts/fetch-anim.sh` — có mirror
+ * CC0 thật của Quaternius nhưng bộ clip của họ là hành động/chiến đấu, không
+ * có wave/clap/nod/think…) nên **toàn bộ vẫn thủ tục**, làm kỹ hơn A1: mỗi
+ * emote một dáng riêng, không dùng chung một vài khuôn cho 15 cái.
  */
-function apDungClip(ten: string, u: number, t: number, x: BoXuong): void {
+function apDungClip(ten: string, u: number, t: number, x: BoXuong, manh = 1): void {
   // vào/ra mềm để không bị giật ở hai đầu clip
   const w = Math.sin(Math.min(1, u) * Math.PI) * 0.35 + 0.65;
+
+  if (ten.startsWith('emote:')) {
+    apDungEmote(ten.slice('emote:'.length), u, t, x, w, manh);
+    return;
+  }
 
   switch (ten) {
     case 'wave': {
@@ -692,6 +902,163 @@ function apDungClip(ten: string, u: number, t: number, x: BoXuong): void {
       if (x.tayT) x.tayT.rotation.x += Math.sin(t * 7.5) * -0.2;
       if (x.tayP) x.tayP.rotation.x += Math.sin(t * 7.5) * 0.2;
       break;
+    default:
+      break;
+  }
+}
+
+/**
+ * Dáng cơ thể của 15 emote (spec mục 3.2b) — mặt đã do `actor.emote` đặt
+ * riêng (`datBieuCam`), đây chỉ là phần cơ thể. `manh` 0–1 nhân biên độ,
+ * `w` vào/ra mềm hai đầu đã tính sẵn ở `apDungClip`.
+ */
+function apDungEmote(ten: string, u: number, t: number, x: BoXuong, w: number, manh: number): void {
+  const m = w * manh;
+  switch (ten) {
+    case 'vui': {
+      const v = Math.sin(t * 9);
+      x.tayT?.rotation.set(-0.3 * m, 0, -0.5 + 0.15 * v * m);
+      x.tayP?.rotation.set(-0.3 * m, 0, 0.5 - 0.15 * v * m);
+      x.canhT?.rotation.set(-0.3, 0, 0.25);
+      x.canhP?.rotation.set(-0.3, 0, -0.25);
+      if (x.spine) x.spine.rotation.x += -0.06 * m + Math.sin(t * 9) * 0.03 * m;
+      break;
+    }
+    case 'rat-vui': {
+      // 2 tay giơ cao quá đầu vẫy (z nâng gần đứng), lắc người + quay đầu
+      const v = Math.sin(t * 13);
+      x.tayT?.rotation.set(-0.2 * m, 0, -1.9 * m + v * 0.12);
+      x.tayP?.rotation.set(-0.2 * m, 0, 1.9 * m - v * 0.12);
+      x.canhT?.rotation.set(-0.2, 0, 0.15 + v * 0.1);
+      x.canhP?.rotation.set(-0.2, 0, -0.15 - v * 0.1);
+      if (x.spine) x.spine.rotation.x += -0.1 * m + Math.abs(Math.sin(t * 13)) * 0.06 * m;
+      if (x.head) x.head.rotation.y += Math.sin(t * 6) * 0.2 * m;
+      break;
+    }
+    case 'buon': {
+      // tay buông nguyên dáng đứng (không chạm tayT/tayP) — chỉ vai sụp, đầu cúi
+      if (x.spine) x.spine.rotation.x += 0.22 * m;
+      if (x.chest) x.chest.rotation.x += 0.1 * m;
+      if (x.neck) x.neck.rotation.x += 0.2 * m;
+      if (x.head) x.head.rotation.x += 0.18 * m;
+      break;
+    }
+    case 'ngac-nhien': {
+      // tay đưa lên che miệng: nâng cánh tay bằng z (giống "wave" nhưng cao
+      // hơn), gập cẳng tay mạnh để bàn tay gập về phía mặt — không dùng x để
+      // "nâng" (x ở rig này là đưa tay ra TRƯỚC, không phải lên)
+      if (x.spine) x.spine.rotation.x += -0.14 * m;
+      x.tayP?.rotation.set(-0.15 * m, 0, 1.55 * m);
+      x.canhP?.rotation.set(-2.05, 0, 0.25);
+      if (x.head) x.head.rotation.x += -0.1 * m;
+      break;
+    }
+    case 'gian': {
+      // nắm tay trước ngực + dậm chân + lắc đầu (khoanh tay thật dễ gãy
+      // khớp với rig này nên đổi sang nắm tay — vẫn rõ "giận", an toàn hơn)
+      x.tayT?.rotation.set(-0.2 * m, 0, 0.55);
+      x.tayP?.rotation.set(-0.2 * m, 0, -0.55);
+      x.canhT?.rotation.set(-1.7, 0, 0.35);
+      x.canhP?.rotation.set(-1.7, 0, -0.35);
+      const dam = Math.max(0, Math.sin(t * 6)) ** 4;
+      if (x.chanP) x.chanP.rotation.x += -dam * 0.12 * m;
+      if (x.head) x.head.rotation.y += Math.sin(t * 7) * 0.16 * m;
+      break;
+    }
+    case 'suy-nghi': {
+      x.tayP?.rotation.set(-0.1, 0, 1.05);
+      x.canhP?.rotation.set(-1.75, 0, 0.5);
+      if (x.head) {
+        x.head.rotation.x += -0.2 * m;
+        x.head.rotation.y += Math.sin(t * 1.4) * 0.12 * m;
+      }
+      break;
+    }
+    case 'dong-y': {
+      // 2 gật dứt khoát trong trọn thời lượng clip (không phụ thuộc loop)
+      const v = Math.sin(Math.min(1, u) * Math.PI * 4);
+      if (x.head) x.head.rotation.x += v * 0.32 * m;
+      if (x.neck) x.neck.rotation.x += v * 0.12 * m;
+      x.tayP?.rotation.set(-0.75 * m, 0, 0.3 * m);
+      x.canhP?.rotation.set(-1.5, 0, 0.1);
+      break;
+    }
+    case 'tu-choi': {
+      const v = Math.sin(t * 7);
+      if (x.head) x.head.rotation.y += v * 0.32 * m;
+      x.tayT?.rotation.set(-0.15 * m, 0, 0.85 * m);
+      x.canhT?.rotation.set(-0.5 + v * 0.1, 0, 0.15);
+      break;
+    }
+    case 'chao': {
+      const v = Math.sin(t * 10);
+      x.tayT?.rotation.set(0.12, 0, 0.62);
+      x.canhT?.rotation.set(v * 0.4, 0, 1.15);
+      if (x.spine) x.spine.rotation.x += 0.12 * m;
+      if (x.neck) x.neck.rotation.x += 0.08 * m;
+      break;
+    }
+    case 'ra-lenh': {
+      x.tayP?.rotation.set(-1.1 * m, 0, 0.3);
+      x.canhP?.rotation.set(-0.1, 0, 0);
+      if (x.spine) x.spine.rotation.x += -0.05 * m;
+      if (x.head) x.head.rotation.x += -0.04 * m;
+      break;
+    }
+    case 'thanh-cong': {
+      // đấm tay lên trời: z nâng tay gần như thẳng đứng, x gần 0 (không đưa
+      // ra trước), cẳng tay gần thẳng để nắm đấm ở trên cao
+      const v = Math.sin(t * 10);
+      x.tayP?.rotation.set(-0.25 * m, 0, 2.05 * m);
+      x.canhP?.rotation.set(-0.1, 0, 0.05);
+      if (x.spine) x.spine.rotation.x += -0.1 * m + Math.max(0, v) * 0.05 * m;
+      break;
+    }
+    case 'that-bai': {
+      // ôm đầu, ngồi thụp (gập gối, không rời chân khỏi sàn) — hai tay nâng
+      // lên ôm đầu bằng z (như ngac-nhien, đối xứng hai bên)
+      x.tayT?.rotation.set(-0.1 * m, 0, 1.1 * m);
+      x.tayP?.rotation.set(-0.1 * m, 0, -1.1 * m);
+      x.canhT?.rotation.set(-2.4, 0, 0.35);
+      x.canhP?.rotation.set(-2.4, 0, -0.35);
+      if (x.chanT) x.chanT.rotation.x += 0.35 * m;
+      if (x.chanP) x.chanP.rotation.x += 0.35 * m;
+      if (x.ongT) x.ongT.rotation.x += -0.4 * m;
+      if (x.ongP) x.ongP.rotation.x += -0.4 * m;
+      if (x.spine) x.spine.rotation.x += 0.25 * m;
+      if (x.head) x.head.rotation.x += 0.15 * m;
+      break;
+    }
+    case 'boi-roi': {
+      // gãi đầu: tay nâng cao bằng z, cẳng tay gập mạnh để bàn tay chạm đầu
+      const v = Math.sin(t * 2.2);
+      x.tayP?.rotation.set(-0.15 * m, 0, 1.7 * m);
+      x.canhP?.rotation.set(-2.1, 0, 0.3);
+      if (x.head) x.head.rotation.y += v * 0.2 * m;
+      break;
+    }
+    case 'met': {
+      // vươn vai rồi ngáp: tay mở ra ở nửa đầu, đầu ngả sau ở nửa cuối
+      const vuon = Math.sin(Math.min(1, u) * Math.PI);
+      x.tayT?.rotation.set(-0.9 * vuon * m, 0, -0.6 * vuon);
+      x.tayP?.rotation.set(-0.9 * vuon * m, 0, 0.6 * vuon);
+      x.canhT?.rotation.set(-0.3, 0, 0.15);
+      x.canhP?.rotation.set(-0.3, 0, -0.15);
+      if (x.head) x.head.rotation.x += -0.28 * m * Math.sin(Math.min(1, u * 1.4) * Math.PI);
+      if (x.spine) x.spine.rotation.x += -0.08 * m * vuon;
+      break;
+    }
+    case 'cham-chu': {
+      // một tay gõ nhịp trước bàn — CHỈ một bên (bài học từ bản trước: đặt cả
+      // 2 tay cùng dấu x làm tay xoè rộng ra ngoài thay vì ra trước, hiện
+      // chưa rõ vì sao — một bên như "point"/"wave" (đã kiểm bằng ảnh, đúng
+      // hướng) thì an toàn, còn bên kia giữ dáng đứng mặc định)
+      const v = Math.sin(t * 7);
+      x.tayP?.rotation.set(-0.85 + v * 0.03, 0, 0.3);
+      x.canhP?.rotation.set(-1.3, 0, 0.1);
+      if (x.head) x.head.rotation.x += 0.14 * m;
+      break;
+    }
     default:
       break;
   }

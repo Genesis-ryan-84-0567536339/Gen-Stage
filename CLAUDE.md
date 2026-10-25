@@ -25,6 +25,8 @@ pnpm preview              # xem thử bản build
 node scripts/kiem-a1.mjs      # bằng chứng A1: bấm từng lệnh + chụp ảnh vào docs/a1/
 node scripts/kiem-a3.mjs      # bằng chứng A3: screen/module/fx/preset + kịch bản mẫu + FPS vào docs/a3/
 node scripts/kiem-bridge.mjs  # bằng chứng bridge: moveTo qua ws → nhận actor.arrived
+node scripts/kiem-a2.mjs      # bằng chứng A2: chạy 15 emote + idleStyle + say, chụp/quay vào docs/a2/
+bash scripts/fetch-anim.sh    # A2: tải mirror CC0 tham khảo cho chuyển động thật (xem file để biết lý do chưa dùng)
 ```
 
 ## Quy ước
@@ -94,8 +96,16 @@ biết registry, **giao diện** không gọi thẳng vào sân khấu.
 - **A1 (xong)**: dispatcher, `stage.*`, `actor.*` (trừ `emote`/`idleStyle`),
   `prop.*`, `scene.light`, `camera.*`, `script.*`, bảng lệnh tự sinh, nhật ký,
   bridge WebSocket. `actor.say` = bong bóng + nhép miệng giả + Web Speech nếu có.
-- **A2**: `actor.emote`, `actor.idleStyle`, chuyển động thật (retarget VRMA thay
-  cho procedural trong `nhanvat.ts`), cử chỉ theo cảm xúc khi nói.
+- **A2 (xong)**: `actor.emote` (15 emote, `src/behavior/emotes.ts`) +
+  `actor.idleStyle` (4 kiểu, `src/behavior/idle-styles.ts`) thi công thật —
+  không còn là stub. Lớp hành vi nhỏ luôn chạy khi idle (thở, đổi chân, nhìn
+  quanh) + khi nói (gật/nghiêng đầu, cử chỉ nhịp tay) trong `NhanVat.capNhat`.
+  `actor.say` có `emotion` → mặt + cử chỉ theo cảm xúc (giữ nguyên hành vi A1
+  khi không truyền `emotion`). Nhân vật chibi bằng bone scale (không đổi model
+  mặc định, không tìm được VRM chibi CC0 nguồn rõ trong thời lượng A2 — xem
+  `TY_LE_CHIBI` trong `nhanvat.ts`). **Chuyển động vẫn là thủ tục (procedural),
+  CHƯA retarget file thật** — lý do + nguồn CC0 đã tìm thấy nhưng chưa dùng
+  được, xem chú thích đầu `scripts/fetch-anim.sh`.
 - **A3 (xong)**: cảnh lab viễn tưởng (`phong.ts`, Kenney Space Kit CC0 hoặc
   fallback emissive), `UnrealBloomPass` nửa độ phân giải + tự tắt khi FPS thấp,
   `screen.*` (hologram, CanvasTexture, stream theo `chunks` hoặc `source:"agent"`
@@ -103,5 +113,26 @@ biết registry, **giao diện** không gọi thẳng vào sân khấu.
   + tự `actor.hold` qua dispatcher) + `module.open`/`module.store`, `fx.play`
   (`src/fx/hieu-ung.ts`), `camera.preset` thêm `ban-dieu-khien`.
 
-Lệnh của A2 **đã đăng ký sẵn** dưới dạng stub (`src/api/commands/stubs.ts`):
-`stage.bootstrap` liệt kê đủ bộ v0.1, gọi vào thì trả `ok:false` nói rõ đợt nào.
+`src/api/commands/stubs.ts` giờ **rỗng**: cả A2 lẫn A3 đã thi công thật, không
+còn lệnh nào trả `ok:false` kiểu "chưa làm". File được giữ lại làm chỗ khai
+lệnh mới cho các đợt sau — `stage.bootstrap` vẫn liệt kê đủ bộ v0.1.
+
+## Quyết định A2 (bổ sung, không sửa mục trên)
+
+- **`busy` còn `true` đúng MỘT nhịp (một microtask) tại thời điểm sự kiện
+  `actor.arrived`/`actor.clipDone`/`actor.emoteDone`… bắn ra** — đã kiểm bằng
+  Playwright thật (`stage.describe()` gọi ngay trong handler của sự kiện vẫn
+  thấy `busy: true`, dù `state` đã là `idle`). Nguyên nhân: `dispatcher.ts`
+  (lõi A1, A2 không được sửa) gắn `.then()` giải phóng hàng đợi SAU `.then()`
+  bắn sự kiện trong `commands/actor.ts` — cùng một Promise `done`, nhưng hai
+  `.then()` chạy theo đúng thứ tự gắn vào, không cùng nhịp. **Quyết định: giữ
+  nguyên, không sửa dispatcher.** Agent/script cần biết "thân đã rảnh chưa"
+  ngay trong handler sự kiện thì đọc `state` (đã đúng ngay lúc đó), không đọc
+  `busy`; muốn `busy` đúng thì đợi thêm một `await Promise.resolve()` hoặc gọi
+  `stage.describe()` ở lượt sau.
+- **Nhân vật chibi**: không tìm được VRM chibi CC0 nguồn rõ ràng kịp A2 (đã
+  tra `toxsam/open-source-avatars`, `MJMoonbow/VRMavatars`, `madjin/vrm-samples`
+  — không có model gắn nhãn chibi/giấy phép rõ). Theo đúng phương án dự phòng
+  trong spec: chibi hoá bằng bone scale (`TY_LE_CHIBI` trong `nhanvat.ts`),
+  áp cho MỌI model nạp (kể cả `AvatarSample_B.vrm` mặc định) — Boss thay bằng
+  VRM chibi thật lúc nào cũng được, code tự nhân hệ số lên bộ xương có sẵn.

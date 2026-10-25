@@ -606,6 +606,17 @@ export class World implements StageWorld {
     return prop;
   }
 
+  actorEmote(id: string, emote: string, intensity = 1, say?: string): Action {
+    if (!(EMOTES as readonly string[]).includes(emote)) {
+      throw new Error(`Không có emote "${emote}". Đang có: ${EMOTES.join(', ')}`);
+    }
+    return this.nv(id).chayEmote(emote, intensity, say);
+  }
+
+  actorIdleStyle(id: string, style: string): void {
+    this.nv(id).datIdleStyle(style);
+  }
+
   actorInterrupt(id: string): void {
     this.actors.get(id)?.dung();
   }

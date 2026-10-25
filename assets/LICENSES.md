@@ -61,6 +61,20 @@ emissive (cyan/cam), không bịa asset.
 nên toàn bộ chuyển động (đi, đung đưa tay/chân, thở, chớp mắt, vẫy tay) là **thủ tục (procedural)**
 — tính bằng code trong `src/main.ts` qua `vrm.humanoid.getNormalizedBoneNode(...)`.
 
+### 3b. Cập nhật A2 (vẫn chưa dùng file chuyển động thật)
+
+Đã tìm ra nguồn CC0 thật — mirror GitHub của Quaternius "Universal Animation
+Library": https://github.com/J-Ponzo/gltf-universal-animation-library
+(CC0 1.0, file `.gltf`, tải được bằng `scripts/fetch-anim.sh`). **Chưa bật**
+vì bộ 46 clip của thư viện này là action/RPG (idle, walk, sit, chiến đấu, bắn,
+phép thuật, bơi…), không có wave/clap/nod/shake/think/point/celebrate/type/
+sleep mà spec Gen-Stage cần, và retarget đúng (bù lệch tư thế gốc giữa rig
+nguồn và `vrm.humanoid` normalized bones) không kịp làm + tự kiểm bằng mắt an
+toàn trong thời lượng A2. Lý do đầy đủ: đầu `scripts/fetch-anim.sh`. Toàn bộ
+13 clip + 15 emote của A2 (`src/stage/nhanvat.ts`, `src/behavior/emotes.ts`)
+vẫn là thủ tục — làm kỹ hơn A1 (mỗi emote một dáng riêng + lớp hành vi nhỏ
+không bao giờ đứng im).
+
 ## 4. Thư viện
 
 | Thư viện | Phiên bản | Giấy phép |

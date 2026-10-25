@@ -298,6 +298,10 @@ export interface StageWorld {
   ): Action;
   actorHold(id: string, prop: string, hand: 'left' | 'right'): void;
   actorDrop(id: string): string | null;
+  /** Cảm xúc trọn gói: mặt + cơ thể + âm ngắn + (tuỳ chọn) nói (spec 3.2b). */
+  actorEmote(id: string, emote: string, intensity?: number, say?: string): Action;
+  /** Đổi dáng đứng chờ. */
+  actorIdleStyle(id: string, style: string): void;
   /** Cắt hành động đang chạy của actor (dùng cho `interrupt: true`). */
   actorInterrupt(id: string): void;
   coActor(id: string): boolean;
