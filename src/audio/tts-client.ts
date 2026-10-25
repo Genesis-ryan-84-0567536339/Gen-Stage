@@ -243,16 +243,24 @@ export class LopTieng {
         rate: String(rate),
         pitch: String(pitch),
       });
+      let r: Response;
       try {
-        const r = await this.fetchFn(`${this.url}/tts?${q}`);
+        r = await this.fetchFn(`${this.url}/tts?${q}`);
+      } catch {
+        // Lỗi MẠNG (bridge tắt) → chốt cờ, nhưng tự gỡ sau 15 s để bật bridge là có giọng lại.
+        this.bridgeHong = true;
+        setTimeout(() => (this.bridgeHong = false), 15_000);
+        return this.khongCoGiong();
+      }
+      try {
         if (!r.ok) throw new Error(`bridge trả ${r.status}`);
         const tho = await r.arrayBuffer();
         if (tho.byteLength === 0) throw new Error('bridge trả 0 byte');
         buf = await a.decodeAudioData(tho);
         this.buffer.set(khoa, buf);
-      } catch {
-        // Bridge tắt là chuyện bình thường (Boss chỉ mở `pnpm dev`).
-        this.bridgeHong = true;
+      } catch (e) {
+        // Lỗi của RIÊNG câu này (voice sai, text hỏng…) → không chốt cờ, câu sau vẫn có giọng.
+        console.warn('[tts] câu này không có giọng:', (e as Error).message);
         return this.khongCoGiong();
       }
     }
