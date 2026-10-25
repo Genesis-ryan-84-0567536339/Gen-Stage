@@ -81,22 +81,34 @@ const NHAN_MOOD: Record<string, { tho: number; dungDua: number }> = {
 export const MOOD_MAC_DINH = 'binh-thuong';
 
 /**
- * Ngồi theo mặt ghế (review PR #10 vòng 4, chặn 2.1): độ hạ gốc khi ngồi
- * KHÔNG còn là hằng số × tỉ lệ chân — phải đặt hips theo đúng cao độ mặt ghế
- * của `place` (`seatY`, xem `noi-dung.ts`), vì hằng số cũ không biết ghế cao
- * bao nhiêu nên hạ bao nhiêu cũng chỉ là đoán (ở trạng thái ổn định lún
- * −0,107 m, mặt ghế cắt ngang đùi).
+ * Ngồi — **đo bằng xương thật**, không bằng hộp bao bind-pose (review PR #10
+ * vòng 4 chỉ ra 4 vòng trước đều sai ở đúng chỗ này).
+ *
+ * `THREE.Box3.setFromObject(obj)` với `precise = false` nở hộp theo
+ * `geometry.boundingBox` của `SkinnedMesh` — tức **bind-pose** — rồi nhân ma
+ * trận world của *node mesh*. Animation chỉ đổi **xương**, không đổi ma trận
+ * node, nên hộp đó y hệt nhau giữa ngồi và đứng: kẹp theo nó chỉ kẹp
+ * `goc.position.y`, nhân vật không hạ xuống tí nào, hông treo ~40 cm trên mặt
+ * ghế và mặt ghế cắt ngang bắp chân.
+ *
+ * Vòng 5 đo bằng `getWorldPosition` của chính các xương `hips` /
+ * `leftUpperLeg` / `leftLowerLeg` / `leftFoot` / `leftToes` **sau khi mixer đã
+ * cập nhật** (những số này *có* đổi theo tư thế) — xem `doTuThe()`, dùng
+ * chung cho cả code lẫn `scripts/kiem-a2.mjs`. Hộp bao chính xác chỉ dùng để
+ * ghi nhật ký, và luôn là `setFromObject(root, true)`.
  */
 /** Mặt ghế mặc định (m) khi `actor.sit` không được truyền `seatY` (place lỗi cũ/không đo được). */
 const MAT_GHE_MAC_DINH = 0.45;
-/**
- * Đáy mông ước lượng thấp hơn tâm xương `hips` bao nhiêu mét — ước lượng hình
- * học pelvis người lớn (~9 cm), co theo đúng tỉ lệ chân chibi `tyLeNgoi` cho
- * đồng bộ với mọi hệ số khác trong file này.
- */
-const DAY_MONG_DUOI_HIP = 0.09;
-/** Ngưỡng sàn — `bbox.min.y` không được thấp hơn mức này ở MỌI thời điểm khi ngồi. */
+/** Chặn dưới/trên cho độ dày đùi đo trên model (m) — xem `dayDui`. */
+const DAY_DUI_MIN = 0.04;
+const DAY_DUI_MAX = 0.15;
+/** Ngưỡng sàn — bàn chân khi ngồi không được thấp hơn mức này. */
 const NGUONG_SAN_NGOI = -0.01;
+/** Trục đứng + quay rỗng, dùng lại để không cấp phát mỗi khung hình. */
+const LEN = /* @__PURE__ */ new THREE.Vector3(0, 1, 0);
+const KHONG_QUAY = /* @__PURE__ */ new THREE.Quaternion();
+/** Đầu gối khi ngồi phải cao hơn mặt ghế ít nhất bao nhiêu mét. */
+const LE_DAU_GOI = 0.03;
 
 /**
  * Chibi hoá bằng bone scale (spec A2 mục 4): phóng đầu, rút thân/chân để tỉ
@@ -294,30 +306,76 @@ export class NhanVat {
     }
     this.dungBoXuong();
     this.datDangDung();
-    const daiChanTruoc = this.doDaiChan();
     if (chibi) this.apDungChibi();
-    const daiChanSau = this.doDaiChan();
-    // TY_LE_CHIBI rút chân ngắn hơn thân — độ hạ gốc khi ngồi (NGOI_HA_GOC)
-    // phải co theo đúng tỉ lệ chân thật sau scale, không phải hằng số cố định
-    // (review PR #10 mục 2.1: mông lún xuyên mặt ghế vì chân chibi ngắn hơn
-    // độ hạ gốc tính cho chân người lớn).
-    this.tyLeNgoi = daiChanTruoc > 0.001 ? daiChanSau / daiChanTruoc : 1;
-    // Đo `hips.y` khi đứng thẳng, gốc tại 0 — mốc để tính độ hạ gốc theo
-    // ĐÚNG cao độ mặt ghế (review vòng 4), không phải hằng số đoán.
+    // Đo nửa bề dày đùi trên chính model (sau chibi scale): một nửa khoảng
+    // cách ngang giữa hai xương upperLeg. Dùng để đặt ĐÁY MÔNG đúng mặt ghế.
     this.goc.updateMatrixWorld(true);
-    const hips0 = this.xuong('hips');
-    if (hips0) this.hipStandY = hips0.getWorldPosition(new THREE.Vector3()).y;
+    const chanT0 = this.xuongThat('leftUpperLeg');
+    const chanP0 = this.xuongThat('rightUpperLeg');
+    if (chanT0 && chanP0) {
+      const a = chanT0.getWorldPosition(new THREE.Vector3());
+      const b = chanP0.getWorldPosition(new THREE.Vector3());
+      this.dayDui = THREE.MathUtils.clamp(a.distanceTo(b) * 0.5, DAY_DUI_MIN, DAY_DUI_MAX);
+    }
+    const chan0 = this.doChanThapNhat();
+    if (Number.isFinite(chan0)) this.chanDungY = chan0;
   }
 
-  /** Khoảng cách dọc hips → bàn chân trái trong không gian, đo trên chính model. */
-  private doDaiChan(): number {
+  /** `y` thấp nhất của bàn chân/ngón chân trên xương RAW (tư thế hiện tại). */
+  private doChanThapNhat(): number {
+    const ds: number[] = [];
+    for (const t of ['leftFoot', 'rightFoot', 'leftToes', 'rightToes'] as const) {
+      const b = this.xuongThat(t);
+      if (b) ds.push(b.getWorldPosition(new THREE.Vector3()).y);
+    }
+    return ds.length ? Math.min(...ds) : NaN;
+  }
+
+  /**
+   * Số đo TƯ THẾ THẬT (m, không gian) — đọc sau khi mixer đã cập nhật xương,
+   * nên các số này đổi theo tư thế (khác hẳn hộp bao bind-pose, xem ghi chú
+   * đầu file). `scripts/kiem-a2.mjs` và code đặt chiều cao khi ngồi dùng
+   * CHUNG hàm này để không bao giờ đo hai đại lượng khác nhau.
+   *
+   * - `hipsY` — tâm xương `hips`
+   * - `kneeY` — đầu gối thấp nhất (`leftLowerLeg` / `rightLowerLeg`)
+   * - `footY` — điểm thấp nhất của bàn chân/ngón chân
+   * - `minY` — đáy hộp bao **chính xác** (`setFromObject(root, true)`, có
+   *   biến dạng xương); chỉ tính khi `chinhXac` vì phải quét toàn bộ đỉnh.
+   */
+  doTuThe(chinhXac = true): {
+    hipsY: number;
+    kneeY: number;
+    footY: number;
+    minY: number;
+    hipsYChuan: number;
+  } {
     this.goc.updateMatrixWorld(true);
-    const hips = this.xuong('hips');
-    const chan = this.xuong('leftFoot');
-    if (!hips || !chan) return 1;
-    const a = hips.getWorldPosition(new THREE.Vector3());
-    const b = chan.getWorldPosition(new THREE.Vector3());
-    return Math.max(0.001, a.y - b.y);
+    const v = new THREE.Vector3();
+    const y = (t: TenXuong): number => {
+      const b = this.xuongThat(t);
+      return b ? b.getWorldPosition(v).y : NaN;
+    };
+    const yChuan = (t: TenXuong): number => {
+      const b = this.xuong(t);
+      return b ? b.getWorldPosition(v).y : NaN;
+    };
+    const nhoNhat = (ds: number[]): number => {
+      const co = ds.filter((n) => Number.isFinite(n));
+      return co.length ? Math.min(...co) : NaN;
+    };
+    const hipsY = y('hips');
+    const kneeY = nhoNhat([y('leftLowerLeg'), y('rightLowerLeg')]);
+    const footY = this.doChanThapNhat();
+    const minY = chinhXac ? new THREE.Box3().setFromObject(this.goc, true).min.y : NaN;
+    const l = (n: number) => (Number.isFinite(n) ? +n.toFixed(4) : NaN);
+    return {
+      hipsY: l(hipsY),
+      kneeY: l(kneeY),
+      footY: l(footY),
+      minY: l(minY),
+      hipsYChuan: l(yChuan('hips')),
+    };
   }
 
   static async nap(
@@ -393,12 +451,32 @@ export class NhanVat {
   }
 
   private tyLeChest = 1;
-  /** Tỉ lệ co độ hạ gốc khi ngồi theo chân thật sau chibi scale (xem constructor). */
-  private tyLeNgoi = 1;
-  /** `hips.y` trong không gian khi đứng thẳng, `goc.position.y = 0` (đo một lần lúc nạp). */
-  private hipStandY = 0.85;
+  /**
+   * Nửa bề dày đùi (m) **đo trên xương RAW của chính model**: lấy một nửa
+   * khoảng cách ngang giữa hai xương `upperLeg` — đúng cỡ bán kính đùi của
+   * model đang được dựng hình, không phải hằng số đoán cho người lớn (và
+   * không phải số của rig normalized, thứ không hề được dựng hình). Đây là khoảng cách từ tâm
+   * xương `hips` xuống đáy mông/đùi, tức lượng phải cộng vào `seatY` để có
+   * `hips` mục tiêu khi ngồi.
+   */
+  private dayDui = 0.09;
   /** Cao độ mặt ghế (m) của place đang ngồi — set bởi `ngoi(seatY)`, đọc trong `capNhat`. */
   private seatYHienTai = MAT_GHE_MAC_DINH;
+  /**
+   * Dáng nền NGUYÊN BẢN (chỉ mixer, chưa cộng lớp cử chỉ) của khung trước —
+   * xem khối reset trong `capNhat` để biết vì sao phải giữ.
+   */
+  private readonly nenGoc = new Map<THREE.Object3D, THREE.Quaternion>();
+  /** Lúc bắt đầu `ngoi()` (ms) và `goc.position.y` lúc đó. */
+  private ngoiTu = 0;
+  private ngoiGocY = 0;
+  /** Lúc rời ghế (`dungLen`/`diToi`) và `goc.position.y` lúc đó. */
+  private dungTu = 0;
+  private dungGocY = 0;
+  /** `y` bàn chân thấp nhất khi ĐỨNG THẲNG, gốc tại 0 (mốc cắm chân xuống sàn). */
+  private chanDungY = 0.07;
+  /** Mốc đồng hồ thật của khung hình trước (ms) — cho mixer chạy đúng tốc độ. */
+  private tKhungTruoc = 0;
   private apDungChibi(): void {
     for (const [xuong, ty] of Object.entries(TY_LE_CHIBI)) {
       this.xuong(xuong as TenXuong)?.scale.setScalar(ty!);
@@ -443,7 +521,7 @@ export class NhanVat {
    * Số đo xương trong không gian — dùng cho **bằng chứng số** (kiểm chiều giơ
    * tay: `y` bàn tay phải cao hơn `y` vai khi emote giơ tay) và đo tỉ lệ chibi.
    */
-  doXuong(): Record<string, [number, number, number]> & { bbox: number[] } {
+  doXuong(): Record<string, unknown> & { bbox: number[] } {
     const ra: Record<string, [number, number, number]> = {};
     const lay = (nhan: string, t: TenXuong) => {
       const b = this.xuong(t);
@@ -462,9 +540,25 @@ export class NhanVat {
     lay('banTayTrai', 'leftHand');
     lay('banTayPhai', 'rightHand');
     lay('chanTrai', 'leftFoot');
+    lay('duiTrai', 'leftUpperLeg');
+    lay('duiPhai', 'rightUpperLeg');
+    lay('ongTrai', 'leftLowerLeg');
+    lay('ongPhai', 'rightLowerLeg');
+    lay('chanPhai', 'rightFoot');
+    lay('ngonTrai', 'leftToes');
+    lay('ngonPhai', 'rightToes');
+    // `bbox` = hộp bao KHÔNG precise: nở theo `geometry.boundingBox` của
+    // `SkinnedMesh`, tức BIND-POSE — chỉ dùng cho chiều cao/tỉ lệ chibi lúc
+    // ĐỨNG, KHÔNG phản ánh tư thế (xem ghi chú đầu file). Số đo theo tư thế
+    // thật nằm trong `tuThe` (`doTuThe()`), kể cả `minY` hộp bao chính xác.
     const b = new THREE.Box3().setFromObject(this.goc);
     return Object.assign(ra, {
       bbox: [b.min.y, b.max.y, b.min.x, b.max.x].map((v) => +v.toFixed(4)),
+      tuThe: this.doTuThe(),
+      seatY: +this.seatYHienTai.toFixed(4),
+      dayDui: +this.dayDui.toFixed(4),
+      dangNgoiCo: this.dangNgoi,
+      nenChanDoan: this.nen?.chanDoan() ?? null,
     });
   }
 
@@ -491,10 +585,17 @@ export class NhanVat {
     }
   }
 
+  /** Rời ghế: ghi mốc để đưa gốc về mặt sàn theo đồng hồ thật. */
+  private roiGhe(): void {
+    this.dangNgoi = false;
+    this.dungTu = bayGio();
+    this.dungGocY = this.goc.position.y;
+  }
+
   /** Đi tới một điểm trên sàn. Tới nơi đúng `durationMs` đã hứa. */
   diToi(v: THREE.Vector3, speed?: number): Action {
     this.huyViec();
-    this.dangNgoi = false;
+    this.roiGhe();
 
     const tu = new THREE.Vector3(this.goc.position.x, 0, this.goc.position.z);
     const den = new THREE.Vector3(v.x, 0, v.z);
@@ -554,7 +655,7 @@ export class NhanVat {
     if (ten === 'idle') {
       this.huyViec();
       this.clip = null;
-      this.dangNgoi = false;
+      this.roiGhe();
       return hanhDongXongNgay(DAI_CLIP.idle);
     }
     if (ten === 'sit') return this.ngoi();
@@ -650,9 +751,15 @@ export class NhanVat {
     this.dangNgoi = true;
     this.seatYHienTai = seatY;
     this.chuyenNgoi = 'sit';
+    // Mốc để hạ người + gập chân theo ĐỒNG HỒ THẬT, không theo số khung hình:
+    // máy kiểm (swiftshader, không GPU) chỉ chạy ~1 fps nên lerp kiểu
+    // `dt * k` mất hơn 10 s mới hội tụ — đúng lý do các vòng trước đo lúc tư
+    // thế còn đang chạy dở.
+    this.ngoiTu = bayGio();
+    this.ngoiGocY = this.goc.position.y;
     let hd!: HanhDongCoTay;
     hd = hanhDongHenGio(DAI_CLIP.sit!, (biHuy) => {
-      if (biHuy) this.dangNgoi = false;
+      if (biHuy) this.roiGhe();
       if (this.chuyenNgoi === 'sit') this.chuyenNgoi = null;
       this.traViec(hd);
     });
@@ -661,24 +768,149 @@ export class NhanVat {
   }
 
   /**
-   * Kẹp cứng đáy mông ≥ `NGUONG_SAN_NGOI`: đo bbox thật (đúng cách
-   * `doXuong()`/`kiem-a2.mjs` đo — `Box3.setFromObject` tính theo xương đã
-   * tạo dáng, không phải bind-pose) rồi đẩy gốc lên nếu vẫn lún. Chạy mỗi
-   * khung hình trong lúc ngồi nên bắt được cả lúc crossfade/blend đẩy dáng
-   * xuống thấp hơn công thức tính trước.
+   * **Tư thế ngồi hình học** — chạy mỗi khung hình trong lúc ngồi, NGAY SAU
+   * khi mixer đã ghi dáng nền (clip ngồi thật `Sitting_Enter` /
+   * `Sitting_Idle_Loop` của bộ Quaternius CC0), và đo bằng **xương raw** (xem
+   * `xuongThat`). Hai việc, theo đúng thứ tự:
+   *
+   *  1. `datChieuCaoNgoi` — dịch gốc nhân vật sao cho **đáy mông/đùi chạm mặt
+   *     ghế**: `hips` cao hơn `seatY` đúng `dayDui`.
+   *  2. `gapChanNgoi` — chỉnh 3 xương chân (đùi → cẳng chân → bàn chân) để
+   *     **đầu gối nằm trên mặt ghế** (`seatY + LE_DAU_GOI`), **cẳng chân rủ
+   *     thẳng xuống** trước mép ghế và **bàn chân phẳng**. Clip ngồi của bộ
+   *     CC0 diễn đúng dáng ngồi nhưng không biết ghế của cảnh này cao bao
+   *     nhiêu, nên hình học vẫn phải chỉnh theo `seatY` thật.
+   *
+   * Bàn chân **lơ lửng trên sàn là chấp nhận được** và được ghi rõ: kéo người
+   * lên cho bàn chân chạm sàn thì mông rời mặt ghế — tức lặp lại đúng lỗi 4
+   * vòng trước. Ở cảnh này ghế cao 0,497 m trong khi cẳng chân + bàn chân của
+   * model chỉ dài ~0,44 m, nên với đầu gối đặt trên mặt ghế thì đế giày còn
+   * cách sàn ~9 cm. Ngược lại, ghế THẤP hơn cẳng chân thì `gapChanNgoi` tự
+   * nâng đầu gối lên để bàn chân không chui xuống dưới sàn
+   * (`NGUONG_SAN_NGOI`).
+   *
+   * KHÔNG còn kẹp-vạn-năng `bbox.min.y ≥ −0,01` của vòng 4: kẹp đó đo hộp bao
+   * **bind-pose** nên chỉ ép `goc.position.y ≈ 0`, vô hiệu hoá toàn bộ công
+   * thức `seatY` (review PR #10 vòng 4 mục 2).
    */
-  private kepKhongLunGhe(): void {
-    this.goc.updateMatrixWorld(true);
-    const b = new THREE.Box3().setFromObject(this.goc);
-    if (b.min.y < NGUONG_SAN_NGOI) {
-      this.goc.position.y += NGUONG_SAN_NGOI - b.min.y;
+  private datTuTheNgoi(): void {
+    const u = muot(
+      THREE.MathUtils.clamp((bayGio() - this.ngoiTu) / (DAI_CLIP.sit ?? 1200), 0, 1),
+    );
+    // Giải lặp 3 vòng trong CÙNG một khung hình: `humanoid.update()` mới đẩy
+    // dáng normalized sang xương raw, mà phép đo phải lấy trên xương raw.
+    for (let i = 0; i < 3; i++) {
+      this.vrm.humanoid?.update();
+      this.goc.updateMatrixWorld(true);
+      this.datChieuCaoNgoi(u);
+      this.gapChanNgoi(u);
     }
+  }
+
+  /** Dịch gốc để đáy mông/đùi chạm mặt ghế. `u` = độ hoàn tất chuyển sang ngồi. */
+  private datChieuCaoNgoi(u: number): void {
+    const hips = this.xuongThat('hips');
+    if (!hips) return;
+    const hipsY = hips.getWorldPosition(new THREE.Vector3()).y;
+    const dich = this.goc.position.y + (this.seatYHienTai + this.dayDui - hipsY);
+    this.goc.position.y = THREE.MathUtils.lerp(this.ngoiGocY, dich, u);
+    this.goc.updateMatrixWorld(true);
+  }
+
+  /**
+   * Gập chân cho đúng tư thế ngồi trên mặt ghế cao `seatY`.
+   *
+   * Cách làm không phụ thuộc quy ước trục (các vòng trước đoán dấu góc rồi
+   * gập chân ra SAU): đo hướng thật của xương trong **không gian** rồi quay
+   * nó tối thiểu sang hướng mong muốn (`Quaternion.setFromUnitVectors`), nên
+   * không cần biết `rotation.x` dương là ra trước hay ra sau.
+   */
+  private gapChanNgoi(u: number): void {
+    const truocNguoi = this.goc.getWorldDirection(new THREE.Vector3()).setY(0);
+    if (truocNguoi.lengthSq() < 1e-8) return;
+    truocNguoi.normalize();
+    const phai = new THREE.Vector3().crossVectors(LEN, truocNguoi).normalize();
+    for (const ben of ['left', 'right'] as const) {
+      const dui = this.xuongThat(`${ben}UpperLeg`);
+      const ong = this.xuongThat(`${ben}LowerLeg`);
+      const chan = this.xuongThat(`${ben}Foot`);
+      const ngon = this.xuongThat(`${ben}Toes`);
+      if (!dui || !ong) continue;
+
+      // 1) đùi: đầu gối lên đúng cao độ trên mặt ghế, giữ nguyên độ xoè ngang
+      const pDui = dui.getWorldPosition(new THREE.Vector3());
+      const pOng = ong.getWorldPosition(new THREE.Vector3());
+      // Ghế THẤP hơn chiều dài cẳng chân thì nâng đầu gối lên cho bàn chân
+      // không chui xuống dưới sàn — đùi khi đó hơi chếch lên, vẫn đúng dáng
+      // ngồi. Ghế cao hơn (cảnh này) thì bàn chân lơ lửng, chấp nhận được.
+      const daiOng = chan ? chan.getWorldPosition(new THREE.Vector3()).distanceTo(pOng) : 0;
+      const dauGoiY = Math.max(this.seatYHienTai + LE_DAU_GOI, daiOng + NGUONG_SAN_NGOI);
+      this.quayXuongToi(`${ben}UpperLeg`, pOng.clone().sub(pDui), dauGoiY - pDui.y, truocNguoi, phai, u);
+
+      // 2) cẳng chân: rủ THẲNG XUỐNG trước mép ghế
+      this.vrm.humanoid?.update();
+      this.goc.updateMatrixWorld(true);
+      if (chan) {
+        const p1 = ong.getWorldPosition(new THREE.Vector3());
+        const p2 = chan.getWorldPosition(new THREE.Vector3());
+        const v = p2.clone().sub(p1);
+        this.quayXuongToi(`${ben}LowerLeg`, v, -v.length(), truocNguoi, phai, u);
+      }
+
+      // 3) bàn chân: phẳng, mũi hướng ra trước
+      this.vrm.humanoid?.update();
+      this.goc.updateMatrixWorld(true);
+      if (chan && ngon) {
+        const p1 = chan.getWorldPosition(new THREE.Vector3());
+        const p2 = ngon.getWorldPosition(new THREE.Vector3());
+        this.quayXuongToi(`${ben}Foot`, p2.clone().sub(p1), 0, truocNguoi, phai, u);
+      }
+    }
+  }
+
+  /**
+   * Quay xương `ten` sao cho hướng tới xương con (`v`, đo trên xương RAW
+   * trong không gian) có thành phần dọc đúng `yMuc`, giữ nguyên độ dài và
+   * thành phần ngang sang hai bên, phần còn lại đẩy RA TRƯỚC mặt nhân vật.
+   *
+   * Phép quay là một quay **thế giới** nên áp được lên xương *normalized*
+   * (chỗ duy nhất ghi được tư thế): rig normalized của three-vrm trùng hệ
+   * trục thế giới, quay nó bao nhiêu thì xương raw quay đúng bấy nhiêu.
+   * `u` = trọng số hoà vào (0 = y nguyên dáng clip, 1 = đúng hình học).
+   */
+  private quayXuongToi(
+    ten: TenXuong,
+    v: THREE.Vector3,
+    yMuc: number,
+    truoc: THREE.Vector3,
+    phai: THREE.Vector3,
+    u: number,
+  ): void {
+    const b = this.xuong(ten);
+    const dai = v.length();
+    if (!b || dai < 1e-4) return;
+    const ngang = THREE.MathUtils.clamp(v.dot(phai), -dai * 0.9, dai * 0.9);
+    const y = THREE.MathUtils.clamp(yMuc, -dai * 0.99, dai * 0.99);
+    const raTruoc = Math.sqrt(Math.max(0, dai * dai - y * y - ngang * ngang));
+    const moi = new THREE.Vector3()
+      .addScaledVector(phai, ngang)
+      .addScaledVector(truoc, raTruoc)
+      .addScaledVector(LEN, y);
+    if (moi.lengthSq() < 1e-8) return;
+    const q = new THREE.Quaternion().setFromUnitVectors(v.clone().normalize(), moi.normalize());
+    if (u < 1) q.slerpQuaternions(KHONG_QUAY, q, u);
+    const qw = b.getWorldQuaternion(new THREE.Quaternion()).premultiply(q);
+    const qCha = b.parent
+      ? b.parent.getWorldQuaternion(new THREE.Quaternion()).invert()
+      : new THREE.Quaternion();
+    b.quaternion.copy(qCha.multiply(qw));
+    b.updateMatrixWorld(true);
   }
 
   dungLen(): Action {
     this.huyViec();
     if (!this.dangNgoi) return hanhDongXongNgay(0);
-    this.dangNgoi = false;
+    this.roiGhe();
     this.chuyenNgoi = 'stand';
     let hd!: HanhDongCoTay;
     hd = hanhDongHenGio(DAI_CLIP.stand!, () => {
@@ -776,6 +1008,42 @@ export class NhanVat {
     return this.vrm.humanoid?.getNormalizedBoneNode(ten) ?? null;
   }
 
+  /**
+   * Xương **đang dựng hình thật** (raw). Khác `xuong()` (normalized) ở chỗ:
+   * `VRMHumanoidRig.update()` của three-vrm chỉ copy `quaternion` (và
+   * `position` của `hips`) từ rig normalized sang xương raw — **không copy
+   * `scale`**. Mọi hình học (chiều dài chân, cao độ đầu gối, bàn chân) vì vậy
+   * phải đo trên xương RAW; đo trên rig normalized ra số của một bộ xương
+   * không hề được dựng hình.
+   */
+  private xuongThat(ten: TenXuong) {
+    return this.vrm.humanoid?.getRawBoneNode(ten) ?? null;
+  }
+
+  /**
+   * Các xương mà lớp cử chỉ/vi mô **cộng thêm** lên trên dáng nền — cần gốc
+   * ổn định mỗi khung hình (xem `nenGoc` và khối reset trong `capNhat`).
+   */
+  private xuongLop(): THREE.Object3D[] {
+    const x = this.xuongBo;
+    return [
+      x.spine,
+      x.chest,
+      x.neck,
+      x.head,
+      x.chanT,
+      x.chanP,
+      x.ongT,
+      x.ongP,
+      x.canhT,
+      x.canhP,
+      x.tayT,
+      x.tayP,
+      x.banTayT,
+      x.banTayP,
+    ].filter((b): b is THREE.Object3D => !!b);
+  }
+
   /** Dáng đứng gốc khi KHÔNG có clip thật: tay buông tự nhiên. */
   private datDangDung() {
     tayBuong(this.xuongBo, 1);
@@ -818,24 +1086,24 @@ export class NhanVat {
     const moodSo = NHAN_MOOD[this.mood] ?? NHAN_MOOD[MOOD_MAC_DINH]!;
     const x = this.xuongBo;
 
-    /* --- reset xương về 0 (lớp nền hoặc dáng thủ tục sẽ ghi lại ngay) --- */
-    for (const b of [
-      x.spine,
-      x.chest,
-      x.neck,
-      x.head,
-      x.chanT,
-      x.chanP,
-      x.ongT,
-      x.ongP,
-      x.canhT,
-      x.canhP,
-      x.tayT,
-      x.tayP,
-      x.banTayT,
-      x.banTayP,
-    ]) {
-      b?.rotation.set(0, 0, 0);
+    /* --- gốc cho các lớp cộng thêm (xem `xuongLop` + `nenGoc`) --- */
+    const coNen = this.nen?.coClip === true;
+    const boLop = this.xuongLop();
+    if (coNen) {
+      // KHÔNG set 0: `THREE.PropertyMixer.apply()` chỉ gọi `binding.setValue`
+      // khi giá trị trộn ĐỔI so với lần ghi trước của chính nó. Clip tĩnh
+      // (`Sitting_Idle_Loop` chỉ có 2 keyframe STEP, chân bất động) vì vậy
+      // ngừng ghi xương sau khi crossfade xong — set 0 ở đây thì chân về tư
+      // thế gốc (THẲNG ĐỨNG) và đứng im như thế mãi: đúng cái "ngồi xuyên
+      // ghế, giày chạm sàn dưới gầm ghế" mà review vòng 4 thấy trên ảnh.
+      // Thay vào đó trả xương về ĐÚNG dáng mixer ghi khung trước (gỡ phần
+      // các lớp cộng thêm của khung trước), rồi để mixer ghi tiếp nếu có đổi.
+      for (const b of boLop) {
+        const q = this.nenGoc.get(b);
+        if (q) b.quaternion.copy(q);
+      }
+    } else {
+      for (const b of boLop) b.rotation.set(0, 0, 0);
     }
     if (x.chest) x.chest.scale.setScalar(this.tyLeChest);
 
@@ -876,11 +1144,24 @@ export class NhanVat {
     }
 
     /* --- LỚP 1: nền = clip CC0 thật, crossfade 0,25 s --- */
-    const coNen = this.nen?.coClip === true;
     if (coNen && this.nen) {
       const { khoa, tocDo } = this.chonDangNen();
       this.nen.dat(khoa, tocDo);
-      this.nen.capNhat(dt);
+      // Mixer chạy theo ĐỒNG HỒ THẬT, không theo `dt` đã bị kẹp 1/20 s của
+      // vòng dựng hình: trên máy không GPU (~1 fps) `dt` kẹp làm clip chạy
+      // chậm gấp ~8 lần đồng hồ, nên `Sitting_Enter`/`Sitting_Exit` còn diễn
+      // dở rất lâu sau khi hành động đã báo xong — ảnh/số đo bằng chứng toàn
+      // chụp giữa chừng. Kẹp 0,5 s cho trường hợp tab bị treo/ẩn.
+      const dtThat = this.tKhungTruoc > 0 ? Math.min((nay - this.tKhungTruoc) / 1000, 0.5) : dt;
+      this.tKhungTruoc = nay;
+      this.nen.capNhat(dtThat);
+      // Chụp lại dáng nền NGUYÊN BẢN của khung này để khung sau trả về đúng
+      // nó (xem ghi chú ở khối reset trên).
+      for (const b of boLop) {
+        const q = this.nenGoc.get(b);
+        if (q) q.copy(b.quaternion);
+        else this.nenGoc.set(b, b.quaternion.clone());
+      }
     }
 
     /* --- dáng thủ tục dự phòng (chỉ khi KHÔNG có clip thật) --- */
@@ -925,19 +1206,24 @@ export class NhanVat {
     if (dangDi) {
       this.goc.position.y = Math.abs(Math.sin(this.phaBuoc)) * 0.022;
     } else if (this.dangNgoi) {
-      // Hạ gốc theo ĐÚNG cao độ mặt ghế (seatY), không còn hằng số đoán: đặt
-      // hips sao cho đáy mông (ước lượng DAY_MONG_DUOI_HIP dưới tâm hips, co
-      // theo tỉ lệ chân chibi) nằm đúng mặt ghế. Chân gập theo clip sit (lớp
-      // nền) hoặc dáng thủ tục ở trên — không viết đè góc chân ở đây.
-      const hipMucTieu = this.seatYHienTai + DAY_MONG_DUOI_HIP * this.tyLeNgoi;
-      const mucHa = hipMucTieu - this.hipStandY;
-      this.goc.position.y = THREE.MathUtils.lerp(this.goc.position.y, mucHa, Math.min(1, dt * 6));
-      // Kẹp cứng: dù công thức trên hay chính lúc blend crossfade đẩy đáy
-      // mông xuống dưới sàn/mặt ghế, bbox thật KHÔNG BAO GIỜ được âm quá
-      // ngưỡng (review vòng 4: "kẹp ở MỌI thời điểm, kể cả khi đang blend").
-      this.kepKhongLunGhe();
+      this.datTuTheNgoi();
+    } else if (this.chuyenNgoi === 'stand') {
+      // ĐANG ĐỨNG LÊN: giữ bàn chân CẮM XUỐNG SÀN suốt clip `Sitting_Exit`.
+      // Nội suy gốc về 0 theo thời gian thì thân về mặt sàn trước khi chân
+      // duỗi xong → nhân vật lơ lửng vài phân giữa chừng (thấy rõ trên máy
+      // không GPU vì clip chạy chậm hơn đồng hồ nhiều lần).
+      this.vrm.humanoid?.update();
+      this.goc.updateMatrixWorld(true);
+      const chanY = this.doChanThapNhat();
+      if (Number.isFinite(chanY)) this.goc.position.y += this.chanDungY - chanY;
     } else {
-      this.goc.position.y = THREE.MathUtils.lerp(this.goc.position.y, 0, Math.min(1, dt * 8));
+      // Về đúng mặt sàn theo ĐỒNG HỒ THẬT (xem ghi chú trong `ngoi()`): lerp
+      // theo `dt` cần cả chục khung hình, trên máy kiểm ~1 fps là cả chục
+      // giây, nên ảnh/số đo sau `actor.stand` toàn chụp lúc còn đang lên.
+      const u = muot(
+        THREE.MathUtils.clamp((bayGio() - this.dungTu) / (DAI_CLIP.stand ?? 900), 0, 1),
+      );
+      this.goc.position.y = THREE.MathUtils.lerp(this.dungGocY, 0, u);
     }
 
     /* --- LỚP 3 (vi mô): dáng tâm trạng/kiểu idle, thở, nhìn quanh --- */

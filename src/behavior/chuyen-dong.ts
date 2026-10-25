@@ -441,6 +441,21 @@ export class LopNen {
     this.mixer.update(dt);
   }
 
+  /** Trạng thái action đang chạy — bằng chứng số khi dáng nền đứng im. */
+  chanDoan(): Record<string, unknown> {
+    const a = this.act;
+    return {
+      khoa: this.hienTai,
+      co: !!a,
+      weight: a ? +a.getEffectiveWeight().toFixed(3) : null,
+      time: a ? +a.time.toFixed(3) : null,
+      chay: a ? a.isRunning() : null,
+      paused: a?.paused ?? null,
+      enabled: a?.enabled ?? null,
+      timeScale: a?.timeScale ?? null,
+    };
+  }
+
   huy(): void {
     this.mixer.stopAllAction();
   }

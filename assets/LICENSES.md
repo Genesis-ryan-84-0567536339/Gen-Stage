@@ -71,6 +71,21 @@ emissive (cyan/cam), không bịa asset.
 Retarget sang `vrm.humanoid` làm trong `src/behavior/chuyen-dong.ts` (giải thích
 cách tính ở đầu file), phát bằng `THREE.AnimationMixer`, crossfade 0,25 s.
 
+### 3c. Clip NGỒI của bộ này TĨNH — hệ quả phải biết
+
+`Sitting_Enter` (1,29 s) / `Sitting_Exit` (1,00 s) / `Sitting_Idle_Loop`
+(1,67 s) đều có dáng ngồi đúng, nhưng `Sitting_Idle_Loop` **chỉ có 2 keyframe,
+nội suy STEP** — tức chân bất động suốt clip. Hai hệ quả đã cắn thật (PR #10):
+
+1. `THREE.PropertyMixer.apply()` chỉ ghi xuống scene graph khi giá trị trộn
+   **đổi** so với lần ghi trước của chính nó, nên với clip tĩnh mixer ngừng ghi
+   xương ngay sau khi crossfade xong. Code nào reset xương về 0 mỗi khung hình
+   (cho lớp cử chỉ cộng thêm) sẽ **xoá sạch dáng ngồi** — chân duỗi thẳng đứng
+   và đứng im như thế mãi. Cách tránh: giữ lại dáng nền khung trước rồi trả về
+   trước khi mixer chạy (`NhanVat.nenGoc`).
+2. Clip không biết ghế của cảnh cao bao nhiêu, nên hình học chân vẫn phải
+   chỉnh theo `seatY` thật của place (`NhanVat.gapChanNgoi`).
+
 ### 3b. Clip spec nào KHÔNG có trong bộ CC0
 
 Bộ 46 clip của Quaternius là action/RPG nên **không có** `wave`, `clap`, `nod`,

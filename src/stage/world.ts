@@ -782,6 +782,23 @@ export class World implements StageWorld {
     this.tamTuBay = { vt: tam.clone().add(huong), tam };
   }
 
+  /**
+   * Đặt góc máy **thủ công, tức thì** (không bay lerp) — dùng cho ảnh bằng
+   * chứng trong `scripts/kiem-a2.mjs`. `camera.focus` không dùng được cho
+   * việc này: nó bay dần (lerp `dt·3,2`) và `distance` thực tế không tới đúng
+   * khoảng cách yêu cầu, nên mọi ảnh bằng chứng trước đây hoặc chụp giữa lúc
+   * camera còn bay, hoặc actor lọt ra ngoài khung (review PR #10 vòng 4).
+   * Không nằm trong Actor/Scene API, chỉ phơi qua `window.stage.datMay`.
+   */
+  datMayThu(vt: Vec3, tam: Vec3): void {
+    this.tamTuBay = null;
+    this.bossDaXoay = true;
+    this.camera.position.set(vt[0], vt[1], vt[2]);
+    this.controls.target.set(tam[0], tam[1], tam[2]);
+    this.camera.lookAt(this.controls.target);
+    this.controls.update();
+  }
+
   cameraPreset(name: string): void {
     if (!(PRESET_MAY as readonly string[]).includes(name)) {
       throw new Error(`Không có góc máy "${name}". Có: ${PRESET_MAY.join(', ')}`);

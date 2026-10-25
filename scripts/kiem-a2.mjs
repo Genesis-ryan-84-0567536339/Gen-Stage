@@ -1,9 +1,10 @@
 /**
  * kiem-a2.mjs — bằng chứng A2 vòng 2 trên app thật (Playwright + Chrome).
  *
- * Chạy:
+ * Chạy (**một lần** — xem cờ khoá `docs/a2/.da-chay` ở dưới):
  *   node scripts/kiem-a2.mjs            # trọn bộ: ảnh + số đo + video + FPS
  *   node scripts/kiem-a2.mjs --chi-anh  # NHANH, chỉ ảnh + số đo (dùng lúc làm)
+ *   node scripts/kiem-a2.mjs --lai      # xoá cờ khoá rồi chạy lại
  *   node scripts/kiem-a2.mjs <url>      # chạy vào một url có sẵn
  *
  * Ra:
@@ -28,6 +29,25 @@ mkdirSync(THU_MUC, { recursive: true });
 const argv = process.argv.slice(2);
 const CHI_ANH = argv.includes('--chi-anh');
 const urlArg = argv.find((a) => a.startsWith('http'));
+
+/**
+ * CỜ KHOÁ CHẠY MỘT LẦN (quy ước làm việc vòng 5): script này dựng hình bằng
+ * CPU (swiftshader) nên một lượt đầy đủ tốn hàng chục phút — chạy lại nhiều
+ * lần là đốt thời gian mà không thêm bằng chứng gì. Chạy xong là có cờ
+ * `docs/a2/.da-chay`; muốn chạy lại phải cố ý thêm `--lai`.
+ */
+const CO_KHOA = `${THU_MUC}/.da-chay`;
+if (argv.includes('--lai')) {
+  if (existsSync(CO_KHOA)) rmSync(CO_KHOA);
+} else if (existsSync(CO_KHOA)) {
+  console.error(
+    `\n⛔ ${CO_KHOA} đã tồn tại — script kiểm A2 chỉ chạy MỘT LẦN sau khi code xong.\n` +
+      `   Kết quả lượt trước: ${THU_MUC}/nhat-ky-kiem-a2.json + ảnh trong ${THU_MUC}/.\n` +
+      '   Thật sự cần chạy lại: node scripts/kiem-a2.mjs --lai\n',
+  );
+  process.exit(2);
+}
+writeFileSync(CO_KHOA, new Date().toISOString() + '\n');
 
 const EMOTES = [
   'vui', 'rat-vui', 'buon', 'ngac-nhien', 'gian', 'suy-nghi', 'dong-y',
@@ -204,48 +224,98 @@ async function moApp(ctx, tien = '') {
   await page.evaluate(() => window.stage.run('actor.play', { actor: 'lan', clip: 'stand', interrupt: true }));
   await page.waitForTimeout(900);
 
-  in_('\n--- lỗi chặn vòng 4 mục 2.1: ngồi KHÔNG lún xuyên ghế/sàn, đo ở trạng thái ỔN ĐỊNH ---');
-  // Vòng 3 đo quá sớm (durationMs + 300 ms, ~1,7 s) trong khi goc.position.y
-  // còn đang lerp xuống — review đo thật thấy hội tụ ở ~6-20 s. Giờ lấy mẫu
-  // 50 ms suốt 6 s SAU khi actor.sit báo xong, 3 lần/ghế (ngồi → đứng → ngồi),
-  // yêu cầu bbox.min.y ≥ −0,01 ở MỌI mẫu.
+  in_('\n--- lỗi chặn vòng 4 mục 2.1: NGỒI — đo bằng XƯƠNG THẬT, 2 ghế × 2 lượt ---');
+  // Vòng 1–4 đều đo `Box3.setFromObject(goc)` (precise = false) = hộp bao
+  // BIND-POSE: hộp đó không đổi theo tư thế nên chỉ phản ánh `goc.position.y`,
+  // kẹp theo nó thì nhân vật đứng nguyên và xuyên qua ghế. Vòng 5 đo
+  // `NhanVat.doTuThe()` — `getWorldPosition` của chính xương RAW `hips` /
+  // `lowerLeg` / `foot` / `toes` sau khi mixer cập nhật, cộng đáy hộp bao
+  // CHÍNH XÁC (`setFromObject(root, true)`).
+  //
+  // Đo ở TRẠNG THÁI ỔN ĐỊNH: đợi 3 s sau khi `actor.sit` báo xong rồi mới lấy
+  // mẫu 50 ms trong 3 s.
   const doNgoi = [];
   for (const ghe of ['ghe-1', 'ghe-2']) {
-    for (let lan = 1; lan <= 3; lan++) {
+    for (let lan = 1; lan <= 2; lan++) {
       const r = await page.evaluate(
         (g) => window.stage.run('actor.sit', { actor: 'lan', seat: g }),
         ghe,
       );
-      ghi(`actor.sit ${ghe} (lần ${lan}/3)`, r.ok === true, r.ok ? `durationMs=${r.result.durationMs}` : r.error);
-      await page.waitForTimeout(r.ok ? r.result.durationMs + 300 : 1500);
-
-      if (lan === 1) {
-        // Ảnh bằng chứng GÓC NGANG toàn thân, không bị bàn điều khiển che:
-        // camera.focus thẳng vào actor, distance 2,5 (review vòng 4).
-        await layCameraVaoActor(page, 2.5);
-        // Camera bay tới theo lerp (k = dt·3,2 trong world.ts) — nhảy vài mét
-        // (ghế bên này sang ghế bên kia) cần ~1,6 s mới ổn định hẳn, 500 ms là
-        // chưa tới nơi (review vòng 4 tự phát hiện: ảnh ghe-2 chụp giữa chừng
-        // lúc camera còn đang bay, lọt ra ngoài, không thấy actor).
-        await page.waitForTimeout(1800);
-        await page.screenshot({ path: `${THU_MUC}/clip-sit-${ghe}.png` });
-      }
+      ghi(`actor.sit ${ghe} (lượt ${lan}/2)`, r.ok === true,
+        r.ok ? `durationMs=${r.result.durationMs}` : r.error);
+      await page.waitForTimeout((r.ok ? r.result.durationMs : 1500) + 3000);
 
       const mau = [];
       const t0 = Date.now();
-      while (Date.now() - t0 < 6000) {
+      while (Date.now() - t0 < 3000) {
         const m = await page.evaluate(() => window.stage.doXuong('lan'));
-        mau.push(+m.bbox[0].toFixed(4));
+        mau.push({ ...m.tuThe, seatY: m.seatY, dayDui: m.dayDui, state: m.state });
         await page.waitForTimeout(50);
       }
-      const minCuaLan = Math.min(...mau);
-      const dat = minCuaLan >= -0.01;
-      ghi(`${ghe} lần ${lan}: ngồi không lún — min(bbox.min.y) 6 s ≥ −0,01`, dat,
-        `min=${minCuaLan} (${mau.length} mẫu)`, { ghe, lan, min: minCuaLan, soMau: mau.length });
-      doNgoi.push({ ghe, lan, min: minCuaLan, mau });
+      const seatY = mau[0].seatY;
+      const dayDui = mau[0].dayDui;
+      const hipMuc = seatY + dayDui;
+      const lechHip = Math.max(...mau.map((x) => Math.abs(x.hipsY - hipMuc)));
+      const goiMin = Math.min(...mau.map((x) => x.kneeY));
+      const chanMin = Math.min(...mau.map((x) => x.footY));
+      const chanMax = Math.max(...mau.map((x) => x.footY));
+      const hopMin = Math.min(...mau.map((x) => x.minY));
+      const so = {
+        ghe, lan, seatY, dayDui, hipMuc: +hipMuc.toFixed(4),
+        lechHip: +lechHip.toFixed(4), kneeY: +goiMin.toFixed(4),
+        footY: +chanMin.toFixed(4), footYMax: +chanMax.toFixed(4),
+        bboxChinhXacMinY: +hopMin.toFixed(4), soMau: mau.length,
+      };
+      doNgoi.push(so);
+
+      ghi(`${ghe} lượt ${lan}: ĐÁY MÔNG chạm mặt ghế — |hipsY − (seatY + dày đùi)| ≤ 0,03`,
+        lechHip <= 0.03,
+        `lệch tối đa ${lechHip.toFixed(4)} m (hipsY mục tiêu ${hipMuc.toFixed(4)}, ${mau.length} mẫu)`, so);
+      ghi(`${ghe} lượt ${lan}: ĐẦU GỐI trên mặt ghế — kneeY > seatY`,
+        goiMin > seatY, `kneeY nhỏ nhất ${goiMin.toFixed(4)} > seatY ${seatY.toFixed(4)}`, so);
+      ghi(`${ghe} lượt ${lan}: BÀN CHÂN không chui dưới sàn — footY ≥ −0,01`,
+        chanMin >= -0.01, `footY nhỏ nhất ${chanMin.toFixed(4)} (đáy hộp bao chính xác ${hopMin.toFixed(4)})`, so);
+      ghi(`${ghe} lượt ${lan}: BÀN CHÂN không đứng trên mặt ghế — footY ≤ seatY`,
+        chanMax <= seatY, `footY lớn nhất ${chanMax.toFixed(4)} ≤ seatY ${seatY.toFixed(4)}`, so);
+
+      if (lan === 1) {
+        // Ảnh bằng chứng GÓC NGANG toàn thân. KHÔNG dùng `camera.focus`:
+        // nó bay dần (lerp dt·3,2) và `distance` thực tế không tới đúng
+        // khoảng cách yêu cầu nên mọi ảnh vòng trước hoặc chụp giữa lúc máy
+        // còn bay, hoặc actor lọt ra ngoài khung. `window.stage.datMay` đặt
+        // máy TỨC THÌ, cách actor 2,5 m theo trục ngang, cao 1,0 m, nhắm vào
+        // hips — và tạm ẩn bảng lệnh để actor nằm GIỮA KHUNG.
+        await page.evaluate(() => {
+          for (const id of ['bang', 'hud']) {
+            const e = document.getElementById(id);
+            if (e) e.style.display = 'none';
+          }
+          window.dispatchEvent(new Event('resize'));
+        });
+        const p = await page.evaluate(async () => {
+          const d = await window.stage.describe();
+          const a = d.ok ? d.result.actors.find((x) => x.id === 'lan') : null;
+          return a ? a.pos : [0, 0, 0];
+        });
+        await page.evaluate(
+          ({ p }) => window.stage.datMay([p[0] + (p[0] > 0 ? -2.5 : 2.5), 1.0, p[2]], [p[0], 0.6, p[2]]),
+          { p },
+        );
+        await page.waitForTimeout(900);
+        await page.screenshot({ path: `${THU_MUC}/clip-sit-${ghe}.png` });
+        await page.evaluate(() => {
+          for (const id of ['bang', 'hud']) {
+            const e = document.getElementById(id);
+            if (e) e.style.display = '';
+          }
+          window.dispatchEvent(new Event('resize'));
+        });
+        await layCameraVaoActor(page, 3, 0.3);
+        await page.waitForTimeout(1200);
+      }
 
       await page.evaluate(() => window.stage.run('actor.stand', { actor: 'lan' }));
-      await page.waitForTimeout(900);
+      await page.waitForTimeout(1500);
     }
   }
   nhatKy.doNgoi = doNgoi;
