@@ -702,6 +702,18 @@ export type Phong = {
    * mặt bàn không ra nên rơi về cao độ ghi cứng 0,97 m của bàn CŨ.
    */
   noc: Map<string, number>;
+  /**
+   * Cao độ **ĐÁY** của từng khối, đo lúc dựng (m) — review PR #70 đề nghị.
+   *
+   * Cùng lý do với `noc`: `gopTinh()` dọn sạch nhóm `khoi:<id>` (53/60 nhóm
+   * rỗng trên cảnh thật), nên không ai chấm được "khối nào lơ lửng" bằng số —
+   * reviewer phải đọc code và nhìn ảnh, mà gối sofa treo 16 cm thì chỉ mắt
+   * Boss bắt được. Phơi ra để script chấm thẳng: đáy ≈ 0 với đồ đứng sàn,
+   * đáy ≈ mặt ngồi với đồ khai `trenGhe`, v.v.
+   */
+  day: Map<string, number>;
+  /** Mặt ngồi thật của ghế/sofa, đo lúc dựng (m) — nguồn cho `trenGhe`. */
+  matNgoi: Map<string, number>;
   /** Số mesh trước/sau khi gộp tĩnh — bằng chứng hiệu năng cho PR. */
   gop: { truoc: number; sau: number };
 };
@@ -955,6 +967,10 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
 
   /** Cao độ mặt trên THẬT của từng khối đã dựng — cho `tren` (đo, không đoán). */
   const nocKhoi = new Map<string, number>();
+  /** Cao độ ĐÁY thật của từng khối — bằng chứng "không món nào lơ lửng". */
+  const dayKhoi = new Map<string, number>();
+  /** Mặt ngồi thật của ghế/sofa — cho `trenGhe` (và `actor.sit`). */
+  const matNgoiKhoi = new Map<string, number>();
 
   /** Thảm dùng CHUNG một texture hoa văn (Boss: không mỗi vật một canvas). */
   let matThamChung: THREE.MeshStandardMaterial | null = null;
@@ -1017,7 +1033,12 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
 
     const lx = k.lech?.[0] ?? 0;
     const lz = k.lech?.[1] ?? 0;
-    const y = k.tren !== undefined ? (nocKhoi.get(k.tren) ?? 0) : (k.datY ?? 0);
+    const y =
+      k.trenGhe !== undefined
+        ? (matNgoiKhoi.get(k.trenGhe) ?? 0)
+        : k.tren !== undefined
+          ? (nocKhoi.get(k.tren) ?? 0)
+          : (k.datY ?? 0);
     g.position.set(k.tai[0] + lx, y, k.tai[1] + lz);
     g.rotation.y = (k.quay * Math.PI) / 180;
     g.name = `khoi:${k.id}`;
@@ -1026,29 +1047,40 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
     g.updateMatrixWorld(true);
     const bb = new THREE.Box3().setFromObject(g);
     if (Number.isFinite(bb.max.y)) nocKhoi.set(k.id, bb.max.y);
+    if (Number.isFinite(bb.min.y)) dayKhoi.set(k.id, bb.min.y);
+    /*
+     * Mặt ngồi đo NGAY ĐÂY (không để vòng ngoài) để khối bày lên nó
+     * (`trenGhe`) đọc được trong cùng lượt dựng — gối sofa cần đúng cái này.
+     */
+    if (k.id === 'ghe-1' || k.id === 'ghe-2' || k.id === 'sofa') {
+      const caoGhe = bb.max.y - bb.min.y;
+      const matGhe = caoGhe > 0.01 ? Math.min(caoGhe * 0.55, 0.52) : 0;
+      if (matGhe > 0) matNgoiKhoi.set(k.id, bb.min.y + matGhe);
+    }
     return g;
   }
 
   for (const k of KHOI_CANH) {
-    const g = dungKhoi(k);
-    // Ghế: `actor.sit` cần hình học THẬT — đo cao độ mặt ghế trên chính model
-    // vừa dựng rồi ghi vào `noi-dung.ts` (chỉ cho 2 place được theo dõi).
-    if (k.id === 'ghe-1' || k.id === 'ghe-2' || k.id === 'sofa') {
-      /*
-       * Mặt ngồi ≈ 55 % chiều cao TOÀN BỘ ghế (ghế tựa thật: cao 0,85–0,9 m,
-       * mặt ngồi 0,45–0,48 m), kẹp ≤ 0,52 m. Bản D1 lấy thẳng `min(max.y,
-       * 0.55)` — đúng khi ghế bị chuẩn hoá cao 0,46 m (sai cỡ, thấy rõ ở ảnh
-       * thử D1b: ghế ăn bé như ghế búp bê), sai khi ghế đúng cỡ.
-       */
-      const bb = new THREE.Box3().setFromObject(g);
-      const caoGhe = bb.max.y - bb.min.y;
-      const matGhe = caoGhe > 0.01 ? Math.min(caoGhe * 0.55, 0.52) : 0;
-      if (matGhe > 0) datSeatY(k.id, matGhe);
-    }
+    dungKhoi(k);
   }
+  /*
+   * Ghế: `actor.sit` cần hình học THẬT. Mặt ngồi đã đo trong `dungKhoi` (một
+   * nguồn duy nhất, vì `trenGhe` cũng đọc đúng số đó) — ở đây chỉ ghi sang
+   * `noi-dung.ts`. Mặt ngồi ≈ 55 % chiều cao TOÀN BỘ ghế (ghế tựa thật: cao
+   * 0,85–0,9 m, mặt ngồi 0,45–0,48 m), kẹp ≤ 0,52 m; bản D1 lấy thẳng
+   * `min(max.y, 0.55)` nên sai khi ghế đúng cỡ.
+   */
+  for (const [id, y] of matNgoiKhoi) datSeatY(id, y);
 
   const gop = gopTinh(nhom);
-  return { nhom, dungKenney: kho.co, gop, noc: nocKhoi };
+  return {
+    nhom,
+    dungKenney: kho.co,
+    gop,
+    noc: nocKhoi,
+    day: dayKhoi,
+    matNgoi: matNgoiKhoi,
+  };
 }
 
 /** PointLight dựng gọn một dòng (bảng bố cục không quản ánh sáng). */

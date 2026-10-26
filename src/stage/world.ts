@@ -341,6 +341,9 @@ export class World implements StageWorld {
   private doDungManHinh = new Map<string, { block: string; surfaceY: number }>();
   /** Mặt trên của từng khối nội thất, đo lúc dựng phòng (xem `Phong.noc`). */
   private nocKhoi = new Map<string, number>();
+  /** Đáy + mặt ngồi của từng khối, đo lúc dựng (xem `Phong.day` / `Phong.matNgoi`). */
+  private dayKhoi = new Map<string, number>();
+  private matNgoiKhoi = new Map<string, number>();
   private ketTinhDangChay = new Map<string, KetTinh>();
   private fxDangChay: HieuUng[] = [];
 
@@ -579,6 +582,8 @@ export class World implements StageWorld {
     tienTrinh?.('Đang dựng căn nhà…');
     const phong = await dungPhong(this.scene);
     this.nocKhoi = phong.noc;
+    this.dayKhoi = phong.day;
+    this.matNgoiKhoi = phong.matNgoi;
 
     tienTrinh?.('Đang nạp nhân vật…');
     // 1) Boss (nam) trên bục trung tâm, quay mặt về camera — phím WASD lái người này
@@ -1421,6 +1426,25 @@ export class World implements StageWorld {
       dangNen: nv.dangNen,
       ...nv.doXuong(),
     };
+  }
+
+  /**
+   * Số đo ĐÁY / NÓC / MẶT NGỒI của từng khối nội thất, đo lúc dựng phòng —
+   * review PR #70 đề nghị. `gopTinh()` dọn sạch nhóm `khoi:<id>` nên đo lại
+   * bằng `Box3` trên cảnh ra rỗng; không có bảng này thì "món nào lơ lửng"
+   * chỉ bắt được bằng mắt (đúng cách gối sofa treo 16 cm thoát hai lượt kiểm).
+   */
+  doKhoiNha(): Record<string, { day: number; noc: number; matNgoi?: number }> {
+    const ra: Record<string, { day: number; noc: number; matNgoi?: number }> = {};
+    for (const [id, noc] of this.nocKhoi) {
+      ra[id] = {
+        day: +(this.dayKhoi.get(id) ?? NaN).toFixed(4),
+        noc: +noc.toFixed(4),
+      };
+      const m = this.matNgoiKhoi.get(id);
+      if (m !== undefined) ra[id]!.matNgoi = +m.toFixed(4);
+    }
+    return ra;
   }
 
   /**

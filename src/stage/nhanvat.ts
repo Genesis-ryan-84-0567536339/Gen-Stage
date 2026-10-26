@@ -159,24 +159,35 @@ const DT_SPRING = 1 / 60;
 const BUOC_SPRING_TOI_DA = 24;
 const DT_SPRING_TOI_DA = 0.4;
 /**
- * TRẦN DỊCH CHUYỂN MỘT KHUNG của mỗi xương tóc/vải (m).
+ * TRẦN TỐC ĐỘ của tóc/vải (m/s) + sàn dịch chuyển mỗi khung (m).
  *
- * Vòng 3 đo được một **gai một khung** 0,112 m ở `ngac-nhien`: lúc bàn tay đưa
- * lên che miệng, collider của tay cắt vào chuỗi tóc và `_collision()` của
- * three-vrm đẩy đuôi ra khỏi hình cầu **trong đúng một bước**, không có trần
- * nào. Cùng khung đó `lechVay` cũng nhảy 0,018 → 0,079, nên biết là cú đẩy
- * của collider chứ không phải tóc bung.
+ * Vòng 4 kẹp **0,03 m mỗi KHUNG** và cố ý không theo `dt`. Review PR #70 chỉ
+ * đúng chỗ sai: tốc độ tối đa khi đó là `0,03 × FPS`, tức **1,8 m/s ở 60 FPS**
+ * mà chỉ **0,24 m/s ở 8 FPS** — đạt hay không đạt thành ra phụ thuộc FPS của
+ * máy kiểm. Reviewer chạy máy mượt (khung 33 ms) và đo lại `ngac-nhien`
+ * **0,0769 m** và **0,1015 m**, trong khi lượt vòng 4 của tôi báo 0,0656 m:
+ * con số đó là lượt may, không tái lập.
  *
- * Chữa bằng trần TỐC ĐỘ hiển thị, không bằng tắt collider: mô phỏng vẫn chạy
- * đủ (tay vẫn gạt được tóc), nhưng dáng VẼ RA mỗi khung chỉ được rời dáng
- * khung trước tối đa bấy nhiêu mét ở đầu đoạn xương. Trạng thái bên trong
- * (`_currentTail`) không bị sửa, nên khi cú đẩy qua rồi tóc tự đuổi kịp trong
- * vài khung thay vì nhảy một phát.
+ * Nay trần là **vận tốc thật**: mỗi khung được dịch `VAN_TOC_TOC × dt`, có sàn
+ * `DICH_TOC_SAN` để FPS thấp không làm tóc đơ. Cùng một chuyển động thì cùng
+ * một trần, máy nhanh hay chậm cũng vậy.
  *
- * Cố tình KHÔNG nhân theo `dt`: chính những khung dài (nouveau khựng 130–400
- * ms) là chỗ sinh gai, nhân theo `dt` là mở trần đúng lúc cần siết nhất.
+ * Con số chốt bằng ĐO, 3 lượt liên tiếp mỗi lần (cú giật `Hit_Chest` của
+ * `ngac-nhien` ở t ≈ 200 ms làm chuỗi tóc duỗi ra, `xaDauNhat` 0,81 → 0,89):
+ *
+ * | trần | `ngac-nhien` 3 lượt | |
+ * | --- | --- | --- |
+ * | mỗi khung 0,03 m (vòng 4) | 0,0656 / 0,0769 / 0,1015 | phụ thuộc FPS |
+ * | 1,0 m/s | 0,0763 / 0,0765 / 0,0734 | tái lập, vẫn vượt |
+ * | 0,7 m/s | 0,0736 / 0,0699 / 0,0673 | 1/3 lượt vượt |
+ * | **0,5 m/s** | xem bảng PR | đạt, còn lề |
+ *
+ * Trần KHÔNG thể phá động học: khi cha (đầu/thân) dịch nhiều, hoà về dáng
+ * khung trước chỉ làm tóc đi THEO đầu như bộ tóc cứng, chứ không tách khỏi
+ * đầu — nên siết thêm là tóc bám đầu sát hơn, không phải tóc rời ra.
  */
-const DICH_TOC_MOI_KHUNG = 0.03;
+const VAN_TOC_TOC = 0.5;
+const DICH_TOC_SAN = 0.01;
 /**
  * Trần lực MỘT BƯỚC spring, theo tỉ lệ độ dài đoạn xương — xem `dongMocSpring`.
  * Điều kiện ổn định của tích phân Euler hiện: lực mỗi bước phải nhỏ so với
@@ -211,8 +222,11 @@ const TOC_CHUA_THAN_DUOI = 0.3;
 const THU_TOC_TOI_THIEU = 0.55;
 /** Trục đứng + quay rỗng, dùng lại để không cấp phát mỗi khung hình. */
 const LEN = /* @__PURE__ */ new THREE.Vector3(0, 1, 0);
-/** Quaternion tạm cho trần tốc độ tóc (không cấp phát mỗi khung). */
+/** Biến tạm cho trần tốc độ tóc (không cấp phát mỗi khung). */
 const _qHam = /* @__PURE__ */ new THREE.Quaternion();
+const _vHam = /* @__PURE__ */ new THREE.Vector3();
+const _mHam = /* @__PURE__ */ new THREE.Matrix4();
+const _mHam2 = /* @__PURE__ */ new THREE.Matrix4();
 /** Lưới thưa hoá mây điểm đế giày (m) — 6 mm là dưới sai số hình học ta cần. */
 const LUOI_MOC_DE = 0.006;
 const KHONG_QUAY = /* @__PURE__ */ new THREE.Quaternion();
@@ -1291,12 +1305,29 @@ export class NhanVat {
   private tChotSpring = 0;
   private daChotLaiToc = false;
   /**
+   * Hai mốc CỐ ĐỊNH cho thước tiếp tuyến, chốt lúc đóng mốc tóc:
+   * `khopGocChuoi` = gốc chuỗi tóc (sát sọ, dịch chuyển gần như = của cái đầu),
+   * `khopDauChuoi` = ngọn tóc xa đầu nhất ở dáng nghỉ.
+   */
+  private khopGocChuoi: THREE.Object3D | null = null;
+  private khopDauChuoi: THREE.Object3D | null = null;
+  /**
    * Trần tốc độ hiển thị của từng xương tóc/vải: `gocToiDa` radian mỗi khung,
    * quy từ `DICH_TOC_MOI_KHUNG` theo độ dài đoạn xương. `qHamTruoc` giữ dáng
    * của khung trước (cùng thứ tự).
    */
-  private khopHam: Array<{ bone: THREE.Object3D; gocToiDa: number }> = [];
-  private qHamTruoc: THREE.Quaternion[] = [];
+  private khopHam: Array<{
+    bone: THREE.Object3D;
+    /** Vị trí ĐUÔI đoạn trong hệ xương (hằng số) — điểm được đo tốc độ. */
+    cucDuoi: THREE.Vector3;
+    /** Dáng cục bộ và vị trí đuôi (thế giới) ở cuối khung TRƯỚC. */
+    qTruoc: THREE.Quaternion;
+    pTruoc: THREE.Vector3;
+    /** Đã có `pTruoc` thật chưa (khung đầu thì chưa). */
+    coMoc: boolean;
+    /** Số tổ tiên — dùng để xử lý gốc → ngọn. */
+    sau: number;
+  }> = [];
   /** Số xương bị trần tốc độ cắt ở khung vừa rồi (bằng chứng số). */
   private soHamCat = 0;
 
@@ -1349,7 +1380,30 @@ export class NhanVat {
     const vDau = dau.getWorldPosition(new THREE.Vector3());
     this.tocMoc.clear();
     const v = new THREE.Vector3();
-    for (const b of this.khopSpring()) this.tocMoc.set(b, b.getWorldPosition(v).distanceTo(vDau));
+    let xa = -1;
+    let gan = Infinity;
+    for (const b of this.khopSpring()) {
+      const d = b.getWorldPosition(v).distanceTo(vDau);
+      this.tocMoc.set(b, d);
+      if (!this.duoiDau(b)) continue;
+      // ngọn: xa đầu nhất Ở DÁNG NGHỈ · gốc chuỗi: gần sọ nhất. Chốt một lần
+      // để thước tiếp tuyến luôn so CÙNG một khớp giữa hai mẫu.
+      if (d > xa) {
+        xa = d;
+        this.khopDauChuoi = b;
+      }
+      if (d < gan) {
+        gan = d;
+        this.khopGocChuoi = b;
+      }
+    }
+  }
+
+  /** Toạ độ thế giới của một khớp, làm tròn — `null` nếu chưa có mốc. */
+  private viTriKhop(b: THREE.Object3D | null): number[] | null {
+    if (!b) return null;
+    const p = b.getWorldPosition(new THREE.Vector3());
+    return [+p.x.toFixed(4), +p.y.toFixed(4), +p.z.toFixed(4)];
   }
 
   /**
@@ -1393,6 +1447,32 @@ export class NhanVat {
       xaDauNhat: +xaNhat.toFixed(4),
       tyLeGoc: +this.goc.scale.x.toFixed(4),
       mocDaOnDinh: this.daChotLaiToc,
+      /*
+       * Vị trí THẾ GIỚI của ĐẦU CHUỖI tóc — **một khớp CỐ ĐỊNH**, chốt lúc
+       * đóng mốc (xem `khopDauChuoi`). Lấy "khớp xa đầu nhất ở mỗi mẫu" là
+       * sai: danh tính khớp đổi giữa hai mẫu nên hiệu hai vị trí là hiệu của
+       * HAI khớp khác nhau — đo thật ra 0,28 m/100 ms trong khi trần tốc độ
+       * chỉ cho 0,13 m/khung. Review PR #70, điểm
+       * mong manh 1: `lechToc` chỉ đo theo HƯỚNG KÍNH (`|dist(khớp, head) −
+       * dist lúc nghỉ|`), nên tóc quạt ngang quanh đầu ở bán kính không đổi
+       * thì nó báo 0. Phơi toạ độ ra để script chấm thêm thước TIẾP TUYẾN:
+       * đầu chuỗi dịch bao nhiêu mét giữa hai mẫu.
+       */
+      dauChuoi: this.viTriKhop(this.khopGocChuoi),
+      ngonToc: this.viTriKhop(this.khopDauChuoi),
+      /*
+       * Ngọn tóc trong hệ quy chiếu của ĐẦU: trừ đi chuyển động của thân/đầu
+       * nên đây mới là "tóc quạt bao nhiêu", còn `dauChuoi` ở trên gần như chỉ
+       * là chuyển động của chính cái đầu. Hai thước tách bạch thì không nhầm
+       * tóc văng với người cử động.
+       */
+      ngonTocTheoDau: (() => {
+        const b = this.khopDauChuoi;
+        const dau = this.vrm.humanoid?.getRawBoneNode('head');
+        if (!b || !dau) return null;
+        const p = dau.worldToLocal(b.getWorldPosition(new THREE.Vector3()));
+        return [+p.x.toFixed(4), +p.y.toFixed(4), +p.z.toFixed(4)];
+      })(),
       soKhopHam: this.khopHam.length,
       soHamCat: this.soHamCat,
       spring: this.soSpring,
@@ -3058,7 +3138,7 @@ export class NhanVat {
    * 1,6 m/s không quăng tóc ra sau; tóc vẫn đung đưa theo cử động đầu/thân.
    */
   private dongMocSpring(): void {
-    const ham: Array<{ bone: THREE.Object3D; gocToiDa: number }> = [];
+    const ham: NhanVat['khopHam'] = [];
     const tt = {
       soKhop: 0,
       cungMin: Infinity,
@@ -3120,15 +3200,25 @@ export class NhanVat {
       k.settings.gravityPower = Math.min(k.goc.gravityPower * ty * TOC_RU_BOT, tran);
       k.settings.hitRadius = k.goc.hitRadius * ty;
       ghiSo(tt, k.settings.stiffness, k.settings.dragForce ?? 0, dai);
-      // trần tốc độ hiển thị: đổi mét/khung thành radian/khung của đoạn này
-      const r = Number.isFinite(dai) && dai > 0 ? dai : 0.07;
+      // trần tốc độ: đo ở ĐUÔI đoạn, nên cần vị trí đuôi trong hệ xương
+      const cuc = k.child
+        ? k.child.position.clone()
+        : (k.initialLocalChildPosition?.clone() ?? new THREE.Vector3(0, 0.07, 0));
+      let sau = 0;
+      for (let o: THREE.Object3D | null = k.bone; o; o = o.parent) sau += 1;
       ham.push({
         bone: k.bone,
-        gocToiDa: THREE.MathUtils.clamp(DICH_TOC_MOI_KHUNG / r, 0.02, Math.PI),
+        cucDuoi: cuc,
+        qTruoc: k.bone.quaternion.clone(),
+        pTruoc: new THREE.Vector3(),
+        coMoc: false,
+        sau,
       });
     }
+    // GỐC → NGỌN: cha phải được hãm trước, không thì ngọn cộng dồn hạn mức của
+    // cả chuỗi (đúng lý do trần 0,03 m/khung của vòng 4 vẫn để lọt 0,10 m).
+    ham.sort((x, y) => x.sau - y.sau);
     this.khopHam = ham;
-    this.qHamTruoc = ham.map(() => new THREE.Quaternion());
     this.soSpring = tt;
     sb.reset?.();
     this.chotMocToc();
@@ -3224,41 +3314,67 @@ export class NhanVat {
     const buoc = tong / soBuoc;
     this.soBuocSpringCuoi = soBuoc;
 
-    // dáng tóc/vải TRƯỚC khi mô phỏng khung này (cho trần tốc độ bên dưới)
-    for (let i = 0; i < this.khopHam.length; i += 1) {
-      this.qHamTruoc[i]!.copy(this.khopHam[i]!.bone.quaternion);
-    }
-
     for (let i = 0; i < soBuoc; i += 1) sb.update(buoc);
 
-    this.hamTocMoiKhung();
+    this.hamTocTheoVanToc(tong);
   }
 
   /**
-   * TRẦN TỐC ĐỘ HIỂN THỊ của tóc/vải — xem `DICH_TOC_MOI_KHUNG`.
+   * TRẦN TỐC ĐỘ của tóc/vải — xem `VAN_TOC_TOC`.
    *
-   * Chạy SAU khi spring đã mô phỏng xong cả khung: xương nào rời dáng khung
-   * trước quá trần thì xoay về đúng trần (`rotateTowards`). Không đụng trạng
-   * thái bên trong của three-vrm, nên đây là trần **tốc độ vẽ**, không phải
-   * đổi vật lý: cú đẩy của collider bàn tay vẫn tới, chỉ là tới trong vài
-   * khung thay vì một khung.
+   * Chạy SAU khi spring đã mô phỏng xong cả khung, đi **gốc → ngọn**: với mỗi
+   * khớp, tính xem ĐUÔI đoạn đã dịch bao nhiêu mét so với khung trước (trong
+   * KHÔNG GIAN THẾ GIỚI, tức tính cả phần cha vừa kéo theo); quá trần thì hoà
+   * dáng về phía dáng khung trước theo đúng tỉ lệ. Vì cha đã bị hãm trước khi
+   * tính con, hạn mức KHÔNG cộng dồn theo chuỗi — đây là chỗ bản vòng 4 hở:
+   * nó hãm từng khớp độc lập nên ngọn tóc được phép đi gấp ~8 lần trần.
+   *
+   * Không đụng `_currentTail` của three-vrm: cú đẩy của collider bàn tay vẫn
+   * tới đủ, chỉ là tới trong vài khung thay vì một khung — tay vẫn gạt được
+   * tóc. (Có phản hồi ngược nhẹ vào vật lý vì `matrixWorld` của khớp cha đổi,
+   * review đã nêu; đó là cái giá để tóc không teleport, và đo được là tóc vẫn
+   * chuyển động liên tục chứ không khựng.)
    */
-  private hamTocMoiKhung(): void {
+  private hamTocTheoVanToc(dt: number): void {
     this.soHamCat = 0;
-    if (this.khopHam.length === 0) return;
+    if (this.khopHam.length === 0 || !(dt > 0)) return;
+    const tran = Math.max(DICH_TOC_SAN, VAN_TOC_TOC * dt);
     let doi = false;
-    for (let i = 0; i < this.khopHam.length; i += 1) {
-      const h = this.khopHam[i]!;
-      const q0 = this.qHamTruoc[i]!;
-      _qHam.copy(h.bone.quaternion);
-      if (q0.angleTo(_qHam) <= h.gocToiDa) continue;
-      h.bone.quaternion.copy(q0).rotateTowards(_qHam, h.gocToiDa);
-      h.bone.updateMatrix();
-      this.soHamCat += 1;
-      doi = true;
+    for (const h of this.khopHam) {
+      const b = h.bone;
+      const mwCha = b.parent ? b.parent.matrixWorld : _mHam.identity();
+      _qHam.copy(b.quaternion); // dáng SAU khi mô phỏng
+      // vị trí đuôi với dáng vừa mô phỏng (cha đã hãm xong)
+      b.updateMatrix();
+      _mHam2.multiplyMatrices(mwCha, b.matrix);
+      _vHam.copy(h.cucDuoi).applyMatrix4(_mHam2);
+      if (h.coMoc && _vHam.distanceTo(h.pTruoc) > tran) {
+        /*
+         * Hoà dáng về phía khung trước theo tỉ lệ `tran / dịch`. Quan hệ
+         * góc → dây cung là `2L·sin(θ/2)`, lại cộng thêm phần cha vừa kéo
+         * theo, nên một lượt tỉ lệ còn dư (đo thật: lố ~40 %). Sửa dần vài
+         * lượt — chỉ chạy cho khớp THẬT SỰ vượt trần nên gần như miễn phí.
+         */
+        let t = 1;
+        for (let lan = 0; lan < 4; lan += 1) {
+          const di = _vHam.distanceTo(h.pTruoc);
+          if (di <= tran) break;
+          t *= tran / di;
+          b.quaternion.copy(h.qTruoc).slerp(_qHam, t);
+          b.updateMatrix();
+          _mHam2.multiplyMatrices(mwCha, b.matrix);
+          _vHam.copy(h.cucDuoi).applyMatrix4(_mHam2);
+        }
+        this.soHamCat += 1;
+        doi = true;
+      }
+      // `bone.matrixAutoUpdate = false` (three-vrm đặt): tự dựng `matrixWorld`
+      // ngay để khớp CON tính tiếp trên dáng đã hãm.
+      b.matrixWorld.copy(_mHam2);
+      h.qTruoc.copy(b.quaternion);
+      h.pTruoc.copy(_vHam);
+      h.coMoc = true;
     }
-    // `bone.matrixAutoUpdate = false` (three-vrm đặt), nên phải tự dựng lại
-    // `matrixWorld` của cả cây sau khi sửa `quaternion`.
     if (doi) this.goc.updateMatrixWorld(true);
   }
 }

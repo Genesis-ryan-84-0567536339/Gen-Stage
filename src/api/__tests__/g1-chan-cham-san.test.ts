@@ -312,10 +312,10 @@ describe('G1 vòng 3 (#56) — spring bone: nhịp cố định, không ăn bớ
    * **cố tình** xoay xương tóc 1 rad mỗi lượt và khẳng định dáng VẼ RA mỗi
    * khung chỉ rời dáng khung trước trong trần cho phép.
    */
-  it('cú đẩy khổng lồ của collider bị trần tốc độ cắt lại', () => {
+  it('cú đẩy khổng lồ của collider bị trần TỐC ĐỘ cắt lại', async () => {
     const sp = springGia();
     const { vrm, scene } = vrmGia(sp);
-    // một "xương tóc" dài 0,1 m ⇒ trần 0,03 m/khung ≈ 0,3 rad/khung
+    // một "xương tóc" với đuôi cách gốc 0,1 m
     const toc = new THREE.Object3D();
     toc.position.set(0, 1.2, 0);
     scene.add(toc);
@@ -329,23 +329,35 @@ describe('G1 vòng 3 (#56) — spring bone: nhịp cố định, không ăn bớ
         settings: { stiffness: 1, gravityPower: 1, hitRadius: 0.02, dragForce: 0.4 },
       },
     ] as never;
-    // mỗi lượt mô phỏng: ném xương đi 1 rad (cú đẩy của collider)
+    // mỗi lượt mô phỏng: ném xương đi 1 rad (cú đẩy của collider bàn tay)
     sp.update = () => toc.rotateX(1);
 
     const nv = new NhanVat('h1', 'H1', vrm, true);
     chay(nv, 4);
+    const viTri = (): THREE.Vector3 => {
+      nv.goc.updateMatrixWorld(true);
+      return duoi.getWorldPosition(new THREE.Vector3());
+    };
     /*
-     * Trần = 0,03 m / độ-dài-đoạn-THẬT, mà đoạn 0,1 m còn bị `goc.scale` của
-     * chibi nhân vào, nên không ghi cứng con số: chỉ đòi mỗi khung đi được
-     * **ít hơn nửa** cú đẩy 1 rad, và vẫn phải nhích (không đóng băng tóc).
+     * Trần là VẬN TỐC (m/s), nên phải chạy theo đồng hồ thật. Mỗi khung đuôi
+     * tóc chỉ được đi `max(0.01, 1.0 × dt)` mét — bản vòng 4 kẹp mỗi KHUNG nên
+     * tốc độ tối đa tỉ lệ với FPS (1,8 m/s ở 60 FPS, 0,24 m/s ở 8 FPS) và
+     * đạt/không đạt phụ thuộc máy kiểm (review PR #70).
      */
-    for (let i = 0; i < 6; i += 1) {
-      const truoc = toc.quaternion.clone();
+    let coDi = false;
+    for (let i = 0; i < 5; i += 1) {
+      const truoc = viTri();
+      const t0 = performance.now();
+      await new Promise((r) => setTimeout(r, 40));
       nv.capNhat(1 / 60);
-      const di = truoc.angleTo(toc.quaternion);
-      expect(di).toBeLessThan(0.5);
-      expect(di).toBeGreaterThan(0);
+      const dt = (performance.now() - t0) / 1000;
+      const di = viTri().distanceTo(truoc);
+      // +2 mm lề cho phép hoà dáng theo tỉ lệ (xấp xỉ tuyến tính)
+      expect(di).toBeLessThanOrEqual(Math.max(0.01, 1.0 * dt) + 0.002);
+      if (di > 0) coDi = true;
     }
+    // vẫn PHẢI nhích (hãm, không đóng băng tóc)
+    expect(coDi).toBe(true);
     const d = nv.doToc();
     expect(d.soKhopHam).toBe(1);
     expect(d.soHamCat).toBe(1);

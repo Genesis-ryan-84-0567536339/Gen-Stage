@@ -41,6 +41,8 @@ const XIN_EMOTE = (process.argv.find((a) => a.startsWith('--emote=')) ?? '').sli
 const EMOTE = XIN_EMOTE
   ? XIN_EMOTE.split(',').filter(Boolean)
   : ['rat-vui', 'buon', 'ngac-nhien'];
+/** Số LƯỢT lặp lại bảng tóc trong CÙNG một phiên Firefox (chống "lượt may"). */
+const SO_LUOT = Number((process.argv.find((a) => a.startsWith('--luot=')) ?? '--luot=3').slice(7));
 const GHE = ['ghe-1', 'ghe-2', 'sofa'];
 /**
  * `--dev` = chạy trên dev server (khung hình dài hơn hẳn: 150–340 ms trên
@@ -358,6 +360,28 @@ for (const ghe of GHE) {
   );
 }
 
+/* --------------------------- 3b. KHỐI NỘI THẮT: không món nào lơ lửng */
+const khoi = await pg.evaluate(() => window.stage.doKhoi());
+nhatKy.khoi = khoi;
+const matNgoiSofa = khoi.sofa?.matNgoi ?? null;
+for (const g of ['goi-1', 'goi-2']) {
+  const k = khoi[g];
+  const lech = k && matNgoiSofa !== null ? +Math.abs(k.day - matNgoiSofa).toFixed(4) : null;
+  console.log(`${g.padEnd(7)} đáy=${k?.day} mặt ngồi sofa=${matNgoiSofa} lệch=${lech}`);
+  chot(`khoi/${g}-nam-tren-mat-ngoi-sofa`, lech !== null && lech <= 0.02, {
+    day: k?.day,
+    matNgoiSofa,
+    lech,
+  });
+}
+// không khối nào chui xuống dưới sàn
+const duoiSan = Object.entries(khoi).filter(([, v]) => v.day < -0.01);
+chot('khoi/khong-khoi-nao-duoi-san', duoiSan.length === 0, { duoiSan: duoiSan.slice(0, 5) });
+
+await pg.evaluate(() => window.stage.run('camera.preset', { name: 'phong-khach' }));
+await pg.waitForTimeout(1200);
+await pg.screenshot({ path: `${THU_MUC}/vong5${HAU}-phong-khach.png` });
+
 /* ------------------------------------------------- 4. TÓC: 100 ms × 2 s */
 await pg.evaluate(() => window.stage.run('camera.preset', { name: 'toan-canh' }));
 await pg.waitForTimeout(1200);
@@ -381,6 +405,7 @@ if (TAI) {
 }
 
 for (const em of EMOTE) {
+ for (let luot = 1; luot <= SO_LUOT; luot += 1) {
   // dồn mẫu TRONG trang: ra/vào playwright mỗi 100 ms tự nó đã là 1 khung hình
   const mau = await pg.evaluate(
     async ([ten]) => {
@@ -413,6 +438,8 @@ for (const em of EMOTE) {
           xaDauNhat: toc.xaDauNhat,
           lechVay: toc.lechVay,
           soHamCat: toc.soHamCat,
+          dauChuoi: toc.dauChuoi,
+          ngonTocTheoDau: toc.ngonTocTheoDau,
         });
         // GIỮA emote (t ≈ 400 ms) mới đọc dáng nền: đọc ở cuối thì emote đã
         // tan và luôn ra `idle`, chẳng chứng minh được gì.
@@ -444,12 +471,36 @@ for (const em of EMOTE) {
     },
     [em],
   );
-  nhatKy.toc[em] = mau;
+  /*
+   * Thước TIẾP TUYẾN (review PR #70, mong manh 1): `lechToc` chỉ đo hướng
+   * kính, tóc quạt ngang quanh đầu ở bán kính không đổi thì nó báo 0. Đây là
+   * dịch chuyển THẾ GIỚI của đầu chuỗi tóc giữa hai mẫu 100 ms.
+   */
+  const dich = (truong) => {
+    let m = 0;
+    for (let i = 1; i < mau.ds.length; i += 1) {
+      const a = mau.ds[i - 1][truong];
+      const b = mau.ds[i][truong];
+      if (!a || !b) continue;
+      const d = Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+      if (d > m) m = d;
+    }
+    return +m.toFixed(4);
+  };
+  // `dauChuoi` = gốc chuỗi tóc trong THẾ GIỚI (gần như chỉ là chuyển động của
+  // chính cái đầu); `ngonTocTheoDau` = ngọn tóc trong hệ quy chiếu của đầu —
+  // tức "tóc quạt bao nhiêu" sau khi trừ chuyển động của người.
+  mau.dichDauChuoiMax = dich('dauChuoi');
+  mau.dichNgonTheoDauMax = dich('ngonTocTheoDau');
+  const dichMax = mau.dichNgonTheoDauMax;
+  nhatKy.toc[`${em}/luot-${luot}`] = mau;
   const dinh = Math.max(...mau.ds.map((x) => x.lechToc));
   const khungMax = mau.khung.length ? Math.max(...mau.khung) : 0;
   const buoc = mau.buocSpring ?? 0;
   console.log(
-    `emote ${em.padEnd(11)} đỉnh lệchTóc=${dinh.toFixed(4)} m · khung dài nhất=${khungMax} ms · ` +
+    `emote ${em.padEnd(11)} lượt ${luot} đỉnh lệchTóc=${dinh.toFixed(4)} m · ` +
+      `dịch ngọn/đầu=${mau.dichNgonTheoDauMax.toFixed(4)} m · ` +
+      `gốc chuỗi/thế giới=${mau.dichDauChuoiMax.toFixed(4)} m · khung dài nhất=${khungMax} ms · ` +
       `bước spring=${buoc} · nền=${mau.dangNen} · hãm cắt tối đa=${Math.max(
         ...mau.ds.map((x) => x.soHamCat ?? 0),
       )}/${mau.soKhopHam ?? '?'} xương`,
@@ -469,14 +520,17 @@ for (const em of EMOTE) {
     mau.clipThat === true && mau.trangThai === 'emoting' && !!mau.dangNen,
     { dangNen: mau.dangNen, clipThat: mau.clipThat, trangThai: mau.trangThai },
   );
-  chot(`toc/${em}`, dinh <= MOC.lechToc, {
+  chot(`toc/${em}/luot-${luot}`, dinh <= MOC.lechToc, {
     dinhLechToc: +dinh.toFixed(4),
     moc: MOC.lechToc,
+    dichDauChuoiMax: mau.dichDauChuoiMax,
+    dichNgonTheoDauMax: mau.dichNgonTheoDauMax,
     khungDaiNhatMs: khungMax,
     buocSpringToiDa: buoc,
     mau: mau.ds,
   });
   await pg.waitForTimeout(1500);
+ }
 }
 
 /* ảnh tóc + toàn cảnh */
@@ -524,11 +578,25 @@ const bangDe = Object.entries(nhatKy.de)
   .join('\n');
 
 const bangToc = EMOTE.map((em) => {
-  const d = nhatKy.toc[em]?.ds ?? [];
-  return (
-    `${em}\n` +
-    d.map((x) => `  ${String(x.t).padStart(4)} ms  lệchTóc ${x.lechToc.toFixed(4)}  xaĐầuNhất ${x.xaDauNhat}`).join('\n')
-  );
+  const dong = [];
+  let dinhChung = 0;
+  let dichChung = 0;
+  for (let luot = 1; luot <= SO_LUOT; luot += 1) {
+    const t = nhatKy.toc[`${em}/luot-${luot}`];
+    if (!t) continue;
+    const dinh = Math.max(...t.ds.map((x) => x.lechToc));
+    dinhChung = Math.max(dinhChung, dinh);
+    dichChung = Math.max(dichChung, t.dichNgonTheoDauMax ?? 0);
+    dong.push(
+      `  lượt ${luot}: đỉnh lệchTóc ${dinh.toFixed(4)} · dịch ngọn/đầu ` +
+        `${(t.dichNgonTheoDauMax ?? 0).toFixed(4)} · gốc chuỗi/thế giới ` +
+        `${(t.dichDauChuoiMax ?? 0).toFixed(4)}\n` +
+        t.ds
+          .map((x) => `      ${String(x.t).padStart(4)} ms  ${x.lechToc.toFixed(4)}  xaĐầuNhất ${x.xaDauNhat}`)
+          .join('\n'),
+    );
+  }
+  return `${em}  — MAX ${SO_LUOT} lượt: lệchTóc ${dinhChung.toFixed(4)} · dịch ngọn/đầu ${dichChung.toFixed(4)}\n${dong.join('\n')}`;
 }).join('\n\n');
 
 writeFileSync(
@@ -543,7 +611,21 @@ writeFileSync(
     '"PRbáo" là `doXuong().deGiayY` — in ra chỉ để đối chiếu, KHÔNG dùng để chấm.\n\n' +
     `BẢNG 2 — LỆCH TÓC mỗi 100 ms suốt 2 s từ lúc gọi emote (mốc ≤ ${MOC.lechToc} m)\n\n` +
     bangToc +
-    '\n',
+    '\n\nBẢNG 3 — ĐÁY / NÓC / MẶT NGỒI đo lúc dựng (`window.stage.doKhoi()`)\n\n' +
+    'khối                      đáy      nóc    mặt ngồi\n' +
+    '------------------------ -------- -------- --------\n' +
+    Object.entries(nhatKy.khoi ?? {})
+      .map(([id, v]) =>
+        [
+          id.padEnd(24),
+          v.day.toFixed(4).padStart(8),
+          v.noc.toFixed(4).padStart(8),
+          (v.matNgoi === undefined ? '—' : v.matNgoi.toFixed(4)).padStart(8),
+        ].join(' '),
+      )
+      .join('\n') +
+    '\n\nGối sofa phải có ĐÁY = mặt ngồi sofa (±2 cm). Vòng 2–4 khai `datY: 0.42`\n' +
+    '(số của sofa CŨ cao 0,9 m) nên gối treo 16 cm — review PR #70 CHẶN 2.\n',
 );
 writeFileSync(`${THU_MUC}/nhat-ky-vong3${HAU}.json`, JSON.stringify(nhatKy, null, 1));
 

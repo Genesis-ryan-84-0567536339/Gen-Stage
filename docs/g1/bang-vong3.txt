@@ -4,62 +4,288 @@ BẢNG 1 — ĐẾ GIÀY đo bằng QUÉT ĐỈNH MESH (world space), độc l�
 
 trạng thái/ai            đếTHẬT   PRbáo   xươngChân  mốcTưThế  đỉnhNhận
 ------------------------ --------- --------- --------- -------- -------
-dung/owner                       0   -0.0001    0.0334   0.0335    1017
-dung/gen                         0   -0.0011     0.049   0.0501     762
+dung/owner                       0   -0.0001    0.0333   0.0334    1021
+dung/gen                         0    0.0013     0.049   0.0477     758
 ngoi-ghe-1/owner           -0.0072   -0.0074    0.0859   0.0934    1301
 dung-len-sau-ghe-1/owner         0    0.0002    0.0334   0.0332    1016
 ngoi-ghe-2/owner           -0.0072   -0.0074    0.0859   0.0934    1301
-dung-len-sau-ghe-2/owner         0    0.0002    0.0334   0.0333    1015
+dung-len-sau-ghe-2/owner         0    0.0001    0.0334   0.0333    1016
 ngoi-sofa/owner            -0.0072   -0.0074    0.0859   0.0934    1301
-dung-len-sau-sofa/owner          0    0.0002    0.0334   0.0333    1015
+dung-len-sau-sofa/owner          0    0.0005    0.0334   0.0329    1017
 
 Đạt = |đế THẬT| ≤ 0.01 m khi đứng/đi, ≤ 0.02 m khi ngồi.
 "PRbáo" là `doXuong().deGiayY` — in ra chỉ để đối chiếu, KHÔNG dùng để chấm.
 
 BẢNG 2 — LỆCH TÓC mỗi 100 ms suốt 2 s từ lúc gọi emote (mốc ≤ 0.07 m)
 
-ngac-nhien
-     2 ms  lệchTóc 0.0070  xaĐầuNhất 0.8066
-   102 ms  lệchTóc 0.0362  xaĐầuNhất 0.8497
-   201 ms  lệchTóc 0.0554  xaĐầuNhất 0.8689
-   302 ms  lệchTóc 0.0656  xaĐầuNhất 0.8792
-   401 ms  lệchTóc 0.0469  xaĐầuNhất 0.7666
-   536 ms  lệchTóc 0.0469  xaĐầuNhất 0.7666
-   601 ms  lệchTóc 0.0429  xaĐầuNhất 0.8382
-   700 ms  lệchTóc 0.0554  xaĐầuNhất 0.8245
-   803 ms  lệchTóc 0.0508  xaĐầuNhất 0.8611
-   901 ms  lệchTóc 0.0426  xaĐầuNhất 0.8561
-  1001 ms  lệchTóc 0.0407  xaĐầuNhất 0.8542
-  1101 ms  lệchTóc 0.0402  xaĐầuNhất 0.8537
-  1200 ms  lệchTóc 0.0371  xaĐầuNhất 0.8507
-  1302 ms  lệchTóc 0.0356  xaĐầuNhất 0.8492
-  1401 ms  lệchTóc 0.0364  xaĐầuNhất 0.8499
-  1501 ms  lệchTóc 0.0310  xaĐầuNhất 0.8021
-  1601 ms  lệchTóc 0.0339  xaĐầuNhất 0.7886
-  1701 ms  lệchTóc 0.0113  xaĐầuNhất 0.8249
-  1802 ms  lệchTóc 0.0123  xaĐầuNhất 0.8258
-  1900 ms  lệchTóc 0.0084  xaĐầuNhất 0.822
-  2002 ms  lệchTóc 0.0059  xaĐầuNhất 0.8194
+rat-vui  — MAX 3 lượt: lệchTóc 0.0461 · dịch ngọn/đầu 0.1516
+  lượt 1: đỉnh lệchTóc 0.0461 · dịch ngọn/đầu 0.1516 · gốc chuỗi/thế giới 0.0632
+         1 ms  0.0034  xaĐầuNhất 0.8184
+       102 ms  0.0194  xaĐầuNhất 0.8042
+       218 ms  0.0164  xaĐầuNhất 0.8054
+       313 ms  0.0355  xaĐầuNhất 0.8343
+       402 ms  0.0380  xaĐầuNhất 0.8416
+       521 ms  0.0380  xaĐầuNhất 0.8416
+       619 ms  0.0360  xaĐầuNhất 0.8107
+       719 ms  0.0461  xaĐầuNhất 0.7863
+       824 ms  0.0423  xaĐầuNhất 0.7801
+       921 ms  0.0271  xaĐầuNhất 0.7948
+      1001 ms  0.0120  xaĐầuNhất 0.8115
+      1102 ms  0.0153  xaĐầuNhất 0.8171
+      1202 ms  0.0252  xaĐầuNhất 0.8184
+      1301 ms  0.0287  xaĐầuNhất 0.8261
+      1406 ms  0.0311  xaĐầuNhất 0.838
+      1504 ms  0.0145  xaĐầuNhất 0.8363
+      1604 ms  0.0275  xaĐầuNhất 0.807
+      1707 ms  0.0423  xaĐầuNhất 0.7858
+      1807 ms  0.0444  xaĐầuNhất 0.7774
+      1901 ms  0.0391  xaĐầuNhất 0.7828
+      2001 ms  0.0207  xaĐầuNhất 0.8011
+  lượt 2: đỉnh lệchTóc 0.0457 · dịch ngọn/đầu 0.1121 · gốc chuỗi/thế giới 0.0559
+         1 ms  0.0037  xaĐầuNhất 0.8225
+       102 ms  0.0153  xaĐầuNhất 0.8132
+       218 ms  0.0143  xaĐầuNhất 0.8075
+       315 ms  0.0352  xaĐầuNhất 0.8356
+       417 ms  0.0374  xaĐầuNhất 0.8424
+       533 ms  0.0374  xaĐầuNhất 0.8424
+       601 ms  0.0218  xaĐầuNhất 0.8217
+       702 ms  0.0453  xaĐầuNhất 0.7991
+       809 ms  0.0457  xaĐầuNhất 0.7761
+       902 ms  0.0376  xaĐầuNhất 0.7842
+      1000 ms  0.0151  xaĐầuNhất 0.8067
+      1102 ms  0.0122  xaĐầuNhất 0.8161
+      1201 ms  0.0252  xaĐầuNhất 0.8197
+      1301 ms  0.0285  xaĐầuNhất 0.8239
+      1401 ms  0.0310  xaĐầuNhất 0.8344
+      1510 ms  0.0122  xaĐầuNhất 0.8322
+      1601 ms  0.0269  xaĐầuNhất 0.8076
+      1701 ms  0.0428  xaĐầuNhất 0.7842
+      1801 ms  0.0435  xaĐầuNhất 0.7784
+      1902 ms  0.0413  xaĐầuNhất 0.7806
+      2001 ms  0.0260  xaĐầuNhất 0.7958
+  lượt 3: đỉnh lệchTóc 0.0445 · dịch ngọn/đầu 0.1247 · gốc chuỗi/thế giới 0.0582
+         3 ms  0.0042  xaĐầuNhất 0.8221
+       100 ms  0.0156  xaĐầuNhất 0.8138
+       219 ms  0.0121  xaĐầuNhất 0.8109
+       301 ms  0.0328  xaĐầuNhất 0.8323
+       414 ms  0.0366  xaĐầuNhất 0.8439
+       529 ms  0.0366  xaĐầuNhất 0.8439
+       602 ms  0.0299  xaĐầuNhất 0.8197
+       701 ms  0.0445  xaĐầuNhất 0.7906
+       802 ms  0.0425  xaĐầuNhất 0.7826
+       901 ms  0.0335  xaĐầuNhất 0.7883
+      1003 ms  0.0124  xaĐầuNhất 0.8123
+      1112 ms  0.0163  xaĐầuNhất 0.8192
+      1201 ms  0.0252  xaĐầuNhất 0.8187
+      1301 ms  0.0282  xaĐầuNhất 0.8261
+      1401 ms  0.0311  xaĐầuNhất 0.8345
+      1502 ms  0.0179  xaĐầuNhất 0.8361
+      1601 ms  0.0209  xaĐầuNhất 0.8159
+      1702 ms  0.0420  xaĐầuNhất 0.7798
+      1801 ms  0.0437  xaĐầuNhất 0.7781
+      1901 ms  0.0432  xaĐầuNhất 0.7786
+      2002 ms  0.0281  xaĐầuNhất 0.7938
 
-rat-vui
-     2 ms  lệchTóc 0.0077  xaĐầuNhất 0.8058
-   101 ms  lệchTóc 0.0160  xaĐầuNhất 0.8014
-   202 ms  lệchTóc 0.0122  xaĐầuNhất 0.8013
-   301 ms  lệchTóc 0.0308  xaĐầuNhất 0.8299
-   418 ms  lệchTóc 0.0267  xaĐầuNhất 0.829
-   572 ms  lệchTóc 0.0267  xaĐầuNhất 0.829
-   604 ms  lệchTóc 0.0077  xaĐầuNhất 0.8202
-   701 ms  lệchTóc 0.0404  xaĐầuNhất 0.7825
-   801 ms  lệchTóc 0.0322  xaĐầuNhất 0.7832
-   901 ms  lệchTóc 0.0216  xaĐầuNhất 0.8046
-  1002 ms  lệchTóc 0.0145  xaĐầuNhất 0.809
-  1100 ms  lệchTóc 0.0140  xaĐầuNhất 0.813
-  1201 ms  lệchTóc 0.0217  xaĐầuNhất 0.8127
-  1301 ms  lệchTóc 0.0234  xaĐầuNhất 0.8233
-  1401 ms  lệchTóc 0.0233  xaĐầuNhất 0.8332
-  1501 ms  lệchTóc 0.0251  xaĐầuNhất 0.8386
-  1620 ms  lệchTóc 0.0305  xaĐầuNhất 0.7861
-  1703 ms  lệchTóc 0.0377  xaĐầuNhất 0.7769
-  1801 ms  lệchTóc 0.0343  xaĐầuNhất 0.7793
-  1902 ms  lệchTóc 0.0325  xaĐầuNhất 0.781
-  2000 ms  lệchTóc 0.0130  xaĐầuNhất 0.8006
+buon  — MAX 3 lượt: lệchTóc 0.0628 · dịch ngọn/đầu 0.0248
+  lượt 1: đỉnh lệchTóc 0.0628 · dịch ngọn/đầu 0.0183 · gốc chuỗi/thế giới 0.0588
+         3 ms  0.0045  xaĐầuNhất 0.8218
+       101 ms  0.0020  xaĐầuNhất 0.82
+       202 ms  0.0167  xaĐầuNhất 0.8052
+       318 ms  0.0331  xaĐầuNhất 0.7888
+       415 ms  0.0450  xaĐầuNhất 0.7769
+       534 ms  0.0450  xaĐầuNhất 0.7769
+       610 ms  0.0482  xaĐầuNhất 0.7736
+       701 ms  0.0628  xaĐầuNhất 0.759
+       801 ms  0.0558  xaĐầuNhất 0.766
+       902 ms  0.0422  xaĐầuNhất 0.7796
+      1000 ms  0.0362  xaĐầuNhất 0.7857
+      1101 ms  0.0332  xaĐầuNhất 0.7886
+      1202 ms  0.0320  xaĐầuNhất 0.7898
+      1316 ms  0.0309  xaĐầuNhất 0.7909
+      1402 ms  0.0314  xaĐầuNhất 0.7904
+      1501 ms  0.0301  xaĐầuNhất 0.7918
+      1601 ms  0.0218  xaĐầuNhất 0.8
+      1703 ms  0.0151  xaĐầuNhất 0.8103
+      1800 ms  0.0171  xaĐầuNhất 0.8145
+      1902 ms  0.0176  xaĐầuNhất 0.8185
+      2001 ms  0.0171  xaĐầuNhất 0.8192
+  lượt 2: đỉnh lệchTóc 0.0488 · dịch ngọn/đầu 0.0248 · gốc chuỗi/thế giới 0.0488
+         2 ms  0.0153  xaĐầuNhất 0.8065
+       102 ms  0.0211  xaĐầuNhất 0.8008
+       201 ms  0.0306  xaĐầuNhất 0.7912
+       301 ms  0.0335  xaĐầuNhất 0.7883
+       402 ms  0.0417  xaĐầuNhất 0.7802
+       518 ms  0.0417  xaĐầuNhất 0.7802
+       601 ms  0.0367  xaĐầuNhất 0.7852
+       701 ms  0.0488  xaĐầuNhất 0.773
+       801 ms  0.0424  xaĐầuNhất 0.7794
+       901 ms  0.0387  xaĐầuNhất 0.7831
+      1001 ms  0.0411  xaĐầuNhất 0.7808
+      1116 ms  0.0445  xaĐầuNhất 0.7774
+      1215 ms  0.0455  xaĐầuNhất 0.7763
+      1301 ms  0.0452  xaĐầuNhất 0.7766
+      1418 ms  0.0421  xaĐầuNhất 0.7797
+      1502 ms  0.0327  xaĐầuNhất 0.7891
+      1626 ms  0.0174  xaĐầuNhất 0.8107
+      1718 ms  0.0180  xaĐầuNhất 0.8231
+      1802 ms  0.0187  xaĐầuNhất 0.8292
+      1901 ms  0.0171  xaĐầuNhất 0.836
+      2001 ms  0.0148  xaĐầuNhất 0.8366
+  lượt 3: đỉnh lệchTóc 0.0625 · dịch ngọn/đầu 0.0194 · gốc chuỗi/thế giới 0.0561
+         1 ms  0.0022  xaĐầuNhất 0.8196
+       110 ms  0.0112  xaĐầuNhất 0.8106
+       200 ms  0.0218  xaĐầuNhất 0.8001
+       301 ms  0.0397  xaĐầuNhất 0.7821
+       402 ms  0.0504  xaĐầuNhất 0.7715
+       517 ms  0.0504  xaĐầuNhất 0.7715
+       605 ms  0.0499  xaĐầuNhất 0.7719
+       701 ms  0.0625  xaĐầuNhất 0.7594
+       817 ms  0.0439  xaĐầuNhất 0.7779
+       900 ms  0.0364  xaĐầuNhất 0.7854
+      1003 ms  0.0335  xaĐầuNhất 0.7883
+      1107 ms  0.0322  xaĐầuNhất 0.7896
+      1206 ms  0.0323  xaĐầuNhất 0.7895
+      1311 ms  0.0352  xaĐầuNhất 0.7866
+      1407 ms  0.0392  xaĐầuNhất 0.7827
+      1506 ms  0.0372  xaĐầuNhất 0.7846
+      1604 ms  0.0261  xaĐầuNhất 0.7957
+      1702 ms  0.0190  xaĐầuNhất 0.8028
+      1811 ms  0.0222  xaĐầuNhất 0.8121
+      1901 ms  0.0220  xaĐầuNhất 0.8175
+      2002 ms  0.0207  xaĐầuNhất 0.8233
+
+ngac-nhien  — MAX 3 lượt: lệchTóc 0.0532 · dịch ngọn/đầu 0.0727
+  lượt 1: đỉnh lệchTóc 0.0514 · dịch ngọn/đầu 0.0563 · gốc chuỗi/thế giới 0.2216
+         3 ms  0.0084  xaĐầuNhất 0.8135
+       101 ms  0.0405  xaĐầuNhất 0.8364
+       224 ms  0.0351  xaĐầuNhất 0.8559
+       325 ms  0.0514  xaĐầuNhất 0.8732
+       405 ms  0.0276  xaĐầuNhất 0.8431
+       536 ms  0.0276  xaĐầuNhất 0.8431
+       604 ms  0.0132  xaĐầuNhất 0.8297
+       702 ms  0.0256  xaĐầuNhất 0.8474
+       801 ms  0.0220  xaĐầuNhất 0.828
+       917 ms  0.0409  xaĐầuNhất 0.8628
+      1002 ms  0.0320  xaĐầuNhất 0.8539
+      1103 ms  0.0300  xaĐầuNhất 0.8518
+      1201 ms  0.0277  xaĐầuNhất 0.8495
+      1317 ms  0.0268  xaĐầuNhất 0.8486
+      1402 ms  0.0282  xaĐầuNhất 0.8501
+      1503 ms  0.0483  xaĐầuNhất 0.8354
+      1602 ms  0.0464  xaĐầuNhất 0.829
+      1718 ms  0.0118  xaĐầuNhất 0.81
+      1803 ms  0.0034  xaĐầuNhất 0.8231
+      1901 ms  0.0020  xaĐầuNhất 0.8198
+      2002 ms  0.0015  xaĐầuNhất 0.8203
+  lượt 2: đỉnh lệchTóc 0.0532 · dịch ngọn/đầu 0.0591 · gốc chuỗi/thế giới 0.2322
+         3 ms  0.0032  xaĐầuNhất 0.8186
+       120 ms  0.0357  xaĐầuNhất 0.8539
+       202 ms  0.0492  xaĐầuNhất 0.871
+       300 ms  0.0532  xaĐầuNhất 0.875
+       402 ms  0.0319  xaĐầuNhất 0.8434
+       516 ms  0.0319  xaĐầuNhất 0.8434
+       601 ms  0.0161  xaĐầuNhất 0.8379
+       702 ms  0.0315  xaĐầuNhất 0.8533
+       804 ms  0.0353  xaĐầuNhất 0.8318
+       900 ms  0.0302  xaĐầuNhất 0.8501
+      1020 ms  0.0307  xaĐầuNhất 0.8526
+      1101 ms  0.0290  xaĐầuNhất 0.8508
+      1201 ms  0.0267  xaĐầuNhất 0.8486
+      1316 ms  0.0261  xaĐầuNhất 0.8479
+      1402 ms  0.0274  xaĐầuNhất 0.8492
+      1502 ms  0.0425  xaĐầuNhất 0.8279
+      1601 ms  0.0393  xaĐầuNhất 0.8162
+      1701 ms  0.0144  xaĐầuNhất 0.8074
+      1801 ms  0.0068  xaĐầuNhất 0.825
+      1904 ms  0.0028  xaĐầuNhất 0.8211
+      2001 ms  0.0022  xaĐầuNhất 0.8218
+  lượt 3: đỉnh lệchTóc 0.0498 · dịch ngọn/đầu 0.0727 · gốc chuỗi/thế giới 0.1934
+         2 ms  0.0016  xaĐầuNhất 0.8211
+       101 ms  0.0346  xaĐầuNhất 0.84
+       201 ms  0.0489  xaĐầuNhất 0.8707
+       303 ms  0.0498  xaĐầuNhất 0.8716
+       402 ms  0.0309  xaĐầuNhất 0.834
+       519 ms  0.0309  xaĐầuNhất 0.834
+       615 ms  0.0091  xaĐầuNhất 0.83
+       722 ms  0.0325  xaĐầuNhất 0.8369
+       821 ms  0.0258  xaĐầuNhất 0.8177
+       901 ms  0.0298  xaĐầuNhất 0.8454
+      1007 ms  0.0297  xaĐầuNhất 0.8515
+      1108 ms  0.0272  xaĐầuNhất 0.8491
+      1200 ms  0.0254  xaĐầuNhất 0.8472
+      1302 ms  0.0240  xaĐầuNhất 0.8458
+      1401 ms  0.0252  xaĐầuNhất 0.847
+      1503 ms  0.0429  xaĐầuNhất 0.8291
+      1600 ms  0.0405  xaĐầuNhất 0.8165
+      1702 ms  0.0216  xaĐầuNhất 0.8002
+      1801 ms  0.0035  xaĐầuNhất 0.8246
+      1901 ms  0.0011  xaĐầuNhất 0.8229
+      2001 ms  0.0007  xaĐầuNhất 0.8212
+
+BẢNG 3 — ĐÁY / NÓC / MẶT NGỒI đo lúc dựng (`window.stage.doKhoi()`)
+
+khối                      đáy      nóc    mặt ngồi
+------------------------ -------- -------- --------
+ke-tivi                    0.0000   0.5500        —
+tranh-1                    1.1700   1.8300        —
+tranh-2                    1.2100   1.7900        —
+tham                       0.0060   0.0060        —
+sofa                       0.0000   0.4700   0.2585
+goi-1                      0.2585   0.5483        —
+goi-2                      0.2585   0.5483        —
+ban-tra                    0.0000   0.2600        —
+sach-ban-tra               0.2600   0.4534        —
+coc-tra                    0.2600   0.3553        —
+ghe-don-1                  0.0000   0.4700        —
+ghe-don-2                  0.0000   0.3399        —
+den-san                    0.0000   1.0500        —
+ban-canh-sofa              0.0000   0.2733        —
+den-ban-sofa               0.2733   0.5733        —
+cay-1                      0.0000   1.3500        —
+cay-2                      0.0000   1.1000        —
+tranh-3                    1.1400   1.8600        —
+ke-module                  0.0000   1.9000        —
+sach-ke-1                  1.2400   1.4472        —
+sach-ke-2                  0.8200   1.0272        —
+sach-ke-3                  1.2400   1.4196        —
+sach-ke-4                  0.4000   0.6072        —
+ban-dieu-khien             0.0000   0.5862        —
+man-hinh-ban               0.5862   0.8862        —
+ban-phim                   0.5862   0.6155        —
+chuot                      0.5862   0.6139        —
+den-ban                    0.5862   0.8862        —
+sach-ban                   0.5862   0.7657        —
+coc-ban                    0.5862   0.6815        —
+ghe-2                      0.0000   0.4700   0.2585
+bang-ghim                  0.9900   1.7100        —
+tu-bep                     0.0000   0.9500        —
+tu-bep-goc                 0.0000   0.9500        —
+tu-duoi-1                  0.0000   0.9500        —
+bep-nau                    0.0000   0.9500        —
+tu-duoi-2                  0.0000   0.9500        —
+tu-lanh                    0.0000   1.8000        —
+tu-tren-3                  1.5000   2.2000        —
+tu-tren-1                  1.5000   2.2000        —
+tu-tren-2                  1.5000   2.2000        —
+hut-mui                    1.5500   2.1000        —
+lo-vi-song                 0.9500   1.2293        —
+may-ca-phe                 0.9500   1.2500        —
+tham-an                    0.0060   0.0060        —
+ban-an                     0.0000   0.4813        —
+ghe-1                      0.0000   0.4700   0.2585
+ban-an-ghe-2               0.0000   0.4700        —
+ban-an-ghe-3               0.0000   0.4700        —
+ban-an-ghe-4               0.0000   0.4700        —
+binh-hoa                   0.4813   0.8213        —
+trai-cay                   0.4818   0.5833        —
+tu-bat-dia                 0.0000   0.9500        —
+binh-hoa-tu                0.9500   1.2700        —
+cay-4                      0.0000   1.4000        —
+tranh-4                    1.1900   1.8100        —
+ke-giay                    0.0000   0.4762        —
+moc-ao                     0.0000   1.7200        —
+tham-cua                   0.0000   0.0221        —
+cua                        0.0000   2.0500        —
+
+Gối sofa phải có ĐÁY = mặt ngồi sofa (±2 cm). Vòng 2–4 khai `datY: 0.42`
+(số của sofa CŨ cao 0,9 m) nên gối treo 16 cm — review PR #70 CHẶN 2.

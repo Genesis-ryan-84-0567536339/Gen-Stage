@@ -54,6 +54,12 @@ export interface CuaStage {
    */
   doToc(actor: string): Record<string, unknown>;
   /**
+   * Đáy / nóc / mặt ngồi ĐO ĐƯỢC của từng khối nội thất (review PR #70): để
+   * script chấm "không món nào lơ lửng" bằng SỐ, vì `gopTinh()` dọn nhóm
+   * `khoi:<id>` nên đo lại trên cảnh ra rỗng.
+   */
+  doKhoi(): Record<string, { day: number; noc: number; matNgoi?: number }>;
+  /**
    * D1b (#48) — số lượt vẽ / tam giác / số mesh của khung vừa render. Boss
    * 26/10: "đừng đòi GPU lớn" → bằng chứng hiệu năng phải là SỐ, không phải
    * cảm giác. Mốc tự đặt: `calls ≤ 150`, `triangles ≤ 300k`.
@@ -153,6 +159,7 @@ window.stage = {
   bridge: (bat) => (bat ? bridge.bat() : bridge.tat()),
   doXuong: (actor) => world.doXuongActor(actor),
   doToc: (actor) => world.doTocActor(actor),
+  doKhoi: () => world.doKhoiNha(),
   hieuNang: () => world.doHieuNang(),
   chieuDiem: (p) => world.chieuDiem(p),
   datMay: (vt, tam) => world.datMayThu(vt, tam),

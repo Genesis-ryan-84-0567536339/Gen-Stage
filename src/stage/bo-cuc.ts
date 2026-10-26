@@ -84,8 +84,15 @@ export interface KhoiCanh {
   /* ------------------------------------------------- D1b (Issue #48) thêm */
 
   /**
-   * Cao độ CHÂN khối so với sàn (m) — đồ treo tường (tranh, tủ bếp trên, bảng
-   * ghim, máy hút mùi) và gối trên mặt sofa. Không khai = đứng trên sàn.
+   * Cao độ CHÂN khối so với sàn (m) — **chỉ cho đồ treo tường** (tranh, tủ bếp
+   * trên, bảng ghim, máy hút mùi, sách trên kệ). Không khai = đứng trên sàn.
+   *
+   * ĐỪNG dùng `datY` cho đồ bày trên một món khác: số ghi tay là số của món ở
+   * cỡ CŨ, hạ món đỡ xuống là đồ treo lơ lửng mà không test nào báo. Gối sofa
+   * từng khai `datY: 0.42` (mặt ngồi sofa cao 0,9 m); G1 hạ sofa về `cao: 0.47`
+   * ⇒ mặt ngồi 0,2585 m, gối treo **16 cm** trên không khí (review PR #70
+   * CHẶN 2). Đồ bày lên món khác phải dùng `tren` (nóc) hoặc `trenGhe` (mặt
+   * ngồi) để ĐO thật.
    */
   datY?: number;
   /**
@@ -94,6 +101,13 @@ export interface KhoiCanh {
    * mỗi model một cao độ khác nhau. Khối đỡ phải đứng TRƯỚC trong bảng.
    */
   tren?: string;
+  /**
+   * Đặt lên **MẶT NGỒI** của một ghế/sofa (id trong bảng này) — khác `tren` là
+   * nóc (lưng tựa). `phong.ts` đo mặt ngồi thật trên chính model vừa dựng
+   * (cùng phép đo `actor.sit` dùng), nên gối/đệm luôn nằm đúng chỗ người ngồi
+   * dù ghế đổi cỡ. Khối đỡ phải đứng TRƯỚC trong bảng.
+   */
+  trenGhe?: string;
   /**
    * Lệch khỏi tâm ô lưới (m, `[dx, dz]` theo trục thế giới). Chỉ dành cho ĐỒ
    * NHỎ bày trên mặt bàn/kệ — `kiemLuoi()` vẫn soi `tai`, nên lưới 0,5 m của
@@ -183,8 +197,10 @@ export const KHOI_CANH: readonly KhoiCanh[] = [
   // sofa 3 chỗ, mặt quay ĐÚNG về kệ TV (−X), cách 3,2 m — khoảng nhìn TV thật
   { id: 'sofa', vung: 'phong-khach', tai: [-3, 1], quay: 270, kenney: 'loungeSofaLong', kenneyPhu: 'loungeDesignSofa', cao: 0.47, rongToiDa: 1.7, chan: [0.85, 0.34], chat: 'vai', mauVai: 0xd8c6a8 },
   // gối tựa trên mặt ngồi sofa (0,42 m đo được) — 1 kem + 1 olive nhạt làm điểm
-  { id: 'goi-1', vung: 'phong-khach', tai: [-3, 0.5], lech: [0.15, 0], datY: 0.42, quay: 268, kenney: 'pillow', rong: 0.44, chat: 'vai', mauVai: 0xb08a4e },
-  { id: 'goi-2', vung: 'phong-khach', tai: [-3, 1.5], lech: [0.15, 0], datY: 0.42, quay: 274, kenney: 'pillow', rong: 0.44, chat: 'vai', mauVai: 0x7d8a5e },
+  // gối tựa NẰM TRÊN MẶT NGỒI sofa — `trenGhe` đo thật, không ghi số tay
+  // (xem ghi chú ở `datY`: số 0,42 cũ là của sofa cao 0,9 m, hạ sofa là gối treo)
+  { id: 'goi-1', vung: 'phong-khach', tai: [-3, 0.5], lech: [0.15, 0], trenGhe: 'sofa', quay: 268, kenney: 'pillow', rong: 0.3, chat: 'vai', mauVai: 0xb08a4e },
+  { id: 'goi-2', vung: 'phong-khach', tai: [-3, 1.5], lech: [0.15, 0], trenGhe: 'sofa', quay: 274, kenney: 'pillow', rong: 0.3, chat: 'vai', mauVai: 0x7d8a5e },
   // bàn trà CHÍNH GIỮA sofa ↔ TV; mép đông cách mặt sofa 0,45 m (đúng cỡ thật)
   { id: 'ban-tra', vung: 'phong-khach', tai: [-4, 1], quay: 0, kenney: 'tableCoffee', kenneyPhu: 'tableCoffeeGlass', cao: 0.26, rongToiDa: 0.85, chan: [0.43, 0.29], mauVai: 0x6b4a2f },
   { id: 'sach-ban-tra', vung: 'phong-khach', tai: [-4, 1], lech: [-0.2, 0.02], tren: 'ban-tra', quay: 18, kenney: 'books', rong: 0.28, chat: 'nham' },
