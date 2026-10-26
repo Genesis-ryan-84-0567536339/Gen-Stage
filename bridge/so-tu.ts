@@ -232,6 +232,84 @@ export function suaTheoSoTu(cau: string): string {
  * - **không** viết hoa / sửa ngữ pháp: text giữ nguyên để não đọc, chỉ gắn
  *   thêm cờ `goiGen` khi câu mở đầu bằng cách gọi tên.
  */
+/* ------------------------------ G3 (#67): tên "Nhi"/"Nam" ở ĐẦU câu nói --- */
+
+/** Cách PhoWhisper nghe chệch "Nhi"/"Nam" — xem chú thích `suaTenDauCau`. */
+const NGHE_NHAM_TEN: Array<{ chuan: string; dongAm: string[]; hep?: string[] }> = [
+  { chuan: 'Nhi', dongAm: ['nhi', 'ni', 'nia', 'nhì', 'nhỉ'], hep: ['nghi', 'nghĩ'] },
+  { chuan: 'Nam', dongAm: ['nam', 'nham', 'nhâm', 'năm'] },
+];
+
+/**
+ * Động từ lệnh được phép đứng ngay sau tên. **Phải khớp y**, không fuzzy.
+ *
+ * Cùng một danh sách với `DONG_TU_LENH` trong `src/behavior/ngu-phap.ts`, và
+ * đó là CÓ Ý: bài học E1 (#48) việc 6 — sổ từ nhà (sửa chữ) và lớp tách người
+ * nhận (hiểu lệnh) phải khớp nhau, lệch một bên là câu chạy sang nhân vật
+ * khác. Sửa một bên thì sửa **cả hai**.
+ */
+const DONG_TU_SAU_TEN = new Set([
+  'di', 'den', 'toi', 'qua', 'ra', 'vao', 'buoc', 'chay', 'lai', 've',
+  'ngoi', 'dung', 'nhin', 'quay', 'tim', 'kiem',
+  'mo', 'tat', 'dong', 'hien', 'xoa', 'cat', 'cam', 'luu', 'bo',
+  'ket', 'tao', 'lam', 'doi',
+  'noi', 'bao', 'nhac', 'chao', 'keu', 'nho', 'giup',
+  'vui', 'buon', 'gian', 'met', 'nghi',
+]);
+/** Động từ mơ hồ — không đủ để nhận một cách nghe chệch "hẹp" là tên. */
+const DONG_TU_MO_HO = new Set(['di', 'thoi', 'lam', 'nghi']);
+const TIN_HIEU_GOI = new Set(['oi', 'a', 'ha']);
+
+/** Bỏ dấu + hạ chữ thường, giống `boDau()` của `src/behavior/ngu-phap.ts`. */
+function khongDau(x: string): string {
+  return x
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .toLowerCase();
+}
+
+/**
+ * Viết đúng tên "Nhi"/"Nam" khi nó ở **ĐẦU câu** và theo sau là tín hiệu gọi
+ * ("ơi"/"à") hoặc một động từ lệnh.
+ *
+ * Vì sao KHÔNG khai vào `SO_TU` như "Gen"/"Javis": `SO_TU` viết đè ở **bất kỳ
+ * đâu** trong câu, mà "nam"/"nhi" là từ tiếng Việt thường ("phía nam", "nam
+ * châm", "nhí nhảnh", "nghĩ") và còn là số đếm. Viết đè toàn cục là phá đúng
+ * những câu Boss nói đúng — bài học lớn nhất của C1 (`docs/c1/so-sanh.md`
+ * mục 3: khai `tuc` vào sổ làm "cất module" thành "kết tinh module").
+ *
+ * Ở đây thì có **vị trí** để dựa vào, nên luật hẹp hẳn lại và đo được:
+ * review #67 trên bộ TTS bẩn thấy gọi tên mới chỉ 5/10 đúng người, vì STT nghe
+ * "Nhi" ra `nia`/`nghi`/`ni` (3 ký tự → ngưỡng fuzzy 0, không cứu nổi) và vì
+ * giọng nói **không có dấu phẩy** nên "Nam đi tới bếp" không ai nhận là gọi.
+ *
+ * Sửa ở đây có hai cái được: Boss **thấy đúng tên** trong ô chat (trước đó ô
+ * chat hiện "nia ngồi xuống"), và lớp hiểu lệnh nhận lời gọi mà không phải
+ * đoán lại.
+ */
+export function suaTenDauCau(cau: string): string {
+  const tu = cau.split(/\s+/).filter(Boolean);
+  if (tu.length < 2) return cau;
+  const dau = khongDau(tu[0]).replace(/[^a-z0-9]/g, '');
+  // từ thứ hai có thể còn dấu phẩy dính vào ("Nhi, ngồi đi")
+  const sau = khongDau(tu[1]).replace(/[^a-z0-9]/g, '');
+  const laGoi = TIN_HIEU_GOI.has(sau);
+  const laLenh = DONG_TU_SAU_TEN.has(sau);
+  if (!laGoi && !laLenh) return cau;
+  for (const t of NGHE_NHAM_TEN) {
+    const rong = t.dongAm.some((x) => khongDau(x) === dau);
+    const hep = (t.hep ?? []).some((x) => khongDau(x) === dau);
+    if (rong || (hep && (laGoi || !DONG_TU_MO_HO.has(sau)))) {
+      // giữ nguyên dấu câu Boss/engine để lại sau tên ("Nhi," → "Nhi,")
+      const dauCau = tu[0].replace(/^[\p{L}\p{N}]+/u, '');
+      return [t.chuan + dauCau, ...tu.slice(1)].join(' ');
+    }
+  }
+  return cau;
+}
+
 export function chuanHoaCauNoi(tho: string): { text: string; goiGen: boolean } {
   const sach = tho
     .trim()
@@ -240,7 +318,7 @@ export function chuanHoaCauNoi(tho: string): { text: string; goiGen: boolean } {
     // Engine hay chèn một phụ âm lạc ở đầu ("n nói lại lần nữa", "d quay lại
     // đây", "m mở màn hình") — tiếng Việt không có từ một phụ âm, nên bỏ.
     .replace(/^[bcdfghjklmnpqrstvxz]\s+/i, '');
-  const sua = suaTheoSoTu(sach);
+  const sua = suaTenDauCau(suaTheoSoTu(sach));
   // "Gen ơi," / "Gen à," / "Gen," ở ĐẦU câu = gọi tên. Giữa câu thì không.
   const goiGen = /^gen\s*(ơi|à|ạ|a)?\s*[,.!]?\s/i.test(`${sua} `);
   return { text: sua, goiGen };

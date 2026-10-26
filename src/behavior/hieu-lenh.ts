@@ -38,8 +38,13 @@ import {
   BI_DANH_PLACE,
   CAU_CHUA_HIEU,
   CHO_SEP,
+  DONG_TU_LENH,
+  DONG_TU_LENH_MO_HO,
   GHE_GAN_NHAT,
   GOC_MAY_KE,
+  NGHE_NHAM_TEN,
+  NGHE_NHAM_TEN_HEP,
+  TIN_HIEU_GOI,
   XAC_NHAN,
   boDau,
   gan,
@@ -173,13 +178,63 @@ export function tachNguoiNhan(
    * `tach()` chạy), nên phải soi câu GỐC, không soi `cau.sach[0]`.
    */
   const goiTranDauCau = textGoc ? /^\s*(nam|nhi)\s*,/i.exec(boDau(textGoc)) : null;
-  if (goiTranDauCau) {
-    const tenTran = goiTranDauCau[1];
+  /**
+   * 1c. G3 (#67) — GỌI TRẦN BẰNG GIỌNG: tên ở ĐẦU CÂU + theo sau là tín hiệu
+   * gọi ("ơi"/"à") hoặc một ĐỘNG TỪ LỆNH. **Không cần dấu phẩy.**
+   *
+   * Luật 1b của G2 đúng cho chữ Boss GÕ, nhưng vô nghĩa với giọng: STT trả
+   * một dòng chữ liền, không bao giờ có dấu phẩy. Review #67 đo trên bộ TTS
+   * bẩn: gọi tên mới chỉ **5/10** đúng người, và "Nam đi tới bếp" là ca trượt
+   * tiêu biểu.
+   *
+   * Ba ràng buộc giữ luật này khỏi ăn vào câu thường — mỗi cái chặn một ca đo
+   * được, test giữ cả ba:
+   *   · **chỉ từ đầu câu** → "miền nam", "ở phía nam" không khớp;
+   *   · **phải có động từ lệnh / "ơi" ngay sau** → "nam châm hút sắt",
+   *     "nhí nhảnh quá" không khớp;
+   *   · cách nghe chệch trùng hẳn từ Việt thường (`nghi` = "nghỉ"/"nghĩ") thì
+   *     động từ theo sau **không được mơ hồ** → "nghỉ đi" giữ nguyên nghĩa,
+   *     "nghi qua bàn điều khiển" mới là gọi Nhi.
+   */
+  const goiTranGiong = (() => {
+    const dau = cau.sach[0];
+    const sau = cau.sach[1];
+    if (!dau) return null;
+    /*
+     * So KHỚP Y, không fuzzy, cho từ đứng sau tên.
+     *
+     * Đây chỉ là **cái cổng** quyết định "có phải lời gọi không"; việc khớp
+     * lệnh thật vẫn fuzzy như cũ ở dưới. Fuzzy ngay tại cổng thì "**nam châm**
+     * hút sắt" lọt: `cham` cách `chao` (động từ "chào") đúng 1 ký tự, mà từ 4
+     * ký tự được phép lệch 1. Thà bỏ sót một lời gọi (câu rơi về người nhận
+     * mặc định) hơn là bắt nhân vật diễn giữa câu Boss đang nói chuyện.
+     */
+    const laTinHieuGoi = sau !== undefined && TIN_HIEU_GOI.includes(sau);
+    const laDongTuLenh = sau !== undefined && DONG_TU_LENH.includes(sau);
+    const moHo = sau !== undefined && DONG_TU_LENH_MO_HO.includes(sau);
+    for (const [ten, ds] of Object.entries(NGHE_NHAM_TEN)) {
+      if (ds.some((x) => boDau(x) === dau) && (laTinHieuGoi || laDongTuLenh)) return ten;
+      // dạng "hẹp": chỉ nhận khi động từ theo sau KHÔNG mơ hồ
+      const hep = NGHE_NHAM_TEN_HEP[ten] ?? [];
+      if (hep.some((x) => boDau(x) === dau) && (laTinHieuGoi || (laDongTuLenh && !moHo)))
+        return ten;
+    }
+    return null;
+  })();
+  const tenTran = goiTranDauCau?.[1] ?? goiTranGiong;
+  if (tenTran) {
+    /*
+     * Cắt luôn cả tiếng gọi "ơi"/"à" đi kèm: để lại thì "Nhi ơi, ngồi đi" còn
+     * một từ lạ giữa câu, mà mỗi từ không dùng tới bị trừ 0,7 điểm (`diemThat`)
+     * — đủ để đẩy lệnh ngắn xuống dưới ngưỡng 1,5.
+     */
+    const sau = cau.sach[1];
+    const dai = sau !== undefined && TIN_HIEU_GOI.includes(sau) ? 2 : 1;
     return {
       nguoiNhan: [tenTran === 'nam' ? idOwner : idGen],
       coGoiTen: true,
       moiNguoi: false,
-      conLai: cat(cau, 0, 1),
+      conLai: cat(cau, 0, dai),
     };
   }
 

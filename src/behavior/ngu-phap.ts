@@ -149,6 +149,76 @@ export function gan(nhap: string, mau: string): boolean {
   return khoangCach(nhap, mau) <= nguong(mau);
 }
 
+/* ------------------------------- G3 (#62/#67): GỌI TÊN BẰNG GIỌNG NÓI ----- */
+
+/**
+ * CÁCH STT NGHE CHỆCH TÊN "Nhi" / "Nam" — **chỉ dùng được ở đầu câu**.
+ *
+ * Review độc lập #67 đo trên bộ TTS bẩn: gọi tên mới chỉ **5/10** đúng người.
+ * Hai nguyên nhân, cả hai là chuyện của GIỌNG NÓI chứ không phải chữ gõ:
+ *
+ * 1. "Nhi" dài 3 ký tự nên ngưỡng fuzzy là **0** (`nguong()`): PhoWhisper nghe
+ *    ra `nia` / `nghi` / `ni` là trượt hết, không cứu được bằng fuzzy.
+ * 2. Luật của G2 đòi **dấu phẩy** sau tên gọi trần ("Nam, mở đèn"). Giọng nói
+ *    KHÔNG BAO GIỜ có dấu phẩy — STT trả một dòng chữ liền — nên "Nam đi tới
+ *    bếp" không được coi là gọi Nam.
+ *
+ * Vì sao bảng này KHÔNG nằm trong `bridge/so-tu.ts` (sổ từ nhà) như "Gen":
+ * `so-tu.ts` viết đè chữ ở **bất kỳ đâu** trong câu, mà `nghi` cũng là "nghĩ"
+ * (emote `suy-nghi`!) và `nam` là "nằm/năm/phía nam". Viết đè toàn cục là phá
+ * đúng những câu Boss nói đúng — bài học lớn nhất của C1. Ở đây thì khác: lớp
+ * hiểu lệnh biết **vị trí** của từ, nên chỉ nhận ở ĐẦU CÂU và chỉ khi **theo
+ * sau là tín hiệu gọi** ("ơi"/"à") hoặc một **động từ lệnh**. "miền nam",
+ * "nam châm", "nhí nhảnh" không có hình đó nên không khớp (test giữ cả sáu ca).
+ *
+ * `HEP` = cách nghe chệch trùng hẳn một từ Việt thường, chỉ nhận khi động từ
+ * theo sau **không mơ hồ**: `nghi` vừa là "Nhi" vừa là "nghỉ", nên "nghỉ đi"
+ * phải giữ nguyên nghĩa còn "nghi qua bàn điều khiển" mới là gọi Nhi.
+ */
+export const NGHE_NHAM_TEN: Record<string, string[]> = {
+  nhi: ['nhi', 'ni', 'nia', 'nhì', 'nhỉ'],
+  nam: ['nam', 'nham', 'năm'],
+};
+
+/** Cách nghe chệch "hẹp" — xem chú thích trên. */
+export const NGHE_NHAM_TEN_HEP: Record<string, string[]> = {
+  nhi: ['nghi', 'nghĩ'],
+  nam: [],
+};
+
+/**
+ * Từ đứng ngay sau tên là **tín hiệu gọi**: "Nhi ơi", "Nam à".
+ * Đây là hình gần như không bao giờ xuất hiện tình cờ trong câu thường.
+ *
+ * CỐ TÌNH **không** có `nay` ("Nhi này") và `hoi`: đo thật thấy "**năm nay**
+ * nhà mình đi du lịch" khớp ngay — `nam` + `nay` ở đúng hai ô đầu. Mất một
+ * cách gọi ít dùng, đổi lấy không nhận bừa một câu đời thường rất hay gặp.
+ */
+export const TIN_HIEU_GOI = ['oi', 'a', 'ha'];
+
+/**
+ * ĐỘNG TỪ MỞ ĐẦU MỘT LỆNH — "Nam <động từ>…" ở đầu câu là gọi Nam.
+ *
+ * Lấy từ chính `BANG_MAU_CAU` phía dưới (mọi từ đầu của mọi mẫu) cộng mấy từ
+ * đệm Boss hay chen ("kêu", "nhờ"). Giữ thành **danh sách tường minh** chứ
+ * không sinh tự động: sinh tự động thì thêm một mẫu câu mới là âm thầm mở rộng
+ * luật gọi tên, mà đó là chỗ sai thì Boss mất quyền điều khiển nhân vật.
+ */
+export const DONG_TU_LENH = [
+  'di', 'den', 'toi', 'qua', 'ra', 'vao', 'buoc', 'chay', 'lai', 've',
+  'ngoi', 'dung', 'nhin', 'quay', 'tim', 'kiem',
+  'mo', 'tat', 'dong', 'hien', 'xoa', 'cat', 'cam', 'luu', 'bo',
+  'ket', 'tao', 'lam', 'doi',
+  'noi', 'bao', 'nhac', 'chao', 'keu', 'nho', 'giup',
+  'vui', 'buon', 'gian', 'met', 'nghi',
+];
+
+/**
+ * Động từ **mơ hồ**: đi một mình thì không đủ để nhận một cách nghe chệch
+ * "hẹp" là tên gọi. "nghỉ đi" / "làm thôi" phải giữ nguyên nghĩa.
+ */
+export const DONG_TU_LENH_MO_HO = ['di', 'thoi', 'lam', 'nghi'];
+
 /* ------------------------------------------------------- bí danh người nhận */
 
 /** Nhóm người nhận đặc biệt: cả hai nhân vật. */
