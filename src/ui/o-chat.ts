@@ -32,12 +32,27 @@ export interface OChat {
    * mic đang mở, đang nhận dạng, hay đã nghe ra gì. Dòng này là chỗ Boss nhìn
    * (console thì Boss không mở). `null` = xoá dòng.
    */
-  trangThai(chu: string | null): void;
+  trangThai(chu: string | null, sua?: SuaMau): void;
   /** Con trỏ đang ở trong ô chat không (phím V là chữ "v", không phải mic). */
   dangGoChu(): boolean;
   /** Actor đang nói hộ Boss. */
   actor(): string;
   thao(): void;
+}
+
+/**
+ * G3 (#62) — nút "✎ Sửa" đi kèm dòng "nghe được: «…»".
+ *
+ * Boss bấm → ô nhập (đang giữ đúng chữ engine nghe được) nhận con trỏ và hẹn
+ * tự gửi bị huỷ; Boss chữa chữ rồi bấm "✓ Lưu mẫu" là `luu()` được gọi với
+ * chữ đúng. `src/audio/mic.ts` đem nó về `POST /stt/mau` làm bộ kiểm chuẩn.
+ *
+ * Vì sao **không** làm một ô nhập riêng: chữ đã nằm trong ô chat rồi, và Boss
+ * vẫn phải sửa ở đó trước khi gửi. Thêm ô thứ hai là bắt Boss gõ lại câu.
+ */
+export interface SuaMau {
+  /** Chữ đúng Boss gõ lại. */
+  luu(chuDung: string): void;
 }
 
 export function batOChat(
@@ -74,19 +89,54 @@ export function batOChat(
   hop.appendChild(tt);
   /** Xoá dòng "nghe được: …" sau bấy nhiêu ms (chữ đã nằm trong ô nhập). */
   let henTt = 0;
-  function datTrangThai(chu: string | null): void {
+  /** G3 — chữ của dòng trạng thái, tách khỏi nút Sửa để không ghi đè nhau. */
+  const ttChu = document.createElement('span');
+  tt.appendChild(ttChu);
+
+  function datTrangThai(chu: string | null, sua?: SuaMau): void {
     clearTimeout(henTt);
+    tt.querySelector('#o-chat-sua')?.remove();
+    tt.querySelector('#o-chat-luu')?.remove();
     if (!chu) {
       tt.hidden = true;
-      tt.textContent = '';
+      ttChu.textContent = '';
       return;
     }
-    tt.textContent = chu;
+    ttChu.textContent = chu;
     tt.hidden = false;
+    if (sua) {
+      const nut = document.createElement('button');
+      nut.type = 'button';
+      nut.id = 'o-chat-sua';
+      nut.textContent = '✎ Sửa';
+      nut.title = 'Nghe sai? Sửa lại chữ đúng để Gen học giọng Sếp';
+      nut.addEventListener('click', () => {
+        // Sửa là **không** để câu tự bay đi: Boss đang gõ lại chữ đúng.
+        huyHen();
+        o.focus();
+        o.setSelectionRange(o.value.length, o.value.length);
+        nut.remove();
+        const luu = document.createElement('button');
+        luu.type = 'button';
+        luu.id = 'o-chat-luu';
+        luu.textContent = '✓ Lưu mẫu';
+        luu.title = 'Ghi cặp (giọng vừa nói, chữ đúng) vào bộ kiểm chuẩn';
+        luu.addEventListener('click', () => {
+          sua.luu(o.value);
+          luu.remove();
+        });
+        tt.appendChild(luu);
+        ttChu.textContent = 'sửa chữ trong ô dưới rồi bấm:';
+        // Boss đang sửa thì đừng tự xoá dòng này giữa lúc gõ.
+        clearTimeout(henTt);
+      });
+      tt.appendChild(nut);
+    }
     // "đang nghe…" / "đang nhận dạng…" đứng tới khi có bước sau; câu kết quả
-    // thì tự tắt để ô chat sạch trở lại.
+    // thì tự tắt để ô chat sạch trở lại. Có nút Sửa thì để lâu hơn — Boss cần
+    // thời gian đọc chữ rồi mới quyết định là nó sai.
     if (chu.startsWith('nghe được'))
-      henTt = window.setTimeout(() => datTrangThai(null), 4000);
+      henTt = window.setTimeout(() => datTrangThai(null), sua ? 12000 : 4000);
   }
 
   async function gui(chu: string): Promise<boolean> {

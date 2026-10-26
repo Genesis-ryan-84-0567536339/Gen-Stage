@@ -36,7 +36,7 @@
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server } from 'node:http';
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -54,6 +54,28 @@ const DAI_TOI_DA_MS = 30_000;
 const THAN_TOI_DA = 8 * 1024 * 1024;
 /** Hạn chờ thợ trả lời một câu. */
 const HAN_THO_MS = 120_000;
+
+/* ----------------------------------------------- G3 (#62): sổ thu giọng thật
+ *
+ * Boss 28/10: "nhận diện giọng nói tào lao quá". Mọi số đo trước (WER 7,9 %)
+ * đo trên giọng **TTS** — sạch, chậm, chuẩn. Không ai từng đo trên giọng Boss,
+ * và không thể đo được, vì bridge chỉ giữ **kết quả** (`.cache/stt/cache/*.json`)
+ * chứ không giữ **âm**: kiểm thật 26/10 thấy 16 tệp json, 0 tệp audio.
+ *
+ * Nên từ G3 mỗi lượt Boss nói để lại hai tệp trong `.cache/stt/thu/`:
+ *   <ts>.ogg    đúng byte trình duyệt gửi (chưa qua ffmpeg)
+ *   <ts>.json   chữ nghe được + độ tin + trễ + dải cắt VAD
+ *
+ * Vòng 50 tệp: Boss nói cả ngày thì thư mục không phình, mà vẫn đủ một bộ
+ * kiểm chuẩn. Cả hai nằm trong `.cache/` → `.gitignore` sẵn, KHÔNG vào repo
+ * (giọng Boss là dữ liệu riêng).
+ */
+/** Thư mục giữ audio thô mỗi lượt nói. */
+const THU_MUC_THU = process.env.GEN_STAGE_STT_THU ?? join(GOC, 'thu');
+/** Thư mục cặp (audio, chữ ĐÚNG do Boss sửa) — bộ kiểm chuẩn giọng thật. */
+const THU_MUC_MAU = process.env.GEN_STAGE_STT_MAU ?? join(GOC, 'mau');
+/** Giữ bấy nhiêu lượt gần nhất trong `thu/`. */
+const SO_THU_GIU = 50;
 
 /** Đường tới python trong venv do `scripts/fetch-stt.sh` lập. */
 function duongPython(): string {
@@ -267,6 +289,13 @@ export interface KetQuaStt {
   goiGen: boolean;
   /** Chữ thô trước khi sửa theo sổ từ (để Boss/Issue soi khi sai). */
   tho: string;
+  /**
+   * G3 (#62) — mã lượt nói, cũng là tên tệp trong `.cache/stt/thu/`.
+   *
+   * Trình duyệt giữ mã này để nút "✎ Sửa" ở ô chat biết **cặp với audio nào**
+   * khi Boss chữa chữ nghe sai (`POST /stt/mau`).
+   */
+  ts?: string;
 }
 
 const tho = new Tho();
@@ -315,6 +344,114 @@ export async function nhanDang(
   } finally {
     await rm(wav, { force: true });
   }
+}
+
+/* -------------------------------------------- G3 (#62): lưu lượt nói thật */
+
+/**
+ * Đuôi tệp theo dạng trình duyệt gửi.
+ *
+ * KHÔNG đổi dạng khi lưu: lưu đúng byte `MediaRecorder` sinh ra thì bộ mẫu
+ * sau này đo lại được **cả** đường ffmpeg của bridge, không chỉ phần model.
+ * Firefox cho `audio/ogg; codecs=opus`, Chrome `audio/webm`, iOS `audio/mp4`.
+ */
+export function duoiTheoDang(dang: string): string {
+  const d = dang.toLowerCase();
+  if (d.includes('webm')) return '.webm';
+  if (d.includes('wav') || d.includes('x-wav')) return '.wav';
+  if (d.includes('mp4') || d.includes('m4a') || d.includes('aac')) return '.m4a';
+  if (d.includes('mpeg') || d.includes('mp3')) return '.mp3';
+  return '.ogg';
+}
+
+/** Mã lượt nói: thời gian ISO gọn, xếp theo tên là xếp theo thời gian. */
+function maLuot(): string {
+  return new Date().toISOString().replace(/[:.]/g, '-').replace(/Z$/, '');
+}
+
+/**
+ * Giữ đúng `SO_THU_GIU` lượt gần nhất — xoá cả cặp `.ogg`/`.json` của lượt cũ.
+ *
+ * Xếp theo **tên** chứ không theo `mtime`: tên là mốc ISO nên hai cách cho
+ * cùng thứ tự, mà đọc tên không phải `stat` 100 tệp mỗi lượt Boss nói.
+ */
+async function donVongThu(): Promise<void> {
+  let ds: string[];
+  try {
+    ds = await readdir(THU_MUC_THU);
+  } catch {
+    return;
+  }
+  const ma = [...new Set(ds.map((f) => f.replace(/\.[^.]+$/, '')))].sort();
+  for (const m of ma.slice(0, Math.max(0, ma.length - SO_THU_GIU)))
+    for (const f of ds.filter((x) => x.startsWith(`${m}.`)))
+      await rm(join(THU_MUC_THU, f), { force: true });
+}
+
+/**
+ * Lưu một lượt nói: audio thô + kết quả. Lỗi ghi đĩa **không** được làm Boss
+ * mất câu — bắt hết, chỉ cảnh báo.
+ */
+export async function luuThu(
+  am: Buffer,
+  dang: string,
+  kq: KetQuaStt,
+  cat?: { tuMs?: number; denMs?: number },
+): Promise<string | null> {
+  const ma = maLuot();
+  try {
+    await mkdir(THU_MUC_THU, { recursive: true });
+    await writeFile(join(THU_MUC_THU, `${ma}${duoiTheoDang(dang)}`), am);
+    await writeFile(
+      join(THU_MUC_THU, `${ma}.json`),
+      JSON.stringify(
+        {
+          ma,
+          luc: new Date().toISOString(),
+          dang,
+          byte: am.length,
+          cat: { tuMs: cat?.tuMs ?? null, denMs: cat?.denMs ?? null },
+          text: kq.text,
+          tho: kq.tho,
+          confidence: kq.confidence,
+          durationMs: kq.durationMs,
+          audioMs: kq.audioMs,
+          model: tho.thuMucModel(),
+        },
+        null,
+        2,
+      ),
+    );
+    await donVongThu();
+    return ma;
+  } catch (e) {
+    console.warn('[stt ] không lưu được lượt thu:', (e as Error).message);
+    return null;
+  }
+}
+
+/**
+ * Boss bấm "✎ Sửa" rồi gõ chữ đúng → cặp `(audio, chữ đúng)` vào `mau/`.
+ *
+ * Đây là thứ duy nhất biến "nghe sai" thành **số đo được**: `do-stt.mjs --mau`
+ * chấm WER trên chính giọng Boss, thay vì trên TTS sạch như C1 đã làm.
+ */
+export async function ghiMau(ma: string, chuDung: string): Promise<string> {
+  // Chặn đường dẫn lạ: `ma` tới từ trình duyệt.
+  if (!/^[A-Za-z0-9_-]{4,64}$/.test(ma)) throw new Error('mã lượt không hợp lệ');
+  const chu = chuDung.trim();
+  if (!chu) throw new Error('chữ đúng để trống');
+  const ds = await readdir(THU_MUC_THU).catch(() => [] as string[]);
+  const am = ds.find((f) => f.startsWith(`${ma}.`) && !f.endsWith('.json'));
+  if (!am) throw new Error(`không còn audio của lượt ${ma} (vòng ${SO_THU_GIU} tệp)`);
+  await mkdir(THU_MUC_MAU, { recursive: true });
+  await copyFile(join(THU_MUC_THU, am), join(THU_MUC_MAU, am));
+  await writeFile(join(THU_MUC_MAU, `${ma}.txt`), `${chu}\n`, 'utf8');
+  // Chép luôn json của lượt để bộ mẫu còn chữ engine ĐÃ nghe sai — đó mới là
+  // thứ so được "trước / sau" khi đổi model.
+  const js = ds.find((f) => f === `${ma}.json`);
+  if (js) await copyFile(join(THU_MUC_THU, js), join(THU_MUC_MAU, js));
+  return join(THU_MUC_MAU, am);
 }
 
 function docThan(req: IncomingMessage): Promise<Buffer> {
@@ -371,8 +508,44 @@ export function batStt(host: string, cong: number): Server {
             ok: true,
             daCai: tho.daCai(),
             model: tho.thuMucModel(),
+            thu: THU_MUC_THU,
+            mau: THU_MUC_MAU,
             huongDan: tho.daCai() ? undefined : 'Chạy: bash scripts/fetch-stt.sh',
           }),
+        );
+      return;
+    }
+    /*
+     * G3 (#62) — `POST /stt/mau` : Boss sửa chữ nghe sai.
+     *
+     * Thân: `{ "ts": "<mã lượt>", "text": "<chữ đúng>" }`. Ghi cặp
+     * `(audio, chữ đúng)` vào `.cache/stt/mau/` làm bộ kiểm chuẩn giọng thật.
+     * Cố tình **không** sửa gì trong luồng nói: câu Boss vừa gửi đã đi rồi,
+     * đây chỉ là đóng góp cho bàn đo.
+     */
+    if (u.pathname === '/stt/mau') {
+      if (req.method !== 'POST') {
+        res.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8' }).end('Chỉ POST');
+        return;
+      }
+      docThan(req)
+        .then(async (than) => {
+          const g = JSON.parse(than.toString('utf8')) as { ts?: string; text?: string };
+          return await ghiMau(String(g.ts ?? ''), String(g.text ?? ''));
+        })
+        .then(
+          (duong) => {
+            res
+              .writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' })
+              .end(JSON.stringify({ ok: true, mau: duong }));
+            console.log(`[stt ] mẫu giọng thật → ${duong}`);
+          },
+          (e: Error) => {
+            res
+              .writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' })
+              .end(JSON.stringify({ ok: false, error: e.message }));
+            console.warn('[stt ] ghi mẫu lỗi:', e.message);
+          },
         );
       return;
     }
@@ -398,8 +571,19 @@ export function batStt(host: string, cong: number): Server {
       const x = Number(u.searchParams.get(ten));
       return Number.isFinite(x) && x >= 0 ? x : undefined;
     };
+    const dang = req.headers['content-type'] ?? 'audio/ogg';
     docThan(req)
-      .then((am) => nhanDang(am, { tuMs: soMs('tu'), denMs: soMs('den') }))
+      .then(async (am) => {
+        const cat = { tuMs: soMs('tu'), denMs: soMs('den') };
+        const k = await nhanDang(am, cat);
+        /*
+         * Lưu lượt nói **mỗi lượt**, kể cả khi kết quả tới từ cache: cache
+         * giữ chữ, không giữ âm, nên bỏ qua ca cache là mất đúng những lượt
+         * Boss nói lại câu cũ — mà đó thường là câu engine nghe sai.
+         */
+        const ma = await luuThu(am, String(dang), k, cat);
+        return ma ? { ...k, ts: ma } : k;
+      })
       .then(
         (k) => {
           res

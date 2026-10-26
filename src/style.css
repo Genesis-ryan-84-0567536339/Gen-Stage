@@ -686,6 +686,53 @@ input[type="checkbox"] { width: 17px; height: 17px; min-height: 0; accent-color:
   pointer-events: none;
 }
 
+/*
+ * G3 (#62) — nút "✎ Sửa" / "✓ Lưu mẫu" NGAY trong dòng trạng thái.
+ *
+ * Theo skill `game-ui-ux`: chữ nghe được và chỗ sửa nó phải ở ngay khung chơi,
+ * KHÔNG mở hộp thoại che sân khấu, và không được làm bố cục nhảy. Nên dòng này
+ * vẫn `position: absolute` (ngoài luồng flex của `#o-chat`), chỉ đổi thành một
+ * hàng flex: chữ co lại bằng "…" còn nút giữ nguyên bề ngang.
+ *
+ * `#o-chat-tt` có `pointer-events: none` (F3) để không chắn chuột vào sân
+ * khấu — nên nút phải tự bật lại `pointer-events` cho mình.
+ */
+#o-chat-tt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+#o-chat-tt > span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+#o-chat-tt[hidden] { display: none; }
+#o-chat-tt button {
+  flex: 0 0 auto;
+  pointer-events: auto;
+  /* mốc chạm 44 px của skill `game-ui-ux` — ngón tay trên màn 390 px */
+  min-height: 28px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--xanh);
+  border: 0;
+  border-radius: 7px;
+  cursor: pointer;
+}
+#o-chat-tt #o-chat-sua {
+  color: var(--muc);
+  background: rgba(64, 55, 46, 0.08);
+  border: 1px solid var(--vien);
+}
+@media (max-width: 760px) {
+  #o-chat-tt button { min-height: 44px; min-width: 44px; }
+}
+
 /* 1,5 s Boss sửa chữ mic nhận được: viền xanh chạy cho thấy "sắp gửi" */
 #o-chat.cho-sua input {
   border-color: var(--xanh);

@@ -53,6 +53,25 @@
  * c. **Không còn đường chết lặng**: mọi bước ghi `console.info('[mic]', …)` và
  *    vào `thongKe().buoc`; nhả phím giữa lúc hỏi quyền thì giữ mic lại và nói
  *    "bấm lần nữa để nói" chứ không im.
+ *
+ * ---
+ *
+ * **G3 (#62) — bốn thay đổi cho GIỌNG THẬT của Boss.**
+ *
+ * Boss 28/10: "nhận diện giọng nói tào lao quá". Bốn chỗ sửa ở tầng mic (số đo
+ * engine nằm trong `docs/g3/ket-qua.md`):
+ *
+ * 1. `getUserMedia` xin thêm **16 kHz mono** (`sampleRate` + `channelCount`):
+ *    engine chỉ nhận dạng đó, lấy đúng từ mic là bớt một lần lấy mẫu lại.
+ * 2. VAD chừa **200 ms** mỗi đầu (`src/audio/vad.ts`, trước 120): giọng Boss
+ *    vào câu ngay khi vừa bấm nên phụ âm đầu nằm TRƯỚC mép RMS — log thật có
+ *    *"Gen ơi, qua ghế ngồi đi"* → "dạ nơi qua ghế ngồi đi".
+ * 3. **Toast tên thiết bị mic** đúng một lần: laptop Boss có mic trong máy +
+ *    webcam + tai nghe; Firefox lấy "mặc định hệ thống" và cái đó đổi theo lần
+ *    cắm cuối. Mic trong thân máy cách miệng 50 cm thì model nào cũng sai.
+ * 4. **Chạm nhanh = bật/tắt** thay vì bỏ lượt (skill `input-systems`), và dòng
+ *    "nghe được" có nút **"✎ Sửa"** → `POST /stt/mau` ghi cặp (giọng thật, chữ
+ *    đúng) vào `.cache/stt/mau/` làm bộ kiểm chuẩn tự tích luỹ.
  */
 import { SoDoAm, tinhRms } from './vad';
 import { datPhieuGiong } from './so-giong';
@@ -70,12 +89,39 @@ const PHIM = 'KeyV';
 /** Giữ bấy nhiêu dòng log gần nhất trong `thongKe()` (bằng chứng F3). */
 const SO_DONG_LOG = 40;
 /**
- * Ba cờ này là của trình duyệt, miễn phí, và bù đúng cái mic phòng Boss thiếu:
- * vọng loa, ồn quạt máy, giọng xa mic.
+ * Ràng buộc mic. Ba cờ đầu là của trình duyệt, miễn phí, và bù đúng cái mic
+ * phòng Boss thiếu: vọng loa, ồn quạt máy, giọng xa mic.
+ *
+ * G3 (#62) thêm `channelCount: 1` + `sampleRate: 16000`: engine chỉ nhận
+ * **16 kHz mono**, nên lấy đúng dạng đó ngay từ mic là bớt một lần lấy mẫu lại
+ * (Firefox cho 48 kHz stereo → ffmpeg hạ xuống 16 kHz mono, mỗi lần đổi tần số
+ * là một lần méo thêm).
+ *
+ * CỐ Ý **không** dùng `{ exact: … }`: mic laptop nào không chạy nổi 16 kHz thì
+ * `exact` ném `OverconstrainedError` và Boss mất hẳn mic. Dạng trần (= `ideal`)
+ * là lời đề nghị — trình duyệt cho được thì cho, không thì vẫn mở mic.
  */
 const RANG_BUOC: MediaStreamConstraints = {
-  audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+  audio: {
+    echoCancellation: true,
+    noiseSuppression: true,
+    autoGainControl: true,
+    channelCount: 1,
+    sampleRate: 16000,
+  },
 };
+
+/**
+ * G3 (#62) — bấm **nhả nhanh** nút 🎤 = bật/tắt thay vì giữ.
+ *
+ * Theo skill `input-systems` (mục "hold-vs-toggle" của phần tiếp cận dễ dùng):
+ * một hành động chỉ-giữ là rào với người không giữ nổi phím lâu, và trên điện
+ * thoại thì giữ ngón tay trên nút suốt câu rất khó. Bản cũ coi mọi lượt
+ * < 250 ms là "bấm lỡ" rồi **bỏ im lặng** — tức chạm nhanh thì mic không làm
+ * gì mà cũng không nói gì. Giờ: chạm nhanh → vào chế độ bật/tắt, chạm lần nữa
+ * để chốt câu. Giữ lâu vẫn là đẩy-để-nói y như cũ.
+ */
+const CHE_DO_BAT_TAT_MS = GIU_TOI_THIEU_MS;
 
 export interface OChatLike {
   /** Gửi câu đi (đúng hàm ô chat dùng khi Boss bấm Enter). */
@@ -91,7 +137,7 @@ export interface OChatLike {
    * Boss nhìn ô chat chứ không nhìn console: không có dòng này thì mic hỏng
    * hay mic chậm đều giống nhau — đều là "không nghe".
    */
-  trangThai(chu: string | null): void;
+  trangThai(chu: string | null, sua?: { luu(chuDung: string): void }): void;
 }
 
 /** Kết quả xin quyền mic — `nut-tieng.ts` dùng để chọn câu báo cho Boss. */
@@ -140,6 +186,12 @@ export interface ThongKeMic {
   nhoQuyen: boolean;
   /** Đang giữ sẵn một stream cho phiên này. */
   giuStream: boolean;
+  /** G3 (#62) — tên thiết bị mic đang dùng (Boss phải biết nó nghe bằng mic nào). */
+  tenMic: string;
+  /** G3 (#62) — mã lượt nói bridge đã lưu (`.cache/stt/thu/<ts>.ogg`). */
+  ts: string;
+  /** G3 (#62) — lượt này đang ở chế độ bật/tắt (chạm nhanh) chứ không phải giữ. */
+  batTat: boolean;
   /** Từng bước đã chạy, để Boss/Issue đọc khi mic lại "không nghe". */
   buoc: string[];
 }
@@ -151,7 +203,10 @@ export interface CauHinhMic {
   toast: (chu: string) => void;
 }
 
-const TRONG: Omit<ThongKeMic, 'quyen' | 'nhoQuyen' | 'giuStream' | 'buoc'> = {
+const TRONG: Omit<
+  ThongKeMic,
+  'quyen' | 'nhoQuyen' | 'giuStream' | 'buoc' | 'tenMic' | 'batTat'
+> = {
   soMauRms: 0,
   dinhRms: 0,
   coTieng: false,
@@ -161,6 +216,7 @@ const TRONG: Omit<ThongKeMic, 'quyen' | 'nhoQuyen' | 'giuStream' | 'buoc'> = {
   confidence: 0,
   treMs: 0,
   loi: '',
+  ts: '',
 };
 
 /**
@@ -221,6 +277,16 @@ export function batMic(ch: CauHinhMic): Mic {
   /** Đang trong `batGhi()` (chặn pointer + touch bắn hai lần). */
   let dangMo = false;
   const buoc: string[] = [];
+  /*
+   * Khai TRƯỚC `tk`: `moiThongKe()` đọc `tenMic`/`batTat` ngay ở dòng khởi tạo
+   * `tk`, nên khai sau là `ReferenceError` vùng chết (TDZ) — bắt được nhờ bộ
+   * test F3 chạy lại.
+   */
+  /** G3 — tên thiết bị mic (track label); toast MỘT lần cho Boss biết. */
+  let tenMic = '';
+  let daToastMic = false;
+  /** G3 — lượt này vào chế độ bật/tắt (chạm nhanh nút 🎤 / nhấp phím V). */
+  let batTat = false;
   let tk: ThongKeMic = moiThongKe();
   /** Khối audio đã ghi — nhả phím mới biết hết. */
   let manh: Blob[] = [];
@@ -231,7 +297,32 @@ export function batMic(ch: CauHinhMic): Mic {
   let dangXin: Promise<KetQuaQuyen> | null = null;
 
   function moiThongKe(): ThongKeMic {
-    return { ...TRONG, quyen, nhoQuyen, giuStream: conSong(streamSan), buoc: [...buoc] };
+    return {
+      ...TRONG,
+      quyen,
+      nhoQuyen,
+      giuStream: conSong(streamSan),
+      buoc: [...buoc],
+      tenMic,
+      batTat,
+    };
+  }
+
+  /**
+   * G3 (#62) — nói ra mic nào đang nghe, đúng MỘT lần mỗi phiên.
+   *
+   * Boss báo "nhận diện tào lao" mà không ai biết Firefox đang nghe bằng mic
+   * nào: laptop có mic trong máy + webcam + tai nghe, Firefox chọn "mặc định
+   * hệ thống" và cái đó đổi theo lần cắm cuối. Mic trong thân máy cách miệng
+   * 50 cm thì model nào cũng nghe sai. Một dòng tên thiết bị là chỗ Boss
+   * **tự** thấy được chuyện đó.
+   */
+  function toastTenMic(s: MediaStream): void {
+    const nhan = s.getAudioTracks()[0]?.label ?? '';
+    tenMic = nhan;
+    if (!nhan || daToastMic) return;
+    daToastMic = true;
+    ch.toast(`🎤 Đang nghe bằng: ${nhan}`);
   }
 
   /** Mọi bước đều ghi ra — "không nghe" phải để lại dấu vết đọc được. */
@@ -331,6 +422,7 @@ export function batMic(ch: CauHinhMic): Mic {
       }
 
       quyen = 'duoc';
+      toastTenMic(s);
       nhoQuyen = (await doQuyen()) === 'duoc';
       ghiBuoc(
         `mic MỞ sau ${Date.now() - t0} ms · track "${s.getAudioTracks()[0]?.label ?? '?'}" · ` +
@@ -366,6 +458,7 @@ export function batMic(ch: CauHinhMic): Mic {
     }
     dangMo = true;
     batLuc = Date.now();
+    batTat = false;
     tk = moiThongKe();
     manh = [];
     try {
@@ -391,6 +484,7 @@ export function batMic(ch: CauHinhMic): Mic {
         } else {
           try {
             stream = await navigator.mediaDevices.getUserMedia(RANG_BUOC);
+            toastTenMic(stream);
             ghiBuoc('mở mic bằng quyền đã nhớ');
           } catch (e) {
             tk.loi = (e as Error).message;
@@ -468,8 +562,25 @@ export function batMic(ch: CauHinhMic): Mic {
 
   async function ketGhi(): Promise<void> {
     const r = ghi;
+    const giuMs = batLuc ? Date.now() - batLuc : 0;
     batLuc = 0;
     if (!r) return;
+    /*
+     * G3 (#62) — chạm nhanh thì CHUYỂN sang bật/tắt, không bỏ lượt.
+     *
+     * Bản cũ: giữ < 250 ms là "bấm lỡ" → ghi vào log rồi im. Đo thật thấy đây
+     * là ca Boss gặp trên điện thoại (ngón tay trượt khỏi nút) và cả trên bàn
+     * phím (nhấp phím V thay vì giữ). Theo skill `input-systems`: hành động
+     * chỉ-giữ phải có bản bật/tắt tương đương, và mọi lượt vào phải có PHẢN
+     * HỒI — không được chết lặng.
+     */
+    if (!batTat && giuMs > 0 && giuMs < CHE_DO_BAT_TAT_MS) {
+      batTat = true;
+      tk.batTat = true;
+      ghiBuoc(`chạm nhanh ${giuMs} ms → chế độ bật/tắt, vẫn đang ghi`);
+      ch.oChat.trangThai('🎤 đang nghe… (bấm 🎤 hoặc V lần nữa để chốt)');
+      return;
+    }
     ghi = null;
     nhaLuc = Date.now();
     void nhaLuc;
@@ -528,6 +639,8 @@ export function batMic(ch: CauHinhMic): Mic {
       confidence?: number;
       goiGen?: boolean;
       error?: string;
+      /** G3 (#62) — mã lượt bridge đã lưu audio thô, để nút "✎ Sửa" cặp lại. */
+      ts?: string;
     }
     let g: GoiStt | null = null;
     try {
@@ -554,6 +667,7 @@ export function batMic(ch: CauHinhMic): Mic {
     }
     tk.text = g.text;
     tk.confidence = Number(g.confidence ?? 0);
+    tk.ts = typeof g.ts === 'string' ? g.ts : '';
     ghiBuoc(`nghe được sau ${tk.treMs} ms · tin ${tk.confidence} · "${tk.text.slice(0, 60)}"`);
     if (!tk.text) {
       ch.oChat.trangThai(null);
@@ -561,7 +675,20 @@ export function batMic(ch: CauHinhMic): Mic {
       return;
     }
 
-    ch.oChat.trangThai(`nghe được: «${tk.text}»`);
+    /*
+     * G3 (#62) — dòng "nghe được" kèm nút "✎ Sửa".
+     *
+     * Đây là chỗ DUY NHẤT biến "nghe sai" thành số đo được: Boss chữa chữ →
+     * cặp (giọng thật, chữ đúng) vào `.cache/stt/mau/`. Không có nó thì mãi
+     * chỉ đo được trên giọng TTS sạch như C1 đã làm, và Boss cứ phải kể lại
+     * bằng miệng là "nó nghe sai câu nào".
+     *
+     * Chỉ gắn nút khi bridge có trả `ts`: không có audio thì sửa cũng vô ích.
+     */
+    ch.oChat.trangThai(
+      `nghe được: «${tk.text}»`,
+      tk.ts ? { luu: (chuDung) => void guiMau(tk.ts, chuDung) } : undefined,
+    );
     // Phiếu giọng để `actor.say` biết câu này đến từ mic → bắn `user.speech`.
     datPhieuGiong({
       text: tk.text,
@@ -571,6 +698,31 @@ export function batMic(ch: CauHinhMic): Mic {
     });
     // Tin cậy cao thì tự gửi sau 1,5 s; thấp thì để Boss quyết.
     ch.oChat.datNhap(tk.text, tk.confidence >= TIN_DU ? CHO_SUA_MS : null);
+  }
+
+  /** G3 — gửi cặp (audio lượt `ts`, chữ Boss sửa) về bridge làm bộ kiểm chuẩn. */
+  async function guiMau(ts: string, chuDung: string): Promise<void> {
+    const chu = chuDung.trim();
+    if (!ts || !chu) return;
+    try {
+      const r = await fetch(`${ch.urlStt}/stt/mau`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ts, text: chu }),
+      });
+      const g = (await r.json()) as { ok?: boolean; error?: string };
+      if (g.ok) {
+        ghiBuoc(`đã ghi mẫu giọng thật cho lượt ${ts}`);
+        ch.toast('✓ Đã lưu mẫu — Gen sẽ đo lại trên đúng giọng Sếp');
+        ch.oChat.trangThai(null);
+      } else {
+        ghiBuoc(`ghi mẫu lỗi — ${g.error ?? '?'}`);
+        ch.toast(`Không lưu được mẫu: ${g.error ?? '?'}`);
+      }
+    } catch (e) {
+      ghiBuoc(`ghi mẫu lỗi mạng — ${(e as Error).message}`);
+      ch.toast('Không lưu được mẫu — bridge còn chạy không?');
+    }
   }
 
   /* --------------------------------------------------------------- phím V */
@@ -638,7 +790,15 @@ export function batMic(ch: CauHinhMic): Mic {
       await dangDoi;
     },
     dangGhi: () => ghi !== null,
-    thongKe: () => ({ ...tk, quyen, nhoQuyen, giuStream: conSong(streamSan), buoc: [...buoc] }),
+    thongKe: () => ({
+      ...tk,
+      quyen,
+      nhoQuyen,
+      giuStream: conSong(streamSan),
+      buoc: [...buoc],
+      tenMic,
+      batTat,
+    }),
     thao() {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);

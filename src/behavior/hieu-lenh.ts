@@ -637,7 +637,24 @@ export function batHieuLenh(
       bc.actors.find((a) => a.id === kq.nguoiNhan[0])?.controlledBy === 'owner';
 
     if (kq.mau === null && !javisTuDo) {
-      // Nhi (gen) nghe câu tự do → giữ nguyên luồng cũ: `user.text` chảy tới não
+      /*
+       * Nhi (gen) nghe câu tự do → giữ nguyên luồng cũ: `user.text` chảy tới não.
+       *
+       * G3 (#62) — THÊM MỘT TRƯỜNG, KHÔNG ĐỔI LUỒNG. Boss gọi đúng tên nhân
+       * vật mà không mẫu nào khớp thì gần như chắc đó là **lệnh nói kiểu đời
+       * thường** chứ không phải câu hỏi: log thật 28/10 có "tôi kêu hai bạn
+       * qua hồi đi mà dính dáng hồi đi" — engine nghe nát, mẫu nào cũng trượt,
+       * nhưng rõ ràng Boss đang sai việc chứ không trò chuyện.
+       *
+       * Nên đánh dấu `hint: 'co-the-la-lenh'` để não biết **trả lời ngắn và
+       * hỏi lại** thay vì tán chuyện. Cố tình KHÔNG đặt `handled` và KHÔNG tự
+       * đoán lệnh: đoán sai là Nhi làm sai việc, mà "hỏi lại một câu" thì
+       * không mất gì. `diem` đi kèm để não/Issue biết nó trượt ngưỡng bao xa.
+       */
+      if (data && kq.coGoiTen) {
+        data.hint = 'co-the-la-lenh';
+        data.diem = kq.diem;
+      }
       return kq;
     }
 
