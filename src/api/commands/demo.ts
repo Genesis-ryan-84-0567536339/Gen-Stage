@@ -66,7 +66,10 @@ export const LENH_DEMO: CommandSpec[] = [
   {
     cmd: 'module.demo',
     group: 'module',
-    events: ['module.demoDone'],
+    // H1 vòng 2 (review PR #72 mục 3): handler có `ctx.bus.emit('module.fallback')`
+    // khi `from` không tồn tại — phải KHAI, không thì não đọc `stage.bootstrap`
+    // không biết lệnh này có thể cảnh báo.
+    events: ['module.demoDone', 'module.fallback'],
     desc:
       'MỘT LỆNH = cả màn dựng module: bay màn hình tới trước mặt → code chạy lên màn hình → ' +
       'hạt kết tinh thành module vào tay nhân vật → emote thành công → nói một câu báo xong',

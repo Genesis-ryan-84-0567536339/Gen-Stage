@@ -16,6 +16,13 @@
  *      trí camera nằm trong AABB nhà**.
  *   5. FPS (`?fps=1`) + `calls`/tam giác trên bản build.
  *   6. console: 0 lỗi.
+ *   7. **dao động `|v|`** (biến trạng thái của bộ tích phân) khi giữ phím, đo
+ *      trên cửa sổ chạy tự do ≥ 120 khung — KHÔNG phải "hết giật" (quãng
+ *      đi được/khung vẫn còn nợ #3 nội suy render).
+ *  10. **tay máy ở 4 góc + dọc 4 tường** (review PR #72 mục 1): khoảng cách
+ *      camera → ĐẦU nhân vật mỗi 100 ms ≥ 0,6 m, `|v|` camera ≤ 3 m/s, 0 mẫu
+ *      ngoài AABB. Số 4 không bắt được lỗi này: co vào trong người thì vẫn ở
+ *      trong hộp nhà.
  *
  * Cổng RIÊNG: vite preview **8961** — KHÔNG đụng 5173 / 8787-8790 / tmux của
  * Boss. Chỉ giết tiến trình do chính script này spawn (PID âm của group).
@@ -67,7 +74,21 @@ const MOC = {
   bangPhuToiDa: 5,
   /** Nhà 14 × 10 m, trần 2,8 m — AABB mà camera phải nằm trong (lề 0,05 m). */
   nha: { hx: 7, hz: 5, yMin: 0, yMax: 2.8 },
+  /**
+   * Review PR #72 mục 1 — **khoảng cách camera → đầu nhân vật nhỏ nhất** (m).
+   * Khớp `MAY_GAN_TOI_DA`/`controls.minDistance` trong `world.ts`. Trước vòng
+   * 2 đo được 0,1265 m: khung hình chỉ còn cái áo.
+   */
+  tayMayToiThieu: 0.6,
+  /** Tốc độ camera bám lớn nhất (m/s). Trước vòng 2: 13,23 tích vào tường. */
+  vMayToiDa: 3,
 };
+
+/**
+ * Số khung tối thiểu của **cửa sổ chạy tự do** để số (7) có nghĩa (review PR
+ * #72 mục 2): 120 khung ≈ 2 s ở 60 FPS.
+ */
+const KHUNG_TU_DO_TOI_THIEU = 120;
 
 const CO_KHOA = `${THU_MUC}/.da-chay`;
 if (!CHI_FPS) {
@@ -157,6 +178,23 @@ function chot(ten, dat, chiTiet) {
   nhatKy.dat[ten] = { dat, ...chiTiet };
   console.log(`${dat ? '✅' : '❌'} ${ten} ${JSON.stringify(chiTiet)}`);
   if (!dat) loi.push(ten);
+}
+
+/**
+ * Chạy MỘT lệnh qua dispatcher thật và **bắt buộc `r.ok`**.
+ *
+ * Review PR #72 mục 2: bản đầu gọi `actor.moveTo { x, z }` trong khi lệnh nhận
+ * `to`, dispatcher từ chối, mà script không kiểm `r.ok` — nên hai số bằng
+ * chứng đo một nhân vật **chưa bao giờ nhận lệnh đi**. Giờ mọi lệnh đi qua
+ * đây và `!ok` là **ném**, không có số nào đứng trên một lệnh bị từ chối.
+ */
+async function lenh(pg, cmd, args) {
+  const r = await pg.evaluate(
+    ([c, a]) => window.stage.run(c, a).then((x) => ({ ok: x.ok, error: x.error ?? null })),
+    [cmd, args],
+  );
+  if (!r.ok) throw new Error(`lệnh ${cmd} ${JSON.stringify(args)} bị từ chối: ${r.error}`);
+  return r;
 }
 
 const br = await firefox.launch({
@@ -257,7 +295,8 @@ try {
       },
     );
     await anh('11-module-from-main-van-dung-duoc');
-    await pg.evaluate(() => window.stage.run('prop.remove', { id: 'h1-connector-baserow' }));
+    // `prop`, không phải `id` — lỗi thứ hai mà `lenh()` (kiểm `r.ok`) bắt được
+    await lenh(pg, 'prop.remove', { prop: 'h1-connector-baserow' });
     await nghi(400);
   }
 
@@ -269,13 +308,13 @@ try {
   await nghi(600);
 
   /* ============================================ 2 + 5. luma / FPS làm mốc */
-  await pg.evaluate(() => window.stage.run('camera.preset', { name: 'toan-canh' }));
+  await lenh(pg, 'camera.preset', { name: 'toan-canh' });
   await nghi(2000);
   const aTruoc = await anh(`${CHI_FPS ? NHAN + '-' : ''}01-toan-canh-truoc`);
   const lTruoc = lumaStats(aTruoc);
 
   // `scene.light sang` — đúng đường mà `stage.reset` và phím R đi qua
-  await pg.evaluate(() => window.stage.run('scene.light', { preset: 'sang' }));
+  await lenh(pg, 'scene.light', { preset: 'sang' });
   await nghi(1200);
   const aSau = await anh(`${CHI_FPS ? NHAN + '-' : ''}02-toan-canh-sau-scene-light`);
   const lSau = lumaStats(aSau);
@@ -302,7 +341,7 @@ try {
     window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyR', bubbles: true }));
   });
   await nghi(3000);
-  await pg.evaluate(() => window.stage.run('camera.preset', { name: 'toan-canh' }));
+  await lenh(pg, 'camera.preset', { name: 'toan-canh' });
   await nghi(2200);
   const aR = await anh(`${CHI_FPS ? NHAN + '-' : ''}03-toan-canh-sau-phim-R`);
   const lR = lumaStats(aR);
@@ -406,20 +445,17 @@ try {
 
     /* ======================================== 3. moveTo xuyên sofa */
     const sofa = { x0: -3.45, x1: -2.55, z0: -0.15, z1: 2.15 };
-    await pg.evaluate(() => window.stage.run('camera.preset', { name: 'toan-canh' }));
-    // đặt Nhi ở phía ĐÔNG sofa, cùng làn z = 1 (hành lang giữa nhà)
-    await pg.evaluate(() =>
-      window.stage.run('actor.moveTo', { actor: 'gen', x: 0, z: 1, speed: 1.6 }),
-    );
+    await lenh(pg, 'camera.preset', { name: 'toan-canh' });
+    // đặt Nhi ở phía ĐÔNG sofa, cùng làn z = 1 (hành lang giữa nhà).
+    // `to` — KHÔNG phải `x`/`z` (review PR #72 mục 2).
+    await lenh(pg, 'actor.moveTo', { actor: 'gen', to: [0, 0, 1], speed: 1.6 });
     await nghi(6000);
     const batDau = await pg.evaluate(
       () => window.stage.describe().then?.((r) => r) ?? window.stage.describe(),
     );
     void batDau;
     // lệnh "xuyên": đích nằm HẲN phía tây sofa
-    await pg.evaluate(() =>
-      window.stage.run('actor.moveTo', { actor: 'gen', x: -6, z: 1, speed: 1.6 }),
-    );
+    await lenh(pg, 'actor.moveTo', { actor: 'gen', to: [-6, 0, 1], speed: 1.6 });
     const mauNhi = [];
     for (let i = 0; i < 60; i += 1) {
       const r = await pg.evaluate(async () => {
@@ -453,7 +489,7 @@ try {
     await anh('05-nhi-dung-truoc-sofa');
 
     /* ============================ 4. camera quanh nhà không ra ngoài tường */
-    await pg.evaluate(() => window.stage.run('camera.preset', { name: 'theo-owner' }));
+    await lenh(pg, 'camera.preset', { name: 'theo-owner' });
     await nghi(600);
     const mauMay = [];
     const docMay = async () => {
@@ -486,11 +522,8 @@ try {
     }
     await anh('06-camera-bam-goc-nha');
     for (const name of ['toan-canh', 'truoc-mat', 'ban-dieu-khien', 'bep', 'theo-owner']) {
-      const kq = await pg.evaluate(
-        (n) => window.stage.run('camera.preset', { name: n }).then((r) => r.ok),
-        name,
-      );
-      if (!kq) continue;
+      // mọi preset trong danh sách này đều có thật ⇒ `!ok` là lỗi, không "bỏ qua"
+      await lenh(pg, 'camera.preset', { name });
       for (let i = 0; i < 10; i += 1) {
         await docMay();
         await nghi(130);
@@ -543,8 +576,179 @@ try {
       ...nhatKy.so.camera,
     });
 
+    /* ======= 10. THƯỚC ĐO MỚI (review PR #72 mục 1): tay máy ở 4 GÓC + 4 TƯỜNG
+     *
+     * Vì sao cần thước đo khác số 4: số 4 chỉ hỏi "camera có trong hộp nhà
+     * không" — tay máy co vào **trong người** nhân vật thì vẫn ở trong hộp,
+     * nên lỗi "khung hình toàn áo" (0,1265 m) lọt qua. Ở đây đo đúng thứ Boss
+     * nhìn thấy: **khoảng cách camera → đầu nhân vật**, mỗi 100 ms, khi lái
+     * vào 4 góc nhà và dọc 4 tường.
+     *
+     * Ba mốc: `xaDau` nhỏ nhất ≥ 0,6 m · `|v|` camera ≤ 3 m/s · 0 mẫu ngoài
+     * AABB. `|v|` lấy từ **sổ ghi từng khung** `hieuNang().soMay` (cột 4) —
+     * lấy mẫu từ ngoài mỗi 100 ms không thấy được đỉnh giữa hai mẫu.
+     */
+    await lenh(pg, 'camera.preset', { name: 'toan-canh' });
+    await nghi(400);
+    await lenh(pg, 'camera.preset', { name: 'theo-owner' }); // ⇒ sổ `soMay` mở lại từ 0
+    await nghi(1200);
+    const mauTay = [];
+    const docTay = async () => {
+      const r = await pg.evaluate(async () => {
+        const kq = await window.stage.describe();
+        const st = kq.result ?? kq;
+        const a = (st.actors ?? []).find((x) => x.id === 'owner');
+        if (!a || !st.camera?.pos) return null;
+        const c = st.camera.pos;
+        return {
+          xaDau: Math.hypot(c[0] - a.pos[0], c[1] - (a.pos[1] + 1.1), c[2] - a.pos[2]),
+          may: c,
+          chu: a.pos,
+        };
+      });
+      if (r) mauTay.push(r);
+    };
+    /** Khoảng cách từ nhân vật tới mặt tường gần nhất (m) — có thật sự ép sát? */
+    const satTuong = (chu) => Math.min(MOC.nha.hx - Math.abs(chu[0]), MOC.nha.hz - Math.abs(chu[2]));
+    /** Giữ một bộ phím `ms` ms, lấy mẫu mỗi 100 ms. */
+    const giuVaDo = async (codes, ms) => {
+      await pg.evaluate((cs) => {
+        document.activeElement?.blur?.();
+        for (const c of cs) window.dispatchEvent(new KeyboardEvent('keydown', { code: c }));
+      }, codes);
+      const het = Date.now() + ms;
+      while (Date.now() < het) {
+        await docTay();
+        await nghi(100);
+      }
+      await pg.evaluate((cs) => {
+        for (const c of cs) window.dispatchEvent(new KeyboardEvent('keyup', { code: c }));
+      }, codes);
+      await nghi(200);
+      await docTay();
+    };
+    /* 4 GÓC: đưa chủ về gần góc rồi GIỮ hai phím chéo cho tới khi đụng tường */
+    const GOC = [
+      ['đông-nam', [5.2, 3.2], ['KeyS', 'KeyD']],
+      ['tây-nam', [-5.2, 3.2], ['KeyS', 'KeyA']],
+      ['đông-bắc', [5.2, -3.2], ['KeyW', 'KeyD']],
+      ['tây-bắc', [-5.2, -3.2], ['KeyW', 'KeyA']],
+    ];
+    const theoGoc = {};
+    for (const [ten, [x, z], codes] of GOC) {
+      const i0 = mauTay.length;
+      await lenh(pg, 'actor.moveTo', { actor: 'owner', to: [x, 0, z], speed: 1.6 });
+      await nghi(6000);
+      await giuVaDo(codes, 5000);
+      const lat = mauTay.slice(i0);
+      theoGoc[ten] = {
+        soMau: lat.length,
+        xaDauMin: +Math.min(...lat.map((m) => m.xaDau)).toFixed(4),
+        // nhà có nội thất: góc đông-bắc là BẾP (tủ x = 6,5 · z = −4,5…−0,5) nên
+        // nhân vật không vào được — ghi lại đã ép sát tới đâu thay vì giả vờ
+        satTuongM: +Math.min(...lat.map((m) => satTuong(m.chu))).toFixed(3),
+        chuCuoi: lat.at(-1)?.chu.map((v) => +v.toFixed(2)) ?? null,
+        mayCuoi: lat.at(-1)?.may.map((v) => +v.toFixed(2)) ?? null,
+      };
+    }
+    await anh('12-tay-may-o-goc-nha');
+    /* 4 TƯỜNG: ép sát từng tường rồi chạy DỌC tường (chỗ tay máy bị cắt liên tục) */
+    const TUONG = [
+      ['nam z+', [0, 3.2], ['KeyS'], ['KeyD']],
+      ['bắc z−', [0, -3.2], ['KeyW'], ['KeyA']],
+      ['đông x+', [5.2, 0], ['KeyD'], ['KeyS']],
+      ['tây x−', [-5.2, 0], ['KeyA'], ['KeyW']],
+    ];
+    const theoTuong = {};
+    for (const [ten, [x, z], epSat, doc] of TUONG) {
+      const i0 = mauTay.length;
+      await lenh(pg, 'actor.moveTo', { actor: 'owner', to: [x, 0, z], speed: 1.6 });
+      await nghi(5000);
+      await giuVaDo(epSat, 2500);
+      await giuVaDo(doc, 3500);
+      const lat = mauTay.slice(i0);
+      theoTuong[ten] = {
+        soMau: lat.length,
+        xaDauMin: +Math.min(...lat.map((m) => m.xaDau)).toFixed(4),
+        satTuongM: +Math.min(...lat.map((m) => satTuong(m.chu))).toFixed(3),
+        chuCuoi: lat.at(-1)?.chu.map((v) => +v.toFixed(2)) ?? null,
+        mayCuoi: lat.at(-1)?.may.map((v) => +v.toFixed(2)) ?? null,
+      };
+    }
+    await anh('13-tay-may-doc-tuong');
+    const hieuTay = await pg.evaluate(() => window.stage.hieuNang());
+    const soMay = hieuTay.soMay ?? [];
+    // đỉnh |v| của CẢ lượt bám (~45 s), không bị trần 900 khung của `soMay`
+    const vMaxCaLuot = hieuTay.may?.vMax ?? null;
+    const vMax = soMay.length ? Math.max(...soMay.map((r) => r[4])) : null;
+    /*
+     * `vMax` toàn lượt luôn chạm `MAY_VEL_TOI_DA` vì **lúc MỚI vào preset**
+     * camera đang ở góc nhà, sai số 6–8 m: lò xo tới hạn vọt tới ~0,37·ω·e =
+     * 20 m/s nếu không có trần. Nên ghi thêm `vMaxOnDinh` — bỏ 2 s đầu — đó là
+     * con số nói về việc BÁM, và là chỗ trước vòng 2 đọc 13,23 m/s.
+     */
+    const t0May = soMay.length ? soMay[0][0] : 0;
+    /*
+     * Bỏ **5 s** đầu, không phải 2: lúc mới vào preset camera đang ở góc nhà
+     * của `toan-canh`, phải bay ~8 m ở trần 2,8 m/s ⇒ pha bay dài hơn 2 s và
+     * `vMaxOnDinh` của lượt trước đọc đúng cái trần đó.
+     */
+    const vOnDinh = soMay.filter((r) => r[0] - t0May > 5000).map((r) => r[4]);
+    const vMaxOnDinh = vOnDinh.length ? Math.max(...vOnDinh) : null;
+    const xaKhung = soMay.map((r) => r[5]).filter((v) => typeof v === 'number');
+    const xaKhungMin = xaKhung.length ? Math.min(...xaKhung) : null;
+    const xaMin = Math.min(...mauTay.map((m) => m.xaDau));
+    const ngoaiTay = mauTay.filter(
+      (m) =>
+        Math.abs(m.may[0]) > MOC.nha.hx + 0.05 ||
+        Math.abs(m.may[2]) > MOC.nha.hz + 0.05 ||
+        m.may[1] < MOC.nha.yMin - 0.05 ||
+        m.may[1] > MOC.nha.yMax + 0.05,
+    );
+    nhatKy.so.tayMay = {
+      soMau100ms: mauTay.length,
+      soKhungSoMay: soMay.length,
+      xaDauMin100ms: +xaMin.toFixed(4),
+      xaDauMinTungKhung: xaKhungMin === null ? null : +xaKhungMin.toFixed(4),
+      vMayMax: vMax === null ? null : +vMax.toFixed(4),
+      vMayMaxCaLuot: vMaxCaLuot,
+      vMayMaxOnDinh: vMaxOnDinh === null ? null : +vMaxOnDinh.toFixed(4),
+      tranVanToc: 2.8,
+      soMauNgoaiNha: ngoaiTay.length,
+      // sổ từng khung (lấy 1/5 cho gọn): [t ms, dt s, cam.x, cam.z, |v|, xaDau]
+      soMayMau: soMay.filter((_, i) => i % 5 === 0),
+      theoGoc,
+      theoTuong,
+      truocVong2: { xaDau: 0.1265, vMay: 13.23, batRaKhiRoiGoc: 3.33 },
+    };
+    chot(
+      '10-tay-may-khong-co-vao-nguoi',
+      mauTay.length >= 80 &&
+        xaMin >= MOC.tayMayToiThieu &&
+        (xaKhungMin === null || xaKhungMin >= MOC.tayMayToiThieu) &&
+        vMax !== null &&
+        vMax <= MOC.vMayToiDa &&
+        vMaxOnDinh !== null &&
+        vMaxOnDinh <= MOC.vMayToiDa &&
+        vMaxCaLuot !== null &&
+        vMaxCaLuot <= MOC.vMayToiDa &&
+        ngoaiTay.length === 0,
+      {
+        soMau100ms: mauTay.length,
+        xaDauMin: +xaMin.toFixed(4),
+        xaDauMinTungKhung: xaKhungMin === null ? null : +xaKhungMin.toFixed(4),
+        mocXa: MOC.tayMayToiThieu,
+        vMayMax: vMax === null ? null : +vMax.toFixed(4),
+        vMayMaxCaLuot: vMaxCaLuot,
+        vMayMaxOnDinh: vMaxOnDinh === null ? null : +vMaxOnDinh.toFixed(4),
+        mocV: MOC.vMayToiDa,
+        soMauNgoaiNha: ngoaiTay.length,
+        truocVong2: 'xaDau 0,1265 m · |v| 13,23 m/s · bật ra 3,33 m/s',
+      },
+    );
+
     /* ====================== 7. dao động tốc độ khi giữ phím (Cửa 2 mục 12) */
-    await pg.evaluate(() => window.stage.run('camera.preset', { name: 'theo-owner' }));
+    await lenh(pg, 'camera.preset', { name: 'theo-owner' });
     const soLai = () => pg.evaluate(() => window.stage.doXuong('owner').vanToc);
     const daoDong = {};
     /**
@@ -564,16 +768,38 @@ try {
     };
     for (const code of ['KeyW', 'KeyS', 'KeyA', 'KeyD']) {
       const [sx, sz] = XUAT_PHAT[code];
-      await pg.evaluate(
-        ([x, z]) => window.stage.run('actor.moveTo', { actor: 'owner', x, z, speed: 1.6 }),
-        [sx, sz],
-      );
-      await nghi(7000);
+      /*
+       * Phải TỚI được `XUAT_PHAT` thì cửa sổ chạy tự do mới dài: lượt đo trước
+       * có lần nhân vật bỏ cuộc giữa đường (vướng đồ) và W/S chỉ còn ~100 khung.
+       * Chờ tới đúng chỗ (sai số ≤ 0,35 m), thử lại một lần nếu chưa tới.
+       */
+      for (let lan = 0; lan < 2; lan += 1) {
+        await lenh(pg, 'actor.moveTo', { actor: 'owner', to: [sx, 0, sz], speed: 1.6 });
+        const het = Date.now() + 9000;
+        let xong = false;
+        while (Date.now() < het && !xong) {
+          await nghi(300);
+          xong = await pg.evaluate(
+            async ([x, z]) => {
+              const kq = await window.stage.describe();
+              const a = ((kq.result ?? kq).actors ?? []).find((v) => v.id === 'owner');
+              return !!a && a.state !== 'walking' && Math.hypot(a.pos[0] - x, a.pos[2] - z) <= 0.35;
+            },
+            [sx, sz],
+          );
+        }
+        if (xong) break;
+      }
+      await nghi(600);
       await pg.evaluate((c) => {
         document.activeElement?.blur?.();
         window.dispatchEvent(new KeyboardEvent('keydown', { code: c }));
       }, code);
-      await nghi(4000);
+      /*
+       * 7 s, không phải 4: review PR #72 mục 2 đòi cửa sổ chạy tự do ≥ 120
+       * khung, mà máy kiểm chạy ~28 FPS ⇒ 4 s chỉ cho ~100 khung.
+       */
+      await nghi(7000);
       const vt = await soLai();
       await pg.evaluate((c) => window.dispatchEvent(new KeyboardEvent('keyup', { code: c })), code);
       await nghi(1200);
@@ -602,8 +828,13 @@ try {
         };
       };
       daoDong[code] = {
-        // CHẤM trên đoạn chạy tự do: đây là cái timestep chịu trách nhiệm
-        tuDo: tinh(tuDo, 10),
+        /*
+         * CHẤM trên đoạn chạy tự do: đây là cái timestep chịu trách nhiệm.
+         * Review PR #72 mục 2: đòi **≥ 120 khung** (≈2 s) mới cho con số có
+         * nghĩa — lượt trước `XUAT_PHAT` không hề được áp dụng (lệnh `moveTo`
+         * bị từ chối) nên cửa sổ chỉ còn 11–29 khung ≈ 0,2 s.
+         */
+        tuDo: tinh(tuDo, KHUNG_TU_DO_TOI_THIEU),
         // phần đi được nhưng có thể đã trượt men vật cản
         diDuoc: tinh(diDuoc),
         tatCa: tinh(than),
@@ -617,12 +848,21 @@ try {
     const xau = Object.entries(daoDong)
       .map(([k, v]) => [k, v.tuDo?.daoDongPc ?? null])
       .filter(([, v]) => v !== null);
+    const khungTuDo = Object.fromEntries(
+      Object.entries(daoDong).map(([k, v]) => [k, v.soKhungTuDo]),
+    );
     chot(
-      '7-dao-dong-toc-do-giu-phim',
-      xau.length === 4 && xau.every(([, v]) => v <= MOC.daoDongToiDa),
+      '7-dao-dong-|v|-khi-giu-phim',
+      xau.length === 4 &&
+        xau.every(([, v]) => v <= MOC.daoDongToiDa) &&
+        Object.values(khungTuDo).every((n) => n >= KHUNG_TU_DO_TOI_THIEU),
       Object.fromEntries(
         xau.concat([
           ['mocPc', MOC.daoDongToiDa],
+          ['soKhungTuDo', JSON.stringify(khungTuDo)],
+          ['mocKhungTuDo', KHUNG_TU_DO_TOI_THIEU],
+          ['doCaiGi', 'dao động |v| của bộ tích phân bước cố định'],
+          ['chuaDo', 'quãng đi được / khung (nợ #3: nội suy render) — xem mô tả PR'],
           ['truocH1', 'W 33 · S 6 · A 44 · D 34 (Cửa 2 trên main)'],
         ]),
       ),

@@ -38,7 +38,13 @@ import {
   MAU_DEN_AM,
 } from './phong';
 import { heSoBam, NhanVat, TOC_DO_DI, uocThoiLuongNoi } from './nhanvat';
-import { dayTayMay, kepTrongHop, type HopNha } from './may-quay';
+import {
+  dayTayMay,
+  dichCamera,
+  hopTamNgam,
+  kepTrongHop,
+  type HopNha,
+} from './may-quay';
 import {
   BIEU_CAM,
   CLIPS,
@@ -201,6 +207,36 @@ const HOP_MAY: HopNha = {
 const MAY_XA_TOI_DA = Math.hypot(KICH_THUOC_PHONG, KICH_THUOC_SAU) / 2;
 /** Tay máy ngắn nhất (m) — khớp `controls.minDistance` để hai bên không giằng. */
 const MAY_GAN_TOI_DA = 0.6;
+/** Lề tay máy với mặt hộp nhà (m) — dùng chung cho `dayTayMay` và `dichCamera`. */
+const LE_TAY_MAY = 0.12;
+/**
+ * H1 vòng 2 (review PR #72 mục 1) — **hộp cho TÂM NGẮM**, thu vào
+ * `MAY_GAN_TOI_DA + LE_TAY_MAY` so với hộp camera.
+ *
+ * Nhờ bất biến hình học trong `hopTamNgam`, tâm ngắm nằm trong hộp này thì
+ * `dayTayMay` **không thể** trả về dưới 0,6 m theo bất kỳ hướng nào. Trước
+ * đây tâm ngắm là đúng cái đầu nhân vật, lái sát tường là tâm nằm trên mặt
+ * hộp ⇒ tay máy co còn 0,126 m ⇒ khung hình toàn áo.
+ */
+const HOP_TAM = /* @__PURE__ */ hopTamNgam(HOP_MAY, MAY_GAN_TOI_DA + LE_TAY_MAY);
+/**
+ * Khoảng cách camera→nhân vật mà khung hình còn "thấy căn nhà" (m).
+ *
+ * Sát tường thì kẹp ngang ăn mất khoảng cách; `dichCamera` bù lại bằng cách
+ * **nâng camera lên cao** tới mốc này thay vì tiến vào người.
+ */
+const MAY_XA_DE_CHIU = 2.6;
+/**
+ * **Trần tốc độ lò xo camera** (m/s) — lưới an toàn, không phải cách sửa.
+ *
+ * Cách sửa là `dichCamera` (đích luôn khả thi ⇒ sai số về 0 ⇒ vận tốc về 0).
+ * Trần này chỉ chặn hai trường hợp còn lại: lúc MỚI vào preset `theo-owner`
+ * camera đang ở tận góc nhà (sai số 6–8 m ⇒ lò xo tới hạn vọt tới ~0,37·ω·e),
+ * và mọi cú dời camera do Boss/`kepMayTrongNha` gây ra. 2,8 m/s ≈ 1,75 lần
+ * tốc độ đi bộ: đủ nhanh để bám, và nằm HẲN dưới mốc 3 m/s của thước đo nên
+ * con số đo được không phải là chính cái trần này.
+ */
+const MAY_VEL_TOI_DA = 2.8;
 /**
  * H1 (#69 mục 6) — **hằng thời gian camera BAY** (s), thay `min(1, dt·3,2)`.
  *
@@ -223,6 +259,11 @@ const BUOC_CO_DINH = 1 / 60;
  * hơn ⇒ càng chậm ⇒ càng nhiều bước). 5 bước = bù được tới 83 ms giật.
  */
 const BUOC_TOI_DA = 5;
+/**
+ * Trần `dt` của một khung hình (s). Khung dài hơn mốc này thì phần dư bị
+ * **bỏ** — và đó mới là tín hiệu "máy đang chậm thật" (`khungTranBuoc`).
+ */
+const DT_KHUNG_TOI_DA = 1 / 20;
 /**
  * F2 (#56 mục 2) — **tần số riêng của lò xo camera bám** (rad/s).
  *
@@ -343,14 +384,27 @@ export class World implements StageWorld {
   /**
    * F2 — **sổ ghi từng khung của camera bám** (bằng chứng "không rung").
    *
-   * `[t ms, dt s, cam.x, cam.z, |vel|]`. Ghi tại chỗ, không cấp phát; script
-   * bằng chứng đọc một lần qua `doHieuNang().soMay` thay vì lấy mẫu mỗi khung
-   * (lấy mẫu từ ngoài kéo FPS 60 → 8,5, tức làm hỏng đúng cái đang đo).
+   * `[t ms, dt s, cam.x, cam.z, |vel|, xaDau]`. Ghi tại chỗ, không cấp phát;
+   * script bằng chứng đọc một lần qua `doHieuNang().soMay` thay vì lấy mẫu mỗi
+   * khung (lấy mẫu từ ngoài kéo FPS 60 → 8,5, tức làm hỏng đúng cái đang đo).
+   *
+   * H1 vòng 2 (review PR #72 mục 1): thêm `xaDau` = **khoảng cách camera →
+   * đầu nhân vật** (m). Thước đo cũ chỉ hỏi "camera có trong hộp không" nên
+   * không bắt được lỗi tay máy co vào trong người — co vào thì vẫn trong hộp.
    */
-  private soMay: Array<[number, number, number, number, number]> = [];
+  private soMay: Array<[number, number, number, number, number, number]> = [];
+  /** Đỉnh `|v|` của lượt bám hiện tại (m/s) — KHÔNG có trần như `soMay`. */
+  private mayVelMax = 0;
+  /** Vị trí camera do lò xo đặt, để `controls.update()` không giằng lại. */
+  private readonly mayVtGiu = new THREE.Vector3();
+  private giuMayVt = false;
   /** H1 — phần `dt` chưa tiêu của accumulator bước cố định (s). */
   private duDt = 0;
-  /** H1 — số khung đã phải bỏ bước vì chạm `BUOC_TOI_DA` (máy đang chậm thật). */
+  /**
+   * H1 — số khung **có thời gian bị bỏ** vì dài hơn `DT_KHUNG_TOI_DA`, tức máy
+   * đang chậm thật (review PR #72 mục 3 — mốc cũ theo `BUOC_TOI_DA` không bao
+   * giờ tăng được).
+   */
   private khungTranBuoc = 0;
   /** H1 — vector tạm cho tay máy: không cấp phát trong đường render. */
   private readonly tayMay = new THREE.Vector3();
@@ -579,7 +633,17 @@ export class World implements StageWorld {
      * Nhờ vậy số đo của một lượt bám camera ở 30, 60 hay 144 FPS là **cùng
      * một quỹ đạo** — điều `heSoBam`/`buocLoXo` của F2 chỉ làm gần đúng.
      */
-    const dt = Math.min(this.dongHo.getDelta(), 1 / 20);
+    const dtThat = this.dongHo.getDelta();
+    const dt = Math.min(dtThat, DT_KHUNG_TOI_DA);
+    /*
+     * H1 vòng 2 (review PR #72 mục 3) — **`khungTranBuoc` giờ đếm được THẬT.**
+     *
+     * Bản đầu chỉ tăng khi accumulator chạm `BUOC_TOI_DA` = 5 bước; nhưng `dt`
+     * đã kẹp 1/20 s ⇒ nhiều nhất 3 bước + phần dư < 1/60 ⇒ nhánh đó **không
+     * bao giờ chạy** và log luôn ghi 0. Tín hiệu "máy đang chậm thật" đúng ra
+     * là: khung hình dài hơn trần `dt` nên có thời gian bị BỎ.
+     */
+    if (dtThat > DT_KHUNG_TOI_DA) this.khungTranBuoc += 1;
 
     // điểm con trỏ chiếu ra không gian, cách camera 2,4 m
     this.diemChuot
@@ -613,10 +677,9 @@ export class World implements StageWorld {
       this.duDt -= BUOC_CO_DINH;
       soBuoc += 1;
     }
-    if (this.duDt >= BUOC_CO_DINH) {
-      this.duDt = 0;
-      this.khungTranBuoc += 1;
-    }
+    // Lưới an toàn (`BUOC_TOI_DA`): với `dt` đã kẹp 1/20 thì không chạm được,
+    // nhưng vẫn giữ để ai nới trần `dt` sau này không rơi vào spiral of death.
+    if (this.duDt >= BUOC_CO_DINH) this.duDt = 0;
 
     for (const mh of this.screens.values()) mh.capNhat(dt);
 
@@ -627,6 +690,19 @@ export class World implements StageWorld {
 
     this.capNhatBongBong();
     this.controls.update();
+    /*
+     * H1 vòng 2 (review PR #72 mục 1) — **lò xo là NGƯỜI GHI CUỐI** khi đang
+     * bám chủ.
+     *
+     * `controls.update()` (OrbitControls, `enableDamping`) dựng lại
+     * `camera.position` từ toạ độ cầu quanh `target` **sau** vòng mô phỏng,
+     * nên nó kéo camera lệch khỏi chỗ lò xo vừa đặt; khung sau lò xo thấy sai
+     * số lớn hơn thật và đẩy `|vel|` lên (đo trên Firefox: 2,6–2,8 m/s trong
+     * khi mô phỏng cùng quỹ đạo không có ai giằng cho đúng 1,6 m/s). Trả lại
+     * vị trí của lò xo ở đây là chấm dứt vụ giằng — không ảnh hưởng preset
+     * khác (`giuMayVt` chỉ bật khi `theoOwner`).
+     */
+    if (this.giuMayVt) this.camera.position.copy(this.mayVtGiu);
     // Boss xoay/zoom bằng chuột cũng phải nằm trong nhà: kẹp SAU
     // `controls.update()` (nó mới là người ghi cuối cùng lên camera).
     this.kepMayTrongNha();
@@ -646,8 +722,28 @@ export class World implements StageWorld {
         this.theoOwner = null;
       } else {
         const p = nv.goc.position;
-        this.mayDich.set(p.x, 0, p.z).add(LECH_THEO_OWNER);
-        this.mayTam.set(p.x, 1.1, p.z);
+        /*
+         * H1 vòng 2 (review PR #72 mục 1) — **đích của lò xo phải KHẢ THI.**
+         *
+         * Tâm ngắm: đầu nhân vật, nhưng kẹp vào `HOP_TAM` (hộp nhà đã thu vào
+         * một tay máy) — nhờ vậy luôn còn chỗ cho tay máy 0,6 m.
+         * Đích camera: `dichCamera` kẹp `tâm + lệch` vào trong nhà, bù khoảng
+         * cách bị tường ăn bằng độ cao. Cả hai phép đều liên tục theo vị trí
+         * nhân vật nên không sinh cú nhảy đích ⇒ không sinh đỉnh vận tốc.
+         */
+        const [ctx_, cty, ctz] = kepTrongHop(p.x, 1.1, p.z, HOP_TAM);
+        this.mayTam.set(ctx_, cty, ctz);
+        const [dcx, dcy, dcz] = dichCamera(
+          [ctx_, cty, ctz],
+          // `LECH_THEO_OWNER.y` là độ cao TUYỆT ĐỐI (bản cũ cộng vào y = 0),
+          // nên quy về lệch so với tâm ngắm đã kẹp.
+          [LECH_THEO_OWNER.x, LECH_THEO_OWNER.y - cty, LECH_THEO_OWNER.z],
+          HOP_MAY,
+          MAY_XA_DE_CHIU,
+          LE_TAY_MAY,
+          MAY_GAN_TOI_DA,
+        );
+        this.mayDich.set(dcx, dcy, dcz);
         /**
          * F2 — lò xo giảm chấn tới hạn cho CẢ vị trí và tâm ngắm, dùng **cùng
          * một** `dt` và `omega` nên hiệu (vị trí − tâm) không bị méo giữa hai
@@ -656,7 +752,19 @@ export class World implements StageWorld {
         const dtMay = Math.min(dt, DT_MAY_TOI_DA);
         buocLoXo(this.camera.position, this.mayVel, this.mayDich, OMEGA_MAY, dtMay);
         buocLoXo(this.controls.target, this.mayTamVel, this.mayTam, OMEGA_MAY, dtMay);
+        if (this.mayVel.lengthSq() > MAY_VEL_TOI_DA * MAY_VEL_TOI_DA) {
+          this.mayVel.setLength(MAY_VEL_TOI_DA);
+        }
+        if (this.mayTamVel.lengthSq() > MAY_VEL_TOI_DA * MAY_VEL_TOI_DA) {
+          this.mayTamVel.setLength(MAY_VEL_TOI_DA);
+        }
         // Đầy thì NGỪNG ghi (xem ghi chú cùng loại ở `NhanVat.soLai`).
+        /*
+         * `soMay` có TRẦN 900 khung, nên đỉnh `|v|` của một lượt lái dài (mục
+         * 10 của `kiem-h1.mjs` chạy ~45 s) có thể rơi ngoài sổ. Giữ thêm một
+         * con số **không trần**: đỉnh `|v|` của cả lượt bám.
+         */
+        this.mayVelMax = Math.max(this.mayVelMax, this.mayVel.length());
         if (this.soMay.length < 900)
         this.soMay.push([
           +performance.now().toFixed(1),
@@ -664,12 +772,18 @@ export class World implements StageWorld {
           +this.camera.position.x.toFixed(4),
           +this.camera.position.z.toFixed(4),
           +this.mayVel.length().toFixed(4),
+          +Math.hypot(
+            this.camera.position.x - p.x,
+            this.camera.position.y - (p.y + 1.1),
+            this.camera.position.z - p.z,
+          ).toFixed(4),
         ]);
       }
     } else if (this.mayVel.lengthSq() > 0 || this.mayTamVel.lengthSq() > 0 || this.soMay.length) {
       // rời preset `theo-owner` → bỏ quán tính, đừng để lò xo kéo thêm
       this.mayVel.set(0, 0, 0);
       this.mayTamVel.set(0, 0, 0);
+      this.mayVelMax = 0;
       // …và **xoá sổ**: `doHieuNang()` luôn trả `soMay`, để sổ cũ lại thì
       // người đọc sau có thể chấm điểm camera trên một lượt bám khác hẳn.
       this.soMay = [];
@@ -691,6 +805,9 @@ export class World implements StageWorld {
     // Mọi bước mô phỏng kết thúc bằng một lần kẹp: đích của lò xo bám hay của
     // camera bay đều có thể nằm ngoài tường (lệch cố định ở góc nhà).
     this.kepMayTrongNha();
+    // …rồi giữ lại vị trí này để `controls.update()` không giằng (xem `motKhung`)
+    this.giuMayVt = this.theoOwner !== null;
+    if (this.giuMayVt) this.mayVtGiu.copy(this.camera.position);
   }
 
   /**
@@ -709,6 +826,16 @@ export class World implements StageWorld {
     if (!this.kepMay) return;
     const tam = this.controls.target;
     const [tx, ty, tz] = kepTrongHop(tam.x, tam.y, tam.z, HOP_MAY);
+    /*
+     * H1 vòng 2 (review PR #72 mục 1) — **kẹp thì phải TRỪ CẢ VẬN TỐC.**
+     *
+     * Dời vị trí mà để nguyên `vel` thì lò xo coi như sai số không giảm và
+     * tích vận tốc vào tường (đo được 13,23 m/s, bật ra 3,33 m/s khi rời góc).
+     * Trục nào bị kẹp thì bỏ thành phần vận tốc theo trục đó.
+     */
+    if (Math.abs(tx - tam.x) > 1e-9) this.mayTamVel.x = 0;
+    if (Math.abs(ty - tam.y) > 1e-9) this.mayTamVel.y = 0;
+    if (Math.abs(tz - tam.z) > 1e-9) this.mayTamVel.z = 0;
     tam.set(tx, ty, tz);
 
     this.tayMay.subVectors(this.camera.position, tam);
@@ -724,12 +851,35 @@ export class World implements StageWorld {
       [this.tayMay.x, this.tayMay.y, this.tayMay.z],
       Math.min(xa, MAY_XA_TOI_DA),
       HOP_MAY,
-      0.12,
+      LE_TAY_MAY,
       MAY_GAN_TOI_DA,
     );
     if (Math.abs(dai - xa) > 1e-6) {
       this.camera.position.copy(tam).addScaledVector(this.tayMay, dai);
+      /*
+       * Tay máy bị cắt ⇒ bỏ thành phần vận tốc **theo trục tay máy** (hướng
+       * đâm vào mặt hộp). Giữ thành phần tiếp tuyến để camera vẫn trượt men
+       * tường mượt thay vì đứng chết.
+       */
+      const vr = this.mayVel.dot(this.tayMay);
+      if (vr * (dai - xa) < 0) this.mayVel.addScaledVector(this.tayMay, -vr);
     }
+  }
+
+  /**
+   * H1 vòng 2 — khoảng cách camera → **đầu** nhân vật đang bám (m), `null`
+   * khi không ở preset `theo-owner`. Thước đo của review PR #72 mục 1.
+   */
+  private xaToiDauChu(): number | null {
+    if (!this.theoOwner) return null;
+    const nv = this.actors.get(this.theoOwner);
+    if (!nv) return null;
+    const p = nv.goc.position;
+    return Math.hypot(
+      this.camera.position.x - p.x,
+      this.camera.position.y - (p.y + 1.1),
+      this.camera.position.z - p.z,
+    );
   }
 
   /**
@@ -890,6 +1040,10 @@ export class World implements StageWorld {
         tam: [this.controls.target.x, this.controls.target.y, this.controls.target.z],
         xa: this.camera.position.distanceTo(this.controls.target),
         kep: this.kepMay,
+        // H1 vòng 2: khoảng cách tới ĐẦU nhân vật đang bám (null khi không bám)
+        xaDau: this.xaToiDauChu(),
+        // đỉnh |v| của CẢ lượt bám (sổ `soMay` chỉ giữ 900 khung đầu)
+        vMax: +this.mayVelMax.toFixed(4),
       },
       hopNha: HOP_MAY,
       mocDen: PRESET_DEN_SO,

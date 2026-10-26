@@ -98,3 +98,88 @@ export function dayTayMay(
   const mong = Math.min(xaMuon, Math.max(0, tranCung - le));
   return Math.min(Math.max(mong, Math.min(toiThieu, tranCung)), tranCung);
 }
+
+/**
+ * **Hộp cho TÂM NGẮM**: hộp nhà thu vào mỗi mặt `lui` m.
+ *
+ * Vì sao cần: khoảng cách từ một điểm trong hộp tới biên theo **bất kỳ** tia
+ * nào luôn ≥ khoảng cách tới mặt phẳng gần nhất. Nên nếu tâm ngắm luôn cách
+ * mọi mặt ít nhất `toiThieu + le`, thì `dayTayMay` **không thể** trả về dưới
+ * `toiThieu` — đó chính là bất biến mà review PR #72 (1) bắt được: lái sát
+ * tường thì tâm ngắm nằm ngay trên mặt hộp, `tranCung → 0`, tay máy co còn
+ * 0,126 m và khung hình chỉ còn cái áo nhân vật.
+ */
+export function hopTamNgam(hop: HopNha, lui: number): HopNha {
+  const giua = (hop.yMin + hop.yMax) / 2;
+  return {
+    hx: Math.max(0, hop.hx - lui),
+    hz: Math.max(0, hop.hz - lui),
+    yMin: Math.min(giua, hop.yMin + lui),
+    yMax: Math.max(giua, hop.yMax - lui),
+  };
+}
+
+/**
+ * **Đích camera KHẢ THI** cho một tâm ngắm + lệch mong muốn.
+ *
+ * Đây là chỗ sửa gốc của review PR #72 (1). Trước đây lò xo bám chạy tới
+ * `đầu + lệch` — một điểm **ngoài tường** khi nhân vật đứng sát vách — rồi
+ * `kepMayTrongNha()` dời camera về; lò xo thấy sai số không bao giờ giảm nên
+ * tích vận tốc tới trạng thái xác lập `ω·e/(2+ω·dt)` (đo được 13,23 m/s) và
+ * bật ra 3,33 m/s khi rời góc. Giờ **đích đã nằm trong nhà trước khi lò xo
+ * chạy**, nên sai số về 0 và vận tốc về 0.
+ *
+ * Ba bước, đều **liên tục theo vị trí nhân vật** (phép chiếu lên hộp lồi là
+ * 1-Lipschitz) nên không sinh cú nhảy đích ⇒ không sinh đỉnh vận tốc:
+ *   1. kẹp đích vào hộp nhà (trừ lề `le`);
+ *   2. nhân vật ở sát tường/góc thì bước 1 ăn mất khoảng cách — **nâng camera
+ *      lên cao** để lấy lại tới `xaDeChiu` (trượt lên trần thay vì tiến vào
+ *      người, đúng lối `camera-systems` tả cho spring arm bị chặn);
+ *   3. lưới an toàn: vẫn ngắn hơn `toiThieu` thì đẩy ra đúng `toiThieu` theo
+ *      hướng hiện có — an toàn vì `tam` đã cách mọi mặt ≥ `toiThieu`.
+ */
+export function dichCamera(
+  tam: readonly [number, number, number],
+  lech: readonly [number, number, number],
+  hop: HopNha,
+  xaDeChiu: number,
+  le = 0.12,
+  toiThieu = 0.6,
+): [number, number, number] {
+  const trongLe: HopNha = {
+    hx: Math.max(0, hop.hx - le),
+    hz: Math.max(0, hop.hz - le),
+    yMin: Math.min(hop.yMax, hop.yMin + le),
+    yMax: Math.max(hop.yMin, hop.yMax - le),
+  };
+  let [x, y, z] = kepTrongHop(tam[0] + lech[0], tam[1] + lech[1], tam[2] + lech[2], trongLe);
+
+  /*
+   * 2) bù bằng độ cao: ngang đã bị tường ăn thì **leo lên**.
+   *
+   * Bù theo ĐÚNG phần thiếu (`xaDeChiu − khoảng cách`), không theo nghiệm
+   * đường tròn `sqrt(xaDeChiu² − ngang²)`: đạo hàm của căn ấy tiến ra vô cực
+   * ở mép `ngang → xaDeChiu`, nên lúc nhân vật đi ngang qua mốc bù thì đích
+   * camera **giật** một nhịp và lò xo chạm trần tốc độ. Phần thiếu thì
+   * 1-Lipschitz: đích đi chậm hơn nhân vật.
+   */
+  const thieu = xaDeChiu - Math.hypot(x - tam[0], y - tam[1], z - tam[2]);
+  if (thieu > 0) y = Math.min(trongLe.yMax, y + thieu);
+
+  /* 3) lưới an toàn: không bao giờ ngắn hơn `toiThieu` */
+  let ex = x - tam[0];
+  let ey = y - tam[1];
+  let ez = z - tam[2];
+  let d = Math.hypot(ex, ey, ez);
+  if (d < 1e-6) {
+    ex = 0;
+    ey = 0;
+    ez = 1;
+    d = 1;
+  }
+  if (d < toiThieu) {
+    const k = toiThieu / d;
+    return [tam[0] + ex * k, tam[1] + ey * k, tam[2] + ez * k];
+  }
+  return [x, y, z];
+}

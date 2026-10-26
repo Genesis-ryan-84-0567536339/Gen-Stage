@@ -232,6 +232,12 @@ export function batPhim(
     void chay('actor.steer', { actor: actorId, vx: 0, vz: 0, ms: HIEU_LUC_DUNG });
   }
 
+  /** Những phím mà `onKeyDown` dưới đây THỰC SỰ nhận (để biết có chặn nhịp lặp gốc). */
+  const PHIM_LENH = new Set(['Space', 'KeyC', 'KeyE', 'KeyR', 'Slash', 'IntlRo']);
+  function laPhimCuaMinh(code: string): boolean {
+    return Boolean(HUONG[code]) || /^(Digit|Numpad)[0-9]$/.test(code) || PHIM_LENH.has(code);
+  }
+
   function onKeyDown(e: KeyboardEvent): void {
     /**
      * F2 — đang gõ chữ (kể cả ô chat, ô kịch bản, ô nói nhanh) thì phím thuộc
@@ -261,7 +267,13 @@ export function batPhim(
      * mới là thứ giữ nhân vật đi, chứ không phải nhịp `keydown` lặp.
      */
     if (e.repeat) {
-      e.preventDefault();
+      /*
+       * H1 vòng 2 (review PR #72 mục 3 phụ) — chỉ `preventDefault` khi ĐÂY LÀ
+       * PHÍM CỦA MÌNH. Bản đầu chặn luôn nhịp lặp **gốc của trình duyệt** cho
+       * mọi phím khác (giữ Tab để chuyển focus, giữ F5, giữ phím mũi tên trong
+       * trang…), tức sửa một lỗi nhập liệu bằng cách sinh một lỗi nhập liệu.
+       */
+      if (laPhimCuaMinh(e.code)) e.preventDefault();
       return;
     }
 

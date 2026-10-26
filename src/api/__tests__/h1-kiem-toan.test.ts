@@ -20,7 +20,14 @@ import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { buocDiToi, TOC_DO_STEER, heSoBam } from '../../stage/nhanvat';
 import { biChan, hopChan } from '../../stage/bo-cuc';
-import { dayTayMay, kepTrongHop, trongHop, type HopNha } from '../../stage/may-quay';
+import {
+  dayTayMay,
+  dichCamera,
+  hopTamNgam,
+  kepTrongHop,
+  trongHop,
+  type HopNha,
+} from '../../stage/may-quay';
 import { OMEGA_MAY, buocLoXo } from '../../stage/world';
 
 /* ============================================ 1. phím lặp (DOM giả, như F2) */
@@ -354,6 +361,140 @@ describe('H1 mục 14 + 15 — tay máy kẹp camera trong nhà', () => {
     expect(trongHop(vt[0], vt[1], vt[2], hop)).toBe(true);
   });
 
+  /* ======== H1 vòng 2 (review PR #72 mục 1) — tay máy KHÔNG co vào người ==== */
+
+  const GAN = 0.6;
+  const LE = 0.12;
+  const DE_CHIU = 2.6;
+  const hopTam = hopTamNgam(hop, GAN + LE);
+  /** Đúng `LECH_THEO_OWNER` của `world.ts`: y là độ cao TUYỆT ĐỐI. */
+  const LECH: [number, number, number] = [1.8, 2.0, 2.6];
+  /** Đích camera cho một nhân vật đứng ở `(x; z)` — đúng phép của `buocMoPhong`. */
+  function dich(x: number, z: number): {
+    tam: [number, number, number];
+    vt: [number, number, number];
+    xa: number;
+  } {
+    const tam = kepTrongHop(x, 1.1, z, hopTam);
+    const vt = dichCamera(tam, [LECH[0], LECH[1] - tam[1], LECH[2]], hop, DE_CHIU, LE, GAN);
+    return { tam, vt, xa: Math.hypot(vt[0] - x, vt[1] - 1.1, vt[2] - z) };
+  }
+
+  it('quét cả sàn nhà (0,25 m): camera→đầu LUÔN ≥ 0,6 m và camera trong nhà', () => {
+    let min = Infinity;
+    let oDau: [number, number] = [0, 0];
+    let soLan = 0;
+    for (let x = -6.75; x <= 6.75; x += 0.25) {
+      for (let z = -4.75; z <= 4.75; z += 0.25) {
+        const { vt, xa } = dich(x, z);
+        expect(trongHop(vt[0], vt[1], vt[2], hop, 1e-6), `ra ngoài nhà ở (${x}; ${z})`).toBe(true);
+        if (xa < min) {
+          min = xa;
+          oDau = [x, z];
+        }
+        soLan += 1;
+      }
+    }
+    expect(soLan).toBe(55 * 39);
+    // trước vòng 2: review đo được 0,1265 m ở sát tường nam (khung hình toàn áo)
+    expect(min, `gần nhất ở (${oDau[0]}; ${oDau[1]})`).toBeGreaterThanOrEqual(GAN);
+  });
+
+  it('4 GÓC nhà: tay máy vẫn ≥ 0,6 m, và camera LEO LÊN chứ không tiến vào người', () => {
+    for (const [x, z] of [
+      [6.4, 4.4],
+      [-6.4, 4.4],
+      [6.4, -4.4],
+      [-6.4, -4.4],
+    ]) {
+      const { vt, xa } = dich(x, z);
+      expect(xa, `góc (${x}; ${z})`).toBeGreaterThanOrEqual(GAN);
+      // bù bằng độ cao: camera cao hơn đầu nhân vật
+      expect(vt[1]).toBeGreaterThan(1.6);
+      expect(trongHop(vt[0], vt[1], vt[2], hop, 1e-6)).toBe(true);
+    }
+  });
+
+  it('đích camera LIÊN TỤC theo nhân vật (không nhảy ⇒ lò xo không vọt vận tốc)', () => {
+    /*
+     * Lò xo tới hạn bám một đích chạy đều `v` thì |vel| xác lập = `v`; đỉnh
+     * chỉ sinh ra khi đích NHẢY. Nhân vật đi nhanh nhất 1,6 m/s ⇒ mỗi bước
+     * 1/60 s đi 0,027 m; đích được phép dời tối đa `k` lần quãng đó.
+     */
+    const BUOC = 1.6 / 60;
+    let max = 0;
+    for (let x = -6.8; x <= 6.8; x += BUOC) {
+      for (const z of [-4.6, -2.3, 0, 2.3, 4.6]) {
+        const a = dich(x, z).vt;
+        const b = dich(x + BUOC, z).vt;
+        max = Math.max(max, Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]));
+      }
+    }
+    // k = 1,6: chiếu lên hộp lồi là 1-Lipschitz, bù độ cao THEO PHẦN THIẾU
+    // cũng vậy — nên đích đi không nhanh hơn nhân vật quá 1,6 lần
+    expect(max).toBeLessThan(BUOC * 1.6);
+  });
+
+  it('MÔ PHỎNG cả vòng bám (không có trần vận tốc): |v| ≤ 1,6 m/s và tay máy ≥ 0,6 m', () => {
+    /*
+     * Chạy đúng vòng của `buocMoPhong`: nhân vật lái vào 4 tường rồi 2 đường
+     * chéo vào góc, mỗi bước 1/60 s, hai lò xo `buocLoXo` như `world.ts` —
+     * nhưng **không áp `MAY_VEL_TOI_DA`**, để con số nói về hình học chứ không
+     * nói về cái trần. Trước vòng 2, cùng lượt này cho |v| xác lập 13,23 m/s
+     * (ω·e/(2+ω·dt) với e = sai số không bao giờ giảm) và tay máy 0,126 m.
+     */
+    const DT = 1 / 60;
+    const V = 1.6;
+    const duong: Array<[number, number]> = [];
+    let cx = 0;
+    let cz = 0;
+    const lai = (dx: number, dz: number, giay: number) => {
+      for (let i = 0; i < giay * 60; i += 1) {
+        cx = Math.max(-6.5, Math.min(6.5, cx + dx * V * DT));
+        cz = Math.max(-4.5, Math.min(4.5, cz + dz * V * DT));
+        duong.push([cx, cz]);
+      }
+    };
+    lai(0, 1, 6);
+    lai(1, 0, 6);
+    lai(0, -1, 6);
+    lai(-1, 0, 6);
+    lai(Math.SQRT1_2, Math.SQRT1_2, 8);
+    lai(-Math.SQRT1_2, -Math.SQRT1_2, 8);
+
+    const d0 = dich(duong[0][0], duong[0][1]);
+    const vt = new THREE.Vector3(...d0.vt);
+    const vel = new THREE.Vector3();
+    const tamVt = new THREE.Vector3(...d0.tam);
+    const tamVel = new THREE.Vector3();
+    let vMax = 0;
+    let xaMin = Infinity;
+    for (const [x, z] of duong) {
+      const d = dich(x, z);
+      buocLoXo(vt, vel, new THREE.Vector3(...d.vt), OMEGA_MAY, DT);
+      buocLoXo(tamVt, tamVel, new THREE.Vector3(...d.tam), OMEGA_MAY, DT);
+      vMax = Math.max(vMax, vel.length());
+      xaMin = Math.min(xaMin, Math.hypot(vt.x - x, vt.y - 1.1, vt.z - z));
+      expect(trongHop(vt.x, vt.y, vt.z, hop, 1e-6)).toBe(true);
+    }
+    // lò xo tới hạn bám đích chạy đều `v` thì |vel| xác lập = `v`, không hơn
+    expect(vMax).toBeLessThanOrEqual(V + 0.01);
+    expect(xaMin).toBeGreaterThanOrEqual(GAN);
+  });
+
+  it('lò xo có TRẦN vận tốc và kẹp thì TRỪ vận tốc (không tích vào tường)', () => {
+    const nguon = readFileSync(new URL('../../stage/world.ts', import.meta.url), 'utf8');
+    expect(nguon).toContain('const MAY_VEL_TOI_DA = 2.8');
+    expect(nguon).toContain('this.mayVel.setLength(MAY_VEL_TOI_DA)');
+    // kẹp tâm ngắm ⇒ bỏ thành phần vận tốc theo trục bị kẹp
+    expect(nguon).toContain('this.mayTamVel.x = 0');
+    // cắt tay máy ⇒ bỏ thành phần vận tốc theo trục tay máy
+    expect(nguon).toContain('this.mayVel.addScaledVector(this.tayMay, -vr)');
+    // đích của lò xo đi qua `dichCamera` (khả thi) chứ không còn `đầu + lệch`
+    expect(nguon).toContain('const [dcx, dcy, dcz] = dichCamera(');
+    expect(nguon).not.toContain("this.mayDich.set(p.x, 0, p.z).add(LECH_THEO_OWNER)");
+  });
+
   it('maxDistance theo kích thước nhà, không còn hằng 26 m của lab', () => {
     const nguon = readFileSync(new URL('../../stage/world.ts', import.meta.url), 'utf8');
     expect(nguon).not.toContain('this.controls.maxDistance = 26');
@@ -416,8 +557,12 @@ describe('H1 mục 1–3 + 6 — accumulator bước cố định 1/60', () => {
     expect(than).toContain('this.duDt += dt;');
     expect(than).toContain('this.buocMoPhong(BUOC_CO_DINH)');
     expect(than).toContain('soBuoc < BUOC_TOI_DA');
-    // chỉ MỘT phép kẹp dt trong cả thân vòng lặp
-    expect(than.match(/Math\.min\(this\.dongHo\.getDelta\(\)/g)!.length).toBe(1);
+    // chỉ MỘT lần đọc đồng hồ và MỘT phép kẹp dt trong cả thân vòng lặp
+    expect(than.match(/this\.dongHo\.getDelta\(\)/g)!.length).toBe(1);
+    expect(than.match(/Math\.min\(dtThat, DT_KHUNG_TOI_DA\)/g)!.length).toBe(1);
+    // H1 vòng 2: `khungTranBuoc` đếm khung bị BỎ thời gian (mốc cũ không bao
+    // giờ tăng vì `dt` đã kẹp 1/20 ⇒ tối đa 3 bước < BUOC_TOI_DA = 5)
+    expect(than).toContain('if (dtThat > DT_KHUNG_TOI_DA) this.khungTranBuoc += 1;');
   });
 
   it('camera BAY dùng heSoBam, không còn min(1, dt*3.2)', () => {

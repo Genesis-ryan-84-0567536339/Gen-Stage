@@ -1300,6 +1300,14 @@ export class NhanVat {
     const tocDo = Math.min(speed && speed > 0 ? speed : TOC_DO_DI, TOC_DO_STEER);
     const dai = (kc / tocDo) * 1000;
     this.ketTu = 0;
+    /*
+     * H1 vòng 2 (review PR #72 mục 3) — **reset cả MỐC ĐỒNG HỒ.**
+     *
+     * `ketTu` về 0 mà `tKetTruoc` còn mốc của chuyến đi trước thì một `moveTo`
+     * mới bị chặn ngay khung đầu sẽ cộng luôn cả khoảng lặng giữa hai chuyến
+     * vào `ketTu` ⇒ bỏ cuộc trong một khung thay vì sau 600 ms.
+     */
+    this.tKetTruoc = 0;
     let hd!: HanhDongCoTay;
     hd = hanhDong(dai, () => {
       this.di = null;
