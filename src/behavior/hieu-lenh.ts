@@ -212,7 +212,9 @@ export function tachNguoiNhan(
     const laTinHieuGoi = sau !== undefined && TIN_HIEU_GOI.includes(sau);
     const sauChuan = sau !== undefined ? (DONG_TU_NGHE_NHAM[sau] ?? sau) : undefined;
     const laDongTuLenh = sauChuan !== undefined && DONG_TU_LENH.includes(sauChuan);
-    const moHo = sau !== undefined && DONG_TU_LENH_MO_HO.includes(sau);
+    // Đo trên dạng ĐÃ chuẩn hoá: `bi` → `di`, mà `di` là động từ mơ hồ. Soi
+    // `sau` thô thì "nghi bi …" lọt qua cửa hẹp dù động từ thật là "đi".
+    const moHo = sauChuan !== undefined && DONG_TU_LENH_MO_HO.includes(sauChuan);
     for (const t of NGHE_NHAM_TEN) {
       if (t.dongAm.some((x) => boDau(x) === dau) && (laTinHieuGoi || laDongTuLenh))
         return t.ten;
