@@ -996,3 +996,74 @@ và cách tái hiện: **`docs/f2/GOC-DIEU-KHIEN-LOAN.md`**.
   bằng `ffmpeg -f x11grab` thay vào; (3) ngưỡng "nhả phím → dừng ≤ 0,3 s" khi
   chấm trên máy thật phải **cộng 2 khung hình đo từ chính sổ**, không thì đang
   đo tốc độ GPU của máy kiểm chứ không đo đường cong phanh.
+
+## Quyết định I1 — phản ứng tức thì 3 tầng (29/10, Issue #74)
+
+Boss: *"các nhân vật phải đưa ra phản ứng và hành vi tức thì ngay sau khi nhận
+lệnh để tăng trải nghiệm chân thực trong quá trình nó suy nghĩ"*. Thiết kế đầy
+đủ: `docs/spec/actor-api.md` mục **3.2e**. Bằng chứng Firefox thật:
+`node scripts/kiem-i1.mjs` (cổng riêng 8950-8953 / web 5390, chạy MỘT LẦN).
+
+- **Khoảng im lặng dài nhất KHÔNG phải lúc chờ não — là lúc chờ STT.** C0 chỉ
+  phản ứng ở `user.text`, mà giọng nói mất **3–18 s** mới thành chữ (rồi còn
+  1,5 s cho Boss sửa trong ô chat). Nên phải có một sự kiện mới:
+  **`user.listening { on, dangNhanDang }`** bắn từ `src/audio/mic.ts` ngay lúc
+  `MediaRecorder.start()`. Khai trong `SU_KIEN_HE_THONG` (`registry.ts`) để
+  `stage_events` của MCP thấy — não cũng cần biết "Sếp đang nói, đừng chen".
+- **Lời hứa ≤150 ms không được phụ thuộc nhịp quét.** Nhịp của phản xạ là
+  100 ms, nên nếu tầng 0 chỉ *đặt cờ* rồi chờ nhịp thì đã mất ⅔ ngân sách
+  trước khi gửi lệnh đầu. `micBatDau()` gọi `actor.lookAt` **đồng bộ ngay
+  trong handler sự kiện**; test chứng minh bằng cách không gọi `nhip()` lần nào.
+- **Mốc câu đệm 1500 → 200 ms.** Lời hứa là "bắt đầu PHÁT trong ≤400 ms", mà
+  `actor.say` còn phải `chuanBiGiong` (tải mp3 từ bridge) trước khi bong bóng
+  hiện. Nhịp 100 ms nên mốc 200 ms nổ ở 200–300 ms, chừa 100–200 ms cho giọng.
+  Đặt 400 ở đây là **hết luôn ngân sách** trước khi mở miệng.
+- **`actor.emote chu-y` ở tầng 1 là CÁI CHẶN chính câu đệm.** Nó dài 800 ms và
+  **chiếm thân**: tới mốc 200 ms thì Nhi còn đang diễn chính cú chú ý đó, câu
+  đệm bị bỏ hẳn (đo thật, không suy luận). Tầng 1 giờ ngẩng mặt bằng
+  **`actor.express`** (không chiếm thân); cú `chu-y` trọn gói chuyển về **tầng
+  0**, chỗ còn vài giây trước khi có chữ.
+- **Cái gật phải là MỘT LỆNH, không phải một lời gọi thẳng vào sân khấu.** C0
+  gọi `world.actorNgheNgong(...)` trực tiếp — hành động duy nhất không qua
+  dispatcher, nên nó không có trong nhật ký và **không có mốc nào đo được**,
+  đúng cái thước đo "t(`user.text`) → t(gật) ≤300 ms" của Issue đòi. Thêm lệnh
+  **`actor.listen { actor, on?, question? }`**: không chiếm thân (xếp hàng thì
+  cái gật chạy sau khi câu đệm nói xong — đúng lúc hết cần), nên dùng được cả
+  khi Nhi đang bận việc của não.
+- **Mọi thứ tầng 2 chỉ gửi khi Nhi ĐANG RẢNH.** Không phải để lịch sự: hàng đợi
+  là FIFO, nên một câu nối *xếp hàng* sẽ chạy **TRƯỚC** câu trả lời thật của
+  não. Câu nối tới hạn mà Nhi đang nói thì **hoãn sang nhịp sau**, không bỏ và
+  không chen — đó là chỗ giữ lời hứa "một giọng, không chồng".
+- **Cờ `dangDienCho` là chốt hai chiều của việc cắt.** C0 gác `cmd.queued`
+  bằng `cauDemDangPhat !== null` nên chỉ che được câu đệm; tầng 2 còn chêm cả
+  tư thế nghĩ. Cờ này bật ⇒ cái đang chiếm Nhi là việc chêm của phản xạ ⇒ cắt
+  được bằng `world.actorInterrupt` (**không** `catNgang`, xem mục C0). Cờ tắt ⇒
+  là việc của não ⇒ **không cắt gì, hàng đợi nguyên vẹn**. Cờ **tự hết hạn ở
+  đầu mỗi nhịp** khi Nhi rảnh — để nó treo lại là một `moveTo` của não xếp
+  hàng sau đó bị cắt oan.
+- **Câu chêm được nhường chỗ cho CHÍNH MÌNH, không cho ai khác** (`noiChem`):
+  tư thế nghĩ đang chạy mà tới hạn câu đệm → cắt tư thế; đang `speaking` → hoãn
+  câu sau; đang làm việc của não → im. Sau `actorInterrupt`, `dangBan` **chưa**
+  tắt trong cùng tick (dispatcher dọn chỗ trong một `.then()`), nên câu mới cố
+  ý đi qua hàng đợi — `done` của hành động vừa huỷ giải quyết ngay nên nó chạy
+  sau đúng một microtask.
+- **"Mắt liếc lên" dùng `actor.lookAt { target: null }`.** `validate.ts` nhận
+  toạ độ cho kiểu `target`, nhưng handler `actor.lookAt` lại `String()` tham số
+  rồi đưa cho `world.actorLookAt(id, string|null)` — tức **lookAt không hỗ trợ
+  toạ độ**. `null` = thả mắt (lớp "nhìn quanh" tự chạy, có cả hướng lên), rồi
+  mốc `nhinTamDen` của C0 kéo mắt về đúng người nghe: thành ra đúng "đổi tư thế
+  nhẹ **rồi nhìn lại Boss**" mà không thêm API nào.
+- **Nam không tự phản ứng với mình** (Boss gõ/nói = Nam nói). Khi Nhi nói, Nam
+  quay mắt + thân về Nhi; Nhi **nói xong** thì Nam gật nhẹ 1,2 s. Cả hai chỉ
+  làm khi Nam đang rảnh — Boss có thể đang lái anh ta bằng WASD, xoay thân anh
+  ta giữa cú đi là đúng cái tật F2 (#56) đã sửa.
+- **Nhánh "Boss lại gần → chào nhẹ" bị tắt trong lúc chờ não** (`!tangHai`):
+  hai vòng cùng giành hướng mắt thì Nhi vừa nghĩ vừa chào.
+- **Não giả trong test phải nằm trên ĐÚNG cái đồng hồ giả** (`naoGia` trong
+  `src/api/__tests__/i1-phan-ung-tuc-thi.test.ts`), không `setTimeout`: không
+  thì "trễ 25 s" thành 25 giây chờ thật mỗi lần chạy `pnpm test`.
+- **Cạm bẫy đo trên sân khấu giả**: hành động ở đó dài **20 ms thật**, nên đẩy
+  đồng hồ giả 6 s (65 nhịp ≈ 65 ms thật) là `moveTo` đã xong từ lâu và Nhi rảnh
+  lại — kiểm "đang bận thì im" phải đẩy ngắn (≤500 ms) hoặc kiểm bằng
+  `soCho()`. Và `actorSay` ghi **hai** dòng `say:` (nội dung + hành động chiếm
+  thân), đếm cả hai là mỗi câu thành hai câu.

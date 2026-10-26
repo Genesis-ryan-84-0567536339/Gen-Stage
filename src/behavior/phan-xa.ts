@@ -32,6 +32,33 @@
  *   não vừa xếp hàng sau câu đệm (đúng cái ta đang muốn nhường chỗ cho). Phản
  *   xạ gọi thẳng `world.actorInterrupt(gen)`: huỷ đúng hành động đang chạy,
  *   dispatcher thấy `done` thì tự xả hàng đợi → câu của não chạy ngay sau đó.
+ *
+ * ## I1 (#74) — PHẢN ỨNG TỨC THÌ BA TẦNG
+ *
+ * Boss 29/10: *"các nhân vật phải đưa ra phản ứng và hành vi tức thì ngay sau
+ * khi nhận lệnh"*. Bản C0 chỉ phản ứng khi **đã có chữ**, mà giọng nói mất
+ * 3–18 s STT mới thành chữ, và câu đệm còn chờ thêm 1,5 s — Boss nói xong là
+ * nhìn một nhân vật đứng im hàng chục giây.
+ *
+ *  - **Tầng 0 — Boss bắt đầu nói, chưa có chữ** (`user.listening` do
+ *    `src/audio/mic.ts` bắn): `lookAt camera` **đồng bộ ngay trong handler**
+ *    (không chờ nhịp quét → ≤150 ms) + dáng nghe + `chu-y` nhẹ. Lúc STT đang
+ *    chạy thì đổi sang `suy-nghi` nhẹ (đang nhẩm).
+ *  - **Tầng 1 — có chữ** (`user.text`): gật (`actor.listen`, không chiếm thân
+ *    nên không xếp hàng sau câu đệm) + câu đệm sau **200 ms** thay vì 1,5 s.
+ *  - **Tầng 2 — chờ não**: vòng "đang nghĩ" — đổi tư thế mỗi 4,5 s rồi nhìn
+ *    lại Boss, 6 s một **câu nối**, 20 s câu "hơi lâu". Não mở miệng là cắt.
+ *
+ * Hai luật xuyên suốt cả ba tầng, và là chỗ dễ sai nhất:
+ *
+ *  - **MỘT GIỌNG DUY NHẤT.** Mọi thứ tầng 2 gửi đi chỉ gửi khi Nhi **đang
+ *    rảnh**. Không phải để lịch sự: xếp hàng cũng không chồng giọng, nhưng
+ *    cái xếp hàng ấy sẽ chạy TRƯỚC câu của não (hàng đợi là FIFO) — câu nối
+ *    của tuỷ sống chen lên trước câu trả lời thật.
+ *  - **KHI BẬN CHỈ CHO LỆNH NHÌN.** Nhi đang chạy việc của não (`moveTo`…)
+ *    thì phản xạ chỉ `actor.lookAt` + `actor.listen` (cả hai không chiếm
+ *    thân): không `faceTo`, không emote, không nói, và **không chạm hàng
+ *    đợi** — xem cờ `dangDienCho` ở người nghe `cmd.queued`.
  */
 import type { ActorSnapshot, EventBusLike, Result, StageState, StageWorld } from '../api/types';
 import { laCauHoi } from '../api/commands/actor';
@@ -57,14 +84,35 @@ export interface SoPhanXa {
   lechToiDa: number;
   /** E1 (#48) — ân hạn sau `bridge.connected` trước khi dám nói "chưa có não" (ms). */
   choXacNhanNaoMs: number;
+  /* ------------------------------------------- I1 (#74): vòng "đang nghĩ" */
+  /** Vào tầng 2 bao lâu thì lấy tư thế nghĩ đầu tiên (ms). */
+  tuTheDauMs: number;
+  /** Sau đó đổi tư thế mỗi bao lâu (ms) — Issue #74 đòi 4–6 s. */
+  nhipTuTheMs: number;
+  /** Chờ não bao lâu thì nói **câu nối** (ms). */
+  cauNoiMs: number;
+  /** Chờ não bao lâu thì xin lỗi là hơi lâu (ms). */
+  cauNoiLauMs: number;
+  /** Lúc đổi tư thế thì rời mắt khỏi Boss bao lâu rồi nhìn lại (ms). */
+  liecNghiMs: number;
+  /** Nam gật nhẹ bao lâu sau khi Nhi nói xong (ms). */
+  gatNamMs: number;
 }
 
 /** Số đo mặc định — spec mục 3.2d. */
 export const MAC_DINH: SoPhanXa = {
   /** Nhịp quét máy trạng thái (ms). Phải nhỏ hơn 300 ms để kịp lời hứa. */
   nhipMs: 100,
-  /** Chờ não nói bao lâu trước khi chêm câu đệm (ms). */
-  choNaoMs: 1500,
+  /**
+   * Chờ não nói bao lâu trước khi chêm câu đệm (ms).
+   *
+   * I1 (#74) hạ **1500 → 200**. Lời hứa của Issue là *"câu đệm bắt đầu phát
+   * trong ≤400 ms sau khi có chữ"*; nhịp quét 100 ms nên mốc 200 ms nổ ở
+   * nhịp thứ 2–3 (200–300 ms), còn lại 100–200 ms cho `chuanBiGiong` tải
+   * giọng từ bridge. Đặt 400 ở đây là **hết luôn ngân sách** trước khi mở
+   * miệng.
+   */
+  choNaoMs: 200,
   /** Owner vào bán kính này thì Gen nhìn theo (m). */
   banKinhGan: 2.5,
   /** Ra ngoài bán kính này thì Gen về việc đang làm (m) — có trễ để khỏi rung. */
@@ -90,6 +138,13 @@ export const MAC_DINH: SoPhanXa = {
   banKinhLiec: 3,
   liecMs: 700,
   lechToiDa: 12,
+  /* --------------------------------------------------------------- I1 (#74) */
+  tuTheDauMs: 1800,
+  nhipTuTheMs: 4500,
+  cauNoiMs: 6000,
+  cauNoiLauMs: 20000,
+  liecNghiMs: 1300,
+  gatNamMs: 1200,
 };
 
 /** Câu đệm — ngắn, không hứa gì, nói trong lúc não còn đang nghĩ. */
@@ -99,6 +154,17 @@ export const CAU_DEM = [
   'Sếp cần gì ạ?',
   'Dạ em đây',
 ] as const;
+
+/**
+ * I1 (#74) — **câu nối** lúc chờ não: nói đúng cái đang xảy ra, không hứa gì.
+ *
+ * Tách hẳn khỏi `CAU_DEM` vì hai cái trả lời hai câu hỏi khác nhau của Boss:
+ * câu đệm = *"nó có nghe mình không"*, câu nối = *"nó còn sống không"*.
+ */
+export const CAU_NOI = 'Em đang nghĩ ạ…';
+
+/** Chờ quá lâu (20 s) — nói thẳng là lâu, đừng im. */
+export const CAU_NOI_LAU = 'Hơi lâu, Sếp chờ em chút.';
 
 /**
  * Não rule-based tối thiểu **trong app** — chỉ dùng khi `brainConnected` là
@@ -168,6 +234,19 @@ export interface TrangThaiPhanXa {
   giuNhinDen: number;
   /** Người nghe của Gen lượt này: `"camera"` (Sếp qua màn hình) hay id actor. */
   nguoiNghe: string;
+  /* ------------------------------------------------------------- I1 (#74) */
+  /** Tầng 0: Boss đang giữ mic (chưa có chữ). */
+  ngheMic: boolean;
+  /** Tầng 0: STT đang chạy (Nhi đang "nhẩm"). */
+  nhanDang: boolean;
+  /** Tầng 2: đang trong vòng "đang nghĩ" chờ não. */
+  tangHai: boolean;
+  /** Đã nói mấy câu nối lượt này (0 · 1 = câu nối · 2 = thêm câu "hơi lâu"). */
+  soCauNoi: number;
+  /** Đã đổi tư thế mấy lần trong lượt chờ này. */
+  soTuThe: number;
+  /** Hành động đang chiếm Nhi là **câu/tư thế chêm của phản xạ** (cắt được). */
+  dangDienCho: boolean;
 }
 
 export interface MayPhanXa {
@@ -213,6 +292,29 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
    */
   let tBridgeNoi = Number.NEGATIVE_INFINITY;
 
+  /* --------------------------------------------- I1 (#74): ba tầng phản ứng */
+  /** Tầng 0 — Boss đang giữ mic (chưa có chữ). */
+  let ngheMic = false;
+  /** Tầng 0 — STT đang chạy. */
+  let nhanDang = false;
+  /** Tầng 2 — đang chờ não trả lời. */
+  let tangHai = false;
+  /** 0 = chưa câu nối · 1 = đã nói câu nối · 2 = đã nói thêm câu "hơi lâu". */
+  let soCauNoi = 0;
+  let soTuThe = 0;
+  /** Mốc đổi tư thế kế tiếp (0 = không có). */
+  let tTuThe = 0;
+  /**
+   * Hành động đang chiếm Nhi là **của phản xạ** (câu đệm/câu nối/tư thế nghĩ).
+   *
+   * Đây là cái chốt giữ lời hứa "không phá hàng đợi của não": chỉ khi cờ này
+   * bật thì `cmd.queued` mới được phép `actorInterrupt`. Nhi đang chạy
+   * `moveTo` của não mà Boss gõ thêm câu → cờ tắt → hàng đợi nguyên vẹn.
+   */
+  let dangDienCho = false;
+  /** Mốc tắt dáng nghe của Nam sau khi Nhi nói xong (0 = không có). */
+  let tatNgheNam = 0;
+
   /**
    * Gửi một lệnh phản xạ.
    *
@@ -245,6 +347,95 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
     void gui('actor.faceTo', { actor: ai, target: muc });
   }
 
+  /**
+   * I1 (#74) — quay người CHỈ KHI được phép.
+   *
+   * Luật "khi bận chỉ cho lệnh nhìn": đang chạy việc của não (`moveTo`,
+   * `play`…) thì không được quay thân — nhân vật đang đi dở mà bị xoay là
+   * hỏng cả cú đi. Ngoại lệ: chính nó **đang nói** (lúc đó `dangBan` bật vì
+   * câu nói của nó), vì giữ mặt về người nghe suốt câu là việc bắt buộc.
+   */
+  function quayVeNeuDuoc(ai: string, muc: string, dangNoi: boolean): void {
+    if (!dangNoi && dispatcher.dangBan(ai)) return;
+    quayVe(ai, muc);
+  }
+
+  /**
+   * I1 (#74) — bật/tắt **dáng lắng nghe** qua đúng cửa dispatcher.
+   *
+   * Trước I1 chỗ này gọi thẳng `world.actorNgheNgong`, nên cái gật đầu không
+   * có trong nhật ký — mà thước đo tầng 1 của Issue #74 là *"t(`user.text`) →
+   * t(gật) ≤300 ms"*. `actor.listen` không chiếm thân nên gọi được cả khi Nhi
+   * đang bận.
+   */
+  function nghe(ai: string, bat: boolean, cauHoi = false): void {
+    void gui('actor.listen', { actor: ai, on: bat, question: cauHoi });
+  }
+
+  /** Nhi có rảnh để diễn/nói không — chốt "một giọng duy nhất" của tầng 2. */
+  function ranh(ai: string, g: ActorSnapshot | undefined): boolean {
+    return !dispatcher.dangBan(ai) && g?.state !== 'speaking';
+  }
+
+  /**
+   * Nói một câu **chêm** (câu đệm hoặc câu nối). Trả `false` = chưa nói được.
+   *
+   * Ba luật nằm gọn trong hàm này, và cả ba đều là chỗ I1 từng sai:
+   *
+   *  1. **Nhường chỗ của chính mình.** Tư thế nghĩ (`actor.emote suy-nghi`,
+   *     2,6 s) hay cú `chu-y` của tầng 0 (0,8 s) đang chiếm Nhi thì câu đệm
+   *     *không được chờ nó xong* — chờ là mất lời hứa 400 ms. Cắt bằng
+   *     `world.actorInterrupt` (KHÔNG `catNgang`, xem mục C0), rồi gửi câu:
+   *     dispatcher thấy chỗ còn bận nên xếp hàng, và `done` của hành động vừa
+   *     bị huỷ giải quyết ngay nên câu chạy sau đúng một microtask.
+   *  2. **Không bao giờ cắt lời chính mình.** Đang nói (`speaking`) thì câu
+   *     sau phải **hoãn**, nhịp quét sẽ thử lại — đây là chỗ giữ lời hứa "một
+   *     giọng duy nhất, không chồng".
+   *  3. **Không bao giờ cắt việc của não.** `dangDienCho` tắt ⇒ cái đang chiếm
+   *     Nhi là việc của não ⇒ im, và không chạm hàng đợi.
+   */
+  function noiChem(ai: string, cau: string, g: ActorSnapshot | undefined): boolean {
+    if (dispatcher.dangBan(ai)) {
+      if (!dangDienCho || g?.state === 'speaking') return false;
+      dispatcher.world.actorInterrupt(ai);
+    }
+    cauDemDangPhat = cau;
+    dangDienCho = true;
+    void gui('actor.say', { actor: ai, text: cau, to: nguoiNgheCuaGen });
+    return true;
+  }
+
+  /**
+   * Tầng 2 — **đổi tư thế nhẹ rồi nhìn lại Boss**.
+   *
+   * Mắt thả (`target: null` = nhìn quanh tự nhiên, có cả hướng lên) trong
+   * `liecNghiMs` rồi mục 2 của nhịp quét tự kéo về đúng người nghe. Hai tư
+   * thế xen kẽ để vòng chờ không thành một vòng lặp máy móc.
+   */
+  function doiTuThe(ai: string, now: number): void {
+    soTuThe++;
+    void gui('actor.lookAt', { actor: ai, target: null });
+    nhinTamDen = now + so.liecNghiMs;
+    dangDienCho = true;
+    void gui('actor.emote', {
+      actor: ai,
+      emote: soTuThe % 2 === 1 ? 'suy-nghi' : 'cham-chu',
+      intensity: 0.65,
+    });
+  }
+
+  /** Thoát vòng "đang nghĩ" (não đã mở miệng, hoặc câu không gửi cho Nhi). */
+  function ketTangHai(): void {
+    tangHai = false;
+    choNao = false;
+    tTuThe = 0;
+    dangDienCho = false;
+    cauDemDangPhat = null;
+    // CỐ Ý không xoá `soCauNoi`/`soTuThe`: đó là **sổ của lượt chờ vừa rồi**,
+    // `ownerNoi` mới là chỗ mở lượt mới. Xoá ở đây thì không test nào (và
+    // không script bằng chứng nào) đọc lại được "đã nói mấy câu nối".
+  }
+
   /** Góc (độ) giữa hướng thân của `a` và hướng từ `a` tới điểm `p`. */
   function lechVe(a: ActorSnapshot, p: readonly number[]): number {
     const muc = (Math.atan2(p[0]! - a.pos[0], p[2]! - a.pos[2]) * 180) / Math.PI;
@@ -268,6 +459,59 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
     return { st, owner: ownerId, gen: genId };
   }
 
+  /* ------------------------------ I1 (#74) tầng 0: Boss bắt đầu nói, chưa chữ */
+
+  /**
+   * Boss vừa bấm mic. **Lời hứa ≤150 ms**, nên mọi thứ ở đây chạy ĐỒNG BỘ
+   * ngay trong handler sự kiện — chờ nhịp quét (100 ms) là đã mất nửa ngân
+   * sách trước khi gửi lệnh đầu tiên.
+   */
+  function micBatDau(): void {
+    const { st, gen } = doc();
+    if (!gen) return;
+    ngheMic = true;
+    nhanDang = false;
+    const g = st.actors.find((a) => a.id === gen);
+    const now = bayGio();
+    // Boss nói qua mic = nói với **màn hình**, không phải với Nam trong phòng.
+    nguoiNgheCuaGen = 'camera';
+    nhinTamDen = 0;
+    giuNhinDen = now + so.giuNhinMs;
+    nhinVe(gen, 'camera', g?.lookingAt ?? null);
+    nghe(gen, true);
+    quayVeNeuDuoc(gen, 'camera', g?.state === 'speaking');
+    if (ranh(gen, g)) {
+      void gui('actor.emote', { actor: gen, emote: 'chu-y', intensity: 0.7 });
+      dangDienCho = true;
+    }
+  }
+
+  /** Hết ghi, STT đang chạy (3–18 s) → dáng "đang nhẩm", vẫn hướng về Boss. */
+  function micNhanDang(): void {
+    const { st, gen } = doc();
+    if (!gen) return;
+    ngheMic = false;
+    nhanDang = true;
+    const g = st.actors.find((a) => a.id === gen);
+    nhinVe(gen, 'camera', g?.lookingAt ?? null);
+    nghe(gen, true);
+    if (ranh(gen, g)) {
+      void gui('actor.emote', { actor: gen, emote: 'suy-nghi', intensity: 0.45 });
+      dangDienCho = true;
+    }
+  }
+
+  /**
+   * Lượt nói đóng lại. Có chữ thì `ownerNoi` bật lại dáng nghe ngay sau đó;
+   * không ra chữ (im lặng, lỗi mạng) thì phải **thôi** dáng nghe, không thì
+   * Nhi gật đầu một mình mãi.
+   */
+  function micXong(): void {
+    ngheMic = false;
+    nhanDang = false;
+    if (!tangHai && genId) nghe(genId, false);
+  }
+
   /* -------------------------------------------------- Owner vừa nói gì đó */
 
   function ownerNoi(chu: string, toi: string): void {
@@ -277,6 +521,13 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
     tOwnerNoi = now;
     choNao = true;
     giuNhinDen = now + so.giuNhinMs;
+    // I1 (#74) — vào tầng 2: đã có chữ, từ đây là chờ não.
+    ngheMic = false;
+    nhanDang = false;
+    tangHai = true;
+    soCauNoi = 0;
+    soTuThe = 0;
+    tTuThe = now + so.tuTheDauMs;
     const g = st.actors.find((a) => a.id === gen);
     const o = st.actors.find((a) => a.id === owner);
     const xa =
@@ -300,7 +551,7 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
      */
     const guiChoGen = toi === 'camera' || toi === gen;
     if (!guiChoGen) {
-      choNao = false;
+      ketTangHai();
       if (henNoiBo) clearTimeout(henNoiBo);
       henNoiBo = null;
       // hướng nhìn của cặp đang nói do chính `actor.say` lo (một nguồn sự
@@ -309,8 +560,8 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
     }
     nguoiNgheCuaGen = noiTrongPhong ? owner : 'camera';
 
-    // 1) Javis (avatar của Sếp) quay về Gen — người nói luôn hướng về người nghe.
-    quayVe(owner, gen);
+    // 1) Nam (avatar của Sếp) quay về Nhi — người nói luôn hướng về người nghe.
+    quayVeNeuDuoc(owner, gen, o?.state === 'speaking');
     nhinVe(owner, gen, o?.lookingAt ?? null);
 
     // 2) Gen: nhìn + quay về đúng người nghe. Javis đứng xa (> 3 m) thì Gen
@@ -322,15 +573,32 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
       nhinVe(gen, nguoiNgheCuaGen, g?.lookingAt ?? null);
       nhinTamDen = 0;
     }
-    quayVe(gen, nguoiNgheCuaGen);
+    quayVeNeuDuoc(gen, nguoiNgheCuaGen, g?.state === 'speaking');
 
-    // 3) Dáng LẮNG NGHE: gật nhẹ, nghiêng đầu nếu Sếp đang hỏi.
-    dispatcher.world.actorNgheNgong(gen, true, laCauHoi(chu));
+    // 3) Tầng 1 — **GẬT NGAY**: `actor.listen` không chiếm thân nên nó chạy
+    //    tức thì, không xếp hàng sau câu đệm (lời hứa ≤300 ms), và dùng được
+    //    cả khi Nhi đang bận việc của não.
+    nghe(gen, true, laCauHoi(chu));
 
-    // 4) Ngẩng đầu chú ý: CHỈ khi Gen đang rảnh — phản xạ không được cắt việc
-    //    não đang làm (spec mục 3.2d, ưu tiên thấp).
-    if (!dispatcher.dangBan(gen)) {
-      void gui('actor.emote', { actor: gen, emote: 'chu-y', intensity: 0.85 });
+    /**
+     * 4) Ngẩng đầu chú ý — I1 (#74) đổi từ `actor.emote chu-y` sang
+     *    **`actor.express`**.
+     *
+     * `chu-y` dài 800 ms và **chiếm thân**, nên nó ăn trọn ngân sách 400 ms
+     * của câu đệm: C0 đo được câu đệm bị bỏ hẳn vì lúc tới hạn Nhi còn đang
+     * diễn chính cú chú ý đó. Mặt vẫn ngẩng/mở to mắt, nhưng bằng một lệnh
+     * **không chiếm thân, không xếp hàng**. Cú `chu-y` trọn gói chuyển về
+     * **tầng 0** (`micBatDau`), chỗ còn vài giây trước khi có chữ.
+     *
+     * Vẫn gác `ranh()`: phản xạ là ưu tiên thấp nhất (spec mục 3.2d).
+     */
+    if (ranh(gen, g)) {
+      void gui('actor.express', {
+        actor: gen,
+        expression: 'surprised',
+        weight: 0.3,
+        durationMs: 900,
+      });
     }
 
     // 5) Não không nối → tự trả lời bằng não rule-based, sau câu đệm.
@@ -365,20 +633,46 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
     const d = Math.hypot(g.pos[0] - o.pos[0], g.pos[2] - o.pos[2]);
     const dangNoi = g.state === 'speaking';
 
-    /* 1. câu đệm: hết 1,5 s mà não vẫn im */
+    /* 0. Nhi rảnh ⇒ không còn việc chêm nào đang chạy.
+       Cờ `dangDienCho` phải TỰ hết hạn ở đây: để nó treo lại thì một lệnh
+       `moveTo` của não xếp hàng sau đó sẽ bị phản xạ cắt oan. */
+    if (!dispatcher.dangBan(gen)) dangDienCho = false;
+
+    /* 1. câu đệm: hết `choNaoMs` (I1: 200 ms) mà não vẫn im.
+       Câu đệm "đang phát" tới khi `actor.sayDone` của CHÍNH nó bắn ra — không
+       phải khi `dispatcher.run` trả lời (lệnh trả lời ngay, giọng còn chạy
+       tiếp vài giây sau đó). `noiChem` tự lo việc nhường chỗ / im lặng. */
     if (choNao && now - tOwnerNoi >= so.choNaoMs) {
       choNao = false;
-      if (!dangNoi && !dispatcher.dangBan(gen)) {
-        // Câu đệm "đang phát" tới khi `actor.sayDone` của CHÍNH nó bắn ra —
-        // không phải khi `dispatcher.run` trả lời (lệnh trả lời ngay, giọng
-        // còn chạy tiếp vài giây sau đó).
-        const cau = chon(CAU_DEM);
-        cauDemDangPhat = cau;
-        void gui('actor.say', { actor: gen, text: cau, to: nguoiNgheCuaGen });
-      }
+      noiChem(gen, chon(CAU_DEM), g);
     }
     // não nói trước hạn → không chêm nữa
     if (choNao && dangNoi) choNao = false;
+
+    /* 1b. TẦNG 2 (I1 #74) — vòng "đang nghĩ" trong lúc chờ não.
+       CHỈ gửi khi Nhi đang rảnh. Không phải để lịch sự: hàng đợi là FIFO nên
+       một câu nối xếp hàng sẽ chạy TRƯỚC câu trả lời của não. */
+    if (tangHai) {
+      const troi = now - tOwnerNoi;
+      if (troi >= so.cauNoiLauMs && soCauNoi < 2) {
+        // `noiChem` trả `false` khi Nhi đang nói / đang làm việc của não →
+        // HOÃN sang nhịp sau, không bỏ và không chen.
+        if (noiChem(gen, CAU_NOI_LAU, g)) soCauNoi = 2;
+      } else if (troi >= so.cauNoiMs && soCauNoi < 1) {
+        if (noiChem(gen, CAU_NOI, g)) soCauNoi = 1;
+      } else if (tTuThe !== 0 && now >= tTuThe && ranh(gen, g)) {
+        // Đổi tư thế thì KHÔNG nhường chỗ của chính mình: một câu đang nói
+        // quan trọng hơn một cú đổi dáng.
+        tTuThe = now + so.nhipTuTheMs;
+        doiTuThe(gen, now);
+      }
+    }
+
+    /* 1c. Nam gật nhẹ xong thì thôi dáng nghe (I1 #74). */
+    if (tatNgheNam !== 0 && now > tatNgheNam) {
+      tatNgheNam = 0;
+      nghe(owner, false);
+    }
 
     /* 2. hết cú LIẾC tạm → quay mắt về đúng người nghe */
     if (nhinTamDen !== 0 && now > nhinTamDen) {
@@ -407,12 +701,15 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
     if (ownerNoiDay) {
       const p = viTriMuc(st, nguoiNgheCuaGen);
       if (nhinTamDen === 0) nhinVe(gen, nguoiNgheCuaGen, g.lookingAt);
-      if (p && lechVe(g, p) > so.lechToiDa) quayVe(gen, nguoiNgheCuaGen);
+      // I1 (#74) — Nhi đang chạy việc của não thì CHỈ lệnh nhìn, không quay thân.
+      if (p && lechVe(g, p) > so.lechToiDa) quayVeNeuDuoc(gen, nguoiNgheCuaGen, dangNoi);
       giuNhinDen = now + so.giuNhinMs;
     }
 
-    /* 4. Owner lại gần / đi xa (không ai đang nói) */
-    if (!dangNoi && !ownerNoiDay && nhinTamDen === 0) {
+    /* 4. Owner lại gần / đi xa (không ai đang nói, không đang chờ não).
+       `!tangHai` là của I1: đang chờ não thì hướng mắt do vòng "đang nghĩ" lo,
+       nhánh "chào nhẹ" chen vào giữa là Nhi vừa nghĩ vừa chào. */
+    if (!dangNoi && !ownerNoiDay && !tangHai && nhinTamDen === 0) {
       if (d <= so.banKinhGan) {
         if (tGan === 0) tGan = now;
         nhinVe(gen, owner, g.lookingAt);
@@ -449,6 +746,22 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
     }),
   );
 
+  /**
+   * I1 (#74) tầng 0 — **Boss bắt đầu nói, chưa có chữ nào**.
+   *
+   * `src/audio/mic.ts` bắn ba mốc: `{on:true}` lúc `MediaRecorder` chạy,
+   * `{on:false, dangNhanDang:true}` lúc gửi audio lên STT, và
+   * `{on:false, dangNhanDang:false}` khi lượt nói đóng (có chữ / không ra chữ
+   * / lỗi).
+   */
+  boNghe.push(
+    bus.on('user.listening', (e) => {
+      if (e.data.on === true) micBatDau();
+      else if (e.data.dangNhanDang === true) micNhanDang();
+      else micXong();
+    }),
+  );
+
   boNghe.push(
     bus.on('user.text', (e) => {
       // C2 (#32) đã hiểu và thực thi lệnh cố định → chỉ phản xạ quay/nhìn,
@@ -478,6 +791,29 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
         // Gen đang nói: hướng về đúng người nghe của câu đó
         nguoiNgheCuaGen = toi === 'cursor' ? 'camera' : toi;
         nhinTamDen = 0;
+        /**
+         * I1 (#74) — **Nam nhìn Nhi khi Nhi nói**, nhưng chỉ khi Nam đang
+         * rảnh: Boss có thể đang lái Nam bằng WASD, xoay thân anh ta giữa cú
+         * đi là đúng cái tật F2 (#56) đã sửa.
+         */
+        const o2 = st.actors.find((a) => a.id === owner);
+        if (o2 && ranh(owner, o2)) {
+          nhinVe(owner, gen, o2.lookingAt);
+          quayVe(owner, gen);
+        }
+        /**
+         * I1 (#74) — câu này là của PHẢN XẠ hay của NÃO?
+         *
+         * Của phản xạ (câu đệm / câu nối) thì vòng "đang nghĩ" còn chạy tiếp.
+         * Của não (hoặc của lớp hiểu lệnh, hoặc của não rule-based) thì thoát
+         * tầng 2 ngay và về dáng chú ý — không nói chồng, không đổi tư thế
+         * giữa câu trả lời thật.
+         */
+        const chu = String(e.data.text ?? '');
+        if (tangHai && chu !== cauDemDangPhat) {
+          ketTangHai();
+          nghe(gen, false);
+        }
         return;
       }
       if (ai !== owner) return;
@@ -502,10 +838,20 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
    */
   boNghe.push(
     bus.on('cmd.queued', (e) => {
-      if (tuGui || cauDemDangPhat === null) return;
+      if (tuGui) return;
       if (e.data.actor !== genId) return;
+      /**
+       * I1 (#74) — **chỉ cắt việc của CHÍNH MÌNH.**
+       *
+       * C0 gác bằng `cauDemDangPhat !== null`, tức chỉ che được câu đệm. Tầng
+       * 2 còn chêm cả tư thế nghĩ (`actor.emote`), nên cờ `dangDienCho` thay
+       * vào — và nó cũng là chỗ giữ lời hứa ngược lại: Nhi đang chạy `moveTo`
+       * của não mà não gửi thêm lệnh thì **không cắt gì cả**, hàng đợi nguyên.
+       */
+      if (!dangDienCho) return;
+      dangDienCho = false;
       cauDemDangPhat = null;
-      choNao = false;
+      ketTangHai();
       dispatcher.world.actorInterrupt(String(genId));
     }),
   );
@@ -514,8 +860,9 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
     bus.on('actor.sayDone', (e) => {
       const ai = e.data.actor;
       if (ai === ownerId) {
-        // Sếp nói xong → Gen thôi dáng lắng nghe
-        if (genId) dispatcher.world.actorNgheNgong(genId, false);
+        // Sếp nói xong → Gen thôi dáng lắng nghe (đang chờ não thì vòng "đang
+        // nghĩ" của tầng 2 lo tiếp, dáng NGHE phải tắt mới đúng cái đang xảy ra)
+        if (genId) nghe(genId, false);
         /**
          * E2 (#48 mục 7) — Javis nói với Gen xong thì **Gen liếc máy quay**
          * (Sếp vẫn đang xem). `actor.say` đã đổi mắt người nghe; chỗ này đổi
@@ -535,6 +882,14 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
       }
       if (ai !== genId) return;
       if (cauDemDangPhat !== null && e.data.text === cauDemDangPhat) cauDemDangPhat = null;
+      /**
+       * I1 (#74) — **Nam gật nhẹ khi Nhi nói xong.** Đúng lúc nói xong, không
+       * phải trong lúc nói: gật giữa câu là cắt lời.
+       */
+      if (ownerId && !dispatcher.dangBan(ownerId)) {
+        nghe(ownerId, true);
+        tatNgheNam = bayGio() + so.gatNamMs;
+      }
       giuNhinDen = bayGio() + so.giuNhinMs;
       // Nói với một nhân vật trong phòng xong thì **liếc máy quay** — Sếp vẫn
       // là người xem, không được quên mất Sếp.
@@ -561,6 +916,12 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
       daChao,
       giuNhinDen,
       nguoiNghe: nguoiNgheCuaGen,
+      ngheMic,
+      nhanDang,
+      tangHai,
+      soCauNoi,
+      soTuThe,
+      dangDienCho,
     }),
     dung() {
       clearInterval(hen);

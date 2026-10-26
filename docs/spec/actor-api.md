@@ -239,6 +239,7 @@ Hai thứ mới trong bộ lệnh (v0.1, không đổi nghĩa lệnh cũ):
 | --- | --- |
 | `actor.say` + `to?: actorId \| "camera"` | Nói **với ai**. Mặc định `camera` = Sếp đang xem. Người nói tự quay mặt về người nghe; người nghe (nếu là actor) vào dáng lắng nghe. `user.text` và `actor.sayDone` mang theo `to`. |
 | `actor.faceTo { actor, target }` | Quay người về mục tiêu **KHÔNG chiếm thân, không xếp hàng**. `actor.turnTo` chiếm thân nên gọi lúc đang nói chỉ xếp hàng chạy sau khi nói xong — đúng lúc hết cần. Đây là lệnh "giữ hướng", gọi được mỗi nhịp. |
+| `actor.listen { actor, on?, question? }` | **Sửa spec 29/10 — I1, Issue #74.** Bật/tắt **dáng lắng nghe** (gật đầu nhẹ theo nhịp, nghiêng đầu khi `question`). Cũng **không chiếm thân, không xếp hàng**, nên dùng được cả khi actor đang bận việc khác. Bắn `actor.listening { actor, on, question }`. Trước I1 dáng này chỉ đặt được từ bên trong sân khấu (`actor.say` tự bật cho người nghe) nên **không có mốc thời gian nào đo được**; giờ nó là một lệnh như mọi lệnh khác, vào nhật ký, và phản xạ dùng chính nó cho cái "gật ngay trong 300 ms". |
 
 `stage.describe` thêm hai thứ:
 
@@ -327,8 +328,53 @@ Ví dụ kịch bản Boss dán vào ô kịch bản (hoặc agent gửi):
 ]}}
 ```
 
+### 3.2e Phản ứng tức thì ba tầng (Sửa spec 29/10 — I1, Issue #74)
+
+Boss 29/10: *"các nhân vật phải đưa ra phản ứng và hành vi tức thì ngay sau khi
+nhận lệnh để tăng trải nghiệm chân thực trong quá trình nó suy nghĩ"*.
+
+C0 (mục 3.2d) chỉ phản ứng khi **đã có chữ**. Giọng nói mất 3–18 s để thành chữ
+và câu đệm còn chờ thêm 1,5 s, nên Boss nói xong là nhìn một nhân vật đứng im
+hàng chục giây. I1 chia khoảng chờ đó thành ba tầng, **không thêm lệnh nào cho
+não phải học** (chỉ `actor.listen` ở bảng trên, và một sự kiện mới):
+
+| Tầng | Mốc | Nhi làm gì |
+| --- | --- | --- |
+| 0 | `user.listening { on: true }` — Boss vừa bấm mic, **chưa có chữ** | `actor.lookAt camera` **≤150 ms** (chạy đồng bộ trong handler, không chờ nhịp quét) + `actor.listen` + `actor.emote chu-y` nhẹ |
+| 0b | `user.listening { on: false, dangNhanDang: true }` — STT đang chạy | `actor.emote suy-nghi` nhẹ (đang nhẩm), vẫn hướng về Boss |
+| 1 | `user.text` / `user.speech` — đã có chữ | gật (`actor.listen`, ≤300 ms) + `actor.faceTo` + mặt ngẩng (`actor.express`) + **câu đệm bắt đầu phát ≤400 ms** (mốc chờ não hạ 1500 → **200 ms**) |
+| 2 | từ khi có chữ tới lệnh đầu của não | vòng "đang nghĩ": đổi tư thế mỗi **4,5 s** rồi nhìn lại Boss; **6 s** một câu nối ("Em đang nghĩ ạ…"); **20 s** câu "Hơi lâu, Sếp chờ em chút." Não mở miệng là **cắt ngay** và về dáng chú ý |
+
+Bốn giao kèo bắt buộc của tầng 2 (chỗ dễ sai nhất):
+
+1. **Một giọng duy nhất.** Mọi câu/tư thế chêm chỉ gửi khi Nhi **đang rảnh**.
+   Không phải để lịch sự: hàng đợi là FIFO, nên một câu nối *xếp hàng* sẽ chạy
+   **trước** câu trả lời thật của não.
+2. **Khi bận chỉ cho lệnh nhìn.** Nhi đang chạy việc của não (`moveTo`,
+   `play`…) thì phản xạ chỉ `actor.lookAt` + `actor.listen` — không `faceTo`,
+   không emote, không nói, **không chạm hàng đợi**.
+3. **Cắt bằng `world.actorInterrupt`, không bao giờ `actor.stop`/`interrupt:
+   true`** (xem mục 3.2d): hai cửa đó xoá sạch hàng đợi → giết luôn câu của
+   não vừa xếp hàng sau câu chêm.
+4. **Câu chêm được phép nhường chỗ cho CHÍNH MÌNH, không cho ai khác.** Tư thế
+   nghĩ đang chạy mà tới hạn câu đệm thì cắt tư thế đó; đang NÓI thì hoãn câu
+   sau; đang làm việc của não thì im.
+
+**Nam** (nhân vật `owner`): Boss gõ/nói = Nam nói, nên Nam **không** tự phản ứng
+với chính mình. Khi Nhi nói, Nam quay mắt + thân về Nhi; Nhi **nói xong** thì
+Nam gật nhẹ 1,2 s. Cả hai chỉ làm khi Nam đang rảnh — Boss có thể đang lái anh
+ta bằng WASD.
+
 ### 3.5 Sự kiện sân khấu → agent
 `actor.arrived`, `actor.steerDone`, `actor.clipDone`, `actor.sayDone`, `actor.emoteDone`, `script.done`, `user.speech` (Boss nói, đã chuyển thành chữ), `user.click` (Boss bấm vào actor/prop), `user.text` (Boss gõ).
+
+**Sửa spec (29/10, I1 — Issue #74):** thêm **`user.listening { on, dangNhanDang }`**
+— Boss **bắt đầu/kết thúc nói**, bắn từ `src/audio/mic.ts`, trước khi có chữ.
+Ba mốc: `{on:true}` lúc `MediaRecorder` chạy, `{on:false, dangNhanDang:true}`
+lúc gửi audio lên STT, `{on:false, dangNhanDang:false}` khi lượt nói đóng (có
+chữ, không ra chữ, hay lỗi). Não đọc được nó qua `stage_events` để biết Sếp
+đang nói mà đừng chen vào. Thêm `actor.listening { actor, on, question }` do
+`actor.listen` bắn.
 
 **Sửa spec (26/10, C0 — Issue #28):** thêm `bridge.brain { count, connected }` —
 bridge báo số client MCP đang nối, đi **xuống** sân khấu (hướng ngược với mọi

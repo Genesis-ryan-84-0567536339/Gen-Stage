@@ -30,6 +30,16 @@ export const SU_KIEN_HE_THONG = [
   'user.text',
   /** C2 (#32) — lớp hiểu lệnh giọng đã khớp một mệnh lệnh cố định. */
   'user.command',
+  /**
+   * I1 (#74) — **Boss BẮT ĐẦU nói**, chưa có chữ nào.
+   *
+   * `src/audio/mic.ts` bắn `{ on: true }` ngay lúc `MediaRecorder` chạy,
+   * `{ on: false, dangNhanDang: true }` lúc gửi khối audio lên STT và
+   * `{ on: false, dangNhanDang: false }` khi lượt nói kết thúc (có chữ, không
+   * ra chữ, hay lỗi). Giọng nói mất 3–18 s mới thành chữ; không có sự kiện
+   * này thì cả phản xạ lẫn não đều mù trong suốt khoảng đó.
+   */
+  'user.listening',
   'bridge.connected',
   'bridge.disconnected',
   /** A3 — `window.stage.feed(screen, chunk)` đẩy mẩu khi `screen.stream` source:"agent". */

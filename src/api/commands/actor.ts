@@ -319,6 +319,54 @@ export const LENH_ACTOR: CommandSpec[] = [
   },
 
   {
+    /**
+     * I1 (#74) — **dáng LẮNG NGHE** qua đúng cửa dispatcher.
+     *
+     * Trước I1, `phan-xa.ts` gọi thẳng `world.actorNgheNgong(...)`: cái gật
+     * đầu của người nghe là hành động duy nhất KHÔNG đi qua dispatcher, nên
+     * nó không có trong nhật ký và không có mốc thời gian nào đo được — mà
+     * thước đo tầng 1 của Issue #74 chính là *"t(user.text) → t(gật) ≤300 ms"*.
+     *
+     * Cố ý **không** `chiemActor`: nghe là việc làm song song, và nếu nó xếp
+     * hàng thì cái gật sẽ chạy sau khi câu đệm nói xong — đúng lúc hết cần.
+     * Cũng vì thế nó dùng được cả khi nhân vật đang bận việc của não (luật
+     * "khi bận chỉ cho phép lệnh nhìn": lệnh này không chiếm thân, không di
+     * chuyển, không chạm hàng đợi).
+     */
+    cmd: 'actor.listen',
+    group: 'actor',
+    events: ['actor.listening'],
+    desc:
+      'Bật/tắt dáng LẮNG NGHE (gật đầu nhẹ theo nhịp, nghiêng đầu khi là câu hỏi) — ' +
+      'không chiếm thân, không xếp hàng, gọi được cả khi actor đang bận',
+    params: [
+      P_ACTOR,
+      {
+        name: 'on',
+        type: 'boolean',
+        desc: 'true = đang nghe (gật nhẹ), false = thôi nghe',
+        default: true,
+      },
+      {
+        name: 'question',
+        type: 'boolean',
+        desc: 'Người nói đang HỎI → nghiêng đầu thêm',
+        default: false,
+      },
+    ],
+    example: { cmd: 'actor.listen', args: { actor: 'gen', on: true, question: true } },
+    handler(a, ctx) {
+      const id = s(a.actor);
+      if (!ctx.world.coActor(id)) throw new Error(`Không có actor "${id}"`);
+      const bat = a.on !== false;
+      const hoi = a.question === true;
+      ctx.world.actorNgheNgong(id, bat, hoi);
+      ctx.bus.emit('actor.listening', { actor: id, on: bat, question: bat && hoi });
+      return ngay({ actor: id, on: bat, question: bat && hoi });
+    },
+  },
+
+  {
     cmd: 'actor.sit',
     group: 'actor',
     events: ['actor.sat', 'cmd.queued'],
