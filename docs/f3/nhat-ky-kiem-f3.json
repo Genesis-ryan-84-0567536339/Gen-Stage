@@ -1,0 +1,388 @@
+{
+  "chay": "2026-10-26T09:54:11.739Z",
+  "cong": {
+    "ws": 8894,
+    "tts": 8895,
+    "mcp": 8896,
+    "stt": 8897,
+    "web": 5302
+  },
+  "buoc": [
+    {
+      "nhan": "bridge bật STT thật",
+      "ok": true,
+      "chiTiet": "{\"ok\":true,\"daCai\":true,\"model\":\".cache/stt/models/PhoWhisper-small-ct2\"}"
+    },
+    {
+      "nhan": "bridge /stt nghe ra câu mốc từ chính wav này",
+      "ok": true,
+      "chiTiet": "\"Gen ơi chào sếp\" · tin 0.982",
+      "so": {
+        "text": "Gen ơi chào sếp",
+        "confidence": 0.982,
+        "durationMs": 2795,
+        "audioMs": 2184,
+        "goiGen": true,
+        "tho": "gên ơi chào sếp."
+      }
+    },
+    {
+      "nhan": "Firefox báo quyền mic = \"prompt\" (chưa cho, sẽ hỏi)",
+      "ok": true,
+      "chiTiet": "prompt"
+    },
+    {
+      "nhan": "giữ V → getUserMedia TREO ở hộp hỏi quyền (không duoc/loi)",
+      "ok": true,
+      "chiTiet": "nút \"\" · 0 mẫu RMS · quyền cho",
+      "so": {
+        "soMauRms": 0,
+        "dinhRms": 0,
+        "coTieng": false,
+        "byteGui": 0,
+        "dangBlob": "",
+        "text": "",
+        "confidence": 0,
+        "treMs": 0,
+        "loi": "",
+        "quyen": "cho",
+        "nhoQuyen": false,
+        "giuStream": false,
+        "buoc": [
+          "09:54:38.809 bridge STT sẵn tại http://localhost:8897",
+          "09:54:38.810 quyền mic lúc nạp trang: cho",
+          "09:54:42.160 xin quyền mic (trước khi hỏi: cho)"
+        ],
+        "dung": true
+      }
+    },
+    {
+      "nhan": "nhả V → ô chat vẫn trống (đúng \"voice chat không nghe\" của Boss)",
+      "ok": true,
+      "chiTiet": "ô chat \"\" · 0 byte gửi"
+    },
+    {
+      "nhan": "KHÁC BẢN CŨ: mọi bước đều có log [mic] để đọc ra nguyên nhân",
+      "ok": true,
+      "chiTiet": "3 dòng · vd: [mic] xin quyền mic (trước khi hỏi: cho)"
+    },
+    {
+      "nhan": "getUserMedia có \"goi\" mà KHÔNG có \"duoc\"/\"loi\" — treo ở hộp hỏi quyền",
+      "ok": true,
+      "chiTiet": "null"
+    },
+    {
+      "nhan": "nút \"🔊 Bật tiếng\" có mặt để Boss cho quyền bằng MỘT cú bấm",
+      "ok": true,
+      "chiTiet": null
+    },
+    {
+      "nhan": "bấm \"Bật tiếng\" → mic mở, Firefox không nhớ quyền → GIỮ SẴN cả phiên",
+      "ok": true,
+      "chiTiet": "quyền duoc · nhớ false · giữ true",
+      "so": {
+        "soMauRms": 0,
+        "dinhRms": 0,
+        "coTieng": false,
+        "byteGui": 0,
+        "dangBlob": "",
+        "text": "",
+        "confidence": 0,
+        "treMs": 0,
+        "loi": "",
+        "quyen": "duoc",
+        "nhoQuyen": false,
+        "giuStream": true,
+        "buoc": [
+          "09:54:55.845 bridge STT sẵn tại http://localhost:8897",
+          "09:54:55.846 quyền mic lúc nạp trang: cho",
+          "09:54:58.936 xin quyền mic (trước khi hỏi: cho)",
+          "09:54:59.189 mic MỞ sau 253 ms · track \"\" · Firefox KHÔNG nhớ quyền"
+        ],
+        "dung": true
+      }
+    },
+    {
+      "nhan": "toast nói rõ Boss đang ở trạng thái nào",
+      "ok": true,
+      "chiTiet": "\"🎤 Mic mở cho phiên này (Firefox không nhớ quyền trên localhost) — giữ V để nói\""
+    },
+    {
+      "nhan": "giữ V → nút 🎤 đỏ + ô chat hiện \"🎤 đang nghe…\"",
+      "ok": true,
+      "chiTiet": "\"🎤 đang nghe…\" · ẩn false · nút \"dang-ghi\""
+    },
+    {
+      "nhan": "ô chat đi đủ 3 trạng thái: đang nghe → đang nhận dạng → nghe được",
+      "ok": true,
+      "chiTiet": "[\"\",\"🎤 đang nghe…\",\"⏳ đang nhận dạng…\",\"nghe được: «Gen ơi chào sếp»\"]",
+      "so": [
+        "",
+        "🎤 đang nghe…",
+        "⏳ đang nhận dạng…",
+        "nghe được: «Gen ơi chào sếp»"
+      ]
+    },
+    {
+      "nhan": "ô chat hiện ĐÚNG câu mốc \"Gen ơi, chào Sếp\"",
+      "ok": true,
+      "chiTiet": "nhận \"Gen ơi chào sếp\" · tin 0.955 · trễ 4487 ms",
+      "so": {
+        "oChat": "Gen ơi chào sếp",
+        "confidence": 0.955,
+        "treMs": 4487
+      }
+    },
+    {
+      "nhan": "dòng trạng thái báo \"nghe được: «…»\"",
+      "ok": true,
+      "chiTiet": "\"nghe được: «Gen ơi chào sếp»\""
+    },
+    {
+      "nhan": "MediaRecorder của Firefox cho opus và ffmpeg nhận được",
+      "ok": true,
+      "chiTiet": "80128 byte \"audio/ogg; codecs=opus\"",
+      "so": {
+        "byteGui": 80128,
+        "dangBlob": "audio/ogg; codecs=opus"
+      }
+    },
+    {
+      "nhan": "mic đo được tiếng thật (RMS > 0, có dải nói)",
+      "ok": true,
+      "chiTiet": "71 mẫu · đỉnh 0.3283 · coTieng true"
+    },
+    {
+      "nhan": "tự gửi sau 1,5 s → user.text (owner)",
+      "ok": true,
+      "chiTiet": "{\"actor\":\"owner\",\"text\":\"Gen ơi chào sếp\",\"to\":\"camera\",\"handled\":true}"
+    },
+    {
+      "nhan": "bắn user.speech { text, confidence, durationMs, goiGen }",
+      "ok": true,
+      "chiTiet": "{\"actor\":\"owner\",\"text\":\"Gen ơi chào sếp\",\"confidence\":0.955,\"durationMs\":4487,\"goiGen\":true,\"handled\":true}",
+      "so": {
+        "actor": "owner",
+        "text": "Gen ơi chào sếp",
+        "confidence": 0.955,
+        "durationMs": 4487,
+        "goiGen": true,
+        "handled": true
+      }
+    },
+    {
+      "nhan": "lượt nói thứ hai KHÔNG gọi getUserMedia lần nữa (không hộp hỏi quyền)",
+      "ok": true,
+      "chiTiet": "getUserMedia gọi 1 lần lúc bấm \"Bật tiếng\", vẫn 1 sau 2 lượt nói",
+      "so": {
+        "soGoi1": 1,
+        "soGoi2": 1
+      }
+    },
+    {
+      "nhan": "lượt nói thứ hai cũng ra chữ",
+      "ok": true,
+      "chiTiet": "\"Gen ơi chào sếp\""
+    },
+    {
+      "nhan": "nút 🎤 vẫn bấm được trên màn 390 px (mốc chạm 44 px)",
+      "ok": true,
+      "chiTiet": "{\"rong\":44,\"cao\":44,\"trongMan\":true}",
+      "so": {
+        "rong": 44,
+        "cao": 44,
+        "trongMan": true
+      }
+    },
+    {
+      "nhan": "0 lỗi console ở phần B",
+      "ok": true,
+      "chiTiet": ""
+    },
+    {
+      "nhan": "bị chặn → đúng MỘT dòng hướng dẫn việc Boss phải làm",
+      "ok": true,
+      "chiTiet": "\"🎤 Mic bị chặn — bấm biểu tượng 🎤 bên trái thanh địa chỉ → \"Cho phép\", rồi bấm \"Bật tiếng\" lại\""
+    },
+    {
+      "nhan": "trạng thái quyền ghi lại đúng là \"tu-choi\"",
+      "ok": true,
+      "chiTiet": "quyền tu-choi · log: 09:55:46.703 KHÔNG mở được mic sau 104 ms — NotAllowedError: The request is not allowed by the user agent or the platform in the current context."
+    }
+  ],
+  "sttThang": {
+    "text": "Gen ơi chào sếp",
+    "confidence": 0.982,
+    "durationMs": 2795,
+    "audioMs": 2184,
+    "goiGen": true,
+    "tho": "gên ơi chào sếp."
+  },
+  "phanA": {
+    "quyen": "prompt",
+    "giua": {
+      "gum": null,
+      "nut": "",
+      "micDo": {
+        "soMauRms": 0,
+        "dinhRms": 0,
+        "coTieng": false,
+        "byteGui": 0,
+        "dangBlob": "",
+        "text": "",
+        "confidence": 0,
+        "treMs": 0,
+        "loi": "",
+        "quyen": "cho",
+        "nhoQuyen": false,
+        "giuStream": false,
+        "buoc": [
+          "09:54:38.809 bridge STT sẵn tại http://localhost:8897",
+          "09:54:38.810 quyền mic lúc nạp trang: cho",
+          "09:54:42.160 xin quyền mic (trước khi hỏi: cho)"
+        ],
+        "dung": true
+      }
+    },
+    "sau": {
+      "oChat": "",
+      "micDo": {
+        "soMauRms": 0,
+        "dinhRms": 0,
+        "coTieng": false,
+        "byteGui": 0,
+        "dangBlob": "",
+        "text": "",
+        "confidence": 0,
+        "treMs": 0,
+        "loi": "",
+        "quyen": "cho",
+        "nhoQuyen": false,
+        "giuStream": false,
+        "buoc": [
+          "09:54:38.809 bridge STT sẵn tại http://localhost:8897",
+          "09:54:38.810 quyền mic lúc nạp trang: cho",
+          "09:54:42.160 xin quyền mic (trước khi hỏi: cho)"
+        ],
+        "dung": true
+      }
+    },
+    "micLog": [
+      "[mic] bridge STT sẵn tại http://localhost:8897",
+      "[mic] quyền mic lúc nạp trang: cho",
+      "[mic] xin quyền mic (trước khi hỏi: cho)"
+    ]
+  },
+  "userSpeech": {
+    "actor": "owner",
+    "text": "Gen ơi chào sếp",
+    "confidence": 0.955,
+    "durationMs": 4487,
+    "goiGen": true,
+    "handled": true
+  },
+  "phanB": {
+    "sauBam": {
+      "soMauRms": 0,
+      "dinhRms": 0,
+      "coTieng": false,
+      "byteGui": 0,
+      "dangBlob": "",
+      "text": "",
+      "confidence": 0,
+      "treMs": 0,
+      "loi": "",
+      "quyen": "duoc",
+      "nhoQuyen": false,
+      "giuStream": true,
+      "buoc": [
+        "09:54:55.845 bridge STT sẵn tại http://localhost:8897",
+        "09:54:55.846 quyền mic lúc nạp trang: cho",
+        "09:54:58.936 xin quyền mic (trước khi hỏi: cho)",
+        "09:54:59.189 mic MỞ sau 253 ms · track \"\" · Firefox KHÔNG nhớ quyền"
+      ],
+      "dung": true
+    },
+    "nghe": {
+      "soMauRms": 71,
+      "dinhRms": 0.3283194389535702,
+      "coTieng": true,
+      "byteGui": 80128,
+      "dangBlob": "audio/ogg; codecs=opus",
+      "text": "Gen ơi chào sếp",
+      "confidence": 0.955,
+      "treMs": 4487,
+      "loi": "",
+      "quyen": "duoc",
+      "nhoQuyen": false,
+      "giuStream": true,
+      "buoc": [
+        "09:54:55.845 bridge STT sẵn tại http://localhost:8897",
+        "09:54:55.846 quyền mic lúc nạp trang: cho",
+        "09:54:58.936 xin quyền mic (trước khi hỏi: cho)",
+        "09:54:59.189 mic MỞ sau 253 ms · track \"\" · Firefox KHÔNG nhớ quyền",
+        "09:55:03.022 dùng mic giữ sẵn — 0 ms, không hỏi quyền",
+        "09:55:03.023 đang ghi · dạng \"audio/ogg; codecs=opus\"",
+        "09:55:08.063 nhả · 71 mẫu RMS · đỉnh 0.3283 · coTieng true · 80128 byte \"audio/ogg; codecs=opus\"",
+        "09:55:12.550 nghe được sau 4487 ms · tin 0.955 · \"Gen ơi chào sếp\""
+      ],
+      "dung": true
+    },
+    "oChat": "Gen ơi chào sếp",
+    "oChatLuot2": "Gen ơi chào sếp",
+    "soGoiGetUserMedia": {
+      "sauBatTieng": 1,
+      "sauHaiLuotNoi": 1
+    },
+    "micLog": [
+      "[mic] bridge STT sẵn tại http://localhost:8897",
+      "[mic] quyền mic lúc nạp trang: cho",
+      "[mic] xin quyền mic (trước khi hỏi: cho)",
+      "[mic] mic MỞ sau 253 ms · track \"\" · Firefox KHÔNG nhớ quyền",
+      "[mic] dùng mic giữ sẵn — 0 ms, không hỏi quyền",
+      "[mic] đang ghi · dạng \"audio/ogg; codecs=opus\"",
+      "[mic] nhả · 71 mẫu RMS · đỉnh 0.3283 · coTieng true · 80128 byte \"audio/ogg; codecs=opus\"",
+      "[mic] nghe được sau 4487 ms · tin 0.955 · \"Gen ơi chào sếp\"",
+      "[mic] dùng mic giữ sẵn — 0 ms, không hỏi quyền",
+      "[mic] đang ghi · dạng \"audio/ogg; codecs=opus\"",
+      "[mic] nhả · 67 mẫu RMS · đỉnh 0.3293 · coTieng true · 53942 byte \"audio/ogg; codecs=opus\"",
+      "[mic] nghe được sau 4278 ms · tin 0.943 · \"Gen ơi chào sếp\""
+    ],
+    "loiConsole": []
+  },
+  "phanC": {
+    "toast": "🎤 Mic bị chặn — bấm biểu tượng 🎤 bên trái thanh địa chỉ → \"Cho phép\", rồi bấm \"Bật tiếng\" lại",
+    "micDo": {
+      "soMauRms": 0,
+      "dinhRms": 0,
+      "coTieng": false,
+      "byteGui": 0,
+      "dangBlob": "",
+      "text": "",
+      "confidence": 0,
+      "treMs": 0,
+      "loi": "The request is not allowed by the user agent or the platform in the current context.",
+      "quyen": "tu-choi",
+      "nhoQuyen": false,
+      "giuStream": false,
+      "buoc": [
+        "09:55:43.405 bridge STT sẵn tại http://localhost:8897",
+        "09:55:43.409 quyền mic lúc nạp trang: tu-choi",
+        "09:55:46.599 xin quyền mic (trước khi hỏi: tu-choi)",
+        "09:55:46.703 KHÔNG mở được mic sau 104 ms — NotAllowedError: The request is not allowed by the user agent or the platform in the current context."
+      ],
+      "dung": true
+    },
+    "micLog": [
+      "[mic] bridge STT sẵn tại http://localhost:8897",
+      "[mic] quyền mic lúc nạp trang: tu-choi",
+      "[mic] xin quyền mic (trước khi hỏi: tu-choi)",
+      "[mic] KHÔNG mở được mic sau 104 ms — NotAllowedError: The request is not allowed by the user agent or the platform in the current context."
+    ]
+  },
+  "tongKet": {
+    "soBuoc": 24,
+    "soOk": 24,
+    "thatBai": []
+  }
+}

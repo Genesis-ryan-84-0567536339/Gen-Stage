@@ -23,6 +23,14 @@ export interface OChat {
    * giờ — đang sửa mà câu tự bay đi thì tệ hơn phải bấm thêm Enter.
    */
   datNhap(chu: string, tuGuiSauMs: number | null): void;
+  /**
+   * F3 (#56 mục 3) — một dòng trạng thái mic ngay trên ô chat.
+   *
+   * Boss báo "voice chat không nghe" vì mic chết lặng: không có dòng nào nói
+   * mic đang mở, đang nhận dạng, hay đã nghe ra gì. Dòng này là chỗ Boss nhìn
+   * (console thì Boss không mở). `null` = xoá dòng.
+   */
+  trangThai(chu: string | null): void;
   /** Con trỏ đang ở trong ô chat không (phím V là chữ "v", không phải mic). */
   dangGoChu(): boolean;
   /** Actor đang nói hộ Boss. */
@@ -46,6 +54,34 @@ export function batOChat(
   document.body.appendChild(hop);
 
   const o = hop.querySelector('input')!;
+
+  /*
+   * F3 (#56) — dòng trạng thái mic, đặt TUYỆT ĐỐI phía trên ô chat nên không
+   * chen vào `display: flex` của `#o-chat`: bố cục ô chat (F1 đang sửa) không
+   * đổi một pixel khi dòng này hiện hay ẩn.
+   */
+  const tt = document.createElement('div');
+  tt.id = 'o-chat-tt';
+  // `polite` để trình đọc màn hình đọc sau câu đang đọc, không cắt ngang.
+  tt.setAttribute('aria-live', 'polite');
+  tt.hidden = true;
+  hop.appendChild(tt);
+  /** Xoá dòng "nghe được: …" sau bấy nhiêu ms (chữ đã nằm trong ô nhập). */
+  let henTt = 0;
+  function datTrangThai(chu: string | null): void {
+    clearTimeout(henTt);
+    if (!chu) {
+      tt.hidden = true;
+      tt.textContent = '';
+      return;
+    }
+    tt.textContent = chu;
+    tt.hidden = false;
+    // "đang nghe…" / "đang nhận dạng…" đứng tới khi có bước sau; câu kết quả
+    // thì tự tắt để ô chat sạch trở lại.
+    if (chu.startsWith('nghe được'))
+      henTt = window.setTimeout(() => datTrangThai(null), 4000);
+  }
 
   async function gui(chu: string): Promise<boolean> {
     const cau = chu.trim();
@@ -104,6 +140,7 @@ export function batOChat(
   return {
     gui,
     actor: () => actorId,
+    trangThai: datTrangThai,
     dangGoChu: () => document.activeElement === o,
     datNhap(chu, tuGuiSauMs) {
       huyHen();
@@ -123,6 +160,7 @@ export function batOChat(
     },
     thao: () => {
       huyHen();
+      clearTimeout(henTt);
       hop.remove();
     },
   };
