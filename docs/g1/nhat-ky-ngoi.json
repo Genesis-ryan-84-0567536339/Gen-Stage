@@ -1,0 +1,232 @@
+{
+ "khi": "2026-10-26T14:27:25.620Z",
+ "moc": {
+  "leSan": 0.02,
+  "hongTrenGhe": [
+   0,
+   0.15
+  ],
+  "leManHinh": 0.01
+ },
+ "mongMuon": {
+  "matGhe": [
+   0.24,
+   0.3
+  ],
+  "matBan": [
+   0.54,
+   0.62
+  ]
+ },
+ "ghe": {
+  "ghe-1": {
+   "ngoi": true,
+   "deGiayY": 0.0022,
+   "chanY": 0.0356,
+   "hipsY": 0.3433,
+   "kneeY": 0.2885,
+   "seatY": 0.2585,
+   "dayDui": 0.0848,
+   "tayT": [
+    4.1242,
+    0.4075,
+    1.1961
+   ],
+   "tayP": [
+    3.8806,
+    0.3971,
+    1.1753
+   ]
+  },
+  "ghe-2": {
+   "ngoi": true,
+   "deGiayY": 0.0022,
+   "chanY": 0.0356,
+   "hipsY": 0.3433,
+   "kneeY": 0.2885,
+   "seatY": 0.2585,
+   "dayDui": 0.0848,
+   "tayT": [
+    2.8767,
+    0.4056,
+    -3.6941
+   ],
+   "tayP": [
+    3.1189,
+    0.3953,
+    -3.6732
+   ]
+  },
+  "sofa": {
+   "ngoi": true,
+   "deGiayY": 0.0022,
+   "chanY": 0.0356,
+   "hipsY": 0.3433,
+   "kneeY": 0.2885,
+   "seatY": 0.2585,
+   "dayDui": 0.0848,
+   "tayT": [
+    -3.1925,
+    0.4039,
+    1.123
+   ],
+   "tayP": [
+    -3.1716,
+    0.3938,
+    0.8814
+   ]
+  }
+ },
+ "dat": {
+  "ngoi/ghe-1/that-su-ngoi": {
+   "dat": true,
+   "ngoi": true
+  },
+  "ngoi/ghe-1/chan-cham-san": {
+   "dat": true,
+   "deGiayY": 0.0022,
+   "chanY": 0.0356
+  },
+  "ngoi/ghe-1/hong-tren-mat-ghe": {
+   "dat": true,
+   "hipsY": 0.3433,
+   "seatY": 0.2585,
+   "treoHong": 0.0848,
+   "dayDui": 0.0848
+  },
+  "ngoi/ghe-1/mat-ghe-co-chibi": {
+   "dat": true,
+   "seatY": 0.2585,
+   "mongMuon": [
+    0.24,
+    0.3
+   ]
+  },
+  "ngoi/ghe-1/tay-khong-xuyen-ban": {
+   "dat": true,
+   "matBan": 0.586,
+   "tayT": [
+    4.1242,
+    0.4075,
+    1.1961
+   ],
+   "tayP": [
+    3.8806,
+    0.3971,
+    1.1753
+   ]
+  },
+  "ngoi/ghe-2/that-su-ngoi": {
+   "dat": true,
+   "ngoi": true
+  },
+  "ngoi/ghe-2/chan-cham-san": {
+   "dat": true,
+   "deGiayY": 0.0022,
+   "chanY": 0.0356
+  },
+  "ngoi/ghe-2/hong-tren-mat-ghe": {
+   "dat": true,
+   "hipsY": 0.3433,
+   "seatY": 0.2585,
+   "treoHong": 0.0848,
+   "dayDui": 0.0848
+  },
+  "ngoi/ghe-2/mat-ghe-co-chibi": {
+   "dat": true,
+   "seatY": 0.2585,
+   "mongMuon": [
+    0.24,
+    0.3
+   ]
+  },
+  "ngoi/ghe-2/tay-khong-xuyen-ban": {
+   "dat": true,
+   "matBan": 0.586,
+   "tayT": [
+    2.8767,
+    0.4056,
+    -3.6941
+   ],
+   "tayP": [
+    3.1189,
+    0.3953,
+    -3.6732
+   ]
+  },
+  "ngoi/sofa/that-su-ngoi": {
+   "dat": true,
+   "ngoi": true
+  },
+  "ngoi/sofa/chan-cham-san": {
+   "dat": true,
+   "deGiayY": 0.0022,
+   "chanY": 0.0356
+  },
+  "ngoi/sofa/hong-tren-mat-ghe": {
+   "dat": true,
+   "hipsY": 0.3433,
+   "seatY": 0.2585,
+   "treoHong": 0.0848,
+   "dayDui": 0.0848
+  },
+  "ngoi/sofa/mat-ghe-co-chibi": {
+   "dat": true,
+   "seatY": 0.2585,
+   "mongMuon": [
+    0.24,
+    0.3
+   ]
+  },
+  "ngoi/sofa/tay-khong-xuyen-ban": {
+   "dat": true,
+   "matBan": 0.586,
+   "tayT": [
+    -3.1925,
+    0.4039,
+    1.123
+   ],
+   "tayP": [
+    -3.1716,
+    0.3938,
+    0.8814
+   ]
+  },
+  "man-hinh-van-tren-ban": {
+   "dat": true,
+   "bottomY": 0.586,
+   "surfaceY": 0.586,
+   "lech": 0
+  },
+  "mat-ban-co-chibi": {
+   "dat": true,
+   "surfaceY": 0.586,
+   "mongMuon": [
+    0.54,
+    0.62
+   ]
+  },
+  "console-sach": {
+   "dat": true,
+   "loi": []
+  }
+ },
+ "loiConsole": [],
+ "manHinh": {
+  "id": "may-tinh",
+  "pos": [
+   3,
+   0.87,
+   -4.3
+  ],
+  "showing": null,
+  "streaming": false,
+  "lines": 0,
+  "chars": 0,
+  "bottomY": 0.586,
+  "restsOn": {
+   "block": "ban-dieu-khien",
+   "surfaceY": 0.586
+  }
+ }
+}
