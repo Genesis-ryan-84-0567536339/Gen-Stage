@@ -36,7 +36,11 @@ const MOC = {
   /** Lệch tóc tối đa, MỌI mẫu suốt emote (m) — mốc Boss. */
   lechToc: 0.07,
 };
-const EMOTE = ['rat-vui', 'buon', 'ngac-nhien'];
+/** `--emote=a,b` = chỉ đo bấy nhiêu emote (vòng kiểm lại, khỏi mở Firefox nhiều lần). */
+const XIN_EMOTE = (process.argv.find((a) => a.startsWith('--emote=')) ?? '').slice(8);
+const EMOTE = XIN_EMOTE
+  ? XIN_EMOTE.split(',').filter(Boolean)
+  : ['rat-vui', 'buon', 'ngac-nhien'];
 const GHE = ['ghe-1', 'ghe-2', 'sofa'];
 /**
  * `--dev` = chạy trên dev server (khung hình dài hơn hẳn: 150–340 ms trên
@@ -408,6 +412,7 @@ for (const em of EMOTE) {
           lechToc: toc.lechToc,
           xaDauNhat: toc.xaDauNhat,
           lechVay: toc.lechVay,
+          soHamCat: toc.soHamCat,
         });
         // GIỮA emote (t ≈ 400 ms) mới đọc dáng nền: đọc ở cuối thì emote đã
         // tan và luôn ra `idle`, chẳng chứng minh được gì.
@@ -433,6 +438,7 @@ for (const em of EMOTE) {
         trangThai: trangThaiGiua,
         ketQua: await chay,
         spring: window.stage.doToc('gen').spring,
+        soKhopHam: window.stage.doToc('gen').soKhopHam,
         mocDaOnDinh: window.stage.doToc('gen').mocDaOnDinh,
       };
     },
@@ -444,7 +450,9 @@ for (const em of EMOTE) {
   const buoc = mau.buocSpring ?? 0;
   console.log(
     `emote ${em.padEnd(11)} đỉnh lệchTóc=${dinh.toFixed(4)} m · khung dài nhất=${khungMax} ms · ` +
-      `bước spring=${buoc} · nền=${mau.dangNen} trạngThái=${mau.trangThai}`,
+      `bước spring=${buoc} · nền=${mau.dangNen} · hãm cắt tối đa=${Math.max(
+        ...mau.ds.map((x) => x.soHamCat ?? 0),
+      )}/${mau.soKhopHam ?? '?'} xương`,
   );
   // Bảng tóc chỉ có nghĩa nếu emote THẬT SỰ đang diễn giữa cửa sổ đo
   // thước chỉ đúng nghĩa khi mốc tóc đã đóng lại ở dáng cân bằng
