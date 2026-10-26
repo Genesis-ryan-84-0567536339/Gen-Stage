@@ -84,8 +84,10 @@ export const PLACES: readonly DinhNghiaPlace[] = [
   { id: 'ban-2', pos: [-1, 0, 2.5], kind: 'desk', standAt: [-1, 0, 3.5], facing: 0 },
   // `ghe-1` = ghế ăn phía bắc bàn ăn, `ghe-2` = ghế làm việc. `seatY` ở đây
   // chỉ là FALLBACK: `phong.ts` đo mặt ghế thật trên model rồi ghi đè `datSeatY()`.
-  { id: 'ghe-1', pos: [4, 0, 1], kind: 'seat', facing: 0, seatY: 0.46 },
-  { id: 'ghe-2', pos: [3, 0, -3.5], kind: 'seat', facing: 180, seatY: 0.46 },
+  // G1 (#56): nội thất hạ về cỡ chibi (ghế cao 0,55 m) nên FALLBACK cũng phải
+  // là mặt ngồi chibi ~0,30 m, không còn 0,46 m của ghế người lớn.
+  { id: 'ghe-1', pos: [4, 0, 1], kind: 'seat', facing: 0, seatY: 0.3 },
+  { id: 'ghe-2', pos: [3, 0, -3.5], kind: 'seat', facing: 180, seatY: 0.3 },
   // Trong phòng khách, phía NAM cụm sofa–thảm (F1: cụm chiếm z −1…+2,9 nên
   // chỗ đứng phải ở z ≥ 3,2 mới ra ngoài hộp chắn của `ghe-don-2`). Quay mặt
   // 180° = nhìn vào cả cụm sofa + kệ TV. Mốc mặc định của sân khấu giả trong test.
@@ -96,7 +98,7 @@ export const PLACES: readonly DinhNghiaPlace[] = [
   // x = 1,5 để bếp chữ L lấy trọn góc đông-bắc).
   { id: 'ke-module', pos: [1.5, 0, -4.5], kind: 'shelf', standAt: [1.5, 0, -3.4], facing: 180 },
   // Sofa 3 chỗ phòng khách, mặt quay về kệ TV (−X) → chỗ đứng ở phía bắc đầu sofa.
-  { id: 'sofa', pos: [-3, 0, 1], kind: 'seat', standAt: [-3, 0, -0.7], facing: 270, seatY: 0.42 },
+  { id: 'sofa', pos: [-3, 0, 1], kind: 'seat', standAt: [-3, 0, -0.7], facing: 270, seatY: 0.3 },
   // Bàn ăn tròn giữa cụm ăn; chỗ đứng ở phía bắc bàn (khoảng trống 1,35 m tới dãy bếp).
   { id: 'ban-an', pos: [4, 0, 2], kind: 'desk', standAt: [4, 0, 0.4], facing: 0 },
   // Bếp: đứng trước bếp nấu trên nhánh đông của chữ L.

@@ -49,6 +49,7 @@ bash scripts/fetch-anim.sh    # tải bộ chuyển động CC0 (Quaternius) v�
 bash scripts/fetch-stt.sh     # C1: venv + model PhoWhisper-small ct2 vào .cache/stt/ — chạy 1 lần (cai-dat.sh gọi sẵn)
 node scripts/kiem-f2.mjs      # bằng chứng F2: điều khiển mượt trên FIREFOX + GPU THẬT, vào docs/f2/ (CHẠY MỘT LẦN)
 node scripts/kiem-g1.mjs      # bằng chứng G1: bỏ trần + chân chạm sàn + tóc, FIREFOX thật, vào docs/g1/ (CHẠY MỘT LẦN)
+node scripts/kiem-g1-ngoi.mjs # bằng chứng G1 mục NGỒI: nội thất cỡ chibi, chân chạm sàn khi ngồi (cổng 5363)
 node scripts/kiem-e1.mjs      # bằng chứng E1: UI 390 px, não diễn thật, /tts retry, hiểu "Javis", cài 1 lệnh, vào docs/e1/ (CHẠY MỘT LẦN)
 ```
 
@@ -1032,12 +1033,36 @@ cổng riêng **5362**); số đo trước khi sửa ở `docs/g1/do-truoc/`.
   xương) **một lần ở khung thứ 3**, chỉ nhận đỉnh trong bán kính 0,22 m quanh
   xương bàn chân — ra `deChan` 0,033 m (Javis) / 0,049 m (Gen). Thước này phơi
   ra `doXuong().deGiayY` để script bằng chứng chấm được.
-- **NGỒI thì hông bám mặt ghế, không cắm chân.** Ghế Kenney cao 0,45 m mà
-  người chibi chỉ cao ~1,25 m (chân 0,59 m) nên **bàn chân đung đưa 0,24 m
-  trên sàn** — đúng như một đứa trẻ ngồi ghế người lớn, không phải lỗi. Giao
-  kèo ở trạng thái ngồi là **không thủng sàn** (`deGiayY ≥ −0,01`) và hông
-  đúng mặt ghế. Muốn chân chạm sàn khi ngồi thì phải hạ ghế xuống ~0,3 m
-  (ghế trẻ em) — việc của bảng bố cục, không phải của `nhanvat.ts`.
+- **NỘI THẤT LÀ CỦA NGƯỜI CHIBI, nên phải hạ về cỡ của họ.** Ngồi đúng tư thế
+  thì hông bám mặt ghế — và với ghế Kenney cao 0,45 m trên người chibi cao
+  ~1,25 m (chân 0,554 m), bàn chân **đung đưa 0,24 m** trên sàn. Sếp chốt:
+  nội thất phải vừa hai nhân vật. Hạ trong `bo-cuc.ts` bằng đúng trường
+  `cao`/`rongToiDa` (không đụng code dựng):
+
+  | món | trước | sau | kết quả đo |
+  | --- | --- | --- | --- |
+  | ghế ăn ×4, ghế làm việc, sofa, 2 ghế đơn | cao 0,78–0,9 | **cao 0,47** | mặt ngồi **0,2585 m** |
+  | bàn ăn | rộng 1,3 | **cao 0,58** · rộng ≤1,05 | — |
+  | bàn làm việc | rộng 1,35 | **cao 0,60** · rộng ≤1,12 | mặt bàn **0,586 m** |
+  | bàn trà · bàn cạnh sofa · đèn sàn/đèn bàn | 0,38 · 0,5 · 1,5 · 0,42 | 0,26 · 0,34 · 1,05 · 0,30 | — |
+
+  **Mặt ngồi 0,30–0,32 m (số Sếp nhắm) là BẤT KHẢ nếu muốn chân chạm sàn**:
+  cẳng chân chibi dài 0,25 m, đế giày 0,033 m, dáng ngồi giữ đầu gối cao hơn
+  mặt ghế 0,03 m (`LE_DAU_GOI`) ⇒ mặt ghế phải ≤ 0,253 m. Đo thật ở 0,30 m:
+  bàn chân treo 4,7–5,2 cm. Chốt **0,2585 m** → đế giày **0,0022 m**, hông
+  0,3433 m (trên mặt ghế 0,085 m = nửa bề dày đùi), đầu gối 0,2885 m.
+  Giao kèo cũ (không thủng sàn) **nâng thành** chạm sàn ±2 cm cho cả ba chỗ
+  ngồi `ghe-1`/`ghe-2`/`sofa`: `node scripts/kiem-g1-ngoi.mjs` (cổng 5363,
+  18/18 mục, `docs/g1/bang-ngoi.txt`).
+- **Đồ nhỏ lại thì cụm phải SIẾT theo, không thì món đứng lẻ.** Bàn trà
+  −4,5 → −4,0; 2 ghế đơn z ±1,5 → ±1,0 quanh bàn trà; đèn sàn theo ghế đơn về
+  [−5, 0] (và đèn điểm ấm trong `world.ts` dời theo — chúng là MỘT chụp đèn).
+  Test F1 "không món nào đứng lẻ giữa sàn" bắt đúng chỗ này.
+- **`matTrenKhoi()` phải đọc SỔ ĐO LÚC DỰNG, không đo lại trên cảnh.** Sau
+  `gopTinh()` nhóm `khoi:<id>` rỗng nên `Box3` ra `null` → E2 rơi về cao độ
+  ghi cứng 0,97 m của bàn CŨ và màn hình `may-tinh` lơ lửng 37 cm trên mặt bàn
+  mới. `dungPhong()` nay trả `noc: Map<id, mặt trên>` cho `World`. Đo lại:
+  `bottomY` 0,586 = `surfaceY` 0,586, lệch 0.
 - **TÓC: ba tật chồng nhau, sửa cả ba.** Đo trước: lệch dáng của Gen
   **0,26 m** và gần như không đổi theo thời gian (tóc duỗi hẳn ra khỏi dáng
   tác giả vẽ, không phải đung đưa).

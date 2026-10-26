@@ -179,10 +179,19 @@ describe('kẹp phòng + va chạm (bo-cuc.ts, D1 — căn nhà 14×10 m)', () =
   });
 
   it('TRƯỢT dọc vật cản: đi chéo vào mép bàn ăn vẫn nhích được theo trục còn lại', () => {
-    // bàn ăn ở [3.5, 2.5], chan [0.6,0.6] → mép x = 2.9. Từ phía -x đẩy chéo vào.
-    const z0 = 2.5;
-    const [x, z] = truotVaCham(2.2, z0, 3.2, z0 + 0.3);
-    expect(x).toBeCloseTo(2.2, 5); // trục X bị bàn chặn
+    /*
+     * Toạ độ DÒ TỪ BẢNG, không viết tay (G1 #56): bản cũ ghi cứng "bàn ăn ở
+     * [3.5, 2.5], chan [0.6,0.6]" trong khi F1 đã dời bàn về [4, 2] — test vẫn
+     * xanh vì tình cờ trúng một cái ghế, rồi đỏ ngay khi G1 thu nhỏ nội thất
+     * cho vừa người chibi. Đo từ chính dòng bố cục thì đổi cỡ bao nhiêu cũng
+     * còn đúng.
+     */
+    const ban = KHOI_CANH.find((k) => k.id === 'ban-an')!;
+    const z0 = ban.tai[1] + 0.4; // lệch khỏi 2 ghế ngang hai bên bàn
+    let x0 = ban.tai[0] - ban.chan![0] - 0.05;
+    while (biChan(x0, z0)) x0 -= 0.05; // lùi ra tới chỗ trống THẬT
+    const [x, z] = truotVaCham(x0, z0, ban.tai[0], z0 + 0.3);
+    expect(x).toBeCloseTo(x0, 5); // trục X bị bàn chặn
     expect(z).toBeGreaterThan(z0); // trục Z vẫn đi được → men theo mép
   });
 

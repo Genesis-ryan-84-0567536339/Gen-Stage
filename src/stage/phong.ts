@@ -689,6 +689,15 @@ function phongTroi(): THREE.Mesh {
 export type Phong = {
   nhom: THREE.Group;
   dungKenney: boolean;
+  /**
+   * Cao độ MẶT TRÊN của từng khối, đo lúc dựng (m).
+   *
+   * Phải trả ra ngoài vì `gopTinh()` gộp mesh tĩnh xong thì nhóm
+   * `khoi:<id>` rỗng — đo lại bằng `Box3` trên cảnh sẽ ra `null`. Đó chính là
+   * lý do màn hình `may-tinh` lơ lửng sau khi G1 hạ bàn về cỡ chibi: E2 đo
+   * mặt bàn không ra nên rơi về cao độ ghi cứng 0,97 m của bàn CŨ.
+   */
+  noc: Map<string, number>;
   /** Số mesh trước/sau khi gộp tĩnh — bằng chứng hiệu năng cho PR. */
   gop: { truoc: number; sau: number };
 };
@@ -1035,7 +1044,7 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
   }
 
   const gop = gopTinh(nhom);
-  return { nhom, dungKenney: kho.co, gop };
+  return { nhom, dungKenney: kho.co, gop, noc: nocKhoi };
 }
 
 /** PointLight dựng gọn một dòng (bảng bố cục không quản ánh sáng). */

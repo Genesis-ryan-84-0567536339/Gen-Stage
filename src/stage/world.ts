@@ -339,6 +339,8 @@ export class World implements StageWorld {
   private screens = new Map<string, ManHinh>();
   /** E2 — khối đỡ + mặt trên ĐO ĐƯỢC của từng màn hình (xem `ScreenSnapshot.restsOn`). */
   private doDungManHinh = new Map<string, { block: string; surfaceY: number }>();
+  /** Mặt trên của từng khối nội thất, đo lúc dựng phòng (xem `Phong.noc`). */
+  private nocKhoi = new Map<string, number>();
   private ketTinhDangChay = new Map<string, KetTinh>();
   private fxDangChay: HieuUng[] = [];
 
@@ -555,8 +557,8 @@ export class World implements StageWorld {
       // đèn sàn cạnh ghế đơn phòng khách (−5,5; −1,0) và đèn bàn làm việc
       // (3,0; −4,5). Bản D1b vẫn chiếu vào chỗ cũ (−1,5; 1,0) tức giữa hành
       // lang trống, nên phòng khách tối mà hành lang lại sáng vô cớ.
-      denDiem(MAU_DEN_AM, 6.5, 4.2, -5.5, 1.45, -1.0),
-      denDiem(MAU_DEN_AM, 5.0, 3.6, 3.0, 1.15, -4.3),
+      denDiem(MAU_DEN_AM, 6.5, 4.2, -5, 1.0, 0),
+      denDiem(MAU_DEN_AM, 5.0, 3.6, 3.0, 0.8, -4.3),
     ];
     for (const d of this.denAm) this.scene.add(d);
 
@@ -576,6 +578,7 @@ export class World implements StageWorld {
   async napCanh(tienTrinh?: (chu: string) => void): Promise<{ dungKenney: boolean }> {
     tienTrinh?.('Đang dựng căn nhà…');
     const phong = await dungPhong(this.scene);
+    this.nocKhoi = phong.noc;
 
     tienTrinh?.('Đang nạp nhân vật…');
     // 1) Boss (nam) trên bục trung tâm, quay mặt về camera — phím WASD lái người này
@@ -1753,6 +1756,10 @@ export class World implements StageWorld {
    * `phong.ts` đặt tên nhóm mỗi khối là `khoi:<id>` (nguồn sự thật duy nhất).
    */
   private matTrenKhoi(id: string): number | null {
+    // Sổ đo lúc dựng trước đã: sau `gopTinh()` nhóm `khoi:<id>` rỗng nên đo
+    // lại trên cảnh ra `null` (G1 #56 — màn hình vì thế lơ lửng trên bàn mới).
+    const daDo = this.nocKhoi.get(id);
+    if (daDo !== undefined && Number.isFinite(daDo)) return daDo;
     const g = this.scene.getObjectByName(`khoi:${id}`);
     if (!g) return null;
     const hop = new THREE.Box3().setFromObject(g);
