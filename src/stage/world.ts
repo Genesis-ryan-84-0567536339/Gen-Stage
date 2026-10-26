@@ -124,9 +124,16 @@ type GocMay = { vt: THREE.Vector3; tam: THREE.Vector3; fov: number };
  * bếp. Góc mới thấy **cả 3 cụm trong một khung**: bàn ăn + bếp chữ L bên phải,
  * góc làm việc chính giữa phía xa, cụm sofa–thảm–kệ TV bên trái.
  */
+/**
+ * J1 (#78) — khung `toan-canh` phải THẤY VÙNG GIỮA TRỐNG
+ * (`VUNG_HOAT_DONG` x −3…3 · z −2,5…2,5). Bản F1 đứng ở (1,0 · 4,3) ngắm
+ * (−0,5 · −3,9): trục nhìn xuyên dọc nhà nên vùng giữa bị nén thành một dải
+ * mỏng, còn cụm sofa cũ (giữa sàn) che mất. Nay lùi về góc ĐÔNG-NAM, lên cao
+ * 2,6 m và ngắm thẳng vào tâm vùng hoạt động.
+ */
 const MAY_NGANG: GocMay = {
-  vt: new THREE.Vector3(1.0, 1.92, 4.3),
-  tam: new THREE.Vector3(-0.5, 0.82, -3.9),
+  vt: new THREE.Vector3(3.6, 2.6, 4.4),
+  tam: new THREE.Vector3(-1.2, 0.8, -1.2),
   fov: 74,
 };
 /**
@@ -211,6 +218,11 @@ export class World implements StageWorld {
   private doDungManHinh = new Map<string, { block: string; surfaceY: number }>();
   /** Mặt trên của từng khối nội thất, đo lúc dựng phòng (xem `Phong.noc`). */
   private nocKhoi = new Map<string, number>();
+  /** J1 (#78) — hộp bao thật của từng khối, đo lúc dựng (xem `Phong.hopKhoi`). */
+  private hopKhoi = new Map<
+    string,
+    { min: [number, number, number]; max: [number, number, number] }
+  >();
   private ketTinhDangChay = new Map<string, KetTinh>();
   private fxDangChay: HieuUng[] = [];
 
@@ -390,12 +402,13 @@ export class World implements StageWorld {
      * chói. Hai point light không bóng gần như miễn phí trên GPU yếu.
      */
     this.denAm = [
-      // F1 (#56): hai chụp đèn CÓ THẬT trong cảnh đã dời theo bố cục mới —
-      // đèn sàn cạnh ghế đơn phòng khách (−5,5; −1,0) và đèn bàn làm việc
-      // (3,0; −4,5). Bản D1b vẫn chiếu vào chỗ cũ (−1,5; 1,0) tức giữa hành
-      // lang trống, nên phòng khách tối mà hành lang lại sáng vô cớ.
-      denDiem(MAU_DEN_AM, 6.5, 4.2, -5, 1.0, 0),
-      denDiem(MAU_DEN_AM, 5.0, 3.6, 3.0, 0.8, -4.3),
+      // F1 (#56) → J1 (#78): hai chụp đèn CÓ THẬT trong cảnh, toạ độ luôn đi
+      // theo `bo-cuc.ts` — đèn sàn `den-san` đã về sát tường tây (−6,5; 0) và
+      // đèn bàn `den-ban` theo bàn làm việc nhích sát tường bắc (3,0; −4,35).
+      // Chúng là MỘT chụp đèn, không phải hai thứ: lệch là thấy ngay vệt sáng
+      // không có nguồn (đúng lỗi D1b chiếu vào giữa hành lang trống).
+      denDiem(MAU_DEN_AM, 6.5, 4.2, -6.5, 1.0, 0),
+      denDiem(MAU_DEN_AM, 5.0, 3.6, 3.0, 0.8, -4.35),
     ];
     for (const d of this.denAm) this.scene.add(d);
 
@@ -411,6 +424,7 @@ export class World implements StageWorld {
     tienTrinh?.('Đang dựng căn nhà…');
     const phong = await dungPhong(this.scene);
     this.nocKhoi = phong.noc;
+    this.hopKhoi = phong.hopKhoi;
 
     tienTrinh?.('Đang nạp nhân vật…');
     // 1) Boss (nam) trên bục trung tâm, quay mặt về camera — phím WASD lái người này
@@ -1041,6 +1055,24 @@ export class World implements StageWorld {
     return this.nv(id).doToc();
   }
 
+  /**
+   * J1 (#78) — SỔ ĐO HỘP BAO của mọi khối nội thất, đo lúc dựng phòng.
+   *
+   * Bằng chứng J1 cần `min.y` và mép ngoài THẬT của từng khối (sát tường bao
+   * nhiêu, có lấn vùng giữa không). Không đo lại trên cảnh: `gopTinh()` đã gộp
+   * mesh tĩnh nên nhóm `khoi:<id>` rỗng — đúng bài học `matTrenKhoi()` của G1.
+   */
+  doKhoi(): Record<string, { min: number[]; max: number[] }> {
+    const ra: Record<string, { min: number[]; max: number[] }> = {};
+    for (const [id, h] of this.hopKhoi) {
+      ra[id] = {
+        min: h.min.map((v) => +v.toFixed(4)),
+        max: h.max.map((v) => +v.toFixed(4)),
+      };
+    }
+    return ra;
+  }
+
   actorIdleStyle(id: string, style: string): void {
     this.nv(id).datIdleStyle(style);
   }
@@ -1285,11 +1317,12 @@ export class World implements StageWorld {
      * trong khi bàn đã dời về x 3.
      */
     if (name === 'phong-khach') {
-      // đứng phía nam cụm, nhìn chéo tây-bắc: thấy trọn sofa ↔ bàn trà ↔ kệ TV
+      // J1 (#78): cụm đã về góc TÂY-NAM (sofa tường tây · kệ TV tường nam) —
+      // đứng chéo đông-bắc của cụm, nhìn vào góc: thấy sofa + bàn trà + kệ TV.
       this.bossDaXoay = true;
       this.tamTuBay = {
-        vt: new THREE.Vector3(-1.5, 1.9, 4.2),
-        tam: new THREE.Vector3(-4.9, 0.9, 0.9),
+        vt: new THREE.Vector3(-1.8, 1.8, 0.6),
+        tam: new THREE.Vector3(-6.0, 0.7, 3.6),
       };
       return;
     }

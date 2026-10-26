@@ -17,9 +17,11 @@ import { SanKhauGia, NHIP_MS } from './san-khau-gia';
 import type { StageEvent, StageState } from '../types';
 import {
   DAY_BEP,
+  DO_TUA_TUONG,
   HANH_LANG,
   KHOI_CANH,
   LOI_DI,
+  TUA_TUONG,
   NUA_HANH_LANG,
   NUA_RONG,
   NUA_SAU,
@@ -32,6 +34,7 @@ import {
   kiemHanhLang,
   kiemLoiDi,
   kiemLuoi,
+  kiemTuaTuong,
   truotVaCham,
 } from '../../stage/bo-cuc';
 import { PLACES, timPlace } from '../../stage/noi-dung';
@@ -196,8 +199,18 @@ describe('kẹp phòng + va chạm (bo-cuc.ts, D1 — căn nhà 14×10 m)', () =
   });
 
   it('bị chặn cả hai trục thì đứng yên, không bị đẩy xuyên', () => {
-    const [x, z] = truotVaCham(2.2, 2.5, 3.6, 2.5);
-    expect([x, z]).toEqual([2.2, 2.5]);
+    /*
+     * J1 (#78): toạ độ DÒ TỪ BẢNG. Bản cũ ghi cứng (2,2 · 2,5) → (3,6 · 2,5),
+     * trúng bàn ăn hồi bàn còn ở giữa sàn; J1 đẩy bàn ăn áp tường đông nên chỗ
+     * đó giờ là vùng hoạt động TRỐNG và test xanh giả. Lấy tủ lạnh làm vật cản
+     * (cục to nhất, chắc chắn còn `chan`), đi thẳng vào mặt nó.
+     */
+    const h = hopChan().find((x) => x.id === 'tu-lanh')!;
+    const zm = (h.z0 + h.z1) / 2;
+    let x0 = h.x0 - 0.35;
+    while (biChan(x0, zm)) x0 -= 0.05;
+    const [x, z] = truotVaCham(x0, zm, h.x0 + 0.2, zm);
+    expect([x, z]).toEqual([x0, zm]);
   });
 });
 
@@ -278,7 +291,11 @@ describe('bảng bố cục D1b — nhà đầy đặn (Issue #48)', () => {
 
   it('đồ bày trên bàn có `tren` hoặc `datY`, không món nào lơ lửng vô cớ', () => {
     for (const k of KHOI_CANH) {
-      if (k.lech) expect(k.tren !== undefined || k.datY !== undefined, k.id).toBe(true);
+      // J1 (#78): món LỚN trong `DO_TUA_TUONG` cũng được dùng `lech` — để nhích
+      // vài cm cho mép sau sát tường, xem ghi chú `lech` trong `bo-cuc.ts`.
+      if (k.lech && !DO_TUA_TUONG.includes(k.id)) {
+        expect(k.tren !== undefined || k.datY !== undefined, k.id).toBe(true);
+      }
       if (k.datY !== undefined) expect(k.datY, k.id).toBeGreaterThan(0);
     }
   });
@@ -357,22 +374,25 @@ describe('F1 (#56) — bố cục nhà như nhà thật', () => {
     expect(giay.x1).toBeLessThanOrEqual(-NUA_HANH_LANG);
   });
 
-  it('sofa và kệ TV NHÌN NHAU (lỗi số 1 của D1b: hai món vuông góc)', () => {
-    const tv = KHOI_CANH.find((k) => k.id === 'ke-tivi')!;
-    const sofa = KHOI_CANH.find((k) => k.id === 'sofa')!;
-    // cùng một trục z → đối diện nhau, không lệch chéo
-    expect(sofa.tai[1]).toBe(tv.tai[1]);
-    // hai mặt quay ngược nhau đúng 180°
-    expect(Math.abs(((sofa.quay - tv.quay) % 360) - 180)).toBeLessThan(1);
-    // khoảng nhìn TV thật: 2,5…4 m
-    const xa = Math.abs(sofa.tai[0] - tv.tai[0]);
-    expect(xa).toBeGreaterThanOrEqual(2.5);
+  it('J1 (#78): sofa và kệ TV theo bố cục GÓC — cả hai tựa tường, khoảng nhìn 2…4 m', () => {
+    /*
+     * J1 thay yêu cầu F1 "sofa đối diện kệ TV 180°": nhà 14 × 10 m không có
+     * hai bức tường nào cách nhau 2,5…4 m, nên "cả hai tựa tường + đối diện
+     * nhau" là bất khả. Bố cục GÓC (sofa tường tây, kệ TV tường nam) là cách
+     * duy nhất vừa tựa tường vừa còn trục nhìn TV dùng được.
+     */
+    const tv = hopChan().find((h) => h.id === 'ke-tivi')!;
+    const sofa = hopChan().find((h) => h.id === 'sofa')!;
+    expect(kiemTuaTuong()).toEqual([]);
+    expect(NUA_SAU - tv.z1).toBeLessThanOrEqual(TUA_TUONG + 1e-9);
+    expect(sofa.x0 + NUA_RONG).toBeLessThanOrEqual(TUA_TUONG + 1e-9);
+    // khoảng nhìn TV: tâm-tới-tâm 2…4 m
+    const xa = Math.hypot((tv.x0 + tv.x1) / 2 - (sofa.x0 + sofa.x1) / 2, (tv.z0 + tv.z1) / 2 - (sofa.z0 + sofa.z1) / 2);
+    expect(xa).toBeGreaterThanOrEqual(2);
     expect(xa).toBeLessThanOrEqual(4);
-    // kệ TV SÁT tường tây
-    expect(hopChan().find((h) => h.id === 'ke-tivi')!.x0 + NUA_RONG).toBeLessThanOrEqual(SAT_TUONG);
   });
 
-  it('THẢM phủ cả cụm phòng khách: chân sofa, bàn trà và 2 ghế đơn đều trên thảm', () => {
+  it('THẢM phủ lòng cụm phòng khách: chân sofa và bàn trà trên thảm, 2 ghế đơn sát tường', () => {
     const tham = KHOI_CANH.find((k) => k.id === 'tham')!;
     const canh = tham.rong!;
     const t = {
@@ -381,11 +401,17 @@ describe('F1 (#56) — bố cục nhà như nhà thật', () => {
       z0: tham.tai[1] - (canh * 0.72) / 2,
       z1: tham.tai[1] + (canh * 0.72) / 2,
     };
-    for (const id of ['sofa', 'ban-tra', 'ghe-don-1', 'ghe-don-2']) {
+    for (const id of ['sofa', 'ban-tra']) {
       const h = hopChan().find((x) => x.id === id)!;
       expect(h.x0 < t.x1 && h.x1 > t.x0 && h.z0 < t.z1 && h.z1 > t.z0, `${id} trên thảm`).toBe(
         true,
       );
+    }
+    // J1 (#78): 2 ghế đơn nối tiếp sofa trên tường tây — không còn đứng trên
+    // thảm, nhưng tựa tường nên vẫn không lẻ (`kiemCum()` xanh).
+    for (const id of ['ghe-don-1', 'ghe-don-2']) {
+      const h = hopChan().find((x) => x.id === id)!;
+      expect(h.x0 + NUA_RONG, `${id} tựa tường tây`).toBeLessThanOrEqual(TUA_TUONG + 1e-9);
     }
   });
 
@@ -402,7 +428,7 @@ describe('F1 (#56) — bố cục nhà như nhà thật', () => {
           const dz = Math.max(0, Math.max(a.z0 - b.z1, b.z0 - a.z1));
           return Math.min(m, Math.hypot(dx, dz));
         }, Infinity);
-      expect(gan, `${a.id} liền dãy`).toBeLessThanOrEqual(0.12);
+      expect(gan, `${a.id} liền dãy`).toBeLessThanOrEqual(0.12 + 1e-9);
     }
     // hai nhánh thật: có cục áp tường bắc VÀ cục áp tường đông
     expect(hs.some((h) => h.z0 + NUA_SAU <= SAT_TUONG)).toBe(true);
@@ -414,18 +440,26 @@ describe('F1 (#56) — bố cục nhà như nhà thật', () => {
     expect(DAY_BEP.nhanh.map((n) => n.tuong).sort()).toEqual(['bac', 'dong']);
   });
 
-  it('bàn ăn là CỤM RIÊNG và cách dãy bếp ≥ 1,2 m', () => {
+  it('bàn ăn là CỤM RIÊNG, cách dãy bếp ≥ 1,2 m trên cùng tường đông', () => {
     expect(cumCua(KHOI_CANH.find((k) => k.id === 'ban-an')!)).toBe('ban-an');
     expect(cumCua(KHOI_CANH.find((k) => k.id === 'bep-nau')!)).toBe('bep');
     const an = hopChan().find((h) => h.id === 'ban-an')!;
     const lanh = hopChan().find((h) => h.id === 'tu-lanh')!;
-    expect(an.z0 - lanh.z1).toBeGreaterThanOrEqual(LOI_DI);
-    // 4 ghế quanh bàn, không ghế nào có hộp chắn (phải kéo ra được)
-    const ghe = ['ghe-1', 'ban-an-ghe-2', 'ban-an-ghe-3', 'ban-an-ghe-4'];
-    for (const id of ghe) {
+    /*
+     * J1 (#78): hai cụm giờ tựa CÙNG tường đông, nên khe giữa chúng không còn
+     * là lối đi (`kiemLoiDi()` bỏ qua cặp cùng tường — muốn sang khu kia thì
+     * đi vòng ra `VUNG_HOAT_DONG` rộng 6 × 5 m). Vẫn giữ mốc cũ 1,2 m để dãy
+     * bếp và bàn ăn không dính vào nhau thành một khối.
+     */
+    expect(an.z0 - lanh.z1).toBeGreaterThanOrEqual(1.2);
+    // 4 ghế quanh bàn, không ghế nào có hộp chắn (phải kéo ra được), và ghế nào
+    // cũng kề bàn (≤ 0,8 m) — ba phía còn lại, phía tường không có ghế.
+    const tam = [(an.x0 + an.x1) / 2, (an.z0 + an.z1) / 2];
+    for (const id of ['ghe-1', 'ban-an-ghe-2', 'ban-an-ghe-3', 'ban-an-ghe-4']) {
       const k = KHOI_CANH.find((x) => x.id === id)!;
       expect(k.chan, id).toBeUndefined();
-      expect(Math.hypot(k.tai[0] - 4, k.tai[1] - 2)).toBeCloseTo(1, 5);
+      const d = Math.hypot(k.tai[0] - tam[0]!, k.tai[1] - tam[1]!);
+      expect(d, `${id} kề bàn ăn`).toBeLessThanOrEqual(1.5);
     }
   });
 

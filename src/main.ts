@@ -54,6 +54,11 @@ export interface CuaStage {
    */
   doToc(actor: string): Record<string, unknown>;
   /**
+   * J1 (#78) — hộp bao THẬT của mọi khối nội thất, đo lúc dựng phòng. Bằng
+   * chứng `min.y` / sát tường / vùng giữa trống đọc sổ này (xem `World.doKhoi`).
+   */
+  doKhoi(): Record<string, { min: number[]; max: number[] }>;
+  /**
    * D1b (#48) — số lượt vẽ / tam giác / số mesh của khung vừa render. Boss
    * 26/10: "đừng đòi GPU lớn" → bằng chứng hiệu năng phải là SỐ, không phải
    * cảm giác. Mốc tự đặt: `calls ≤ 150`, `triangles ≤ 300k`.
@@ -153,6 +158,7 @@ window.stage = {
   bridge: (bat) => (bat ? bridge.bat() : bridge.tat()),
   doXuong: (actor) => world.doXuongActor(actor),
   doToc: (actor) => world.doTocActor(actor),
+  doKhoi: () => world.doKhoi(),
   hieuNang: () => world.doHieuNang(),
   chieuDiem: (p) => world.chieuDiem(p),
   datMay: (vt, tam) => world.datMayThu(vt, tam),

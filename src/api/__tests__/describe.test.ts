@@ -155,8 +155,11 @@ describe('khuôn stage.describe', () => {
     expect(typeof dangDi.actors[0]!.nearest.distance).toBe('number');
 
     await new Promise((r) => setTimeout(r, NHIP_MS * 3));
-    // đứng giữa phòng, ngoài bán kính mọi place: at null nhưng nearest vẫn có
-    await d.run('actor.moveTo', { actor: 'gen', to: [0, 0, 1.6] });
+    // đứng giữa phòng, ngoài bán kính mọi place: at null nhưng nearest vẫn có.
+    // J1 (#78): `buc-trung-tam` dời về [0, 0, 1.5] (giữa vùng hoạt động) nên
+    // chỗ cũ (0 · 1,6) chỉ còn cách nó 0,1 m — đổi sang khoảng sàn trống phía
+    // tây hành lang, cách chỗ đứng gần nhất 1,46 m.
+    await d.run('actor.moveTo', { actor: 'gen', to: [-2.4, 0, -0.6] });
     await new Promise((r) => setTimeout(r, NHIP_MS * 3));
     const giua = await moTa();
     const a = giua.actors[0]!;

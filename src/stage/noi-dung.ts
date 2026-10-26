@@ -82,26 +82,31 @@ export const PLACES: readonly DinhNghiaPlace[] = [
   // rìa tây hành lang, bắc và nam.
   { id: 'ban-1', pos: [-1, 0, -2], kind: 'desk', standAt: [-1, 0, -1], facing: 180 },
   { id: 'ban-2', pos: [-1, 0, 2.5], kind: 'desk', standAt: [-1, 0, 3.5], facing: 0 },
-  // `ghe-1` = ghế ăn phía bắc bàn ăn, `ghe-2` = ghế làm việc. `seatY` ở đây
+  // `ghe-1` = ghế ăn phía TÂY-BẮC bàn ăn (J1 #78: bàn ăn dời sang tường đông),
+  // `ghe-2` = ghế làm việc. `seatY` ở đây
   // chỉ là FALLBACK: `phong.ts` đo mặt ghế thật trên model rồi ghi đè `datSeatY()`.
   // G1 (#56): nội thất hạ về cỡ chibi (`cao: 0.47` trong `bo-cuc.ts`, ra mặt
   // ngồi 0,2585 m) nên FALLBACK cũng phải
   // là mặt ngồi chibi ~0,30 m, không còn 0,46 m của ghế người lớn.
-  { id: 'ghe-1', pos: [4, 0, 1], kind: 'seat', facing: 0, seatY: 0.3 },
+  { id: 'ghe-1', pos: [5, 0, 1.5], kind: 'seat', facing: 70, seatY: 0.3 },
   { id: 'ghe-2', pos: [3, 0, -3.5], kind: 'seat', facing: 180, seatY: 0.3 },
-  // Trong phòng khách, phía NAM cụm sofa–thảm (F1: cụm chiếm z −1…+2,9 nên
-  // chỗ đứng phải ở z ≥ 3,2 mới ra ngoài hộp chắn của `ghe-don-2`). Quay mặt
-  // 180° = nhìn vào cả cụm sofa + kệ TV. Mốc mặc định của sân khấu giả trong test.
-  { id: 'buc-trung-tam', pos: [-4.5, 0, 3.5], kind: 'stage', facing: 180 },
+  // J1 (#78): `buc-trung-tam` về ĐÚNG GIỮA NHÀ — trong `VUNG_HOAT_DONG`
+  // (x −3…3 · z −2,5…2,5), nơi Boss vừa dọn trống. Trước đây nó nằm trong cụm
+  // sofa–thảm, mà J1 đẩy cụm đó áp tường tây-nam nên chỗ cũ lọt vào hộp chắn
+  // của bàn trà. `facing: 0` = nhìn về cửa sổ lớn (tường nam).
+  // Mốc mặc định của sân khấu giả trong test + chỗ `screen.spawn` khi không khai `at`.
+  { id: 'buc-trung-tam', pos: [0, 0, 1.5], kind: 'stage', facing: 0 },
   // Cửa ra vào, tường bắc — `facing: 0` = quay mặt vào trong nhà (+Z).
   { id: 'cua', pos: [0, 0, -5], kind: 'door', standAt: [0, 0, -3.8], facing: 0 },
   // Kệ sách, đầu TÂY của dãy làm việc sát tường bắc (F1: dời từ tường đông về
   // x = 1,5 để bếp chữ L lấy trọn góc đông-bắc).
   { id: 'ke-module', pos: [1.5, 0, -4.5], kind: 'shelf', standAt: [1.5, 0, -3.4], facing: 180 },
-  // Sofa 3 chỗ phòng khách, mặt quay về kệ TV (−X) → chỗ đứng ở phía bắc đầu sofa.
-  { id: 'sofa', pos: [-3, 0, 1], kind: 'seat', standAt: [-3, 0, -0.7], facing: 270, seatY: 0.3 },
-  // Bàn ăn tròn giữa cụm ăn; chỗ đứng ở phía bắc bàn (khoảng trống 1,35 m tới dãy bếp).
-  { id: 'ban-an', pos: [4, 0, 2], kind: 'desk', standAt: [4, 0, 0.4], facing: 0 },
+  // J1 (#78): sofa tựa TƯỜNG TÂY, mặt quay +X (`facing: 90`) → chỗ đứng ở phía
+  // đông, trước mặt sofa, lách giữa bàn trà (z ≤ 3,29) và bàn cạnh sofa (z ≥ 4,38).
+  { id: 'sofa', pos: [-6.5, 0, 3.5], kind: 'seat', standAt: [-5.4, 0, 3.9], facing: 90, seatY: 0.3 },
+  // J1 (#78): bàn ăn tròn áp TƯỜNG ĐÔNG (tâm model x 6,2) → chỗ đứng ở phía TÂY
+  // bàn, ngoài hộp chắn (x ≤ 4,6) và ngoài `VUNG_HOAT_DONG`.
+  { id: 'ban-an', pos: [6, 0, 2], kind: 'desk', standAt: [4.6, 0, 2], facing: 90 },
   // Bếp: đứng trước bếp nấu trên nhánh đông của chữ L.
   { id: 'bep', pos: [6.5, 0, -2.5], kind: 'desk', standAt: [5.3, 0, -2.5], facing: 90 },
   { id: 'cua-so', pos: [-1, 0, 5], kind: 'door', standAt: [-1, 0, 3.8], facing: 0 },

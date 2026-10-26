@@ -702,6 +702,15 @@ export type Phong = {
    * mặt bàn không ra nên rơi về cao độ ghi cứng 0,97 m của bàn CŨ.
    */
   noc: Map<string, number>;
+  /**
+   * J1 (#78) — **HỘP BAO THẬT của từng khối, đo NGAY LÚC DỰNG** (m, hệ thế
+   * giới). Phải đo ở đây vì `gopTinh()` gộp mesh tĩnh xong thì nhóm
+   * `khoi:<id>` rỗng — `Box3.setFromObject` trên cảnh đã dựng trả hộp vô
+   * nghĩa (đúng bài học `matTrenKhoi()` của G1). Bảng bằng chứng J1 (`min.y`
+   * mọi khối, mép sau cách tường, vùng giữa trống) đọc thẳng sổ này qua
+   * `window.stage.doKhoi()`.
+   */
+  hopKhoi: Map<string, { min: [number, number, number]; max: [number, number, number] }>;
   /** Số mesh trước/sau khi gộp tĩnh — bằng chứng hiệu năng cho PR. */
   gop: { truoc: number; sau: number };
 };
@@ -955,6 +964,10 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
 
   /** Cao độ mặt trên THẬT của từng khối đã dựng — cho `tren` (đo, không đoán). */
   const nocKhoi = new Map<string, number>();
+  const hopKhoi = new Map<
+    string,
+    { min: [number, number, number]; max: [number, number, number] }
+  >();
 
   /** Thảm dùng CHUNG một texture hoa văn (Boss: không mỗi vật một canvas). */
   let matThamChung: THREE.MeshStandardMaterial | null = null;
@@ -1026,6 +1039,12 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
     g.updateMatrixWorld(true);
     const bb = new THREE.Box3().setFromObject(g);
     if (Number.isFinite(bb.max.y)) nocKhoi.set(k.id, bb.max.y);
+    if (Number.isFinite(bb.min.y)) {
+      hopKhoi.set(k.id, {
+        min: [bb.min.x, bb.min.y, bb.min.z],
+        max: [bb.max.x, bb.max.y, bb.max.z],
+      });
+    }
     return g;
   }
 
@@ -1048,7 +1067,7 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
   }
 
   const gop = gopTinh(nhom);
-  return { nhom, dungKenney: kho.co, gop, noc: nocKhoi };
+  return { nhom, dungKenney: kho.co, gop, noc: nocKhoi, hopKhoi };
 }
 
 /** PointLight dựng gọn một dòng (bảng bố cục không quản ánh sáng). */

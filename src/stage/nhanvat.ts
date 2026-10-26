@@ -176,6 +176,14 @@ const DT_SPRING_TOI_DA = 0.4;
  * Cố tình KHÔNG nhân theo `dt`: chính những khung dài (nouveau khựng 130–400
  * ms) là chỗ sinh gai, nhân theo `dt` là mở trần đúng lúc cần siết nhất.
  */
+/*
+ * J1 (#78) — **đã THỬ siết 0,03 → 0,022 m và ĐO THẤY TỆ HƠN**, nên giữ 0,03
+ * của G1. Vòng 2 trên Firefox thật: `ngac-nhien` của Nhi 0,0739 → 0,1264 m.
+ * Lý do: `lechToc` ở `ngac-nhien` KHÔNG phải tóc bay quá nhanh mà là collider
+ * bàn tay **đẩy đuôi tóc ra xa đầu**; siết trần tốc độ hiển thị chỉ làm tóc về
+ * chỗ chậm hơn nên cú đẩy sau cộng dồn lên cú đẩy trước. Ghi lại ở đây để
+ * không ai siết số này lần nữa với cùng lý do.
+ */
 const DICH_TOC_MOI_KHUNG = 0.03;
 /**
  * Trần lực MỘT BƯỚC spring, theo tỉ lệ độ dài đoạn xương — xem `dongMocSpring`.
@@ -199,16 +207,112 @@ const SO_KHUNG_BAY_SPRING = 12;
  * thành rèm. Hai số này là **tỉ lệ so với model gốc**, không phải số tuyệt
  * đối — model nào cũng dùng được.
  */
-const TOC_CUNG_THEM = 2.6;
+const TOC_CUNG_THEM = 3.1;
 const TOC_RU_BOT = 0.35;
+/**
+ * J1 (#78) — **HÃM (dragForce) TỐI THIỂU của tóc/vải.** Boss 27/10: "chỉnh lại
+ * tóc của các nhân vật cho gọn gàng vì đang rối quá".
+ *
+ * `dragForce` là phần quán tính bị bỏ mỗi bước: đuôi tóc giữ lại
+ * `1 − dragForce` vận tốc cũ. Model Gen/Javis vẽ cho người cao 1,6 m với
+ * `dragForce` nhỏ (tóc bay đẹp trong clip tĩnh), nhưng ở đây nhân vật ĐI
+ * 1,6 m/s và emote giật — quán tính đó thành đuôi tóc còn đung đưa vài giây
+ * sau khi người đã đứng im, đúng cái Boss gọi là "rối". Sàn cắt nửa biên độ
+ * mỗi hơn một khung mà vẫn còn thấy tóc mềm (1 = tóc cứng như dây thép).
+ *
+ * Chốt **0,45** đúng đề bài #78. **Đã thử 0,55 và ĐO THẤY TỆ HƠN** (vòng 2 trên
+ * Firefox thật: `ngac-nhien` của Nhi 0,0739 → 0,1264 m): hãm cao làm đuôi tóc
+ * về dáng nghỉ CHẬM hơn, nên cú đẩy của collider bàn tay cộng dồn thay vì bị
+ * lực đàn hồi kéo lại ngay. Hãm chữa "tóc còn đung đưa sau khi người đứng im",
+ * KHÔNG chữa "tay gạt tóc ra xa đầu" — cái đó chữa bằng `TOC_BAN_KINH_BOT`.
+ *
+ * G1 CHỈ cân `stiffness`/`gravityPower`/`hitRadius` theo tỉ lệ thế giới và
+ * KHÔNG đụng `dragForce` — nên đây là thông số còn lại duy nhất thật sự giảm
+ * được `lechToc` mà không làm tóc duỗi ra khỏi dáng tác giả vẽ.
+ */
+const HAM_TOC_TOI_THIEU = 0.45;
+/**
+ * J1 (#78) — **TRẦN ĐỘ DÀI CHUỖI TÓC (m).** Issue #78: tóc Nhi rút về ≤ 0,45 m
+ * (ngang lưng trên của người chibi cao ~1,25 m).
+ *
+ * G1 đã chặn theo TỈ LỆ thân người (`TOC_CHUA_THAN_DUOI`), ra chuỗi ~0,77 m —
+ * tóc tới quá hông. Cánh tay đòn dài đó là lý do mỗi cú quay đầu nhanh quét
+ * đuôi tóc qua mặt/vai (Boss thấy "rối"), và nó cũng là lý do `lechToc` khó
+ * xuống dưới mốc emote 0,07 m. Thêm trần TUYỆT ĐỐI bên cạnh trần tỉ lệ: lấy
+ * cái nào NGẶT hơn.
+ */
+const TOC_DAI_TOI_DA = 0.45;
+/**
+ * J1 (#78) — **BỚT BÁN KÍNH VA CHẠM của đuôi tóc** (hệ số, 1 = không đụng).
+ *
+ * `settings.hitRadius` là bán kính hình cầu của ĐUÔI TÓC khi xét va chạm với
+ * collider bàn tay/thân. G1 nhân nó theo tỉ lệ thế giới của khớp — đúng khi
+ * chuỗi tóc còn nguyên, nhưng J1 rút chuỗi xuống 0,36 lần: hình cầu to bằng
+ * một phần ba cả chuỗi, nên mỗi lần bàn tay đi qua (emote `ngac-nhien` đưa tay
+ * che miệng) `_collision()` đẩy đuôi ra một đoạn LỚN so với chuỗi — đúng chỗ
+ * `lechToc` vọt quá mốc 0,07 m trong khi tóc không hề bung.
+ *
+ * Bớt 25 %: tay vẫn gạt được tóc (collider vẫn tới), chỉ không còn đẩy sâu.
+ */
+const TOC_BAN_KINH_BOT = 0.75;
+/**
+ * J1 (#78) — **GÓC LỆCH TỐI ĐA của một xương tóc khỏi DÁNG NGHỈ** (radian).
+ *
+ * Vì sao cần một chặn TUYỆT ĐỐI, không chỉ chặn theo khung hình: `lechToc` của
+ * Nhi ở emote `ngac-nhien` (đưa tay che miệng) đo được **0,0739 → 0,1264 →
+ * 0,2891 m** qua ba vòng đo trên cùng một máy, trong khi `lechTB` chỉ
+ * 0,031–0,053 — tức một GAI MỘT MẪU, không phải tóc bay. Nguyên nhân: hình cầu
+ * collider của bàn tay to gần bằng cả chuỗi tóc sau khi chuỗi rút về 0,4 m,
+ * nên `_collision()` của three-vrm đẩy đuôi ra khỏi cầu bằng một cú xoay rất
+ * lớn, và cú đó rơi vào khung nào thì ăn khung đó. Mọi cách chữa "mềm" (hãm
+ * mạnh hơn, trần tốc độ chặt hơn) đều ĐO THẤY TỆ HƠN vì chúng chỉ làm tóc về
+ * chỗ chậm hơn.
+ *
+ * Chặn đúng chỗ: dáng VẼ RA của mỗi xương tóc không được lệch khỏi **dáng
+ * nghỉ** (chốt ở `chotMocToc`) quá bấy nhiêu radian. 0,42 rad ≈ 24° — đủ cho
+ * tóc đung đưa, lắc đầu, tay gạt tóc thấy được; quá đó là "rối" theo đúng
+ * nghĩa Boss nói. Trạng thái bên trong (`_currentTail`) KHÔNG bị sửa, nên khi
+ * cú đẩy qua rồi tóc tự về, không bị khoá cứng.
+ */
+const GOC_LECH_TOC_TOI_DA = 0.42;
 /** Tóc không được quét xuống thấp hơn đế giày — chừa lề bấy nhiêu mét. */
 const LE_TOC_TREN_SAN = 0.03;
 /** Chờ bấy nhiêu giây cho tóc về dáng cân bằng rồi mới đóng lại mốc (xem `chotLaiMocToc`). */
 const CHO_ON_TOC = 3;
 /** Phần thân dưới (tính từ đế giày lên) phải KHÔNG có lọn tóc rủ tới. */
 const TOC_CHUA_THAN_DUOI = 0.3;
-/** Chặn dưới khi thu gọn chuỗi tóc (dưới mức này là tóc teo lạc khỏi mái). */
-const THU_TOC_TOI_THIEU = 0.55;
+/**
+ * Chặn dưới khi thu gọn chuỗi tóc (dưới mức này là tóc teo lạc khỏi mái).
+ *
+ * J1 (#78): 0,55 → **0,30**. Chuỗi tóc của Gen dài 1,09 m, muốn về
+ * `TOC_DAI_TOI_DA` = 0,45 m thì hệ số phải xuống 0,41 — sàn 0,55 cũ kẹp lại ở
+ * 0,60 m nên trần 0,45 m không bao giờ với được. Đã kiểm bằng ảnh 3 góc
+ * (chính diện · sau lưng · nghiêng, 1440 px, Firefox thật): mái tóc ôm sọ bọc
+ * theo xương `head` nên KHÔNG hở da đầu — chỉ các lọn RỦ bị rút.
+ */
+const THU_TOC_TOI_THIEU = 0.3;
+
+/**
+ * J1 (#78) — bộ số tóc phơi ra cho test đọc (`j1-sat-tuong-toc-gon.test.ts`)
+ * và cho `scripts/kiem-j1.mjs` in vào bảng bằng chứng. Phơi hằng số thay vì
+ * viết lại số trong test: sửa một chỗ là test theo, không bao giờ lệch nhau.
+ */
+export const SO_TOC_J1 = {
+  /** Trần độ dài chuỗi tóc (m) — Issue #78 đòi ≤ 0,45. */
+  tranDai: TOC_DAI_TOI_DA,
+  /** Sàn `dragForce` của tóc/vải — Issue #78 đòi ≥ 0,45. */
+  sanHam: HAM_TOC_TOI_THIEU,
+  /** Hệ số cứng thêm so với model gốc. */
+  cungThem: TOC_CUNG_THEM,
+  /** Chặn dưới khi thu gọn chuỗi tóc. */
+  sanThuToc: THU_TOC_TOI_THIEU,
+  /** Hệ số bớt bán kính va chạm của đuôi tóc. */
+  banKinhBot: TOC_BAN_KINH_BOT,
+  /** Góc lệch tối đa khỏi dáng nghỉ của một xương tóc (radian). */
+  gocLech: GOC_LECH_TOC_TOI_DA,
+  /** Mốc lệch tóc Boss: đứng · đi · emote (m). */
+  mocLech: { dung: 0.02, di: 0.05, emote: 0.07 },
+} as const;
 /** Trục đứng + quay rỗng, dùng lại để không cấp phát mỗi khung hình. */
 const LEN = /* @__PURE__ */ new THREE.Vector3(0, 1, 0);
 /** Quaternion tạm cho trần tốc độ tóc (không cấp phát mỗi khung). */
@@ -1117,6 +1221,8 @@ export class NhanVat {
 
   /** Hệ số đã thu gọn chuỗi tóc (1 = không đụng) — xem `thuGonToc`. */
   private tyThuToc = 1;
+  /** J1 (#78) — độ dài chuỗi tóc dài nhất SAU khi thu gọn (m); phải ≤ `TOC_DAI_TOI_DA`. */
+  private daiChuoiToc = 0;
   /** Thông số spring sau khi cân lực (bằng chứng số, phơi qua `doToc`). */
   private soSpring: Record<string, number> | null = null;
   /** Giây (đồng hồ nhân vật) lúc đóng mốc spring, và đã đóng lại mốc tóc chưa. */
@@ -1127,8 +1233,12 @@ export class NhanVat {
    * quy từ `DICH_TOC_MOI_KHUNG` theo độ dài đoạn xương. `qHamTruoc` giữ dáng
    * của khung trước (cùng thứ tự).
    */
-  private khopHam: Array<{ bone: THREE.Object3D; gocToiDa: number }> = [];
+  private khopHam: Array<{ bone: THREE.Object3D; gocToiDa: number; laToc: boolean }> = [];
   private qHamTruoc: THREE.Quaternion[] = [];
+  /** J1 (#78) — dáng NGHỈ của từng xương tóc/vải (chốt ở `chotMocToc`). */
+  private qNghi = new Map<THREE.Object3D, THREE.Quaternion>();
+  /** Số xương bị chặn góc lệch khỏi dáng nghỉ ở khung vừa rồi (bằng chứng số). */
+  private soLechCat = 0;
   /** Số xương bị trần tốc độ cắt ở khung vừa rồi (bằng chứng số). */
   private soHamCat = 0;
 
@@ -1180,8 +1290,13 @@ export class NhanVat {
     this.goc.updateMatrixWorld(true);
     const vDau = dau.getWorldPosition(new THREE.Vector3());
     this.tocMoc.clear();
+    this.qNghi.clear();
     const v = new THREE.Vector3();
-    for (const b of this.khopSpring()) this.tocMoc.set(b, b.getWorldPosition(v).distanceTo(vDau));
+    for (const b of this.khopSpring()) {
+      this.tocMoc.set(b, b.getWorldPosition(v).distanceTo(vDau));
+      // J1 (#78): giữ luôn DÁNG NGHỈ để `hamTocMoiKhung` chặn góc lệch tuyệt đối
+      this.qNghi.set(b, b.quaternion.clone());
+    }
   }
 
   /**
@@ -1221,12 +1336,17 @@ export class NhanVat {
       coMoc: this.tocMoc.size,
       lechToc: +lechToc.toFixed(4),
       tyThuToc: +this.tyThuToc.toFixed(4),
+      daiChuoiToc: +this.daiChuoiToc.toFixed(4),
+      tranDaiToc: TOC_DAI_TOI_DA,
+      sanHamToc: HAM_TOC_TOI_THIEU,
       lechVay: +lechVay.toFixed(4),
       xaDauNhat: +xaNhat.toFixed(4),
       tyLeGoc: +this.goc.scale.x.toFixed(4),
       mocDaOnDinh: this.daChotLaiToc,
       soKhopHam: this.khopHam.length,
       soHamCat: this.soHamCat,
+      soLechCat: this.soLechCat,
+      gocLechToiDa: GOC_LECH_TOC_TOI_DA,
       spring: this.soSpring,
     };
   }
@@ -2839,7 +2959,7 @@ export class NhanVat {
    * 1,6 m/s không quăng tóc ra sau; tóc vẫn đung đưa theo cử động đầu/thân.
    */
   private dongMocSpring(): void {
-    const ham: Array<{ bone: THREE.Object3D; gocToiDa: number }> = [];
+    const ham: Array<{ bone: THREE.Object3D; gocToiDa: number; laToc: boolean }> = [];
     const tt = {
       soKhop: 0,
       cungMin: Infinity,
@@ -2861,6 +2981,7 @@ export class NhanVat {
       | undefined;
     if (!sb) return;
     this.thuGonToc(sb.joints ?? []);
+    this.thuColliderToc(sb.joints ?? []);
     // `center` phải đặt TRƯỚC `setInitState()`: hàm đó lưu đuôi tóc trong hệ
     // quy chiếu của `center`.
     for (const k of sb.joints ?? []) {
@@ -2879,7 +3000,18 @@ export class NhanVat {
         stiffness: k.settings.stiffness,
         gravityPower: k.settings.gravityPower,
         hitRadius: k.settings.hitRadius,
+        dragForce: k.settings.dragForce,
       };
+      /*
+       * J1 (#78) — SÀN HÃM. `dragForce` là TỈ SỐ (phần vận tốc bị bỏ mỗi
+       * bước), không có đơn vị mét, nên KHÔNG cân theo tỉ lệ thế giới như ba
+       * thông số kia: chỉ kéo lên sàn, giữ nguyên nếu model đã hãm mạnh hơn.
+       * Tóc Javis (gai, ngắn) nhờ đó cũng được hãm thêm mà không đổi dáng.
+       */
+      k.settings.dragForce = Math.min(
+        1,
+        Math.max(k.goc.dragForce ?? 0, HAM_TOC_TOI_THIEU),
+      );
       const ty = tyLeTheGioi(k.bone);
       /*
        * TRẦN LỰC MỘT BƯỚC — G1 vòng 3 (#56 — CHẶN 2).
@@ -2899,13 +3031,17 @@ export class NhanVat {
         Number.isFinite(dai) && dai > 0 ? (TRAN_LUC_BUOC * dai) / DT_SPRING : Infinity;
       k.settings.stiffness = Math.min(k.goc.stiffness * ty * TOC_CUNG_THEM, tran);
       k.settings.gravityPower = Math.min(k.goc.gravityPower * ty * TOC_RU_BOT, tran);
-      k.settings.hitRadius = k.goc.hitRadius * ty;
+      k.settings.hitRadius = k.goc.hitRadius * ty * TOC_BAN_KINH_BOT;
       ghiSo(tt, k.settings.stiffness, k.settings.dragForce ?? 0, dai);
       // trần tốc độ hiển thị: đổi mét/khung thành radian/khung của đoạn này
       const r = Number.isFinite(dai) && dai > 0 ? dai : 0.07;
       ham.push({
         bone: k.bone,
         gocToiDa: THREE.MathUtils.clamp(DICH_TOC_MOI_KHUNG / r, 0.02, Math.PI),
+        // J1 (#78): chặn góc lệch khỏi dáng nghỉ CHỈ áp cho TÓC. Váy cần biên
+        // độ lớn hơn nhiều khi đi (đo thật `lechVay` tới 0,19 m lúc đi 1,6 m/s)
+        // — chặn váy bằng cùng con số đó là làm váy cứng như tấm bìa.
+        laToc: this.duoiDau(k.bone),
       });
     }
     this.khopHam = ham;
@@ -2979,11 +3115,57 @@ export class NhanVat {
       deY + LE_TOC_TREN_SAN,
       deY + TOC_CHUA_THAN_DUOI * (dauY - deY),
     );
-    if (dauY - daiNhat >= san) return; // tóc buông hết vẫn trên mức này — không đụng
-    const k = THREE.MathUtils.clamp((dauY - san) / daiNhat, THU_TOC_TOI_THIEU, 1);
+    /*
+     * J1 (#78) — hai trần, lấy cái NGẶT hơn:
+     *   · trần TỈ LỆ (G1): đuôi tóc không thấp hơn `san` (1/3 dưới thân người);
+     *   · trần TUYỆT ĐỐI (J1): chuỗi tóc ≤ `TOC_DAI_TOI_DA` = 0,45 m.
+     * Trần tuyệt đối mới là cái Boss đọc được ("tóc ngang lưng trên"), trần tỉ
+     * lệ giữ cho model lạ cỡ khác vẫn không quét sàn.
+     */
+    const kSan = (dauY - san) / daiNhat;
+    const kDai = TOC_DAI_TOI_DA / daiNhat;
+    const k = THREE.MathUtils.clamp(Math.min(kSan, kDai), THU_TOC_TOI_THIEU, 1);
+    this.daiChuoiToc = daiNhat * Math.min(1, k);
+    if (k >= 1) return; // tóc đã đủ gọn — không đụng
     for (const g of gocChuoi) g.bone.scale.multiplyScalar(k);
     this.tyThuToc = k;
     this.goc.updateMatrixWorld(true);
+  }
+
+  /**
+   * J1 (#78) — **THU HÌNH CẦU COLLIDER tác động lên TÓC theo đúng tỉ lệ đã rút
+   * chuỗi tóc.**
+   *
+   * Vì sao: collider của bàn tay/cánh tay/thân do tác giả vẽ cho chuỗi tóc
+   * NGUYÊN CỠ. J1 rút chuỗi tóc còn `tyThuToc` ≈ 0,36 lần, nên hình cầu bàn
+   * tay bỗng to gần bằng cả chuỗi: emote `ngac-nhien` (đưa tay che miệng) đẩy
+   * đuôi tóc **duỗi thẳng ra** và `lechToc` vọt 0,15–0,29 m — đo thật qua ba
+   * vòng trên Firefox/GPU thật, trong khi `lechTB` chỉ 0,035. Nghịch lý "rút
+   * tóc ngắn hơn mà lệch to hơn" chính là dấu hiệu của chuyện này.
+   *
+   * Nhân bán kính hình cầu với CHÍNH `tyThuToc` là giữ đúng **tỉ lệ**
+   * collider/chuỗi-tóc mà tác giả vẽ — cùng một triết lý với cách G1 cân
+   * `stiffness`/`gravityPower` theo tỉ lệ thế giới. Tay vẫn gạt được tóc, chỉ
+   * không còn xô cả chuỗi.
+   *
+   * CHỈ thu hình cầu của collider mà khớp TÓC thật sự tham chiếu tới; mỗi hình
+   * cầu thu đúng một lần (`__gocBanKinh`) nên gọi lại không cộng dồn.
+   */
+  private thuColliderToc(joints: Iterable<KhopSpring>): void {
+    if (!(this.tyThuToc < 1)) return;
+    for (const k of joints) {
+      if (!k?.bone || !this.duoiDau(k.bone)) continue;
+      for (const nhom of k.colliderGroups ?? []) {
+        for (const c of nhom?.colliders ?? []) {
+          const hinh = c?.shape as
+            | { radius?: number; __gocBanKinh?: number }
+            | undefined;
+          if (!hinh || typeof hinh.radius !== 'number') continue;
+          hinh.__gocBanKinh ??= hinh.radius;
+          hinh.radius = hinh.__gocBanKinh * this.tyThuToc;
+        }
+      }
+    }
   }
 
   /**
@@ -3026,17 +3208,34 @@ export class NhanVat {
    */
   private hamTocMoiKhung(): void {
     this.soHamCat = 0;
+    this.soLechCat = 0;
     if (this.khopHam.length === 0) return;
     let doi = false;
     for (let i = 0; i < this.khopHam.length; i += 1) {
       const h = this.khopHam[i]!;
       const q0 = this.qHamTruoc[i]!;
       _qHam.copy(h.bone.quaternion);
-      if (q0.angleTo(_qHam) <= h.gocToiDa) continue;
-      h.bone.quaternion.copy(q0).rotateTowards(_qHam, h.gocToiDa);
+      if (q0.angleTo(_qHam) > h.gocToiDa) {
+        h.bone.quaternion.copy(q0).rotateTowards(_qHam, h.gocToiDa);
+        this.soHamCat += 1;
+        doi = true;
+      }
+      /*
+       * J1 (#78) — CHẶN GÓC LỆCH KHỎI DÁNG NGHỈ (xem `GOC_LECH_TOC_TOI_DA`).
+       * Phải chạy SAU trần tốc độ: trần tốc độ chặn "đi nhanh", chặn này chặn
+       * "đi xa" — một cú đẩy của collider bàn tay lặp lại vài khung vẫn lọt
+       * qua trần tốc độ rồi cộng dồn thành gai 0,29 m.
+       */
+      const qn = h.laToc ? this.qNghi.get(h.bone) : undefined;
+      if (qn) {
+        _qHam.copy(h.bone.quaternion);
+        if (qn.angleTo(_qHam) > GOC_LECH_TOC_TOI_DA) {
+          h.bone.quaternion.copy(qn).rotateTowards(_qHam, GOC_LECH_TOC_TOI_DA);
+          this.soLechCat += 1;
+          doi = true;
+        }
+      }
       h.bone.updateMatrix();
-      this.soHamCat += 1;
-      doi = true;
     }
     // `bone.matrixAutoUpdate = false` (three-vrm đặt), nên phải tự dựng lại
     // `matrixWorld` của cả cây sau khi sửa `quaternion`.
@@ -3052,6 +3251,8 @@ interface KhopSpring {
   /** Vị trí đuôi trong hệ xương — chỉ có SAU `setInitState()`. */
   initialLocalChildPosition?: THREE.Vector3;
   center?: THREE.Object3D | null;
+  /** Nhóm collider khớp này bị chặn bởi (J1 #78 thu bán kính theo `tyThuToc`). */
+  colliderGroups?: Array<{ colliders?: Array<{ shape?: unknown }> } | undefined>;
   settings?: {
     stiffness: number;
     gravityPower: number;
@@ -3059,7 +3260,13 @@ interface KhopSpring {
     dragForce: number;
   };
   /** Bản gốc của `settings` trước khi cân theo tỉ lệ (ta tự gắn thêm). */
-  goc?: { stiffness: number; gravityPower: number; hitRadius: number };
+  goc?: {
+    stiffness: number;
+    gravityPower: number;
+    hitRadius: number;
+    /** J1 (#78) — hãm gốc của model, để sàn hãm không cộng dồn mỗi lần đóng mốc. */
+    dragForce?: number;
+  };
 }
 
 /**
