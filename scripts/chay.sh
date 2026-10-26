@@ -12,9 +12,13 @@ if [ "${1:-}" = "tat" ]; then
   echo "Đã tắt Gen-Stage."; exit 0
 fi
 [ -d node_modules ] || pnpm install --silent
-[ -f public/models/avatar.vrm ] || bash scripts/fetch-assets.sh >/dev/null 2>&1
-[ -d public/kenney-sci-fi ] || bash scripts/fetch-lab-assets.sh >/dev/null 2>&1
-[ -d public/anim ] && [ "$(ls public/anim | wc -l)" -gt 0 ] || bash scripts/fetch-anim.sh >/dev/null 2>&1
+# C3 (#40): Boss từng thấy model owner CŨ sau khi merge vì chay.sh BỎ QUA
+# fetch-assets.sh khi file đã tồn tại — URL đổi mà không ai gọi lại script thì
+# không bao giờ tải lại. Giờ LUÔN gọi cả 3 script mỗi lần chạy; mỗi script tự
+# quyết có tải lại hay không bằng stamp `<file>.url` (xem fetch-assets.sh).
+bash scripts/fetch-assets.sh >/dev/null 2>&1
+bash scripts/fetch-lab-assets.sh >/dev/null 2>&1
+bash scripts/fetch-anim.sh >/dev/null 2>&1
 bash scripts/fetch-stt.sh >/dev/null 2>&1   # C1 (#31): nhận dạng giọng Việt, tải 1 lần
 # bridge: nếu cổng đã có tiến trình cũ (kể cả bản chạy ngoài script) thì giải phóng rồi bật lại cho sạch
 if ! curl -s -o /dev/null "http://127.0.0.1:8788/tts?text=a&voice=nu"; then

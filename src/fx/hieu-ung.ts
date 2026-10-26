@@ -7,6 +7,7 @@
  * `world.ts` chỉ gọi `tao()` rồi tự cập nhật mỗi khung hình như các fx khác.
  */
 import * as THREE from 'three';
+import { batSang } from '../stage/bloom-layer';
 
 export const DAI_MAC_DINH: Record<string, number> = {
   scan: 1400,
@@ -51,7 +52,8 @@ class HieuUngQuet implements HieuUng {
     this.m = new THREE.Mesh(geo, mat);
     this.m.position.copy(tam).setY(1.6);
     this.m.rotation.x = Math.PI / 2;
-    scene.add(this.m);
+    // C3 (#40): fx ngắn nằm trong danh sách BLOOM chọn lọc.
+    scene.add(batSang(this.m));
   }
 
   capNhat(): boolean {
@@ -104,7 +106,7 @@ class HieuUngBung implements HieuUng {
     });
     this.m = new THREE.Mesh(geo, mat);
     this.m.position.copy(tam);
-    scene.add(this.m);
+    scene.add(batSang(this.m));
 
     this.light = new THREE.PointLight(mau, 6, 5, 2);
     this.light.position.copy(tam);

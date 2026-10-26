@@ -1,0 +1,65 @@
+{
+  "anh": {
+    "sau-toan-canh": "docs/c3/sau-toan-canh-1440.png",
+    "sau-hologram": "docs/c3/sau-hologram-module.png",
+    "sau-owner-chinh-dien": "docs/c3/sau-owner-chinh-dien.png",
+    "sau-owner-goc-34": "docs/c3/sau-owner-goc-34.png",
+    "sau-gen-chinh-dien": "docs/c3/sau-gen-chinh-dien.png",
+    "sau-gen-goc-34": "docs/c3/sau-gen-goc-34.png"
+  },
+  "luma": {
+    "javisMatTruoc": {
+      "n": 176400,
+      "p5": 186.4,
+      "p50": 249.6,
+      "p95": 251.2,
+      "p99": 251.4,
+      "max": 252.1
+    },
+    "genMatTruoc": {
+      "n": 176400,
+      "p5": 112.6,
+      "p50": 210.9,
+      "p95": 248.8,
+      "p99": 250.1,
+      "max": 252.2
+    },
+    "javisMatSau": {
+      "n": 144400,
+      "p5": 12.1,
+      "p50": 39,
+      "p95": 230.6,
+      "p99": 233.3,
+      "max": 239.6
+    },
+    "genMatSau": {
+      "n": 144400,
+      "p5": 33.5,
+      "p50": 65.9,
+      "p95": 210.2,
+      "p99": 226.8,
+      "max": 239.9
+    },
+    "toanKhungSau": {
+      "n": 1296000,
+      "p5": 41.8,
+      "p50": 101.4,
+      "p95": 243.9,
+      "p99": 253.1,
+      "max": 255
+    },
+    "denTranSau": {
+      "n": 95200,
+      "p5": 35.4,
+      "p50": 113.7,
+      "p95": 244.9,
+      "p99": 247.1,
+      "max": 254.4
+    }
+  },
+  "fps": {
+    "sau": 0.64,
+    "mocYeuCau": ">=85% FPS trước (không giảm >15%)"
+  },
+  "consoleLoi": []
+}

@@ -15,6 +15,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { VRMUtils } from '@pixiv/three-vrm';
 import type {
   Action,
@@ -32,6 +33,7 @@ import type {
 } from '../api/types';
 import type { EventBus } from '../events';
 import { dungPhong, haiSuongBuc, KICH_THUOC_PHONG, MAU_CAM, MAU_CYAN } from './phong';
+import { LOP_BLOOM } from './bloom-layer';
 import { NhanVat, TOC_DO_DI, uocThoiLuongNoi } from './nhanvat';
 import {
   BIEU_CAM,
@@ -148,11 +150,28 @@ export class World implements StageWorld {
   /** C0 (#28) — góc máy hiện tại, để `stage.describe().camera.preset` nói thật. */
   private mayPreset = 'toan-canh';
 
-  /* A3 — hậu kỳ (bloom) + tự tắt khi FPS thấp (spec mục 5) */
-  private composer!: EffectComposer;
+  /*
+   * A3 — hậu kỳ (bloom) + tự tắt khi FPS thấp (spec mục 5).
+   *
+   * C3 (#40) — BLOOM CHỌN LỌC: Boss "nhân vật nam thấy ghê" vì bloom cũ chạy
+   * trên TOÀN CẢNH (một `composer` duy nhất) nên MToon sáng gần 1.0 của mặt/áo
+   * nhân vật bị bắt luôn. Kỹ thuật chuẩn three.js (webgl_postprocessing_
+   * unreal_bloom_selective): `bloomComposer` render cảnh với MỌI vật KHÔNG có
+   * bit layer `LOP_BLOOM` bị tô đen tạm (`toDarken`/`toRestore`), ra một
+   * texture chỉ chứa phần phát sáng thật; `finalComposer` render cảnh bình
+   * thường rồi `mixPass` CỘNG texture đó lên trên. Nhân vật/khối/sàn/tường/
+   * bàn/kệ không bao giờ gắn `LOP_BLOOM` (xem `batSang` ở `bloom-layer.ts`) →
+   * không bao giờ cháy trắng, kể cả khi bloom bật tối đa.
+   */
+  private bloomComposer!: EffectComposer;
+  private finalComposer!: EffectComposer;
   private bloom!: UnrealBloomPass;
+  private mixPass!: ShaderPass;
   private bloomDangBat = true;
   private fpsThapTu = 0;
+  private readonly matDen = new THREE.MeshBasicMaterial({ color: 0x000000 });
+  private readonly vatLieuDaThay = new Map<string, THREE.Material | THREE.Material[]>();
+  private readonly lopBloomKiemTra = new THREE.Layers();
 
   private dongHo = new THREE.Timer();
   private chuotNDC = new THREE.Vector2(0, 0);
@@ -179,7 +198,8 @@ export class World implements StageWorld {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.1;
+    // C3 (#40): Boss "chói mắt" — hạ exposure mặc định 1.1 → 1.0.
+    this.renderer.toneMappingExposure = 1.0;
 
     this.scene.background = new THREE.Color(MAU_NEN_LAB);
     // fog rất nhẹ (0.015): cho chiều sâu, KHÔNG làm mờ khối ở cuối phòng 16 m
@@ -210,6 +230,7 @@ export class World implements StageWorld {
       this.lanCuoiBossHoatDong = Date.now();
     });
 
+    this.lopBloomKiemTra.set(LOP_BLOOM);
     this.dungHauKy();
     this.dungAnhSang();
     this.datGocMay();
@@ -218,32 +239,105 @@ export class World implements StageWorld {
   /* ------------------------------------------------------------ dựng cảnh */
 
   /**
-   * Hậu kỳ A3: `UnrealBloomPass` nửa độ phân giải (hiệu năng, spec mục 5) +
-   * `OutputPass` (ACES/sRGB đã khai ở renderer). Tắt được bằng `coBloom`
-   * khi FPS tụt (`motKhung` tự gọi), không cần dựng lại composer.
+   * Hậu kỳ C3 (#40) — BLOOM CHỌN LỌC, hai composer:
+   *   1. `bloomComposer` (không `renderToScreen`): render cảnh với mọi vật
+   *      KHÔNG mang `LOP_BLOOM` bị tô đen tạm (`toDarken`), qua
+   *      `UnrealBloomPass` nửa độ phân giải (hiệu năng, spec mục 5) → texture
+   *      `bloomComposer.renderTarget2.texture` chỉ chứa phần phát sáng thật.
+   *   2. `finalComposer`: render cảnh BÌNH THƯỜNG (không tô đen) rồi
+   *      `mixPass` CỘNG texture bloom lên trên, cuối cùng `OutputPass`.
+   * Nhờ tách hai lượt, nhân vật/khối/sàn/tường/bàn/kệ (không có `LOP_BLOOM`)
+   * không bao giờ tự phát sáng ra ngoài viền thật của nó, kể cả khi MToon của
+   * mặt/áo sáng gần 1.0 — khác bản cũ bloom thẳng lên ảnh cuối cùng (strength
+   * giảm ~40%: 0.34 → 0.20) theo yêu cầu "giảm chói" của Boss.
    */
   private dungHauKy(): void {
-    this.composer = new EffectComposer(this.renderer);
     const kichThuoc = new THREE.Vector2(window.innerWidth, window.innerHeight);
-    this.composer.addPass(new RenderPass(this.scene, this.camera));
-    // threshold cao + strength vừa phải: chỉ viền/đèn thật sự sáng mới nở ra,
-    // nhân vật đứng dưới ánh sáng thường không bị "cháy" (yêu cầu spec mục 1).
-    // threshold 0.95: CHỈ emissive (đèn dải, viền bục, hologram) nở ra — nhân
-    // vật đứng dưới đèn ấm 1.0 không bao giờ bị cháy (Boss: "nhân vật không cháy").
-    this.bloom = new UnrealBloomPass(kichThuoc, 0.34, 0.4, 0.95);
+    const renderScene = new RenderPass(this.scene, this.camera);
+
+    this.bloomComposer = new EffectComposer(this.renderer);
+    this.bloomComposer.renderToScreen = false;
+    this.bloomComposer.addPass(renderScene);
+    // threshold cao + strength vừa phải: chỉ vật mang LOP_BLOOM mới còn hiện
+    // (mọi vật khác đã bị tô đen trước khi bloomComposer.render() chạy), nên
+    // threshold chỉ còn lọc giữa CÁC vật phát sáng với nhau.
+    this.bloom = new UnrealBloomPass(kichThuoc, 0.2, 0.4, 0.85);
     this.bloom.resolution.set(
       Math.max(1, Math.floor(kichThuoc.x / 2)),
       Math.max(1, Math.floor(kichThuoc.y / 2)),
     );
-    this.composer.addPass(this.bloom);
-    this.composer.addPass(new OutputPass());
+    this.bloomComposer.addPass(this.bloom);
+
+    this.mixPass = new ShaderPass(
+      new THREE.ShaderMaterial({
+        uniforms: {
+          baseTexture: { value: null },
+          bloomTexture: { value: this.bloomComposer.renderTarget2.texture },
+        },
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform sampler2D baseTexture;
+          uniform sampler2D bloomTexture;
+          varying vec2 vUv;
+          void main() {
+            gl_FragColor = texture2D(baseTexture, vUv) + texture2D(bloomTexture, vUv);
+          }
+        `,
+      }),
+      'baseTexture',
+    );
+    this.mixPass.needsSwap = true;
+
+    this.finalComposer = new EffectComposer(this.renderer);
+    this.finalComposer.addPass(renderScene);
+    this.finalComposer.addPass(this.mixPass);
+    this.finalComposer.addPass(new OutputPass());
   }
 
-  /** Bật/tắt bloom (giữ composer, chỉ đổi cường độ — rẻ hơn dựng lại pass). */
+  /** Tô đen tạm mọi vật KHÔNG mang `LOP_BLOOM` trước khi render pass bloom. */
+  private toDarken(obj: THREE.Object3D): void {
+    const m = obj as THREE.Mesh;
+    if (m.isMesh && this.lopBloomKiemTra.test(m.layers) === false) {
+      this.vatLieuDaThay.set(m.uuid, m.material);
+      m.material = this.matDen;
+    }
+  }
+
+  /** Trả lại vật liệu thật sau khi `bloomComposer.render()` xong. */
+  private toRestore(obj: THREE.Object3D): void {
+    const m = obj as THREE.Mesh;
+    const cu = this.vatLieuDaThay.get(m.uuid);
+    if (cu) {
+      m.material = cu;
+      this.vatLieuDaThay.delete(m.uuid);
+    }
+  }
+
+  /** Render một khung: bloom chọn lọc (2 lượt) hoặc chỉ `finalComposer` khi tắt. */
+  private veMotKhung(): void {
+    if (this.bloomDangBat) {
+      this.scene.traverse((o) => this.toDarken(o));
+      this.bloomComposer.render();
+      this.scene.traverse((o) => this.toRestore(o));
+    }
+    this.finalComposer.render();
+  }
+
+  /** Bật/tắt bloom (giữ composer, không dựng lại pass — rẻ hơn). Tắt thì
+   *  `veMotKhung` bỏ qua hẳn lượt `bloomComposer` (đỡ cả traverse tô đen lẫn
+   *  blur nhiều lượt của `UnrealBloomPass` — phần tốn hiệu năng nhất). */
   private coBloom(bat: boolean): void {
     if (this.bloomDangBat === bat) return;
     this.bloomDangBat = bat;
-    this.bloom.strength = bat ? 0.34 : 0;
+    // tắt mixPass khi tắt bloom: không thì ảnh cuối cộng texture bloom CŨ
+    // (khung hình cuối trước khi tắt) lên render thường, nhìn như bị "dính".
+    this.mixPass.enabled = bat;
   }
 
   /**
@@ -330,7 +424,8 @@ export class World implements StageWorld {
       this.datGocMay();
       this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       this.renderer.setSize(window.innerWidth, window.innerHeight);
-      this.composer.setSize(window.innerWidth, window.innerHeight);
+      this.bloomComposer.setSize(window.innerWidth, window.innerHeight);
+      this.finalComposer.setSize(window.innerWidth, window.innerHeight);
       this.bloom.resolution.set(
         Math.max(1, Math.floor(window.innerWidth / 2)),
         Math.max(1, Math.floor(window.innerHeight / 2)),
@@ -403,7 +498,7 @@ export class World implements StageWorld {
 
     this.capNhatBongBong();
     this.controls.update();
-    this.composer.render();
+    this.veMotKhung();
     this.theoDoiFps(dt);
   }
 
@@ -897,7 +992,8 @@ export class World implements StageWorld {
         this.nang.color.setHex(0xffe6c4);
         this.vien.intensity = 0.3;
         bg.setHex(MAU_NEN_LAB);
-        this.renderer.toneMappingExposure = 1.1;
+        // C3 (#40): Boss "chói mắt" — hạ exposure 1.1 → 1.0.
+        this.renderer.toneMappingExposure = 1.0;
         break;
       case 'toi':
         this.troi.intensity = 0.34;
