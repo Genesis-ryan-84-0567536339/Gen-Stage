@@ -167,7 +167,11 @@ export const TOOL_SU_KIEN: ToolMcp = {
 /** Lời dặn trả kèm `stage_bootstrap` — một đoạn, để não biết mình là ai. */
 export const HUONG_DAN_AGENT =
   'Hướng dẫn cho agent: bạn là Gen, nhân vật nữ trong phòng lab này. Bạn CHỈ điều khiển actor ' +
-  '"gen"; actor "owner" là Sếp (Boss) tự lái, không bao giờ ra lệnh cho owner. Đọc stage_describe ' +
+  '"gen"; actor "owner" là Javis — avatar của Sếp trong phòng, Sếp tự lái, không bao giờ ra lệnh ' +
+  'cho owner. QUAN TRỌNG: **Sếp thật đang xem qua màn hình, tức là ở chỗ MÁY QUAY** — nói với Sếp ' +
+  'thì actor_say để mặc định (to: "camera"), đừng quay Gen về phía Javis; chỉ dùng to: "owner" khi ' +
+  'Gen nói riêng với Javis trong phòng. stage_describe cho biết camera.pos và facingTarget của từng ' +
+  'nhân vật. Đọc stage_describe ' +
   'trước mỗi lượt để biết ai đang ở đâu, bận gì, cầm gì. Trả lời Sếp bằng tool actor_say với ' +
   'actor "gen", tiếng Việt, câu ngắn (tối đa 2 câu), gọi Sếp là "Sếp" và tự gọi là "em". Diễn xuất ' +
   'bằng actor_emote (chao, dong-y, suy-nghi, ra-lenh, thanh-cong, vui…), chạy việc trên màn hình ' +
@@ -278,6 +282,15 @@ export interface ThamSoNoi {
   token?: string;
   /** Hạn chờ một lệnh (ms). */
   hanMs?: number;
+  /**
+   * C0 (#28) — xưng vai với bridge.
+   *
+   * `'nao'` = tiến trình MCP **riêng** (stdio: `pnpm mcp`, `nao-demo.mjs`):
+   * bridge đếm nó vào `brainConnected`, vì tiến trình này chỉ tồn tại khi có
+   * não thật. Bản HTTP chạy trong chính bridge thì KHÔNG xưng (`undefined`):
+   * nó luôn sẵn sàng kể cả khi chưa não nào gọi, đếm vào là nói dối.
+   */
+  vai?: 'nao';
 }
 
 /**
@@ -289,7 +302,8 @@ export interface ThamSoNoi {
 export function noiBridgeWs(ts: ThamSoNoi = {}): NoiSanKhau {
   const cong = process.env.GEN_STAGE_PORT ?? '8787';
   const token = ts.token ?? process.env.GEN_STAGE_TOKEN ?? '';
-  const url = ts.url ?? `ws://127.0.0.1:${cong}/`;
+  const goc = ts.url ?? `ws://127.0.0.1:${cong}/`;
+  const url = ts.vai ? `${goc}${goc.includes('?') ? '&' : '?'}role=${ts.vai}` : goc;
   const hanMs = ts.hanMs ?? Number(process.env.GEN_STAGE_TIMEOUT ?? 35000);
 
   const bo = new BoSuKien();
@@ -301,7 +315,9 @@ export function noiBridgeWs(ts: ThamSoNoi = {}): NoiSanKhau {
 
   function noi(): void {
     if (ws || dungHan) return;
-    const w = new WebSocket(token ? `${url}?token=${encodeURIComponent(token)}` : url);
+    const w = new WebSocket(
+      token ? `${url}${url.includes('?') ? '&' : '?'}token=${encodeURIComponent(token)}` : url,
+    );
     ws = w;
     w.on('open', () => {
       if (token) w.send(JSON.stringify({ token }));
@@ -463,6 +479,11 @@ export interface ThamSoHttp {
   cong: number;
   noi: NoiSanKhau;
   token?: string;
+  /**
+   * C0 (#28) — gọi mỗi khi có một yêu cầu MCP thật (não đang sống).
+   * `bridge/server.ts` dùng để cập nhật `brainConnected`.
+   */
+  khiNaoGoi?: () => void;
 }
 
 /**
@@ -472,6 +493,7 @@ export interface ThamSoHttp {
  */
 export function batMcpHttp(ts: ThamSoHttp): HttpServer {
   const { host, cong, noi } = ts;
+  const khiNaoGoi = ts.khiNaoGoi;
   const token = ts.token ?? '';
   const riengMay = host === '127.0.0.1' || host === 'localhost' || host === '::1';
 
@@ -514,6 +536,7 @@ export function batMcpHttp(ts: ThamSoHttp): HttpServer {
     }
 
     const than = await docThan(req);
+    khiNaoGoi?.(); // C0 — có yêu cầu MCP thật = đang có não nối
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
     const mcp = taoMcpServer(noi);
     res.on('close', () => {
@@ -551,7 +574,8 @@ async function docThan(req: IncomingMessage): Promise<unknown> {
 
 /** `pnpm mcp` — MCP qua stdio cho agy CLI (`agy mcp add gen-stage …`). */
 export async function chayStdio(): Promise<void> {
-  const noi = noiBridgeWs();
+  // xưng `role=nao` để bridge tính vào `stage.describe().brainConnected`
+  const noi = noiBridgeWs({ vai: 'nao' });
   const sv = taoMcpServer(noi);
   // stdout là đường MCP: mọi lời giải thích phải ra stderr, không thì vỡ giao thức
   console.error(`[mcp stdio] gen-stage v${PHIEN_BAN_MCP} · ${sinhTools().length} tool`);

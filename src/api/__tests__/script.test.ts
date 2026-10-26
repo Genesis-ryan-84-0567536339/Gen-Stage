@@ -37,9 +37,13 @@ describe('script.run', () => {
 
     const e = await xongKichBan();
     expect(e.data).toMatchObject({ steps: 3, errors: 0 });
+    // C0 (#28) — `actor.say` tự quay người nói về **người nghe** (mặc định là
+    // `camera`, tức Sếp đang xem qua màn hình) trước khi mở miệng.
     expect(world.lichSu).toEqual([
       'moveTo:lan',
       'express:happy',
+      'lookAt:lan',
+      'faceTo:lan:camera',
       'say:Tới rồi Sếp',
       'say:lan',
     ]);

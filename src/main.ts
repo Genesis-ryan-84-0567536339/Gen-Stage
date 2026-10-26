@@ -16,6 +16,8 @@ import { batPhim } from './ui/phim';
 import { batOChat } from './ui/o-chat';
 // C2 (#32) — lớp hiểu lệnh giọng: nghe `user.text`/`user.speech` trên bus.
 import { batHieuLenh } from './behavior/hieu-lenh';
+// C0 (#28) — phản xạ xã hội: Gen quay lại, nhìn, đáp ngay khi Sếp gọi, KHÔNG chờ não.
+import { batPhanXa } from './behavior/phan-xa';
 import { BridgeClient, coBatBridge, urlTts } from './bridge-client';
 // B2 (#20) — giọng tiếng Việt thật + nút mở khoá autoplay.
 import { lopTieng } from './audio/tts-client';
@@ -172,6 +174,10 @@ async function khoiDong(): Promise<void> {
     tieng.capHinh({ toast });
     ganNutTieng(tieng, toast);
   }
+
+  // C0 (#28) — bật "tuỷ sống" của Gen. Đặt sau khi cảnh đã có đủ nhân vật, và
+  // trước `stage.ready` để câu đầu tiên của Sếp cũng được phản xạ bắt.
+  batPhanXa({ dispatcher, bus });
 
   loading.classList.add('xong');
   sanSang = true;

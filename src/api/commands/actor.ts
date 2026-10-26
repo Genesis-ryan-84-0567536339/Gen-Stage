@@ -17,6 +17,16 @@ import { boMiengNhep } from '../../audio/so-tieng';
 const s = (v: unknown) => String(v);
 
 /**
+ * C0 (#28) — câu này có phải câu hỏi không (để người nghe **nghiêng đầu**).
+ * Tiếng Việt hay hỏi mà không có dấu "?": "Sếp cần gì", "xong chưa", "được không".
+ */
+export function laCauHoi(chu: string): boolean {
+  const t = chu.trim().toLowerCase();
+  if (t.endsWith('?')) return true;
+  return /(không|chưa|gì|nào|sao|đâu|hả|nhỉ)\s*[.!]?$/.test(t);
+}
+
+/**
  * B2 — tải sẵn giọng cho một câu TRƯỚC khi sân khấu mở miệng.
  *
  * Phải xong trước `world.actorSay`/`actorEmote` vì `durationMs` của hành động
@@ -261,6 +271,42 @@ export const LENH_ACTOR: CommandSpec[] = [
   },
 
   {
+    /**
+     * C0 (#28) — quay người về mục tiêu **KHÔNG chiếm thân, không xếp hàng**.
+     *
+     * `actor.turnTo` chiếm thân nên gọi nó lúc đang `actor.say` chỉ để lại một
+     * lệnh xếp hàng chạy sau khi nói xong. Lệnh này là bản "giữ hướng": gọi
+     * được mỗi nhịp trong lúc nhân vật đang nói/đang diễn, để **mặt luôn
+     * hướng về người nghe** kể cả khi Boss đổi `camera.preset` giữa chừng.
+     */
+    cmd: 'actor.faceTo',
+    group: 'actor',
+    desc:
+      'Quay người về mục tiêu NHƯNG không chiếm thân, không xếp hàng — gọi được ' +
+      'trong lúc actor đang nói/diễn để giữ mặt hướng về người nghe ("camera" = phía Sếp đang xem)',
+    params: [
+      P_ACTOR,
+      {
+        name: 'target',
+        type: 'target',
+        desc: 'Mục tiêu quay về ("camera" = chỗ Sếp đang xem)',
+        required: true,
+        goiY: 'targets',
+        tuDo: true,
+        default: 'camera',
+      },
+    ],
+    example: { cmd: 'actor.faceTo', args: { actor: 'gen', target: 'camera' } },
+    handler(a, ctx) {
+      const id = s(a.actor);
+      if (!ctx.world.coActor(id)) throw new Error(`Không có actor "${id}"`);
+      const t = a.target as string | Vec3;
+      ctx.world.actorFaceTo(id, t);
+      return ngay({ actor: id, facingTarget: typeof t === 'string' ? t : null });
+    },
+  },
+
+  {
     cmd: 'actor.sit',
     group: 'actor',
     events: ['actor.sat', 'cmd.queued'],
@@ -393,6 +439,16 @@ export const LENH_ACTOR: CommandSpec[] = [
         type: 'string',
         desc: 'Giọng: "nu" | "nam" | tên giọng đầy đủ (mặc định: owner → nam, còn lại → nữ)',
       },
+      {
+        name: 'to',
+        type: 'target',
+        desc:
+          'Nói VỚI AI: "camera" (mặc định — nói với Sếp đang xem qua màn hình) ' +
+          'hoặc id một actor khác. Quyết định người nói quay mặt về đâu và ai lắng nghe',
+        goiY: 'targets',
+        tuDo: true,
+        default: 'camera',
+      },
     ],
     example: {
       cmd: 'actor.say',
@@ -405,6 +461,11 @@ export const LENH_ACTOR: CommandSpec[] = [
       const chu = s(a.text);
       const camXuc = a.emotion === undefined ? undefined : s(a.emotion);
       const giong = a.voice === undefined ? undefined : s(a.voice);
+      /**
+       * C0 (#28) — **người nghe**. Mặc định là `camera`: với nhân vật trong
+       * sân khấu, Sếp chính là người đang xem qua màn hình, tức là máy quay.
+       */
+      const nghe = a.to === undefined ? 'camera' : s(a.to);
 
       /**
        * B3 (#21) — Owner nói là **sự kiện cho não**, không chỉ là lời thoại.
@@ -417,7 +478,24 @@ export const LENH_ACTOR: CommandSpec[] = [
        */
       const nguoiNoi = ctx.world.describe().actors.find((x) => x.id === id);
       if (nguoiNoi?.controlledBy === 'owner') {
-        ctx.bus.emit('user.text', { actor: id, text: chu });
+        ctx.bus.emit('user.text', { actor: id, text: chu, to: nghe });
+      }
+
+      /**
+       * Người nói hướng về người nghe — ngay lúc mở miệng, không chờ phản xạ:
+       * mắt (`lookAt`) và thân (`faceTo`, không chiếm thân nên không xếp hàng
+       * sau chính câu nói này). Phản xạ sẽ GIỮ hướng đó suốt câu.
+       */
+      try {
+        ctx.world.actorLookAt(id, nghe);
+        ctx.world.actorFaceTo(id, nghe);
+        // người nghe (nếu là một actor có mặt) chuyển sang dáng lắng nghe
+        if (nghe !== 'camera' && nghe !== 'cursor' && ctx.world.coActor(nghe)) {
+          ctx.world.actorLookAt(nghe, id);
+          ctx.world.actorNgheNgong(nghe, true, laCauHoi(chu));
+        }
+      } catch {
+        // mục tiêu lạ không được làm hỏng lời thoại
       }
 
       const tieng = await chuanBiGiong(id, chu, giong, camXuc);
@@ -429,11 +507,14 @@ export const LENH_ACTOR: CommandSpec[] = [
       tieng?.phat();
       void hd.done.then(() => {
         if (tieng) lopTieng()?.huy(id);
-        ctx.bus.emit('actor.sayDone', { actor: id, text: chu });
+        if (nghe !== 'camera' && nghe !== 'cursor' && ctx.world.coActor(nghe)) {
+          ctx.world.actorNgheNgong(nghe, false);
+        }
+        ctx.bus.emit('actor.sayDone', { actor: id, text: chu, to: nghe });
       });
       // trả **giọng đã chọn** (không phải tham số thô): agent đọc log biết ngay
       // câu này phát bằng giọng nào, kể cả khi `voice` bỏ trống.
-      return tuHanhDong(hd, { actor: id, text: chu, voice: giongTheoActor(id, giong) });
+      return tuHanhDong(hd, { actor: id, text: chu, to: nghe, voice: giongTheoActor(id, giong) });
     },
   },
 

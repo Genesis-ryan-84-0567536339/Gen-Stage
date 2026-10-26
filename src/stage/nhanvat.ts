@@ -274,12 +274,35 @@ export class NhanVat {
   readonly id: string;
   readonly ten: string;
   readonly vrm: VRM;
+  /**
+   * **Gốc nhân vật** — một `Group` BỌC NGOÀI `vrm.scene`, không phải chính nó.
+   *
+   * Lý do (C0, Issue #28 — Boss: *"đi ngược mà thân thể mặt mũi nhìn kỳ"*):
+   * model **VRM 0.x** quay mặt ngược với VRM 1.0, `VRMUtils.rotateVRM0` sửa
+   * bằng cách đặt `vrm.scene.rotation.y = Math.PI`. Nhưng cả sân khấu lại ghi
+   * `goc.rotation.y` để quay người (`xoayVe`, steer, `actorSpawn`) — nếu `goc`
+   * CHÍNH LÀ `vrm.scene` thì cú ghi đầu tiên **xoá sạch** 180° đó và nhân vật
+   * đi lùi suốt đời. Tách hai việc ra hai node: Group giữ *hướng đi*, còn
+   * `vrm.scene` bên trong giữ *bù trừ VRM0*, không ai ghi đè ai.
+   */
   readonly goc: THREE.Object3D;
   /** Mục tiêu cho `vrm.lookAt`. */
   readonly diemNhin = new THREE.Object3D();
 
   /** Tên mục tiêu đang nhìn, để `stage.describe` trả về. */
   nhinTen: string | null = 'camera';
+  /**
+   * C0 (#28) — **thân** đang quay về đâu (`stage.describe().facingTarget`).
+   * Chỉ mang tên khi quay về một mục tiêu CÓ TÊN (`camera`, id actor/place);
+   * quay về toạ độ trần hoặc một góc số thì `null`.
+   */
+  huongVe: string | null = null;
+  /** C0 (#28) — đang ở dáng LẮNG NGHE (gật nhẹ theo nhịp). */
+  private ngheNgong = false;
+  /** C0 (#28) — người nói đang hỏi → nghiêng đầu. */
+  private ngheCauHoi = false;
+  /** Model này là VRM 0.x (đã bù 180° trên `vrm.scene`) — bằng chứng số. */
+  readonly vrm0: boolean;
   /** Mã prop đang cầm. */
   dangCam: string | null = null;
   /** Tay cầm. */
@@ -377,13 +400,19 @@ export class NhanVat {
     this.id = id;
     this.ten = ten;
     this.vrm = vrm;
-    this.goc = vrm.scene;
+    this.goc = new THREE.Group();
     this.goc.name = `actor:${id}`;
+    this.goc.add(vrm.scene);
     // B2 — để lớp tiếng tìm đúng người mà nhép miệng (xem `so-tieng.ts`).
     ghiMiengNhep(id, this);
 
-    const phienBan = (vrm.meta as { metaVersion?: string }).metaVersion;
-    if (phienBan === '0') VRMUtils.rotateVRM0(vrm);
+    /**
+     * VRM 0.x quay mặt ngược VRM 1.0 → bù 180° **trên `vrm.scene`**, tức là
+     * node CON của `goc`. `VRMUtils.rotateVRM0` tự kiểm `metaVersion === '0'`
+     * nên gọi thẳng cũng an toàn cho model VRM 1.0 (không làm gì).
+     */
+    this.vrm0 = (vrm.meta as { metaVersion?: string }).metaVersion === '0';
+    VRMUtils.rotateVRM0(vrm);
 
     vrm.scene.traverse((o) => {
       const m = o as THREE.Mesh;
@@ -617,6 +646,16 @@ export class NhanVat {
     this.tyLeChest = 1;
   }
 
+  /**
+   * C0 (#28) — bật/tắt dáng **lắng nghe**: gật đầu nhẹ, nghiêng đầu khi người
+   * nói đang hỏi. Lớp vi mô (xem `capNhat`), **không chiếm thân** — nghe là
+   * việc làm song song với mọi việc khác.
+   */
+  datNgheNgong(bat: boolean, cauHoi = false): void {
+    this.ngheNgong = bat;
+    this.ngheCauHoi = bat && cauHoi;
+  }
+
   /** Số đo tỉ lệ chibi trên XƯƠNG RAW — bằng chứng Issue #17 đã sửa thật. */
   doChibi(): Record<string, number | boolean> {
     const h = this.vrm.humanoid;
@@ -711,11 +750,46 @@ export class NhanVat {
       vanToc: this.vanToc(),
       chibi: this.doChibi(),
       state: this.state,
+      // C0 (#28) — bằng chứng "không đi ngược": `huongGoc` là hướng sân khấu
+      // nghĩ nhân vật đang quay về (từ `facing`), `huongMat` là hướng MESH
+      // thật sự quay về (lấy từ xương `hips` RAW, tức sau mọi bù trừ VRM0).
+      // Hai vector này phải cùng chiều (tích vô hướng ≈ +1).
+      vrm0: this.vrm0,
+      huongGoc: this.huongGoc(),
+      huongMat: this.huongMat(),
       seatY: +this.seatYHienTai.toFixed(4),
       dayDui: +this.dayDui.toFixed(4),
       dangNgoiCo: this.dangNgoi,
       nenChanDoan: this.nen?.chanDoan() ?? null,
     });
+  }
+
+  /** Hướng sân khấu **nghĩ** nhân vật đang quay về (suy từ `goc.rotation.y`). */
+  huongGoc(): [number, number] {
+    const y = this.goc.rotation.y;
+    return [+Math.sin(y).toFixed(4), +Math.cos(y).toFixed(4)];
+  }
+
+  /**
+   * Hướng MẶT thật của model trong thế giới.
+   *
+   * Không đo bằng xương (`hips` của nhiều model VRM 0.x có sẵn 180° nướng vào
+   * bind-pose, đo ra số nói dối). Đo bằng **`vrm.lookAt.faceFront`** — vector
+   * do chính `@pixiv/three-vrm` đặt khi nạp file: `(0,0,+1)` cho VRM 1.0 và
+   * `(0,0,-1)` cho VRM 0.x — rồi quay nó bằng ma trận thế giới của `vrm.scene`.
+   *
+   * Nhờ vậy số này bắt đúng lỗi Boss thấy ở C0: ai đó ghi đè
+   * `vrm.scene.rotation.y` (xoá phần bù VRM0) là `huongMat` lật 180° so với
+   * `huongGoc` ngay, dù xương vẫn y nguyên.
+   */
+  huongMat(): [number, number] {
+    this.goc.updateMatrixWorld(true);
+    const truoc = this.vrm.lookAt?.faceFront ?? new THREE.Vector3(0, 0, 1);
+    const q = this.vrm.scene.getWorldQuaternion(new THREE.Quaternion());
+    const v = truoc.clone().applyQuaternion(q).setY(0);
+    if (v.lengthSq() < 1e-6) return this.huongGoc();
+    v.normalize();
+    return [+v.x.toFixed(4), +v.z.toFixed(4)];
   }
 
   /* ------------------------------------------------------------- hành động */
@@ -837,12 +911,28 @@ export class NhanVat {
 
   /** Xoay người về một hướng (độ) hoặc một điểm. */
   xoayVe(muc: THREE.Vector3 | number, chiemThan = true): Action {
-    if (chiemThan) this.huyViec();
-    this.xoay?.hd.cancel();
     const goc =
       typeof muc === 'number'
         ? (muc * Math.PI) / 180
         : Math.atan2(muc.x - this.goc.position.x, muc.z - this.goc.position.z);
+
+    /**
+     * C0 (#28) — **đang quay về gần đúng chỗ đó rồi thì đừng khởi động lại.**
+     *
+     * `actor.faceTo` được gọi MỖI NHỊP để giữ mặt về người nghe. Nếu mỗi lần
+     * gọi đều huỷ cú quay cũ rồi bắt đầu lại từ đầu thì đường nội suy (ease
+     * in-out) cứ về mốc 0 liên tục — nhân vật nhích vài độ rồi đứng im mãi,
+     * thấy rất rõ trên máy kiểm ~1 fps. Chỉ quay lại khi MỤC TIÊU đổi thật.
+     */
+    if (!chiemThan && this.xoay && !this.xoay.chiemThan) {
+      let dLech = goc - this.xoay.den;
+      while (dLech > Math.PI) dLech -= Math.PI * 2;
+      while (dLech < -Math.PI) dLech += Math.PI * 2;
+      if (Math.abs(dLech) < 0.12) return this.xoay.hd;
+    }
+
+    if (chiemThan) this.huyViec();
+    this.xoay?.hd.cancel();
 
     let lech = goc - this.goc.rotation.y;
     while (lech > Math.PI) lech -= Math.PI * 2;
@@ -1575,6 +1665,17 @@ export class NhanVat {
         x.head.rotation.x += this.nhinQuanhPitch;
       }
       if (x.neck) x.neck.rotation.y += this.nhinQuanhYaw * 0.4;
+    }
+
+    /* --- LỚP 2a': ĐANG NGHE — gật nhẹ theo nhịp, nghiêng đầu nếu là câu hỏi
+       (C0 #28: ngôn ngữ cơ thể của người nghe, không chiếm thân) --- */
+    if (this.ngheNgong && this.trangThai !== 'speaking') {
+      const gat = Math.max(0, Math.sin(t * 2.1)) ** 2;
+      if (x.head) {
+        x.head.rotation.x += gat * 0.085;
+        if (this.ngheCauHoi) x.head.rotation.z += 0.13;
+      }
+      if (x.neck) x.neck.rotation.x += gat * 0.035;
     }
 
     /* --- LỚP 2a: cử chỉ nhịp khi nói, KHÁC NHAU theo nhóm cảm xúc --- */

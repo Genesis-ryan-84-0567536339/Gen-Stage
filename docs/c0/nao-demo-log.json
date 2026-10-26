@@ -1,0 +1,146 @@
+{
+  "chay": "2026-10-25T23:46:38.552Z",
+  "nao": "nao-demo (rule-based, không LLM)",
+  "qua": "MCP stdio → bridge/mcp.ts",
+  "toolCalls": [
+    {
+      "tool": "stage_bootstrap",
+      "args": {},
+      "ok": true,
+      "msGoi": 41
+    },
+    {
+      "tool": "stage_events",
+      "args": {
+        "since": 0,
+        "waitMs": 0
+      },
+      "ok": true,
+      "msGoi": 13
+    },
+    {
+      "tool": "stage_events",
+      "args": {
+        "since": 3,
+        "waitMs": 25000
+      },
+      "ok": true,
+      "msGoi": 919
+    },
+    {
+      "tool": "stage_describe",
+      "args": {},
+      "ok": true,
+      "msGoi": 71
+    },
+    {
+      "tool": "actor_emote",
+      "args": {
+        "actor": "gen",
+        "emote": "chao",
+        "interrupt": true
+      },
+      "ok": true,
+      "msGoi": 12,
+      "durationMs": 2000
+    },
+    {
+      "tool": "actor_say",
+      "args": {
+        "actor": "gen",
+        "text": "Dạ em chào Sếp. Sếp cần em làm gì ạ?",
+        "emotion": "vui"
+      },
+      "ok": true,
+      "msGoi": 747,
+      "durationMs": 4032
+    },
+    {
+      "tool": "stage_describe",
+      "args": {},
+      "ok": true,
+      "msGoi": 15
+    }
+  ],
+  "luot": [
+    {
+      "luot": 1,
+      "text": "Chào Gen",
+      "seq": 4,
+      "kieu": "chao",
+      "goi": [
+        {
+          "tool": "actor_emote",
+          "ok": true,
+          "durationMs": 2000
+        },
+        {
+          "tool": "actor_say",
+          "ok": true,
+          "durationMs": 4032
+        }
+      ],
+      "genTruoc": {
+        "state": "emoting",
+        "holding": null
+      },
+      "genSau": {
+        "state": "idle",
+        "holding": null,
+        "mood": "vui"
+      }
+    }
+  ],
+  "soTool": 43,
+  "tenTool": [
+    "stage_bootstrap",
+    "stage_describe",
+    "stage_reset",
+    "actor_spawn",
+    "actor_remove",
+    "actor_list",
+    "actor_moveTo",
+    "actor_steer",
+    "actor_lookAt",
+    "actor_turnTo",
+    "actor_faceTo",
+    "actor_sit",
+    "actor_stand",
+    "actor_play",
+    "actor_stop",
+    "actor_express",
+    "actor_say",
+    "actor_bubble",
+    "actor_hold",
+    "actor_emote",
+    "actor_idleStyle",
+    "actor_drop",
+    "prop_spawn",
+    "prop_remove",
+    "prop_list",
+    "prop_moveTo",
+    "prop_set",
+    "scene_light",
+    "camera_focus",
+    "camera_preset",
+    "script_run",
+    "script_stop",
+    "screen_spawn",
+    "screen_remove",
+    "screen_show",
+    "screen_stream",
+    "screen_clear",
+    "screen_focus",
+    "module_build",
+    "module_open",
+    "module_store",
+    "fx_play",
+    "stage_events"
+  ],
+  "huongDanAgent": "Hướng dẫn cho agent: bạn là Gen, nhân vật nữ trong phòng lab này. Bạn CHỈ điều khiển actor \"gen\"; actor \"owner\" là Javis — avatar của Sếp trong phòng, Sếp tự lái, không bao giờ ra lệnh cho owner. QUAN TRỌNG: **Sếp thật đang xem qua màn hình, tức là ở chỗ MÁY QUAY** — nói với Sếp thì actor_say để mặc định (to: \"camera\"), đừng quay Gen về phía Javis; chỉ dùng to: \"owner\" khi Gen nói riêng với Javis trong phòng. stage_describe cho biết camera.pos và facingTarget của từng nhân vật. Đọc stage_describe trước mỗi lượt để biết ai đang ở đâu, bận gì, cầm gì. Trả lời Sếp bằng tool actor_say với actor \"gen\", tiếng Việt, câu ngắn (tối đa 2 câu), gọi Sếp là \"Sếp\" và tự gọi là \"em\". Diễn xuất bằng actor_emote (chao, dong-y, suy-nghi, ra-lenh, thanh-cong, vui…), chạy việc trên màn hình hologram bằng screen_stream / screen_focus, và kết tinh kết quả thành vật thể bằng module_build rồi module_store khi Sếp nhờ làm một việc. Nghe Sếp bằng stage_events (waitMs 25000) và phản ứng với sự kiện user.text.",
+  "tongKet": {
+    "soLuot": 1,
+    "soToolCall": 7,
+    "soLoi": 0
+  }
+}

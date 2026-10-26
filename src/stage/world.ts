@@ -50,6 +50,8 @@ import { noiTiep, hanhDongHenGio } from './hanh-dong';
 import { ManHinh, MAC_DINH_MAN_HINH } from './man-hinh';
 import { KetTinh, maySurfacePoints } from '../fx/hat-ket-tinh';
 import { taoHieuUng, type HieuUng } from '../fx/hieu-ung';
+// C0 (#28) — sổ "có não nối hay chưa" do bridge ghi vào (xem `src/behavior/so-nao.ts`).
+import { coNao } from '../behavior/so-nao';
 
 /**
  * Nền lab. Boss 25/10: bản cũ 0x070b10 "tối như Tron" — nâng lên xám-xanh
@@ -143,6 +145,8 @@ export class World implements StageWorld {
   private nang!: THREE.DirectionalLight;
   private vien!: THREE.DirectionalLight;
   private denPreset = 'sang';
+  /** C0 (#28) — góc máy hiện tại, để `stage.describe().camera.preset` nói thật. */
+  private mayPreset = 'toan-canh';
 
   /* A3 — hậu kỳ (bloom) + tự tắt khi FPS thấp (spec mục 5) */
   private composer!: EffectComposer;
@@ -633,7 +637,28 @@ export class World implements StageWorld {
     const nv = this.nv(id);
     const v = this.viTriMucTieu(target);
     if (!v) throw new Error(`Không biết "${String(target)}" ở đâu`);
+    nv.huongVe = typeof target === 'string' ? target : null;
     return nv.xoayVe(new THREE.Vector3(v[0], 0, v[2]));
+  }
+
+  /**
+   * C0 (#28) — quay người **không chiếm thân** (`xoayVe(..., false)`).
+   *
+   * Dùng để GIỮ hướng về người nghe trong suốt câu nói: `actor.say` đã chiếm
+   * thân nên một `actor.turnTo` lúc đó chỉ xếp hàng chờ nói xong — đúng lúc
+   * không còn cần nữa. Gọi lại mỗi nhịp thì mặt bám theo máy quay kể cả khi
+   * Boss đổi `camera.preset` giữa chừng.
+   */
+  actorFaceTo(id: string, target: string | Vec3): void {
+    const nv = this.nv(id);
+    const v = this.viTriMucTieu(target);
+    if (!v) throw new Error(`Không biết "${String(target)}" ở đâu`);
+    nv.huongVe = typeof target === 'string' ? target : null;
+    nv.xoayVe(new THREE.Vector3(v[0], 0, v[2]), false);
+  }
+
+  actorNgheNgong(id: string, bat: boolean, cauHoi = false): void {
+    this.nv(id).datNgheNgong(bat, cauHoi);
   }
 
   actorSit(id: string, seat: string): Action {
@@ -927,6 +952,7 @@ export class World implements StageWorld {
     if (!(PRESET_MAY as readonly string[]).includes(name)) {
       throw new Error(`Không có góc máy "${name}". Có: ${PRESET_MAY.join(', ')}`);
     }
+    this.mayPreset = name;
     this.theoOwner = null;
     if (name === 'theo-owner') {
       // bám nhân vật có controlledBy = 'owner' (không có thì actor đầu tiên)
@@ -1280,6 +1306,14 @@ export class World implements StageWorld {
       props: [...this.props.values()].map((d) => this.snapProp(d)),
       lastEvents: this.bus.recent(10),
       scene: { light: this.denPreset },
+      // C0 (#28) — máy quay LÀ chỗ Sếp đang đứng xem; não cần toạ độ này để
+      // biết "quay về phía Sếp" là quay về đâu.
+      camera: {
+        preset: this.mayPreset,
+        pos: [tron(this.camera.position.x), tron(this.camera.position.y), tron(this.camera.position.z)],
+      },
+      // C0 (#28) — số do bridge báo xuống, sân khấu chỉ đọc lại (`so-nao.ts`)
+      brainConnected: coNao(),
     };
   }
 
@@ -1340,6 +1374,7 @@ export class World implements StageWorld {
       distances,
       queued: 0,
       controlledBy: nv.dieuKhienBoi,
+      facingTarget: nv.huongVe,
     };
   }
 

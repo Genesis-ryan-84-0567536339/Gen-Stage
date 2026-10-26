@@ -186,7 +186,12 @@ describe('Owner nói → sự kiện user.text (vòng hội thoại B3)', () => 
     const kq = await d.run('actor.say', { actor: 'owner', text: 'Gen, dựng connector Baserow' });
     expect(kq.ok).toBe(true);
     expect(thay).toHaveLength(1);
-    expect(thay[0]!.data).toEqual({ actor: 'owner', text: 'Gen, dựng connector Baserow' });
+    // C0 (#28) — `user.text` mang thêm `to` (nói với ai; mặc định `camera` = Sếp)
+    expect(thay[0]!.data).toEqual({
+      actor: 'owner',
+      text: 'Gen, dựng connector Baserow',
+      to: 'camera',
+    });
   });
 
   it('Gen nói thì KHÔNG bắn user.text (không tự nghe lời mình)', async () => {

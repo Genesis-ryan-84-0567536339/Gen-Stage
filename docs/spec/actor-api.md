@@ -168,6 +168,100 @@ thêm tham số cùng tên.
 Góc máy thêm **`theo-owner`** (xem mục 3.3): bám mượt theo nhân vật có
 `controlledBy: "owner"`, giữ nguyên góc 3/4 nhìn xuống.
 
+### 3.2d Phản xạ xã hội (Sửa spec 26/10 — C0, Issue #28)
+
+Boss thử bản B3 và chốt hai câu: *"nhân vật nam nhìn kỳ"* và **"gọi Gen không
+quay lại trả lời — nó phải biết quay lại tương tác như người"**. Nguyên nhân
+không phải lỗi lệnh: mọi cái Gen làm đều do **não** quyết, mà não nằm ngoài
+trình duyệt (MCP, nghĩ, gọi tool) nên mất hàng giây. Người thật quay đầu lại
+**trước khi** nghĩ xong câu trả lời.
+
+v0.1 vì vậy thêm một lớp **phản xạ** chạy trong sân khấu, KHÔNG thêm lệnh nào:
+
+| Kích thích | Phản xạ | Số đo |
+| --- | --- | --- |
+| `user.text` (Owner gõ/nói) | `actor.lookAt owner` + `actor.turnTo owner` + `actor.emote chu-y` | bắt đầu ≤ **300 ms** |
+| não im sau `user.text` | Gen nói **câu đệm** ngắn ngẫu nhiên bằng giọng ("Dạ, Sếp?", "Em nghe ạ"…) | sau **1 500 ms** |
+| não `actor.say` tới | **cắt** câu đệm, nhường chỗ ngay | — |
+| Owner vào gần | `actor.lookAt owner` | **≤ 2,5 m** |
+| Owner đứng gần lâu | quay người + `actor.emote chao` **đúng một lần** | **> 4 s** |
+| Owner đi xa | thả nhìn, về việc đang làm | **> 4 m** (có trễ, khỏi rung) |
+| Gen đang nói | luôn nhìn Owner; nói xong **giữ nhìn 2 s** rồi thả | **2 000 ms** |
+
+Giao kèo (thi công: `src/behavior/phan-xa.ts`):
+
+- **Mọi phản xạ đi qua dispatcher**, nguồn `phan-xa` — nhật ký phân biệt được
+  ngay cái gì do phản xạ, cái gì do não. Không có đường tắt vào sân khấu.
+- **Ưu tiên thấp nhất.** Phản xạ chỉ ra lệnh chiếm thân khi Gen đang RẢNH
+  (`busy: false`); đang chạy lệnh của não thì nó chỉ `lookAt` (không chiếm
+  thân) và im. Ngoại lệ **duy nhất**: chính câu đệm của nó.
+- **Cắt câu đệm KHÔNG dùng `actor.stop` / `interrupt: true`.** Hai cửa đó gọi
+  `catNgang`, mà `catNgang` **xoá sạch hàng đợi** → giết luôn câu của não vừa
+  xếp hàng sau câu đệm (đúng cái đang muốn nhường chỗ). Phản xạ huỷ thẳng hành
+  động đang chạy của sân khấu, dispatcher thấy `done` thì tự xả hàng đợi.
+- **Emote mới `chu-y`** (ngẩng đầu, hơi nghiêng) vào bảng emote → tổng **16**.
+  Thời lượng 800 ms, cố ý ngắn hơn hạn 1,5 s để không chắn chỗ câu của não.
+
+`stage.describe` thêm **một trường**:
+
+```json
+{ "brainConnected": false }
+```
+
+`brainConnected` = bridge đang có ≥ 1 client MCP nối. Bridge đếm hai nguồn:
+tiến trình MCP **stdio** tự xưng `?role=nao` khi nối ws, và bản MCP **HTTP**
+(chạy trong chính bridge) tính theo *yêu cầu MCP gần nhất* trong 60 s — vì nó
+luôn sẵn sàng kể cả khi chưa não nào gọi, đếm theo kết nối là nói dối. Bridge
+đẩy sự kiện `bridge.brain { count, connected }` xuống trình duyệt; **không có
+bridge = `false`**.
+
+Khi `brainConnected` là `false`, Gen trả lời bằng **não rule-based tối thiểu
+trong app** (chào / hỏi tên / còn lại → *"Em chưa có não, Sếp bật agy nhé"*) —
+để Gen **không bao giờ im lặng**, kể cả lúc Boss chưa bật `agy`.
+
+#### Ai là "người nghe" (Sửa spec 26/10 — C0 vòng 2)
+
+Boss xem lại và chốt thêm: **với nhân vật trong sân khấu, Sếp = người xem qua
+màn hình = MÁY QUAY**. Người trong phòng mà Boss lái bằng WASD là **Javis**
+(avatar của Sếp), không phải Sếp. Lẫn hai cái này là Gen quay lưng vào khán giả
+để nói chuyện với một cái avatar đứng im.
+
+| Tình huống | Javis (`owner`) | Gen |
+| --- | --- | --- |
+| Sếp gõ/nói (`user.text`, `to` mặc định `camera`) | quay về Gen (người nói hướng về người nghe) | mắt + thân về **máy quay**, emote `chu-y`, bật dáng lắng nghe |
+| …và Javis đứng **> 3 m** | như trên | **liếc** Javis 700 ms rồi mới về máy quay |
+| Gen trả lời (`actor.say` không có `to`) | — | mặt về máy quay, **giữ mỗi khung hình** kể cả khi đổi `camera.preset`; nói xong giữ 2 s |
+| `actor.say { actor: "owner", to: "gen" }` | quay về Gen | quay về Javis, gật/chú ý — hai bên **nhìn nhau**; nói xong Gen liếc máy quay |
+
+Hai thứ mới trong bộ lệnh (v0.1, không đổi nghĩa lệnh cũ):
+
+| Lệnh / tham số | Nghĩa |
+| --- | --- |
+| `actor.say` + `to?: actorId \| "camera"` | Nói **với ai**. Mặc định `camera` = Sếp đang xem. Người nói tự quay mặt về người nghe; người nghe (nếu là actor) vào dáng lắng nghe. `user.text` và `actor.sayDone` mang theo `to`. |
+| `actor.faceTo { actor, target }` | Quay người về mục tiêu **KHÔNG chiếm thân, không xếp hàng**. `actor.turnTo` chiếm thân nên gọi lúc đang nói chỉ xếp hàng chạy sau khi nói xong — đúng lúc hết cần. Đây là lệnh "giữ hướng", gọi được mỗi nhịp. |
+
+`stage.describe` thêm hai thứ:
+
+```json
+{
+  "actors": [{ "id": "gen", "facingTarget": "camera", "lookingAt": "camera" }],
+  "camera": { "preset": "toan-canh", "pos": [0, 3.4, 9.2] }
+}
+```
+
+`facingTarget` là **thân** đang quay về đâu (`"camera"`, id actor, hay `null` khi
+quay về toạ độ trần) — khác `lookingAt` (mắt + đầu). Cặp này cộng với
+`camera.pos` là đủ để não biết Gen đang nói với ai và "quay về phía Sếp" nghĩa
+là quay về đâu.
+
+Ngôn ngữ cơ thể đi kèm (`src/stage/nhanvat.ts`, lớp vi mô — không chiếm thân):
+**gật đầu nhẹ khi đang nghe**, **nghiêng đầu khi người nói đang hỏi** (hết câu
+bằng `?`, hoặc "không / chưa / gì / nào / sao / đâu / hả / nhỉ" — tiếng Việt hay
+hỏi mà không có dấu hỏi). Cử chỉ tay khi nói vốn khai theo **hệ của thân**
+(`src/behavior/cu-chi.ts`), nên khi thân đã hướng về người nghe thì tay cũng tự
+chỉ về phía người nghe — không có bảng cử chỉ thứ hai để lệch nhau.
+
+
 ### 3.3 Đồ vật, cảnh, camera
 | Lệnh | Args |
 | --- | --- |
@@ -235,6 +329,10 @@ Ví dụ kịch bản Boss dán vào ô kịch bản (hoặc agent gửi):
 
 ### 3.5 Sự kiện sân khấu → agent
 `actor.arrived`, `actor.steerDone`, `actor.clipDone`, `actor.sayDone`, `actor.emoteDone`, `script.done`, `user.speech` (Boss nói, đã chuyển thành chữ), `user.click` (Boss bấm vào actor/prop), `user.text` (Boss gõ).
+
+**Sửa spec (26/10, C0 — Issue #28):** thêm `bridge.brain { count, connected }` —
+bridge báo số client MCP đang nối, đi **xuống** sân khấu (hướng ngược với mọi
+sự kiện khác). Đây là nguồn duy nhất của `stage.describe().brainConnected`.
 
 **Sửa spec (25/10, B3 — Issue #21):** `user.text` có **đúng một nguồn**: lệnh
 `actor.say` chạy lên nhân vật `controlledBy: "owner"`. Nhờ vậy ba cửa của Boss

@@ -11,6 +11,7 @@ import type {
   DieuKhienBoi,
   PropSnapshot,
   ScreenSnapshot,
+  StageEvent,
   StageState,
   StageWorld,
   ThamSoModuleBuild,
@@ -66,6 +67,11 @@ interface ActorGia {
   /** B1 — vận tốc lái hiện tại (m/s), `actor.steer` đặt. */
   vx: number;
   vz: number;
+  /** C0 — thân đang quay về mục tiêu có tên nào (`describe().facingTarget`). */
+  huongVe: string | null;
+  /** C0 — đang ở dáng lắng nghe. */
+  nghe: boolean;
+  ngheCauHoi: boolean;
 }
 
 /** Mỗi hành động mất đúng `nhip` ms để test chạy nhanh và đoán được. */
@@ -80,6 +86,12 @@ export class SanKhauGia implements StageWorld {
   readonly lichSu: string[] = [];
   den = 'sang';
   may = 'toan-canh';
+  /** C0 — toạ độ máy quay giả: trước mặt sân khấu, nhìn vào giữa phòng. */
+  mayViTri: Vec3 = [0, 1.6, 7];
+  /** C0 (#28) — giả bộ "có não nối" cho test phản xạ. */
+  coNao = false;
+  /** C0 (#28) — sự kiện giả trả trong `lastEvents` (phản xạ đọc câu Owner nói). */
+  suKienGia: StageEvent[] = [];
 
   constructor(ids: string[] = ['lan']) {
     for (const id of ids) {
@@ -98,6 +110,9 @@ export class SanKhauGia implements StageWorld {
         dieuKhienBoi: id === 'owner' ? 'owner' : 'agent',
         vx: 0,
         vz: 0,
+        huongVe: null,
+        nghe: false,
+        ngheCauHoi: false,
       });
     }
   }
@@ -158,6 +173,8 @@ export class SanKhauGia implements StageWorld {
 
   private viTri(to: string | Vec3): Vec3 {
     if (Array.isArray(to)) return to;
+    // C0 — máy quay là một mục tiêu hợp lệ (Sếp xem qua màn hình = máy quay)
+    if (to === 'camera') return this.mayViTri;
     const p = timPlace(to);
     if (p) return p.standAt ?? p.pos;
     const t = this.actors.get(to);
@@ -219,6 +236,9 @@ export class SanKhauGia implements StageWorld {
       dieuKhienBoi: p.controlledBy ?? 'agent',
       vx: 0,
       vz: 0,
+      huongVe: null,
+      nghe: false,
+      ngheCauHoi: false,
     });
     this.lichSu.push(`spawn:${p.id}`);
     return this.snap(this.a(p.id));
@@ -293,11 +313,30 @@ export class SanKhauGia implements StageWorld {
   actorTurnTo(id: string, target: string | Vec3): Action {
     const v = this.viTri(target);
     const x = this.a(id);
+    x.huongVe = typeof target === 'string' ? target : null;
     return this.hd(id, 'turnTo', 'playing', () => {
       x.facing = Math.round(
         ((Math.atan2(v[0] - x.pos[0], v[2] - x.pos[2]) * 180) / Math.PI + 360) % 360,
       );
     });
+  }
+
+  /** C0 — quay người KHÔNG chiếm thân: đổi `facing` ngay, không có hành động. */
+  actorFaceTo(id: string, target: string | Vec3): void {
+    const v = this.viTri(target);
+    const x = this.a(id);
+    x.huongVe = typeof target === 'string' ? target : null;
+    x.facing = Math.round(
+      ((Math.atan2(v[0] - x.pos[0], v[2] - x.pos[2]) * 180) / Math.PI + 360) % 360,
+    );
+    this.lichSu.push(`faceTo:${id}:${typeof target === 'string' ? target : 'toa-do'}`);
+  }
+
+  actorNgheNgong(id: string, bat: boolean, cauHoi = false): void {
+    const x = this.a(id);
+    x.nghe = bat;
+    x.ngheCauHoi = bat && cauHoi;
+    this.lichSu.push(`ngheNgong:${id}:${bat}${cauHoi ? ':hoi' : ''}`);
   }
 
   actorSit(id: string, seat: string): Action {
@@ -595,8 +634,10 @@ export class SanKhauGia implements StageWorld {
       })),
       screens: [...this.screens.values()].map((mh) => this.snapScreen(mh)),
       props: [...this.props.values()],
-      lastEvents: [],
+      lastEvents: this.suKienGia,
       scene: { light: this.den },
+      camera: { preset: this.may, pos: this.mayViTri },
+      brainConnected: this.coNao,
     };
   }
 
@@ -633,6 +674,7 @@ export class SanKhauGia implements StageWorld {
       distances,
       queued: 0,
       controlledBy: x.dieuKhienBoi,
+      facingTarget: x.huongVe,
     };
   }
 }

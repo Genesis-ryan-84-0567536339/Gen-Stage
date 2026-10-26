@@ -29,3 +29,5 @@ docs/b2/.da-chay
 docs/b1/.da-chay
 # C2 (#32) — cờ khoá "đã chạy kiem-c2.mjs" (xoá bằng --lai)
 docs/c2/.da-chay
+# C0 — cờ khoá "đã chạy kiem-c0.mjs" (xoá bằng --lai)
+docs/c0/.da-chay
