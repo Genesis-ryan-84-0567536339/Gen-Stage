@@ -234,41 +234,30 @@ export function suaTheoSoTu(cau: string): string {
  */
 /* ------------------------------ G3 (#67): tên "Nhi"/"Nam" ở ĐẦU câu nói --- */
 
-/** Cách PhoWhisper nghe chệch "Nhi"/"Nam" — xem chú thích `suaTenDauCau`. */
-const NGHE_NHAM_TEN: Array<{ chuan: string; dongAm: string[]; hep?: string[] }> = [
-  { chuan: 'Nhi', dongAm: ['nhi', 'ni', 'nia', 'nhì', 'nhỉ'], hep: ['nghi', 'nghĩ'] },
-  { chuan: 'Nam', dongAm: ['nam', 'nham', 'nhâm', 'năm'] },
-];
-
-/**
- * Động từ lệnh được phép đứng ngay sau tên. **Phải khớp y**, không fuzzy.
+/*
+ * Bảng cách nghe chệch + danh sách động từ **dùng CHUNG** với lớp hiểu lệnh
+ * (`src/behavior/ngu-phap.ts`), không chép lại.
  *
- * Cùng một danh sách với `DONG_TU_LENH` trong `src/behavior/ngu-phap.ts`, và
- * đó là CÓ Ý: bài học E1 (#48) việc 6 — sổ từ nhà (sửa chữ) và lớp tách người
- * nhận (hiểu lệnh) phải khớp nhau, lệch một bên là câu chạy sang nhân vật
- * khác. Sửa một bên thì sửa **cả hai**.
+ * Bài học E1 (#48) việc 6: sổ từ nhà (sửa chữ Boss ĐỌC) và lớp tách người
+ * nhận (quyết định nhân vật nào diễn) phải khớp nhau — lệch một bên là câu
+ * chạy sang nhân vật khác mà không ai hiểu vì sao. Chép hai bảng rồi dặn
+ * "sửa cả hai chỗ" là trông chờ vào trí nhớ; import thì máy giữ hộ.
+ *
+ * `ngu-phap.ts` cố tình KHÔNG phụ thuộc DOM (chỉ `import type` một `Vec3`),
+ * nên bridge nạp được nó bình thường.
  */
-const DONG_TU_SAU_TEN = new Set([
-  'di', 'den', 'toi', 'qua', 'ra', 'vao', 'buoc', 'chay', 'lai', 've',
-  'ngoi', 'dung', 'nhin', 'quay', 'tim', 'kiem',
-  'mo', 'tat', 'dong', 'hien', 'xoa', 'cat', 'cam', 'luu', 'bo',
-  'ket', 'tao', 'lam', 'doi',
-  'noi', 'bao', 'nhac', 'chao', 'keu', 'nho', 'giup',
-  'vui', 'buon', 'gian', 'met', 'nghi',
-]);
-/** Động từ mơ hồ — không đủ để nhận một cách nghe chệch "hẹp" là tên. */
-const DONG_TU_MO_HO = new Set(['di', 'thoi', 'lam', 'nghi']);
-const TIN_HIEU_GOI = new Set(['oi', 'a', 'ha']);
+import {
+  DONG_TU_LENH,
+  DONG_TU_LENH_MO_HO,
+  DONG_TU_NGHE_NHAM,
+  NGHE_NHAM_TEN,
+  TIN_HIEU_GOI,
+  boDau as khongDau,
+} from '../src/behavior/ngu-phap';
 
-/** Bỏ dấu + hạ chữ thường, giống `boDau()` của `src/behavior/ngu-phap.ts`. */
-function khongDau(x: string): string {
-  return x
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'D')
-    .toLowerCase();
-}
+const DONG_TU_SAU_TEN = new Set(DONG_TU_LENH);
+const DONG_TU_MO_HO = new Set(DONG_TU_LENH_MO_HO);
+const BO_TIN_HIEU_GOI = new Set(TIN_HIEU_GOI);
 
 /**
  * Viết đúng tên "Nhi"/"Nam" khi nó ở **ĐẦU câu** và theo sau là tín hiệu gọi
@@ -280,10 +269,10 @@ function khongDau(x: string): string {
  * những câu Boss nói đúng — bài học lớn nhất của C1 (`docs/c1/so-sanh.md`
  * mục 3: khai `tuc` vào sổ làm "cất module" thành "kết tinh module").
  *
- * Ở đây thì có **vị trí** để dựa vào, nên luật hẹp hẳn lại và đo được:
- * review #67 trên bộ TTS bẩn thấy gọi tên mới chỉ 5/10 đúng người, vì STT nghe
- * "Nhi" ra `nia`/`nghi`/`ni` (3 ký tự → ngưỡng fuzzy 0, không cứu nổi) và vì
- * giọng nói **không có dấu phẩy** nên "Nam đi tới bếp" không ai nhận là gọi.
+ * Ở đây thì có **vị trí** để dựa vào, nên luật hẹp hẳn lại và đo được: review
+ * #67 trên bộ TTS bẩn thấy gọi tên mới chỉ 5/10 đúng người, vì STT nghe "Nhi"
+ * ra `nia`/`nghi`/`ni` (3 ký tự → ngưỡng fuzzy 0, không cứu nổi) và vì giọng
+ * nói **không có dấu phẩy** nên "Nam đi tới bếp" không ai nhận là gọi.
  *
  * Sửa ở đây có hai cái được: Boss **thấy đúng tên** trong ô chat (trước đó ô
  * chat hiện "nia ngồi xuống"), và lớp hiểu lệnh nhận lời gọi mà không phải
@@ -295,13 +284,14 @@ export function suaTenDauCau(cau: string): string {
   const dau = khongDau(tu[0]).replace(/[^a-z0-9]/g, '');
   // từ thứ hai có thể còn dấu phẩy dính vào ("Nhi, ngồi đi")
   const sau = khongDau(tu[1]).replace(/[^a-z0-9]/g, '');
-  const laGoi = TIN_HIEU_GOI.has(sau);
-  const laLenh = DONG_TU_SAU_TEN.has(sau);
+  const laGoi = BO_TIN_HIEU_GOI.has(sau);
+  const sauChuan = DONG_TU_NGHE_NHAM[sau] ?? sau;
+  const laLenh = DONG_TU_SAU_TEN.has(sauChuan);
   if (!laGoi && !laLenh) return cau;
   for (const t of NGHE_NHAM_TEN) {
     const rong = t.dongAm.some((x) => khongDau(x) === dau);
     const hep = (t.hep ?? []).some((x) => khongDau(x) === dau);
-    if (rong || (hep && (laGoi || !DONG_TU_MO_HO.has(sau)))) {
+    if (rong || (hep && (laGoi || !DONG_TU_MO_HO.has(sauChuan)))) {
       // giữ nguyên dấu câu Boss/engine để lại sau tên ("Nhi," → "Nhi,")
       const dauCau = tu[0].replace(/^[\p{L}\p{N}]+/u, '');
       return [t.chuan + dauCau, ...tu.slice(1)].join(' ');

@@ -16,7 +16,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { phanTich, tachNguoiNhan, type BoiCanh } from '../hieu-lenh';
-import { NGHE_NHAM_TEN, NGHE_NHAM_TEN_HEP, TIN_HIEU_GOI, tach } from '../ngu-phap';
+import { NGHE_NHAM_TEN, TIN_HIEU_GOI, tach } from '../ngu-phap';
 
 const BC: BoiCanh = {
   actors: [
@@ -140,10 +140,7 @@ describe('G3 (#67) — ba ràng buộc giữ luật gọi tên khỏi ăn vào c
 
 describe('G3 (#67) — bảng cách nghe chệch giữ được kỷ luật', () => {
   it('không khai cách nghe chệch là một TỪ LỆNH (tự gọi chính mình)', () => {
-    const tatCa = [
-      ...Object.values(NGHE_NHAM_TEN).flat(),
-      ...Object.values(NGHE_NHAM_TEN_HEP).flat(),
-    ];
+    const tatCa = NGHE_NHAM_TEN.flatMap((t) => [...t.dongAm, ...(t.hep ?? [])]);
     for (const x of ['di', 'qua', 'ngoi', 'noi', 'lai']) expect(tatCa).not.toContain(x);
   });
 

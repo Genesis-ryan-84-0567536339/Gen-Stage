@@ -86,11 +86,42 @@ export const CAU_DOI_THUONG = [
   'kêu Gen vui lên',
 ];
 
+/**
+ * G3 (#67) — 10 câu GỌI TÊN + 6 câu TỪ THƯỜNG, để đo **đúng người nhận** chứ
+ * không chỉ đo WER.
+ *
+ * Review #67 đo được 5/10 đúng người trên bộ bẩn. WER không nói ra chuyện đó:
+ * nghe "Nhi" thành "nia" chỉ tính **một** từ sai, mà hậu quả là cả câu lệnh
+ * chạy sang nhân vật khác. Nên bộ này chấm theo `ai` (id người nhận), và
+ * "không được gọi ai cả" (`null`) cũng là một đáp án đúng.
+ */
+export const CAU_TEN = [
+  { text: 'Nam đi tới bàn điều khiển', ai: 'owner' },
+  { text: 'Nhi đi tới kệ module', ai: 'gen' },
+  { text: 'Nhi ngồi xuống đi', ai: 'gen' },
+  { text: 'Nhi qua ghế ngồi đi', ai: 'gen' },
+  { text: 'Nhi lại đây', ai: 'gen' },
+  { text: 'Nhi ơi ngồi đi', ai: 'gen' },
+  { text: 'Nam à đứng lên đi', ai: 'owner' },
+  { text: 'Nam ra cửa', ai: 'owner' },
+  { text: 'Nam vui lên', ai: 'owner' },
+  { text: 'Nhi nhìn Nam', ai: 'gen' },
+  // 6 câu từ thường: KHÔNG được gọi ai (`ai: null`)
+  { text: 'nhà ở phía nam của thành phố', ai: null },
+  { text: 'cục nam châm hút được sắt', ai: null },
+  { text: 'em bé rất nhí nhảnh và vui', ai: null },
+  { text: 'năm nay nhà mình đi du lịch nhiều', ai: null },
+  { text: 'miền nam mùa này mưa nhiều', ai: null },
+  { text: 'nghỉ đi cho đỡ mệt', ai: null },
+];
+
 const GIONG = { nu: 'nu', nam: 'nam' };
 /** Bộ TTS sạch của C1 (giữ nguyên đường cũ để `scripts/kiem-c1.mjs` còn chạy). */
 const THU_MUC_SACH = '.cache/stt/mau';
 /** Bộ TTS làm bẩn của G3. */
 const THU_MUC_BAN = '.cache/stt/ban';
+/** Bộ bẩn riêng cho việc đo GỌI TÊN (#67). */
+const THU_MUC_TEN = '.cache/stt/ban-ten';
 /** Bộ giọng THẬT của Boss: cặp `<ts>.ogg` + `<ts>.txt` do nút "✎ Sửa" ghi. */
 const THU_MUC_THAT = '.cache/stt/mau';
 /** Bộ đang chọn (mọi lệnh đo đọc `bo-thu.json` ở đây). */
@@ -205,6 +236,117 @@ async function sinhMauBan() {
       `(${danh.filter((d) => d.loai === 'lenh').length} câu lệnh + ` +
       `${danh.filter((d) => d.loai === 'doi-thuong').length} câu đời thường)`,
   );
+}
+
+/* ------------------------------------ G3 (#67): bộ đo GỌI TÊN trên giọng bẩn */
+
+async function sinhMauTen() {
+  const { tongHop } = await import('../bridge/tts.ts');
+  await mkdir(THU_MUC_TEN, { recursive: true });
+  const danh = [];
+  for (let i = 0; i < CAU_TEN.length; i++) {
+    const giong = i % 2 === 0 ? GIONG.nu : GIONG.nam;
+    const rate = TOC_DO[i % TOC_DO.length];
+    const pitch = CAO_DO[i % CAO_DO.length];
+    const ban = BAN[i % BAN.length];
+    const ma = `${String(i).padStart(2, '0')}-${giong}-${ban.ten}`;
+    const mp3 = join(THU_MUC_TEN, `${ma}.mp3`);
+    const wav = join(THU_MUC_TEN, `${ma}.wav`);
+    await writeFile(mp3, await tongHop(CAU_TEN[i].text, { voice: giong, rate, pitch }));
+    await chay('ffmpeg', [
+      '-hide_banner', '-loglevel', 'error', '-y',
+      '-i', mp3,
+      '-f', 'lavfi', '-i', 'anoisesrc=color=pink:amplitude=1:r=16000:d=60',
+      '-filter_complex', chuoiLamBan(ban),
+      '-map', '[ra]', '-ar', '16000', '-ac', '1', '-c:a', 'pcm_s16le', wav,
+    ]);
+    danh.push({
+      wav,
+      text: CAU_TEN[i].text,
+      ai: CAU_TEN[i].ai,
+      loai: CAU_TEN[i].ai === null ? 'tu-thuong' : 'goi-ten',
+      giong: giong === GIONG.nu ? 'nu' : 'nam',
+      rate: `+${rate}%`,
+      ban: ban.ten,
+    });
+    process.stdout.write('.');
+  }
+  await writeFile(join(THU_MUC_TEN, 'bo-thu.json'), JSON.stringify(danh, null, 2));
+  console.log(`\nĐã sinh ${danh.length} wav BẨN cho bàn đo GỌI TÊN vào ${THU_MUC_TEN}/`);
+}
+
+/**
+ * Chạy cả vòng THẬT trên bộ gọi tên: wav → thợ → `chuanHoaCauNoi` (sổ từ nhà)
+ * → `phanTich` (lớp hiểu lệnh) → **ai là người nhận**.
+ *
+ * Đây là số đo duy nhất trả lời đúng câu hỏi của review #67 ("gọi tên mới chỉ
+ * 5/10 đúng người"): nó đi qua ĐÚNG hai lớp mà sản phẩm đi qua, không phải đo
+ * WER rồi suy diễn.
+ */
+async function doGoiTen(ten, model) {
+  const danh = JSON.parse(await readFile(join(THU_MUC_TEN, 'bo-thu.json'), 'utf8'));
+  const { chuanHoaCauNoi } = await import('../bridge/so-tu.ts');
+  const { phanTich } = await import('../src/behavior/hieu-lenh.ts');
+  const BC = {
+    actors: [
+      { id: 'owner', controlledBy: 'owner' },
+      { id: 'gen', controlledBy: 'agent' },
+    ],
+    places: [
+      { id: 'ban-dieu-khien', kind: 'stand' },
+      { id: 'buc-trung-tam', kind: 'stand' },
+      { id: 'ke-module', kind: 'stand' },
+      { id: 'cua', kind: 'stand' },
+      { id: 'ghe-1', kind: 'seat' },
+      { id: 'ghe-2', kind: 'seat' },
+    ],
+    emotes: ['vui', 'rat-vui', 'buon', 'cham-chu', 'chao', 'suy-nghi'],
+    screens: ['main', 'left', 'right'],
+    props: [],
+    gocMay: ['toan-canh'],
+  };
+
+  const tsv = await chayWorkerTsv(danh, model);
+  const chiTiet = [];
+  for (let i = 0; i < danh.length; i++) {
+    const nhan = chuanHoaCauNoi(tsv[i].text).text;
+    const kq = phanTich(nhan, BC);
+    const duoc = kq.coGoiTen ? kq.nguoiNhan[0] : null;
+    chiTiet.push({
+      text: danh[i].text,
+      loai: danh[i].loai,
+      nghe: nhan,
+      mongDoi: danh[i].ai,
+      duoc,
+      dung: duoc === danh[i].ai,
+      mau: kq.mau,
+      treMs: tsv[i].treMs,
+    });
+  }
+  const goi = chiTiet.filter((c) => c.loai === 'goi-ten');
+  const thuong = chiTiet.filter((c) => c.loai === 'tu-thuong');
+  const kq = {
+    engine: ten,
+    loai: 'goi-ten',
+    loadavg: (await readFile('/proc/loadavg', 'utf8').catch(() => '')).trim(),
+    goiTenDung: goi.filter((c) => c.dung).length,
+    goiTenTong: goi.length,
+    tuThuongNham: thuong.filter((c) => !c.dung).length,
+    tuThuongTong: thuong.length,
+    chiTiet,
+  };
+  await mkdir(THU_MUC_KQ, { recursive: true });
+  await writeFile(join(THU_MUC_KQ, `ten-${ten}.json`), JSON.stringify(kq, null, 2));
+  console.log(
+    `\n${ten}: gọi tên ĐÚNG NGƯỜI ${kq.goiTenDung}/${kq.goiTenTong} · ` +
+      `câu từ thường nhầm ${kq.tuThuongNham}/${kq.tuThuongTong}`,
+  );
+  for (const c of chiTiet)
+    console.log(
+      `   ${c.dung ? '✓' : '✗'} «${c.text}» → nghe "${c.nghe}" → ` +
+        `${c.duoc ?? 'không gọi ai'} (cần ${c.mongDoi ?? 'không gọi ai'})`,
+    );
+  return kq;
 }
 
 /* ------------------------------------- G3: bộ GIỌNG THẬT từ nút "✎ Sửa" */
@@ -364,6 +506,14 @@ async function bang() {
  */
 async function chayModel(ten, model, { sua = true, luong, tinh, beam } = {}) {
   const danh = JSON.parse(await readFile(join(THU_MUC, 'bo-thu.json'), 'utf8'));
+  const dong = (await chayWorkerTsv(danh, model, { luong, tinh, beam })).map(
+    (x) => `${x.treMs}\t${x.text}`,
+  );
+  return await chamTsv(ten, dong.join('\n'), sua);
+}
+
+/** Chạy thợ python trên một danh sách wav → `[{ treMs, text }]` theo đúng thứ tự. */
+async function chayWorkerTsv(danh, model, { luong, tinh, beam } = {}) {
   const python = process.env.GEN_STAGE_STT_PYTHON ?? '.cache/stt/venv/bin/python';
   if (!existsSync(python)) throw new Error(`thiếu ${python} — chạy: bash scripts/fetch-stt.sh`);
   if (model && !existsSync(model)) throw new Error(`thiếu model ${model}`);
@@ -387,7 +537,6 @@ async function chayModel(ten, model, { sua = true, luong, tinh, beam } = {}) {
     if (g) process.stderr.write(`   [tho] ${g.split('\n').at(-1).slice(0, 160)}\n`);
   });
 
-  const dong = [];
   let dem = '';
   let san = null;
   let cho = null;
@@ -423,17 +572,18 @@ async function chayModel(ten, model, { sua = true, luong, tinh, beam } = {}) {
   });
   console.log(`   thợ sẵn sàng · ${thongTin.model} · ${thongTin.luong} luồng · ${thongTin.tinh}`);
 
+  const ra = [];
   for (const m of danh) {
     const g = await new Promise((xong) => {
       cho = xong;
       con.stdin.write(`${m.wav}\n`);
     });
-    dong.push(`${g.durationMs ?? 0}\t${g.text ?? ''}`);
+    ra.push({ treMs: g.durationMs ?? 0, text: g.text ?? '' });
     process.stdout.write(g.error ? '!' : '.');
   }
   con.kill();
   console.log('');
-  return await chamTsv(ten, dong.join('\n'), sua);
+  return ra;
 }
 
 const [viec, ...tham] = process.argv.slice(2);
@@ -441,6 +591,9 @@ const co = (t) => process.argv.includes(t);
 if (viec === 'mau') await sinhMau();
 else if (viec === 'ban') await sinhMauBan();
 else if (viec === 'thu') await sinhMauThat();
+else if (viec === 'ten') await sinhMauTen();
+else if (viec === 'do-ten')
+  await doGoiTen(tham[0], tham[1] && !tham[1].startsWith('--') ? tham[1] : undefined);
 else if (viec === 'chay')
   await chayModel(tham[0], tham[1] && !tham[1].startsWith('--') ? tham[1] : undefined, {
     sua: !co('--tho'),
@@ -450,7 +603,8 @@ else if (viec === 'bang') await bang();
 else if (viec === 'cham') await chamTsv(tham[0], await readFile(tham[1], 'utf8'), tham[2] === 'sua');
 else
   console.log(
-    'Dùng: node scripts/do-stt.mjs mau | ban | thu | chay <ten> [model] | ' +
+    'Dùng: node scripts/do-stt.mjs mau | ban | thu | ten | chay <ten> [model] | ' +
+      'do-ten <ten> [model] | ' +
       'do <ten> "<lệnh {wav}>" | cham <ten> <tsv> | bang   [--bo <thư mục>]',
   );
 

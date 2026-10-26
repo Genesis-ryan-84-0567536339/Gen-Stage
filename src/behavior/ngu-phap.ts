@@ -175,16 +175,19 @@ export function gan(nhap: string, mau: string): boolean {
  * theo sau **không mơ hồ**: `nghi` vừa là "Nhi" vừa là "nghỉ", nên "nghỉ đi"
  * phải giữ nguyên nghĩa còn "nghi qua bàn điều khiển" mới là gọi Nhi.
  */
-export const NGHE_NHAM_TEN: Record<string, string[]> = {
-  nhi: ['nhi', 'ni', 'nia', 'nhì', 'nhỉ'],
-  nam: ['nam', 'nham', 'năm'],
-};
-
-/** Cách nghe chệch "hẹp" — xem chú thích trên. */
-export const NGHE_NHAM_TEN_HEP: Record<string, string[]> = {
-  nhi: ['nghi', 'nghĩ'],
-  nam: [],
-};
+export const NGHE_NHAM_TEN: Array<{
+  /** Khoá dùng trong `hieu-lenh.ts` để chọn nhân vật (`nhi` = Nhi/`gen`). */
+  ten: 'nhi' | 'nam';
+  /** Dạng viết đúng — `bridge/so-tu.ts` ghi dạng này ra cho Boss ĐỌC. */
+  chuan: string;
+  /** Cách nghe chệch nhận ở mọi ca (đầu câu + có động từ lệnh / "ơi"). */
+  dongAm: string[];
+  /** Cách nghe chệch trùng hẳn từ Việt thường — xem `HEP` ở chú thích trên. */
+  hep?: string[];
+}> = [
+  { ten: 'nhi', chuan: 'Nhi', dongAm: ['nhi', 'ni', 'nia', 'nhì', 'nhỉ'], hep: ['nghi', 'nghĩ'] },
+  { ten: 'nam', chuan: 'Nam', dongAm: ['nam', 'nham', 'nhâm', 'năm'] },
+];
 
 /**
  * Từ đứng ngay sau tên là **tín hiệu gọi**: "Nhi ơi", "Nam à".
@@ -218,6 +221,25 @@ export const DONG_TU_LENH = [
  * "hẹp" là tên gọi. "nghỉ đi" / "làm thôi" phải giữ nguyên nghĩa.
  */
 export const DONG_TU_LENH_MO_HO = ['di', 'thoi', 'lam', 'nghi'];
+
+/**
+ * Cách STT nghe chệch chính **động từ** đứng sau tên — chỉ dùng ở cái cổng
+ * "có phải lời gọi không", nên thêm vào đây **không** mở rộng bảng mẫu câu.
+ *
+ * Đo thật trên bộ bẩn (#67): "Nhi đi tới kệ module" ra `nhi bi toi troi mua
+ * dong` — `b`↔`đ` là cách nghe chệch rất thường của tiếng Việt qua mic băng
+ * hẹp. Không có bảng này thì lời gọi mất, mà lời gọi mất là cả câu lệnh chạy
+ * sang nhân vật khác.
+ *
+ * Cân bằng rủi ro khác với `SO_TU`: nhận bừa một lời gọi **không** làm nhân
+ * vật diễn gì — `coGoiTen` chỉ chọn NGƯỜI NHẬN, còn muốn diễn thì vẫn phải
+ * khớp một mẫu câu. Nên ở cổng này sai sót nghiêng về "nhận" đỡ hơn "bỏ sót".
+ */
+export const DONG_TU_NGHE_NHAM: Record<string, string> = {
+  bi: 'di',
+  dinh: 'dung',
+  dính: 'dung',
+};
 
 /* ------------------------------------------------------- bí danh người nhận */
 

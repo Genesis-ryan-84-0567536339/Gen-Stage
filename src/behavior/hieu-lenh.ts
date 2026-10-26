@@ -40,10 +40,10 @@ import {
   CHO_SEP,
   DONG_TU_LENH,
   DONG_TU_LENH_MO_HO,
+  DONG_TU_NGHE_NHAM,
   GHE_GAN_NHAT,
   GOC_MAY_KE,
   NGHE_NHAM_TEN,
-  NGHE_NHAM_TEN_HEP,
   TIN_HIEU_GOI,
   XAC_NHAN,
   boDau,
@@ -210,14 +210,18 @@ export function tachNguoiNhan(
      * mặc định) hơn là bắt nhân vật diễn giữa câu Boss đang nói chuyện.
      */
     const laTinHieuGoi = sau !== undefined && TIN_HIEU_GOI.includes(sau);
-    const laDongTuLenh = sau !== undefined && DONG_TU_LENH.includes(sau);
+    const sauChuan = sau !== undefined ? (DONG_TU_NGHE_NHAM[sau] ?? sau) : undefined;
+    const laDongTuLenh = sauChuan !== undefined && DONG_TU_LENH.includes(sauChuan);
     const moHo = sau !== undefined && DONG_TU_LENH_MO_HO.includes(sau);
-    for (const [ten, ds] of Object.entries(NGHE_NHAM_TEN)) {
-      if (ds.some((x) => boDau(x) === dau) && (laTinHieuGoi || laDongTuLenh)) return ten;
+    for (const t of NGHE_NHAM_TEN) {
+      if (t.dongAm.some((x) => boDau(x) === dau) && (laTinHieuGoi || laDongTuLenh))
+        return t.ten;
       // dạng "hẹp": chỉ nhận khi động từ theo sau KHÔNG mơ hồ
-      const hep = NGHE_NHAM_TEN_HEP[ten] ?? [];
-      if (hep.some((x) => boDau(x) === dau) && (laTinHieuGoi || (laDongTuLenh && !moHo)))
-        return ten;
+      if (
+        (t.hep ?? []).some((x) => boDau(x) === dau) &&
+        (laTinHieuGoi || (laDongTuLenh && !moHo))
+      )
+        return t.ten;
     }
     return null;
   })();
