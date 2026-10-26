@@ -1242,3 +1242,9 @@ kế đầy đủ: `docs/spec/actor-api.md` mục **3.2f**. Bằng chứng Firef
   gốc: `cmd.queued` giờ mang **`nguon`**, và máy bỏ qua `nguon === 'phan-xa'`
   — phản xạ **chêm vào chỗ trống, không đòi chỗ**; nó là ưu tiên thấp hơn
   chính hoạt động tự sinh ở điểm này.
+- **Vòng 3: "lượt tự sinh đầu ở +13,7 s" là DỤNG CỤ ĐO sai, không phải app.**
+  Script chờ 36 s cho trần tầng 2 của I1 hết hạn **rồi mới** bấm giờ — nhưng
+  Nhi đã rảnh suốt 36 s đó, nên đồng hồ `ranhMs` của máy chạy từ trước mốc
+  bấm. Muốn đo đúng ngưỡng 20 s thì phải **bấm lại đồng hồ bằng một lệnh
+  thật** (một `actor.emote` ngắn làm Nhi bận một nhịp ⇒ máy reset `tRanhTu`
+  qua nhánh "bận vì việc của người khác"), rồi mới tính từ đó.
