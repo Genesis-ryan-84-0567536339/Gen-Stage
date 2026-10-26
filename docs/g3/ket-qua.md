@@ -31,17 +31,38 @@ hâm máy 4 lượt, 8 luồng) qua `node scripts/do-stt.mjs chay <tên> <model>
 
 | Engine | Cỡ | WER cả bộ | WER câu lệnh | WER đời thường | Trễ TB | Trễ trung vị | p95 | loadavg lúc đo | Kết |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| **PhoWhisper-small ct2 int8** | 465 MB | **31,8 %** | 42,3 % | 16,7 % | 4,31 s | **3,91 s** | 6,15 s | 2,4–6 | ✅ **giữ** |
-| PhoWhisper-medium ct2 int8 | 1,5 GB | 31,1 % | 43,6 % | 13,0 % | 15,33 s | 13,82 s | 29,9 s | 6,4 | ❌ trễ |
-| PhoWhisper-large ct2 int8 | 2,9 GB | — | — | — | — | — | — | — | ❌ trễ |
-| whisper large-v3-turbo ct2 int8 | 1,6 GB | — | — | — | — | — | — | — | — |
+| **PhoWhisper-small ct2 int8** | 465 MB | 31,8 % | 42,3 % | 16,7 % | 4,30 s | **3,90 s** | 6,15 s | 2,4–6,4 | ✅ **giữ** |
+| PhoWhisper-medium ct2 int8 | 1,5 GB | 31,1 % | 43,6 % | 13,0 % | 15,33 s | 13,82 s | 29,9 s | 6,4 | ❌ trễ ×3,5 |
+| PhoWhisper-large ct2 int8 | 2,9 GB | **26,5 %** | **34,6 %** | 14,8 % | 23,10 s | 21,71 s | 39,9 s | 11,2 | ❌ trễ ×5,6 |
+| whisper large-v3-turbo ct2 int8 | 1,6 GB | 62,9 % | 64,1 % | 61,1 % | 15,95 s | 14,12 s | 19,4 s | 17,7 | ❌ sai gấp đôi |
 
-**Phát hiện chính: nâng cỡ model KHÔNG chữa được.** Medium gấp 3 cỡ small, mà
-WER **31,1 % so với 31,8 %** — chênh 0,7 điểm, trong khi trễ đi từ 3,9 s lên
-13,8 s (**3,5 lần**, vượt hẳn mốc 5 s của Issue). Đây đúng là hình đã gặp ở C1
-mục 3 với tên riêng, chỉ khác chỗ nghẽn: lần này cái làm engine nghe sai là
-**âm học** (băng hẹp, nhiễu, nói nhanh), và thêm tham số cho model không sinh
-ra thông tin đã mất ở micro.
+> **Đọc bảng cho đúng**: `loadavg` khác nhau vì G1/G2 chạy song song trên cùng
+> máy 8 luồng. WER **không** phụ thuộc tải (đo lại ở C1 mục 4 đã xác nhận), còn
+> trễ thì có — nên cột trễ của large/turbo là số **bi quan**. Kể cả chia đôi,
+> large vẫn ~11 s và turbo ~7 s: cả hai vẫn vượt mốc 5 s.
+
+Ba điều bảng này nói ra:
+
+**1. Nâng cỡ model gần như không chữa được, và chữa thì quá đắt.** Medium gấp 3
+cỡ small mà WER **31,1 % so với 31,8 %** — chênh 0,7 điểm, trễ ×3,5. Large có
+hơn thật (**26,5 %**, bớt 5,3 điểm, và câu lệnh từ 42,3 % xuống 34,6 %) nhưng
+trễ ×5,6 — 21,7 s cho một câu nói. Đây là hình đã gặp ở C1 mục 3 với tên riêng,
+chỉ khác chỗ nghẽn: lần này cái làm engine nghe sai là **âm học** (băng hẹp,
+nhiễu, nói nhanh), và thêm tham số cho model không sinh lại được thông tin đã
+mất ở micro.
+
+**2. Whisper đa ngôn ngữ vẫn kém PhoWhisper ở tiếng Việt — kém gấp đôi.**
+`large-v3-turbo` WER **62,9 %**, tệ hơn cả `PhoWhisper-base` của C1. Nó nhanh
+hơn large (15,9 s so với 23,1 s, đúng như tên "turbo") nhưng nhanh mà nghe sai
+hai phần ba thì vô nghĩa. C1 đã đo đúng kết luận này ở cỡ `small`; G3 xác nhận
+nó vẫn đúng ở cỡ `large`.
+
+**3. Câu đời thường DỄ nghe hơn câu lệnh** — ở mọi engine PhoWhisper (16,7 % so
+với 42,3 % ở small). Nghe ngược với trực giác, nhưng đúng: câu lệnh chứa toàn
+**tên riêng** của dự án ("connector Baserow", "module", "kệ module") — đúng cái
+`bridge/so-tu.ts` sinh ra để chữa — còn câu đời thường thì toàn từ Việt thường
+mà model đã biết rất rõ. Nên WER cao ở câu lệnh **không** đáng lo bằng con số
+nó hiện ra: phần lớn là tên riêng, và sổ từ nhà xử lý được.
 
 Hệ quả cho hướng sửa: tiền nên đổ vào **tín hiệu vào** (ràng buộc mic, VAD
 chừa lề, nói cho Boss biết đang nghe bằng mic nào) và vào **lớp hiểu lệnh**
@@ -197,5 +218,15 @@ tải máy là đọc bảng trễ sai.
 - Việc còn lại thuộc Boss: **góp 10 câu giọng thật** bằng nút "✎ Sửa" (mục 4).
   Sau đó chạy lại bảng mục 1 trên bộ `.cache/stt/mau` — chỉ lúc đó mới có số
   đo thật sự của giọng Boss.
-- Bằng chứng chạy máy thật: `docs/g3/nhat-ky-kiem-g3.json` + ảnh cùng thư mục
-  (`node scripts/kiem-g3.mjs`).
+- Bằng chứng chạy máy thật: **21/21 bước đạt** —
+  `docs/g3/nhat-ky-kiem-g3.json` + ảnh cùng thư mục (`node scripts/kiem-g3.mjs`,
+  Firefox thật, mic giả đọc wav TTS qua `MediaRecorder` thật, cổng 8940-8943 +
+  web 5380). Trong đó: có tệp audio thô trong `.cache/stt/thu/`, nút "✎ Sửa"
+  ghi đủ cặp `.ogg`/`.txt`/`.json` vào `.cache/stt/mau/`, ràng buộc mic đúng cả
+  5 cờ, toast tên thiết bị, **15/15** câu đời thường ra đúng hành động, câu nát
+  mang `hint: 'co-the-la-lenh'`, console 0 lỗi.
+
+  Một số trong nhật ký đó **đừng đọc như trễ thật**: trễ 32 s của lượt nói là
+  vì `loadavg 9,6` (G1/G2 chạy song song) **và** vì script xoá sạch
+  `.cache/stt/cache` trước khi đo nên thợ phải nạp model từ đầu. Trễ Boss gặp
+  là cột "trung vị" ở bảng mục 1 (3,90 s).
