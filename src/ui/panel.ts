@@ -288,6 +288,10 @@ export function dungTabGiong(root: HTMLElement, bus: EventBus): void {
   const nhanVat = Object.entries(TEN_HIEN_THI)
     .map(([, ten]) => ten)
     .join(' · ');
+  // G2 (28/10): tên hiển thị đọc động từ TEN_HIEN_THI (Nhi/Nam) — không ghi
+  // cứng "Gen"/"Javis" vào câu mô tả, không thì tab này lại nói sai tên.
+  const tenNhi = TEN_HIEN_THI.gen ?? 'Nhi';
+  const tenNam = TEN_HIEN_THI.owner ?? 'Nam';
 
   const dau = document.createElement('div');
   dau.className = 'giong-dau';
@@ -295,8 +299,8 @@ export function dungTabGiong(root: HTMLElement, bus: EventBus): void {
     '<p class="giong-gt">Gọi tên rồi ra lệnh: <b>' +
     nhanVat +
     '</b>, hoặc <b>mọi người / cả hai / tất cả</b>. ' +
-    'Không gọi tên thì mặc định <b>Gen</b>. Câu không khớp mẫu nào: Gen chuyển cho não, ' +
-    'Javis nói “chưa hiểu”.</p>' +
+    `Không gọi tên thì mặc định <b>${tenNhi}</b>. Câu không khớp mẫu nào: ${tenNhi} chuyển cho não, ` +
+    `${tenNam} nói “chưa hiểu”.</p>` +
     '<output class="giong-cuoi" id="giong-cuoi">Chưa nghe câu nào.</output>';
   root.appendChild(dau);
 

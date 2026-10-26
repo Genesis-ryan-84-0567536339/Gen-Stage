@@ -76,9 +76,9 @@ const BAN_KINH_AT = 0.9;
  * `models/avatar.vrm` chứ không làm sập cảnh — xem `napCanh`.
  */
 // C2 (#32): tên hiển thị lấy từ BẢNG `TEN_HIEN_THI` trong `noi-dung.ts`
-// (Boss 26/10: nhân vật nam tên **Javis**); `id` vẫn là `owner`.
+// (G2, 28/10: Gen → "Nhi", Javis → "Nam"); `id` vẫn là `owner`/`gen`.
 export const OWNER = { id: 'owner', ten: TEN_HIEN_THI.owner, model: 'models/owner.vrm' } as const;
-export const GEN = { id: 'gen', ten: 'Gen', model: 'models/avatar.vrm' } as const;
+export const GEN = { id: 'gen', ten: TEN_HIEN_THI.gen, model: 'models/avatar.vrm' } as const;
 /** Giữ tên cũ cho mã/kịch bản A1–A3 còn tham chiếu: nay trỏ vào `gen`. */
 export const ACTOR_MAC_DINH = { id: GEN.id, ten: GEN.ten, model: GEN.model };
 

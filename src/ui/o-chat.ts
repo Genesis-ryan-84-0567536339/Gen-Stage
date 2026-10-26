@@ -11,6 +11,8 @@
  */
 import type { Dispatcher } from '../api/dispatcher';
 import type { ActorSnapshot, StageState } from '../api/types';
+import { NGUOI_NHAN_MAC_DINH } from '../behavior/hieu-lenh';
+import { TEN_HIEN_THI } from '../stage/noi-dung';
 
 export interface OChat {
   /** Gửi một câu như Boss vừa gõ (script bằng chứng dùng). */
@@ -44,13 +46,17 @@ export function batOChat(
 ): OChat {
   let actorId = 'owner';
 
+  // G2 (28/10): placeholder/nút đọc tên hiển thị động (mặc định không gọi
+  // tên thì lệnh rơi vào NGUOI_NHAN_MAC_DINH = "gen", tên hiển thị "Nhi") —
+  // không ghi cứng "Gen" nữa.
+  const tenMacDinh = TEN_HIEN_THI[NGUOI_NHAN_MAC_DINH] ?? 'Nhi';
   const hop = document.createElement('form');
   hop.id = 'o-chat';
   hop.innerHTML =
     '<label for="o-chat-nhap">Sếp nói</label>' +
     '<input id="o-chat-nhap" type="text" autocomplete="off" ' +
-    'placeholder="Gen, dựng connector Baserow… (Enter gửi)" />' +
-    '<button type="submit" title="Gửi cho Gen">Gửi</button>';
+    `placeholder="${tenMacDinh}, dựng connector Baserow… (Enter gửi)" />` +
+    `<button type="submit" title="Gửi cho ${tenMacDinh}">Gửi</button>`;
   document.body.appendChild(hop);
 
   const o = hop.querySelector('input')!;

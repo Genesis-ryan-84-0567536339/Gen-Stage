@@ -213,16 +213,17 @@ export function timPlace(id: string): DinhNghiaPlace | undefined {
 /* ------------------------------------------- C2 (#32) — tên gọi nhân vật */
 
 /**
- * TÊN HIỂN THỊ của nhân vật — Boss 26/10: **nhân vật nam tên Javis**.
+ * TÊN HIỂN THỊ của nhân vật — Boss 28/10: **đổi Gen → "Nhi", Javis → "Nam"**
+ * cho dễ gọi/nhận diện (trước đó 26/10 là "Javis").
  *
- * `id` giữ nguyên `owner` (không đổi) vì cả `controlledBy`, phím WASD, camera
- * `theo-owner`, nguồn `user.text` và MCP đều viết theo id đó — đổi id là phá
- * hợp đồng với agent. Chỉ **tên hiện trên bong bóng chữ và trong
- * `stage.describe().actors[].name`** đổi thành "Javis".
+ * `id` giữ nguyên `owner`/`gen` (KHÔNG đổi) vì cả `controlledBy`, phím WASD,
+ * camera `theo-owner`, nguồn `user.text` và MCP đều viết theo id đó — đổi id
+ * là phá hợp đồng với agent. Chỉ **tên hiện trên bong bóng chữ và trong
+ * `stage.describe().actors[].name`** đổi thành "Nam"/"Nhi".
  */
 export const TEN_HIEN_THI: Record<string, string> = {
-  owner: 'Javis',
-  gen: 'Gen',
+  owner: 'Nam',
+  gen: 'Nhi',
 };
 
 /**
@@ -231,6 +232,19 @@ export const TEN_HIEN_THI: Record<string, string> = {
  * Viết sẵn cả những cách STT tiếng Việt hay nghe sai: "Javis" rất dễ ra
  * "Ja-vít", "Gia vis", "Gia vít"; "Gen" ra "Ghen"/"Gien". Máy khớp còn cộng
  * thêm fuzzy ≤2 ký tự nên bảng này chỉ cần những biến thể **khác hẳn** chữ gốc.
+ *
+ * GIỮ nguyên mọi bí danh cũ (`javis`, `gen`, `david`…) — đổi tên hiển thị
+ * không được phá câu Sếp quen gọi theo tên cũ.
+ *
+ * **"Nam"/"Nhi" là từ tiếng Việt thường** ("phía nam", "nam châm", "nhí
+ * nhảnh", và cả số đếm — xem `SO_CHU` trong `ngu-phap.ts`: `nhi` = 2, `nam` =
+ * 5) nên KHÔNG khai bừa làm bí danh trần một từ: máy khớp (`timCum` trong
+ * `hieu-lenh.ts`) tìm cụm ở BẤT KỲ đâu trong câu, khai "nam" trần là "cục nam
+ * châm" cũng bị hiểu thành gọi tên. Chỉ khai **cụm có tín hiệu gọi tên rõ**
+ * (kèm "ơi"/"à", hoặc "anh"/"em" đứng trước) — những cụm này gần như không
+ * bao giờ xuất hiện tình cờ trong câu thường. Trường hợp gọi trần ở **đầu câu
+ * kèm dấu phẩy** ("Nam, mở đèn") được xử lý RIÊNG, có ràng buộc vị trí, ngay
+ * trong `tachNguoiNhan()` — xem chú thích ở đó.
  */
 export const BI_DANH_NHAN_VAT: Record<string, string[]> = {
   /**
@@ -262,6 +276,27 @@ export const BI_DANH_NHAN_VAT: Record<string, string[]> = {
     'đa vít',
     'david',
     'davids',
+    // G2 (28/10) — "Nam" dễ trùng từ thường, chỉ khai cụm có tín hiệu gọi rõ.
+    'nam oi',
+    'nam ơi',
+    'nam a',
+    'nam à',
+    'anh nam',
+    'a nam',
   ],
-  gen: ['gen', 'ghen', 'gien', 'jen', 'gel'],
+  gen: [
+    'gen',
+    'ghen',
+    'gien',
+    'jen',
+    'gel',
+    // G2 (28/10) — "Nhi" dễ trùng từ thường ("nhí", số đếm), chỉ khai cụm có
+    // tín hiệu gọi rõ.
+    'nhi oi',
+    'nhi ơi',
+    'nhi a',
+    'nhi à',
+    'em nhi',
+    'be nhi',
+  ],
 };

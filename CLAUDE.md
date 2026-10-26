@@ -1,6 +1,8 @@
 # Gen-Stage
 
 > **Phiên mới / quota mở lại: đọc `docs/MUC-TIEU-TU-CHAY.md` TRƯỚC và tự chạy vòng lặp trong đó, không chờ Boss nhắc.** Cổng chất lượng: `docs/CONG-CHAT-LUONG.md`.
+> **G2 (28/10):** tên hiển thị đổi Gen → **Nhi**, Javis → **Nam** (id kỹ
+> thuật vẫn `gen`/`owner` — xem `TEN_HIEN_THI` trong `src/stage/noi-dung.ts`).
 
 Sân khấu 3D chạy trong trình duyệt, điều khiển bằng **một bộ lệnh cố định**
 (Actor API v0.1 — `docs/spec/actor-api.md`). Mọi đường vào (nút trên giao diện,
