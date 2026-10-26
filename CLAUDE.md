@@ -1145,3 +1145,37 @@ lệnh để tăng trải nghiệm chân thực trong quá trình nó suy nghĩ"
 - **Đổi lời hứa thì phải đổi cả cửa sổ lấy mẫu.** Câu đệm giờ hoãn tới khi Nam
   dứt lời (2–3 s), mà script còn lấy mẫu ở 1,2 s → "thiếu mốc" và chấm sai
   chính cái vừa sửa.
+
+#### Vòng 2c — "một giọng" là tính chất của SÂN KHẤU, không của phản xạ
+
+Tự đo lại lần nữa (34/36): tầng 2 đã có trần, câu đệm đã chờ Nam dứt lời
+(119 ms sau `actor.sayDone`, **đúng thứ tự**), nhưng móc
+`AudioBufferSourceNode` **vẫn** ra đỉnh 2 giọng. Hai nguyên nhân còn lại, cả
+hai đều **không** nằm trong tầm của lớp phản xạ:
+
+- **`actor.sayDone` bắn theo ƯỚC LƯỢNG, không theo audio thật.** `durationMs`
+  của hành động lấy từ `uocThoiLuongNoi`, có thể ngắn hơn `buf.duration` — nên
+  Nhi mở miệng 119 ms sau `sayDone` mà đuôi giọng Nam còn đang chạy. Thước
+  thật là `LopTieng.aiConGiong()` (đọc `dangPhat`, khoá theo `buf.duration`).
+- **Lớp tiếng nối hàng đợi theo TỪNG ACTOR** (`vaoHangDoi(actorId, …)`), nên
+  hai nhân vật khác nhau phát cùng lúc được. Mà câu của **não** cũng đi đường
+  đó: não trả lời ở mốc 2 s trong khi Nam còn đọc câu của Boss ⇒ chồng giọng,
+  và không cờ nào của phản xạ chặn được vì phản xạ không gửi câu đó.
+
+Nên chốt dời về **lớp tiếng** — chỗ duy nhất mọi câu đi qua (phản xạ, não, lớp
+hiểu lệnh): `khoaGiong` là một hàng đợi **toàn sân khấu**, cộng `choGiongRanh()`
+mà **`actor.say` await TRƯỚC `world.actorSay`**. Phải chờ ở `actor.say` chứ
+không chỉ khoá phần audio: `world.actorSay` dựng bong bóng chữ + nhép miệng
+ngay, khoá riêng audio thì bong bóng hiện trước giọng vài giây — lệch còn khó
+chịu hơn chồng giọng.
+
+Hệ quả cần biết: câu trả lời của não **chờ Nam đọc xong** mới phát. Đó là điều
+đúng (người ta không trả lời khi người khác còn đang nói), nhưng nó đổi nghĩa
+thước "não nói ngay sau khi gửi lệnh" → phải tính từ **max(lệnh của não, lúc
+sân khấu hết tiếng)**.
+
+- **Mẫu kiểm "Firefox phải trống" đúng là neo argv[0]**:
+  `pgrep -f '^[^ ]*firefox-1543/firefox/firefox'`. Mẫu không neo khớp luôn vòng
+  `bash -c` của agent khác đang chờ Firefox → bộ kiểm tự chặn mình bằng người
+  đang chờ nó. Giữ thêm thước thứ hai độc lập (`/proc/<pid>/exe`, vì tiến trình
+  bash có `exe` là `/usr/bin/bash` nên không thể tự khớp).

@@ -620,6 +620,23 @@ export const LENH_ACTOR: CommandSpec[] = [
       if (ctx.daHuy?.() === true) {
         return ngay({ actor: id, text: chu, to: nghe, huy: true });
       }
+      /**
+       * I1 vòng 2 (#74) — **chờ sân khấu hết tiếng rồi mới mở miệng.**
+       *
+       * Khoá nằm ở lớp tiếng (`choGiongRanh`), nhưng phải chờ **ở đây**, chứ
+       * không chỉ chờ lúc phát audio: `world.actorSay` dựng bong bóng chữ +
+       * nhép miệng ngay, nên nếu chỉ khoá phần audio thì bong bóng hiện trước
+       * giọng vài giây — lệch còn khó chịu hơn chồng giọng.
+       *
+       * Đây là chỗ duy nhất mọi câu đi qua (phản xạ, não, lớp hiểu lệnh), nên
+       * lời hứa "một giọng" của Issue #74 giữ được cho **mọi** nguồn, không
+       * phải chỉ cho tuỷ sống.
+       */
+      await lopTieng()?.choGiongRanh();
+      // chờ xong có thể đã bị cắt (não gửi câu mới) → đọc lại cửa huỷ
+      if (ctx.daHuy?.() === true) {
+        return ngay({ actor: id, text: chu, to: nghe, huy: true });
+      }
       const hd = ctx.world.actorSay(id, chu, camXuc, giong);
       // `actor.sayStart` bắn đúng lúc bong bóng chữ hiện ra (sau khi tải tiếng,
       // trước khi chờ nói xong). Driver não (`scripts/nao-agy.mjs`) đo độ trễ

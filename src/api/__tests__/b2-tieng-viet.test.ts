@@ -270,6 +270,51 @@ describe('LopTieng — tải, phát, nhép miệng', () => {
     expect(mau.length).toBe(soMauLucCat); // không nhép thêm sau khi cắt
   });
 
+  /**
+   * I1 vòng 2 (#74, review PR #75 lỗi chặn 1) — **MỘT GIỌNG CHO CẢ SÂN KHẤU.**
+   *
+   * `vaoHangDoi` nối theo **từng actor**, nên hai nhân vật khác nhau vẫn phát
+   * cùng lúc được: móc `AudioBufferSourceNode` ở bộ bằng chứng đo **đỉnh 2
+   * giọng** (Nam đọc câu của Boss, Nhi chêm vào giữa). Issue #74 ghi thẳng
+   * *"không bao giờ nói chồng (một giọng)"* — tính chất của **sân khấu**, nên
+   * chốt phải ở lớp tiếng, chỗ duy nhất mọi câu đi qua.
+   */
+  it('HAI ACTOR khác nhau: câu sau chờ câu trước, không bao giờ chồng giọng', async () => {
+    const { ctx } = ctxGia();
+    ghiMiengNhep('owner', miengGia().mieng);
+    ghiMiengNhep('gen', miengGia().mieng);
+    const t = new LopTieng({ fetchFn: fetchGia(10240), taoCtx: () => ctx }); // ~1 s/câu
+
+    const cuaNam = await t.chuanBi('owner', 'Nam đọc câu của Boss.', {});
+    const cuaNhi = await t.chuanBi('gen', 'Dạ, Sếp?', {});
+    cuaNam!.phat();
+    cuaNhi!.phat();
+
+    // ngay sau khi gọi cả hai: CHỈ Nam có giọng
+    await new Promise((r) => setTimeout(r, 150));
+    expect(t.aiConGiong()).toEqual(['owner']);
+
+    // Nhi chỉ mở miệng sau khi Nam dứt hẳn — đỉnh số giọng luôn là 1
+    let dinh = 0;
+    for (let i = 0; i < 24; i++) {
+      dinh = Math.max(dinh, t.aiConGiong().length);
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    expect(dinh).toBe(1);
+  });
+
+  it('choGiongRanh() chờ hết câu đang phát rồi mới trả về', async () => {
+    const { ctx } = ctxGia();
+    ghiMiengNhep('owner', miengGia().mieng);
+    const t = new LopTieng({ fetchFn: fetchGia(10240), taoCtx: () => ctx });
+    const cau = await t.chuanBi('owner', 'Nam đọc một giây.', {});
+    cau!.phat();
+    await new Promise((r) => setTimeout(r, 100));
+    expect(t.aiConGiong()).toEqual(['owner']);
+    await t.choGiongRanh();
+    expect(t.aiConGiong()).toEqual([]);
+  });
+
   it('phat() gọi hai lần cũng chỉ phát một lần', async () => {
     const { ctx, daPhat } = ctxGia();
     ghiMiengNhep('gen', miengGia().mieng);

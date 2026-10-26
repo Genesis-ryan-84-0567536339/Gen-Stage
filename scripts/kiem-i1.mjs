@@ -149,9 +149,27 @@ function firefoxDangChay() {
   return ra;
 }
 
+/**
+ * Mẫu `pgrep` **neo vào argv[0]** — bản chuẩn của đợt này.
+ *
+ * `-f firefox-1543` (và cả `-f firefox-1543/firefox/firefox`) khớp bất kỳ chỗ
+ * nào trong dòng lệnh, nên nó khớp luôn cái vòng `bash -c` của agent khác đang
+ * CHỜ Firefox. `^[^ ]*` buộc chuỗi phải nằm ở **từ đầu tiên** = đường dẫn tới
+ * file thực thi, nên một tiến trình `bash -c '... firefox-1543 ...'` không còn
+ * khớp nữa.
+ */
+function pgrepFirefox() {
+  const r = spawnSync('pgrep', ['-f', '^[^ ]*firefox-1543/firefox/firefox'], {
+    encoding: 'utf8',
+  });
+  return String(r.stdout ?? '').trim().split(/\s+/).filter(Boolean);
+}
+
 /** Không mở Firefox khi đã có phiên THẬT nào đang chạy (tranh GPU → nouveau gãy). */
 function kiemFirefoxTrong() {
-  const pid = firefoxDangChay();
+  // Hai thước độc lập: mẫu pgrep neo argv[0], và `/proc/<pid>/exe` (bash có
+  // `exe` là `/usr/bin/bash` nên không thể tự khớp). Có cái nào thấy là dừng.
+  const pid = [...new Set([...pgrepFirefox(), ...firefoxDangChay()])];
   if (pid.length === 0) return;
   console.error(
     `\n⛔ Đã có ${pid.length} tiến trình Firefox của Playwright đang chạy (PID ${pid.join(', ')}).\n` +

@@ -1,5 +1,5 @@
 {
-  "chay": "2026-10-26T19:32:57.423Z",
+  "chay": "2026-10-26T19:38:47.171Z",
   "issue": 74,
   "trinhDuyet": "Playwright firefox-1543, headless:false, GPU thật",
   "cong": {
@@ -9,7 +9,7 @@
     "stt": 8973,
     "web": 5397
   },
-  "loadavg": "0.95 1.54 1.87 1/2987 2480501",
+  "loadavg": "1.50 2.67 2.44 1/2991 2504799",
   "buoc": [
     {
       "nhan": "bridge bật, STT thật đã cài",
@@ -24,14 +24,14 @@
     {
       "nhan": "mic bắn user.listening { on: true } ngay lúc bắt đầu ghi",
       "ok": true,
-      "chiTiet": "t=1793043190144 data={\"on\":true,\"dangNhanDang\":false}"
+      "chiTiet": "t=1793043540224 data={\"on\":true,\"dangNhanDang\":false}"
     },
     {
       "nhan": "MỐC 1 — t(user.listening on) → t(actor.lookAt của Nhi) ≤150 ms",
       "ok": true,
-      "chiTiet": "7 ms (trước đó Nhi nhìn \"ban-dieu-khien\", lệnh: nguồn phan-xa, target \"camera\")",
+      "chiTiet": "6 ms (trước đó Nhi nhìn \"ban-dieu-khien\", lệnh: nguồn phan-xa, target \"camera\")",
       "so": {
-        "treMs": 7,
+        "treMs": 6,
         "nhinTruoc": "ban-dieu-khien",
         "nguon": "phan-xa"
       }
@@ -44,35 +44,35 @@
     {
       "nhan": "hết ghi → user.listening { dangNhanDang: true } + dáng \"đang nhẩm\" (suy-nghi)",
       "ok": true,
-      "chiTiet": "t=1793043193368"
+      "chiTiet": "t=1793043543448"
     },
     {
       "nhan": "STT ra chữ từ giọng đi qua MediaRecorder thật của Firefox",
       "ok": true,
-      "chiTiet": "\"Nhi ơi hôm nay thế nào\" · tin 0.952 · trễ 29563 ms",
+      "chiTiet": "\"Nhi ơi hôm nay thế nào\" · tin 0.952 · trễ 27509 ms",
       "so": {
         "soMauRms": 63,
-        "dinhRms": 0.2512333010028281,
+        "dinhRms": 0.2448677612933577,
         "coTieng": true,
         "byteGui": 49741,
         "dangBlob": "audio/ogg; codecs=opus",
         "text": "Nhi ơi hôm nay thế nào",
         "confidence": 0.952,
-        "treMs": 29563,
+        "treMs": 27509,
         "loi": "",
-        "ts": "2026-10-26T19-33-42-926",
+        "ts": "2026-10-26T19-39-30-948",
         "quyen": "duoc",
         "nhoQuyen": false,
         "giuStream": true,
         "buoc": [
-          "19:33:06.511 bridge STT sẵn tại http://localhost:8973",
-          "19:33:06.511 quyền mic lúc nạp trang: cho",
-          "19:33:08.023 xin quyền mic (trước khi hỏi: cho)",
-          "19:33:08.254 mic MỞ sau 230 ms · track \"Default Audio Device\" · Firefox KHÔNG nhớ quyền",
-          "19:33:10.143 dùng mic giữ sẵn — 0 ms, không hỏi quyền",
-          "19:33:10.144 đang ghi · dạng \"audio/ogg; codecs=opus\"",
-          "19:33:13.367 nhả · 63 mẫu RMS · đỉnh 0.2512 · coTieng true · 49741 byte \"audio/ogg; codecs=opus\"",
-          "19:33:42.930 nghe được sau 29563 ms · tin 0.952 · \"Nhi ơi hôm nay thế nào\""
+          "19:38:56.512 bridge STT sẵn tại http://localhost:8973",
+          "19:38:56.512 quyền mic lúc nạp trang: cho",
+          "19:38:58.104 xin quyền mic (trước khi hỏi: cho)",
+          "19:38:58.269 mic MỞ sau 165 ms · track \"Default Audio Device\" · Firefox KHÔNG nhớ quyền",
+          "19:39:00.222 dùng mic giữ sẵn — 0 ms, không hỏi quyền",
+          "19:39:00.223 đang ghi · dạng \"audio/ogg; codecs=opus\"",
+          "19:39:03.447 nhả · 63 mẫu RMS · đỉnh 0.2449 · coTieng true · 49741 byte \"audio/ogg; codecs=opus\"",
+          "19:39:30.957 nghe được sau 27509 ms · tin 0.952 · \"Nhi ơi hôm nay thế nào\""
         ],
         "tenMic": "Default Audio Device",
         "batTat": false,
@@ -87,30 +87,30 @@
     {
       "nhan": "user.text bắn ra và KHÔNG bị lớp hiểu lệnh nhận (handled falsy) — đúng ca chờ não",
       "ok": true,
-      "chiTiet": "t=1793043239672 handled=undefined"
+      "chiTiet": "t=1793043587838 handled=undefined"
     },
     {
       "nhan": "MỐC 2 — t(user.text) → t(gật, actor.listening) ≤300 ms",
       "ok": true,
-      "chiTiet": "9 ms (question=true)",
+      "chiTiet": "6 ms (question=true)",
       "so": {
-        "treMs": 9
+        "treMs": 6
       }
     },
     {
       "nhan": "MỐC 3 — t(Nam dứt lời) → t(câu đệm BẮT ĐẦU PHÁT) ≤400 ms",
-      "ok": false,
-      "chiTiet": "null ms — «undefined» (Nam dứt lời — ms sau user.text)",
+      "ok": true,
+      "chiTiet": "119 ms — «Em nghe ạ» (Nam dứt lời 3215 ms sau user.text)",
       "so": {
-        "treMs": null,
-        "cau": null,
-        "namNoiMs": null
+        "treMs": 119,
+        "cau": "Em nghe ạ",
+        "namNoiMs": 3215
       }
     },
     {
       "nhan": "MỐC 3b — câu đệm KHÔNG bắt đầu trước khi Nam dứt lời (không chồng giọng)",
-      "ok": false,
-      "chiTiet": "thiếu mốc"
+      "ok": true,
+      "chiTiet": "câu đệm t=1793043591172 · Nam dứt lời t=1793043591053"
     },
     {
       "nhan": "MỐC 4a — não trễ 8 s: ≥1 ĐỔI TƯ THẾ trong lúc chờ",
@@ -141,14 +141,14 @@
     {
       "nhan": "câu của não VẪN nói được sau khi việc chêm bị cắt",
       "ok": true,
-      "chiTiet": "t=1793043247715 (não gửi lúc 1793043247687, lệch 28 ms)",
+      "chiTiet": "t=1793043595850 (não gửi lúc 1793043595845, lệch 5 ms)",
       "so": {
         "luotNao": [
           {
             "id": "nao-2",
             "tre": 8000,
             "nhan": "Nhi ơi, hôm nay mình làm gì nhỉ",
-            "guiLuc": 1793043247687,
+            "guiLuc": 1793043595845,
             "ok": true,
             "loi": null
           }
@@ -163,9 +163,9 @@
     {
       "nhan": "MỐC 5b — não nói NGAY sau khi gửi (việc chêm bị cắt, không phải chờ nó xong)",
       "ok": true,
-      "chiTiet": "4 ms sau lệnh của não",
+      "chiTiet": "7 ms sau lệnh của não",
       "so": {
-        "treNaoNoiMs": 4
+        "treNaoNoiMs": 7
       }
     },
     {
@@ -177,9 +177,9 @@
       }
     },
     {
-      "nhan": "não giao việc dài: actor.play type loop",
+      "nhan": "não giao việc dài có hạn: actor.play type speed 0.1",
       "ok": true,
-      "chiTiet": "{\"ok\":true,\"result\":{\"actor\":\"gen\",\"clip\":\"type\",\"loop\":true,\"started\":true,\"durationMs\":0}}"
+      "chiTiet": "{\"ok\":true,\"result\":{\"actor\":\"gen\",\"clip\":\"type\",\"loop\":false,\"started\":true,\"durationMs\":30000}}"
     },
     {
       "nhan": "Nhi đang bận và có 1 việc xếp hàng",
@@ -200,9 +200,9 @@
     {
       "nhan": "MỐC 6a — đang bận vẫn có actor.lookAt ≤300 ms",
       "ok": true,
-      "chiTiet": "9 ms",
+      "chiTiet": "11 ms",
       "so": {
-        "treMs": 9
+        "treMs": 11
       }
     },
     {
@@ -221,33 +221,42 @@
       }
     },
     {
-      "nhan": "MỐC 7a — hết trần 30 s → nói ĐÚNG 1 câu kết",
-      "ok": false,
-      "chiTiet": "câu kết ×0 («Não em chưa trả lời, Sếp thử lại nhé.»)",
+      "nhan": "Nhi rảnh hẳn trước khi đo trần tầng 2",
+      "ok": true,
+      "chiTiet": "{\"busy\":false,\"queued\":0}",
       "so": {
-        "soCauKet": 0
+        "busy": false,
+        "queued": 0
+      }
+    },
+    {
+      "nhan": "MỐC 7a — hết trần 30 s → nói ĐÚNG 1 câu kết",
+      "ok": true,
+      "chiTiet": "câu kết ×1 («Não em chưa trả lời, Sếp thử lại nhé.»)",
+      "so": {
+        "soCauKet": 1
       }
     },
     {
       "nhan": "MỐC 7b — não im 60 s: số emote của phản xạ NGỪNG tăng sau mốc 30 s",
       "ok": true,
-      "chiTiet": "mốc 35 s: 0 emote · mốc 60 s: 0 emote (review đo bản cũ: 8 → 11, vẫn tăng)",
+      "chiTiet": "mốc 35 s: 6 emote · mốc 60 s: 6 emote (review đo bản cũ: 8 → 11, vẫn tăng)",
       "so": {
-        "emote35s": 0,
-        "emote60s": 0
+        "emote35s": 6,
+        "emote60s": 6
       }
     },
     {
       "nhan": "MỐC 7c — không nói thêm câu nào sau câu kết",
-      "ok": false,
-      "chiTiet": "câu kết ×0"
+      "ok": true,
+      "chiTiet": "câu kết ×1"
     },
     {
       "nhan": "MỐC 7d — nhịp thường sống lại: Nhi thả mắt về việc đang làm (mục 4 của nhịp)",
-      "ok": false,
-      "chiTiet": "lookingAt \"camera\" · cách Nam 9.67 m (bản cũ: mục 4 bị !tangHai khoá vĩnh viễn)",
+      "ok": true,
+      "chiTiet": "lookingAt \"ban-dieu-khien\" · cách Nam 9.67 m (bản cũ: mục 4 bị !tangHai khoá vĩnh viễn)",
       "so": {
-        "lookingAt": "camera",
+        "lookingAt": "ban-dieu-khien",
         "xa": 9.67
       }
     },
@@ -262,18 +271,18 @@
     {
       "nhan": "r.ok = true cho MỌI lệnh trong cả phiên",
       "ok": true,
-      "chiTiet": "95 lệnh, 0 lỗi",
+      "chiTiet": "176 lệnh, 0 lỗi",
       "so": {
-        "soLenh": 95,
+        "soLenh": 176,
         "loi": []
       }
     },
     {
       "nhan": "mọi hành động của phản xạ đi qua dispatcher với nguồn \"phan-xa\"",
       "ok": true,
-      "chiTiet": "74/95 lệnh nguồn phan-xa",
+      "chiTiet": "119/176 lệnh nguồn phan-xa",
       "so": {
-        "soLenhPhanXa": 74
+        "soLenhPhanXa": 119
       }
     },
     {
@@ -307,16 +316,11 @@
     }
   ],
   "tomTat": {
-    "soBuoc": 35,
-    "soOk": 28,
+    "soBuoc": 36,
+    "soOk": 34,
     "thatBai": [
-      "MỐC 3 — t(Nam dứt lời) → t(câu đệm BẮT ĐẦU PHÁT) ≤400 ms: null ms — «undefined» (Nam dứt lời — ms sau user.text)",
-      "MỐC 3b — câu đệm KHÔNG bắt đầu trước khi Nam dứt lời (không chồng giọng): thiếu mốc",
       "MỐC 4c — ĐỈNH SỐ GIỌNG THẬT CÙNG PHÁT = 1 (móc AudioBufferSourceNode): đỉnh 2 giọng (thước cũ, chỉ đếm câu của Nhi: 1)",
-      "MỐC 5c — ĐỈNH SỐ GIỌNG THẬT CÙNG PHÁT = 1 quanh lúc cắt: đỉnh 2 giọng",
-      "MỐC 7a — hết trần 30 s → nói ĐÚNG 1 câu kết: câu kết ×0 («Não em chưa trả lời, Sếp thử lại nhé.»)",
-      "MỐC 7c — không nói thêm câu nào sau câu kết: câu kết ×0",
-      "MỐC 7d — nhịp thường sống lại: Nhi thả mắt về việc đang làm (mục 4 của nhịp): lookingAt \"camera\" · cách Nam 9.67 m (bản cũ: mục 4 bị !tangHai khoá vĩnh viễn)"
+      "MỐC 5c — ĐỈNH SỐ GIỌNG THẬT CÙNG PHÁT = 1 quanh lúc cắt: đỉnh 2 giọng"
     ]
   }
 }

@@ -281,7 +281,9 @@ export class LopTieng {
       phat: () => {
         if (daPhat) return;
         daPhat = true;
-        void this.vaoHangDoi(actorId, () => this.phatNgay(actorId, buf!, envelope));
+        void this.vaoHangDoi(actorId, () =>
+          this.vaoKhoaGiong(() => this.phatNgay(actorId, buf!, envelope)),
+        );
       },
       huy: () => this.huy(actorId),
     };
@@ -302,6 +304,43 @@ export class LopTieng {
     const sau = truoc.then(viec, viec);
     this.hangDoi.set(actorId, sau);
     return sau;
+  }
+
+  /**
+   * I1 vòng 2 (#74) — **MỘT GIỌNG CHO CẢ SÂN KHẤU**, không phải mỗi người một
+   * giọng.
+   *
+   * `vaoHangDoi` nối theo **từng actor**, nên hai nhân vật khác nhau vẫn phát
+   * cùng lúc được: review PR #75 móc `AudioBufferSourceNode` và đo **đỉnh 2
+   * giọng** (Nam đọc câu của Boss, Nhi chêm vào giữa). Issue #74 ghi thẳng
+   * *"không bao giờ nói chồng (một giọng)"* — đó là tính chất của **sân
+   * khấu**, nên chốt phải ở đây, chỗ duy nhất mọi câu đi qua, không phải chỉ ở
+   * lớp phản xạ (não và lớp hiểu lệnh cũng gửi câu).
+   */
+  private khoaGiong: Promise<unknown> = Promise.resolve();
+
+  private vaoKhoaGiong(viec: () => Promise<void>): Promise<void> {
+    const sau = this.khoaGiong.then(viec, viec);
+    // nuốt lỗi khi lưu lại: một câu hỏng không được làm đứt khoá của câu sau
+    this.khoaGiong = sau.catch(() => undefined);
+    return sau;
+  }
+
+  /**
+   * Những actor còn **GIỌNG THẬT đang phát** (theo `buf.duration`, không theo
+   * ước lượng).
+   *
+   * `actor.sayDone` bắn theo `uocThoiLuongNoi`, có thể **ngắn hơn** audio thật
+   * — đo được đuôi giọng Nam còn chạy khi Nhi mở miệng 119 ms sau `sayDone`.
+   * Bên nào cần biết "sân khấu còn tiếng không" thì đọc cái này.
+   */
+  aiConGiong(): string[] {
+    return [...this.dangPhat.keys()];
+  }
+
+  /** Chờ tới khi **không còn giọng nào** trên sân khấu (bubble phải chờ cùng). */
+  choGiongRanh(): Promise<void> {
+    return this.vaoKhoaGiong(async () => undefined);
   }
 
   private async phatNgay(
