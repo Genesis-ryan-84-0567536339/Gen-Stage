@@ -384,7 +384,7 @@ export const BANG_MAU_CAU: MauCau[] = [
       'lam module <ten>',
     ],
     moTa: 'Kết tinh một module mới rồi đưa vào tay',
-    viDu: 'Gen, dựng connector Baserow',
+    viDu: 'Gen, dựng module connector Baserow',
     tao: (s) => ({
       cmd: 'module.build',
       args: { id: maTuTen(s.ten), shape: 'book', label: s.ten, from: 'main' },

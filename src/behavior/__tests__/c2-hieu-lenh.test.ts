@@ -243,7 +243,7 @@ describe('C2 — hiểu lệnh giọng', () => {
   });
 
   it('dựng module lấy tên Sếp đọc làm nhãn + mã', () => {
-    const kq = phanTich('Gen, dựng connector Baserow', BC);
+    const kq = phanTich('Gen, dựng module connector Baserow', BC);
     expect(kq.lenh[0].cmd).toBe('module.build');
     expect(kq.lenh[0].args.id).toBe('connector-baserow');
     expect(kq.lenh[0].args.label).toBe('connector Baserow');
