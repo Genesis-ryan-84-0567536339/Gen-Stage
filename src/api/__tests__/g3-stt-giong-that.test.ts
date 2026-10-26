@@ -105,6 +105,18 @@ describe('G3 (#62) — bridge lưu audio thô mỗi lượt (việc 1)', () => {
     expect(ds).toHaveLength(100);
   });
 
+  it('lượt nhận dạng LỖI cũng để lại tệp — đó là mẫu đáng giữ nhất', async () => {
+    const { luuThu } = await napStt();
+    const ma = await luuThu(Buffer.from('OggS giả'), 'audio/ogg', {
+      loi: 'thợ STT tắt giữa câu',
+    });
+    expect(ma).toBeTruthy();
+    const so = JSON.parse(readFileSync(join(goc, 'thu', `${ma}.json`), 'utf8'));
+    expect(so.loi).toBe('thợ STT tắt giữa câu');
+    expect(so.text).toBe('');
+    expect(readdirSync(join(goc, 'thu'))).toContain(`${ma}.ogg`);
+  });
+
   it('lỗi ghi đĩa KHÔNG làm Boss mất câu (trả null, không ném)', async () => {
     const { luuThu } = await napStt();
     // thư mục thu trỏ vào một TỆP → mkdir chắc chắn lỗi

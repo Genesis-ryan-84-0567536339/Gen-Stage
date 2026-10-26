@@ -395,7 +395,12 @@ async function donVongThu(): Promise<void> {
 export async function luuThu(
   am: Buffer,
   dang: string,
-  kq: KetQuaStt,
+  /**
+   * Kết quả của lượt — **một phần cũng được**. Lượt nhận dạng LỖI (thợ chết
+   * giữa câu, ffmpeg không đọc nổi dạng audio) là lượt đáng giữ nhất của bộ
+   * mẫu, nên nó cũng phải để lại tệp: truyền `{ loi: '…' }` là đủ.
+   */
+  kq: Partial<KetQuaStt> & { loi?: string },
   cat?: { tuMs?: number; denMs?: number },
 ): Promise<string | null> {
   const ma = maLuot();
@@ -411,11 +416,12 @@ export async function luuThu(
           dang,
           byte: am.length,
           cat: { tuMs: cat?.tuMs ?? null, denMs: cat?.denMs ?? null },
-          text: kq.text,
-          tho: kq.tho,
-          confidence: kq.confidence,
-          durationMs: kq.durationMs,
-          audioMs: kq.audioMs,
+          text: kq.text ?? '',
+          tho: kq.tho ?? '',
+          confidence: kq.confidence ?? 0,
+          durationMs: kq.durationMs ?? 0,
+          audioMs: kq.audioMs ?? 0,
+          ...(kq.loi ? { loi: kq.loi } : {}),
           model: tho.thuMucModel(),
         },
         null,
@@ -575,12 +581,22 @@ export function batStt(host: string, cong: number): Server {
     docThan(req)
       .then(async (am) => {
         const cat = { tuMs: soMs('tu'), denMs: soMs('den') };
-        const k = await nhanDang(am, cat);
         /*
-         * Lưu lượt nói **mỗi lượt**, kể cả khi kết quả tới từ cache: cache
-         * giữ chữ, không giữ âm, nên bỏ qua ca cache là mất đúng những lượt
-         * Boss nói lại câu cũ — mà đó thường là câu engine nghe sai.
+         * Lưu lượt nói **mỗi lượt**, kể cả khi kết quả tới từ cache: cache giữ
+         * chữ, không giữ âm, nên bỏ qua ca cache là mất đúng những lượt Boss
+         * nói lại câu cũ — mà đó thường là câu engine nghe sai.
+         *
+         * Và lưu cả khi nhận dạng **LỖI**: lượt làm thợ chết hoặc ffmpeg không
+         * đọc nổi là lượt đáng giữ nhất, mà đúng lúc đó Boss chỉ thấy một dòng
+         * toast rồi mất luôn mẩu âm.
          */
+        let k: KetQuaStt;
+        try {
+          k = await nhanDang(am, cat);
+        } catch (e) {
+          await luuThu(am, String(dang), { loi: (e as Error).message }, cat);
+          throw e;
+        }
         const ma = await luuThu(am, String(dang), k, cat);
         return ma ? { ...k, ts: ma } : k;
       })
