@@ -200,3 +200,30 @@ export const PRESET_MAY = [
 export function timPlace(id: string): DinhNghiaPlace | undefined {
   return PLACES.find((p) => p.id === id);
 }
+
+/* ------------------------------------------- C2 (#32) — tên gọi nhân vật */
+
+/**
+ * TÊN HIỂN THỊ của nhân vật — Boss 26/10: **nhân vật nam tên Javis**.
+ *
+ * `id` giữ nguyên `owner` (không đổi) vì cả `controlledBy`, phím WASD, camera
+ * `theo-owner`, nguồn `user.text` và MCP đều viết theo id đó — đổi id là phá
+ * hợp đồng với agent. Chỉ **tên hiện trên bong bóng chữ và trong
+ * `stage.describe().actors[].name`** đổi thành "Javis".
+ */
+export const TEN_HIEN_THI: Record<string, string> = {
+  owner: 'Javis',
+  gen: 'Gen',
+};
+
+/**
+ * Bí danh để GỌI nhân vật bằng giọng (C2 — `src/behavior/hieu-lenh.ts`).
+ *
+ * Viết sẵn cả những cách STT tiếng Việt hay nghe sai: "Javis" rất dễ ra
+ * "Ja-vít", "Gia vis", "Gia vít"; "Gen" ra "Ghen"/"Gien". Máy khớp còn cộng
+ * thêm fuzzy ≤2 ký tự nên bảng này chỉ cần những biến thể **khác hẳn** chữ gốc.
+ */
+export const BI_DANH_NHAN_VAT: Record<string, string[]> = {
+  owner: ['javis', 'ja vit', 'javit', 'gia vis', 'gia vit', 'giavis', 'jarvis', 'da vit'],
+  gen: ['gen', 'ghen', 'gien', 'jen', 'gel'],
+};

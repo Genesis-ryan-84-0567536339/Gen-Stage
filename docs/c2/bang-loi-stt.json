@@ -1,0 +1,105 @@
+{
+  "so": 5,
+  "dungAi": 5,
+  "dungLenh": 5,
+  "sai": [],
+  "cau": [
+    {
+      "cau": "javis di toi ban dieu khien",
+      "aiMongDoi": [
+        "owner"
+      ],
+      "aiThay": [
+        "owner"
+      ],
+      "cmdMongDoi": "actor.moveTo",
+      "cmdThay": "actor.moveTo",
+      "args": {
+        "actor": "owner",
+        "to": "ban-dieu-khien"
+      },
+      "mau": "moveTo",
+      "nhacLai": "đi tới bàn điều khiển",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "Ja-vít, đi tới bàn điều khiểm",
+      "aiMongDoi": [
+        "owner"
+      ],
+      "aiThay": [
+        "owner"
+      ],
+      "cmdMongDoi": "actor.moveTo",
+      "cmdThay": "actor.moveTo",
+      "args": {
+        "actor": "owner",
+        "to": "ban-dieu-khien"
+      },
+      "mau": "moveTo",
+      "nhacLai": "đi tới bàn điều khiển",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "Ghen, vui lên",
+      "aiMongDoi": [
+        "gen"
+      ],
+      "aiThay": [
+        "gen"
+      ],
+      "cmdMongDoi": "actor.emote",
+      "cmdThay": "actor.emote",
+      "args": {
+        "actor": "gen",
+        "emote": "vui"
+      },
+      "mau": "emote",
+      "nhacLai": "vui lên",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "Gen ngoi ghe hai",
+      "aiMongDoi": [
+        "gen"
+      ],
+      "aiThay": [
+        "gen"
+      ],
+      "cmdMongDoi": "actor.sit",
+      "cmdThay": "actor.sit",
+      "args": {
+        "actor": "gen",
+        "seat": "ghe-2"
+      },
+      "mau": "ngoiGhe",
+      "nhacLai": "ngồi ghế hai",
+      "aiOk": true,
+      "lenhOk": true
+    },
+    {
+      "cau": "moi nguoi chao",
+      "aiMongDoi": [
+        "owner",
+        "gen"
+      ],
+      "aiThay": [
+        "owner",
+        "gen"
+      ],
+      "cmdMongDoi": "actor.emote",
+      "cmdThay": "actor.emote",
+      "args": {
+        "actor": "owner",
+        "emote": "chao"
+      },
+      "mau": "emote",
+      "nhacLai": "chào",
+      "aiOk": true,
+      "lenhOk": true
+    }
+  ]
+}

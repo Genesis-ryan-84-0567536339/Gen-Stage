@@ -10,6 +10,9 @@ import type { Dispatcher } from '../api/dispatcher';
 import type { EventBus } from '../events';
 import type { MoTaLenh, MoTaThamSo } from '../api/registry';
 import { TEN_NHOM } from '../api/commands/index';
+// C2 (#32) — tab "Giọng" sinh từ BẢNG mẫu câu, không viết tay dòng nào.
+import { BANG_MAU_CAU } from '../behavior/ngu-phap';
+import { TEN_HIEN_THI } from '../stage/noi-dung';
 
 interface OLenh {
   mo: MoTaLenh;
@@ -266,5 +269,76 @@ function datDatalist(dl: HTMLDataListElement, values: string[]): void {
     const o = document.createElement('option');
     o.value = v;
     dl.appendChild(o);
+  }
+}
+
+/* ------------------------------------------- C2 (#32) — tab "Giọng" */
+
+/**
+ * Tab "Giọng": liệt kê **mọi mẫu câu lớp hiểu lệnh nghe được**, sinh thẳng từ
+ * `BANG_MAU_CAU` (`src/behavior/ngu-phap.ts`) — thêm một dòng vào bảng ngữ
+ * pháp là tab tự có thêm dòng, đúng tinh thần "không viết tay nút nào" của
+ * spec mục 4.
+ *
+ * Trên cùng là **câu cuối Sếp vừa nói** và lệnh đã hiểu (nghe `user.command`
+ * khi khớp, `user.text` khi không khớp) — chỗ duy nhất Sếp xem được "nó hiểu
+ * mình thế nào" mà không phải mở nhật ký.
+ */
+export function dungTabGiong(root: HTMLElement, bus: EventBus): void {
+  const nhanVat = Object.entries(TEN_HIEN_THI)
+    .map(([, ten]) => ten)
+    .join(' · ');
+
+  const dau = document.createElement('div');
+  dau.className = 'giong-dau';
+  dau.innerHTML =
+    '<p class="giong-gt">Gọi tên rồi ra lệnh: <b>' +
+    nhanVat +
+    '</b>, hoặc <b>mọi người / cả hai / tất cả</b>. ' +
+    'Không gọi tên thì mặc định <b>Gen</b>. Câu không khớp mẫu nào: Gen chuyển cho não, ' +
+    'Javis nói “chưa hiểu”.</p>' +
+    '<output class="giong-cuoi" id="giong-cuoi">Chưa nghe câu nào.</output>';
+  root.appendChild(dau);
+
+  const cuoi = dau.querySelector<HTMLElement>('#giong-cuoi')!;
+  bus.on('user.command', (e) => {
+    const d = e.data as { text: string; cmd: string | null; actors: string[] };
+    cuoi.className = 'giong-cuoi khop';
+    cuoi.textContent = `“${d.text}” → ${(d.actors ?? [])
+      .map((a) => TEN_HIEN_THI[a] ?? a)
+      .join(' + ')} · ${d.cmd ?? '—'}`;
+  });
+  bus.on('user.text', (e) => {
+    const d = e.data as { text: string; handled?: boolean };
+    if (d.handled) return;
+    cuoi.className = 'giong-cuoi tu-do';
+    cuoi.textContent = `“${d.text}” → câu tự do, chuyển cho não`;
+  });
+
+  const theoNhom = new Map<string, typeof BANG_MAU_CAU>();
+  for (const mc of BANG_MAU_CAU) {
+    const ds = theoNhom.get(mc.nhom) ?? [];
+    ds.push(mc);
+    theoNhom.set(mc.nhom, ds);
+  }
+
+  for (const [nhom, ds] of theoNhom) {
+    const khoi = document.createElement('details');
+    khoi.className = 'nhom';
+    khoi.open = true;
+    khoi.innerHTML = `<summary><span>${nhom}</span><em>${ds.length}</em></summary>`;
+    for (const mc of ds) {
+      const hop = document.createElement('div');
+      hop.className = 'mau-cau';
+      const cach = mc.mau
+        .map((m) => `<code>${m.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code>`)
+        .join(' ');
+      hop.innerHTML =
+        `<p class="mau-mo-ta">${mc.moTa}</p>` +
+        `<p class="mau-vi-du">“${mc.viDu}”</p>` +
+        `<p class="mau-cach">${cach}</p>`;
+      khoi.appendChild(hop);
+    }
+    root.appendChild(khoi);
   }
 }

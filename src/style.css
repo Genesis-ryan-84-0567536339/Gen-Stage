@@ -633,3 +633,54 @@ input[type="checkbox"] { width: 17px; height: 17px; min-height: 0; accent-color:
   #o-chat { right: 0; width: calc(100% - 20px); }
   #o-chat label { display: none; }
 }
+
+/* ------------------------------------------------- C2 (#32) — tab "Giọng" */
+
+.giong-dau {
+  padding: 10px 12px 12px;
+  border-bottom: 1px solid var(--vien);
+}
+.giong-gt {
+  margin: 0 0 8px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--muc-nhat);
+}
+.giong-gt b { color: var(--muc); }
+.giong-cuoi {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  line-height: 1.45;
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: rgba(64, 55, 46, 0.05);
+  color: var(--muc-nhat);
+  word-break: break-word;
+}
+.giong-cuoi.khop { color: var(--xanh); background: rgba(47, 125, 98, 0.1); }
+.giong-cuoi.tu-do { color: var(--cam); background: rgba(216, 144, 47, 0.12); }
+.mau-cau {
+  padding: 8px 12px 10px;
+  border-top: 1px solid var(--vien);
+}
+.mau-mo-ta {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muc);
+}
+.mau-vi-du {
+  margin: 2px 0 5px;
+  font-size: 11.5px;
+  color: var(--xanh);
+}
+.mau-cach { margin: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+.mau-cach code {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: rgba(64, 55, 46, 0.06);
+  color: var(--muc-nhat);
+}

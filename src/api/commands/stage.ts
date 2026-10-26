@@ -7,6 +7,8 @@
 import type { CommandSpec } from '../types';
 import { moTaLenh } from '../registry';
 import { ngay } from './tien-ich';
+// C2 (#32) — câu giọng gần nhất + lệnh đã hiểu (spec mục 3.6).
+import { lenhCuoi } from '../../behavior/hieu-lenh';
 
 export const PHIEN_BAN_API = '0.1';
 
@@ -73,7 +75,11 @@ export const LENH_STAGE: CommandSpec[] = [
         const q = hd[a.id];
         return q ? { ...a, busy: a.busy || q.busy, queued: q.queued } : a;
       });
-      return ngay(st as unknown as Record<string, unknown>);
+      const cuoi = lenhCuoi();
+      return ngay({
+        ...(st as unknown as Record<string, unknown>),
+        ...(cuoi ? { lastCommand: cuoi } : {}),
+      });
     },
   },
 

@@ -5,15 +5,18 @@
 import type { Dispatcher } from '../api/dispatcher';
 import type { EventBus } from '../events';
 import type { NhatKy } from '../log';
-import { BangLenh } from './panel';
+import { BangLenh, dungTabGiong } from './panel';
 import { OKichBan } from './script-box';
 import { KhungNhatKy } from './log-view';
+
+/** Các thẻ của bảng điều khiển (C2 thêm "giong"). */
+export type TenThe = 'lenh' | 'giong' | 'kich-ban' | 'nhat-ky';
 
 export interface GiaoDien {
   bangLenh: BangLenh;
   oKichBan: OKichBan;
   nhatKyView: KhungNhatKy;
-  moThe(ten: 'lenh' | 'kich-ban' | 'nhat-ky'): void;
+  moThe(ten: TenThe): void;
   dongMo(mo?: boolean): void;
 }
 
@@ -29,16 +32,21 @@ export async function dungGiaoDien(
       <h2>Bảng lệnh <span id="bang-ver"></span></h2>
       <nav id="bang-the">
         <button type="button" data-the="lenh" class="dang-chon">Lệnh</button>
+        <button type="button" data-the="giong">Giọng</button>
         <button type="button" data-the="kich-ban">Kịch bản</button>
         <button type="button" data-the="nhat-ky">Nhật ký</button>
       </nav>
     </header>
     <section id="the-lenh" class="the-noi-dung hien"></section>
+    <section id="the-giong" class="the-noi-dung"></section>
     <section id="the-kich-ban" class="the-noi-dung"></section>
     <section id="the-nhat-ky" class="the-noi-dung"></section>`;
 
   const bangLenh = new BangLenh(document.getElementById('the-lenh')!, dispatcher, bus);
   await bangLenh.dung();
+
+  // C2 (#32) — tab "Giọng": mẫu câu lớp hiểu lệnh nghe được (sinh từ bảng).
+  dungTabGiong(document.getElementById('the-giong')!, bus);
 
   const oKichBan = new OKichBan(document.getElementById('the-kich-ban')!, dispatcher);
   const nhatKyView = new KhungNhatKy(document.getElementById('the-nhat-ky')!, nhatKy);
@@ -52,7 +60,7 @@ export async function dungGiaoDien(
   const nutThe = Array.from(
     bang.querySelectorAll<HTMLButtonElement>('#bang-the button'),
   );
-  const moThe = (ten: 'lenh' | 'kich-ban' | 'nhat-ky') => {
+  const moThe = (ten: TenThe) => {
     for (const n of nutThe) n.classList.toggle('dang-chon', n.dataset.the === ten);
     for (const s of bang.querySelectorAll<HTMLElement>('.the-noi-dung')) {
       s.classList.toggle('hien', s.id === `the-${ten}`);
@@ -60,7 +68,7 @@ export async function dungGiaoDien(
   };
   for (const n of nutThe) {
     n.addEventListener('click', () =>
-      moThe(n.dataset.the as 'lenh' | 'kich-ban' | 'nhat-ky'),
+      moThe(n.dataset.the as TenThe),
     );
   }
 
