@@ -1,0 +1,460 @@
+{
+  "chay": "2026-10-26T00:00:56.974Z",
+  "cong": {
+    "ws": 8797,
+    "tts": 8798,
+    "mcp": 8799
+  },
+  "mcpThu": "gen-stage-thu",
+  "buoc": [
+    {
+      "nhan": "bridge bật cả ws + tts + mcp (cổng riêng)",
+      "ok": true,
+      "chiTiet": "mcp /khoe: {\"ok\":true,\"mcp\":\"0.1\",\"tools\":42}"
+    },
+    {
+      "nhan": "đăng ký MCP tạm cho agy",
+      "ok": true,
+      "chiTiet": "gen-stage-thu → http://127.0.0.1:8799/mcp (xoá ở cuối)"
+    },
+    {
+      "nhan": "trình duyệt nối bridge (?bridge=1)",
+      "ok": true,
+      "chiTiet": "cổng ws 8797"
+    },
+    {
+      "nhan": "driver nối bridge + agy ấm trong tmux",
+      "ok": true,
+      "chiTiet": "tmux \"gen-stage-nao-thu\" đã ấm (agy gemini-3.8-flash-low)"
+    },
+    {
+      "nhan": "driver đang nghe user.text (không cần Boss chạm terminal)",
+      "ok": true,
+      "chiTiet": ""
+    },
+    {
+      "nhan": "lượt 1: Sếp gõ → user.text",
+      "ok": true,
+      "chiTiet": "22 ms · {\"actor\":\"owner\",\"text\":\"Gen ơi, chào Sếp đi\"}"
+    },
+    {
+      "nhan": "lượt 1: phản xạ của Gen ≤300 ms",
+      "ok": true,
+      "chiTiet": "88 ms (cmd.queued)"
+    },
+    {
+      "nhan": "lượt 1: Gen BẮT ĐẦU NÓI (agy thật qua MCP)",
+      "ok": true,
+      "chiTiet": "5982 ms · \"Dạ, em chào Sếp ạ! Hôm nay Sếp cần em hỗ trợ gì trong phòng lab không \""
+    },
+    {
+      "nhan": "lượt 2: Sếp gõ → user.text",
+      "ok": true,
+      "chiTiet": "19 ms · {\"actor\":\"owner\",\"text\":\"dựng connector Baserow\"}"
+    },
+    {
+      "nhan": "lượt 2: phản xạ của Gen ≤300 ms",
+      "ok": true,
+      "chiTiet": "83 ms (actor.turned)"
+    },
+    {
+      "nhan": "lượt 2: Gen BẮT ĐẦU NÓI (agy thật qua MCP)",
+      "ok": true,
+      "chiTiet": "9314 ms · \"Dạ rõ, em dựng connector Baserow ngay cho Sếp đây ạ!\""
+    },
+    {
+      "nhan": "hai câu cách 300 ms gộp thành MỘT lượt não",
+      "ok": true,
+      "chiTiet": "thêm 1 lượt · câu gộp: SẾP: «Gen ơi. cất module vào kệ đi»"
+    },
+    {
+      "nhan": "không có user.text nào do gen tạo (chống lặp)",
+      "ok": true,
+      "chiTiet": "0 cái"
+    },
+    {
+      "nhan": "khung tmux cho thấy agy gọi tool MCP gen-stage",
+      "ok": true,
+      "chiTiet": ""
+    },
+    {
+      "nhan": "0 lỗi console",
+      "ok": true,
+      "chiTiet": ""
+    },
+    {
+      "nhan": "câu trả lời đầu ≤8 s (mục tiêu Sếp đặt)",
+      "ok": false,
+      "chiTiet": "5982 ms · 9314 ms"
+    }
+  ],
+  "luot": [
+    {
+      "luot": 1,
+      "cau": "Gen ơi, chào Sếp đi",
+      "msUserText": 22,
+      "msPhanXa": 88,
+      "suKienPhanXa": "cmd.queued",
+      "msBatDauNoi": 5982,
+      "cauTraLoi": "Dạ, em chào Sếp ạ! Hôm nay Sếp cần em hỗ trợ gì trong phòng lab không ạ?",
+      "msXongNoi": 12294
+    },
+    {
+      "luot": 2,
+      "cau": "dựng connector Baserow",
+      "msUserText": 19,
+      "msPhanXa": 83,
+      "suKienPhanXa": "actor.turned",
+      "msBatDauNoi": 9314,
+      "cauTraLoi": "Dạ rõ, em dựng connector Baserow ngay cho Sếp đây ạ!",
+      "msXongNoi": 13950
+    },
+    {
+      "luot": 3,
+      "cau": "Gen ơi | cất module vào kệ đi (cách 300 ms)",
+      "themLuot": 1,
+      "cauGop": "SẾP: «Gen ơi. cất module vào kệ đi»",
+      "msBatDauNoi": 5877,
+      "cauTraLoi": "Dạ Sếp, hiện trên sân khấu chưa có module nào để cất vào kệ ạ."
+    }
+  ],
+  "doTre": {
+    "phanXaMs": [
+      88,
+      83,
+      null
+    ],
+    "batDauNoiMs": [
+      5982,
+      9314,
+      5877
+    ],
+    "trungBinhBatDauNoiMs": 7648
+  },
+  "loiConsole": [],
+  "suKien": [
+    {
+      "t": 1792972883683,
+      "event": "bridge.connected",
+      "data": {
+        "url": "ws://127.0.0.1:8797/?role=stage"
+      }
+    },
+    {
+      "t": 1792972883779,
+      "event": "bridge.disconnected",
+      "data": {
+        "url": "ws://127.0.0.1:8797/?role=stage"
+      }
+    },
+    {
+      "t": 1792972883794,
+      "event": "scene.lightChanged",
+      "data": {
+        "preset": "am"
+      }
+    },
+    {
+      "t": 1792972885790,
+      "event": "bridge.connected",
+      "data": {
+        "url": "ws://127.0.0.1:8797/?role=stage"
+      }
+    },
+    {
+      "t": 1792972916527,
+      "event": "user.text",
+      "data": {
+        "actor": "owner",
+        "text": "Gen ơi, chào Sếp đi"
+      }
+    },
+    {
+      "t": 1792972916593,
+      "event": "cmd.queued",
+      "data": {
+        "cmd": "actor.emote",
+        "actor": "gen",
+        "position": 1,
+        "dangChay": "actor.turnTo"
+      }
+    },
+    {
+      "t": 1792972916791,
+      "event": "actor.sayStart",
+      "data": {
+        "actor": "owner",
+        "text": "Gen ơi, chào Sếp đi"
+      }
+    },
+    {
+      "t": 1792972919019,
+      "event": "actor.turned",
+      "data": {
+        "actor": "gen",
+        "target": "owner"
+      }
+    },
+    {
+      "t": 1792972919359,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "owner",
+        "text": "Gen ơi, chào Sếp đi"
+      }
+    },
+    {
+      "t": 1792972921254,
+      "event": "cmd.interrupted",
+      "data": {
+        "actor": "gen",
+        "catLenh": "actor.emote",
+        "boHangDoi": 0
+      }
+    },
+    {
+      "t": 1792972921255,
+      "event": "actor.emoteCancelled",
+      "data": {
+        "actor": "gen",
+        "emote": "suy-nghi"
+      }
+    },
+    {
+      "t": 1792972922487,
+      "event": "actor.sayStart",
+      "data": {
+        "actor": "gen",
+        "text": "Dạ, em chào Sếp ạ! Hôm nay Sếp cần em hỗ trợ gì trong phòng lab không ạ?"
+      }
+    },
+    {
+      "t": 1792972922643,
+      "event": "cmd.queued",
+      "data": {
+        "cmd": "actor.emote",
+        "actor": "gen",
+        "position": 1,
+        "dangChay": "actor.say"
+      }
+    },
+    {
+      "t": 1792972928799,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "gen",
+        "text": "Dạ, em chào Sếp ạ! Hôm nay Sếp cần em hỗ trợ gì trong phòng lab không ạ?"
+      }
+    },
+    {
+      "t": 1792972930801,
+      "event": "actor.emoteDone",
+      "data": {
+        "actor": "gen",
+        "emote": "chao"
+      }
+    },
+    {
+      "t": 1792972930902,
+      "event": "user.text",
+      "data": {
+        "actor": "owner",
+        "text": "dựng connector Baserow"
+      }
+    },
+    {
+      "t": 1792972930966,
+      "event": "actor.turned",
+      "data": {
+        "actor": "gen",
+        "target": "owner"
+      }
+    },
+    {
+      "t": 1792972931022,
+      "event": "actor.sayStart",
+      "data": {
+        "actor": "owner",
+        "text": "dựng connector Baserow"
+      }
+    },
+    {
+      "t": 1792972933471,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "owner",
+        "text": "dựng connector Baserow"
+      }
+    },
+    {
+      "t": 1792972933573,
+      "event": "actor.emoteDone",
+      "data": {
+        "actor": "gen",
+        "emote": "suy-nghi"
+      }
+    },
+    {
+      "t": 1792972940197,
+      "event": "actor.sayStart",
+      "data": {
+        "actor": "gen",
+        "text": "Dạ rõ, em dựng connector Baserow ngay cho Sếp đây ạ!"
+      }
+    },
+    {
+      "t": 1792972940240,
+      "event": "cmd.queued",
+      "data": {
+        "cmd": "actor.emote",
+        "actor": "gen",
+        "position": 1,
+        "dangChay": "actor.say"
+      }
+    },
+    {
+      "t": 1792972944833,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "gen",
+        "text": "Dạ rõ, em dựng connector Baserow ngay cho Sếp đây ạ!"
+      }
+    },
+    {
+      "t": 1792972945510,
+      "event": "screen.focused",
+      "data": {
+        "screen": "main"
+      }
+    },
+    {
+      "t": 1792972946436,
+      "event": "actor.emoteDone",
+      "data": {
+        "actor": "gen",
+        "emote": "ra-lenh"
+      }
+    },
+    {
+      "t": 1792972949498,
+      "event": "user.text",
+      "data": {
+        "actor": "owner",
+        "text": "Gen ơi"
+      }
+    },
+    {
+      "t": 1792972949508,
+      "event": "actor.turned",
+      "data": {
+        "actor": "gen",
+        "target": "owner"
+      }
+    },
+    {
+      "t": 1792972949551,
+      "event": "actor.sayStart",
+      "data": {
+        "actor": "owner",
+        "text": "Gen ơi"
+      }
+    },
+    {
+      "t": 1792972949800,
+      "event": "cmd.interrupted",
+      "data": {
+        "actor": "owner",
+        "catLenh": "actor.say",
+        "boHangDoi": 0
+      }
+    },
+    {
+      "t": 1792972949801,
+      "event": "user.text",
+      "data": {
+        "actor": "owner",
+        "text": "cất module vào kệ đi"
+      }
+    },
+    {
+      "t": 1792972949806,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "owner",
+        "text": "Gen ơi"
+      }
+    },
+    {
+      "t": 1792972949836,
+      "event": "actor.sayStart",
+      "data": {
+        "actor": "owner",
+        "text": "cất module vào kệ đi"
+      }
+    },
+    {
+      "t": 1792972952113,
+      "event": "actor.emoteDone",
+      "data": {
+        "actor": "gen",
+        "emote": "suy-nghi"
+      }
+    },
+    {
+      "t": 1792972952164,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "owner",
+        "text": "cất module vào kệ đi"
+      }
+    },
+    {
+      "t": 1792972955370,
+      "event": "actor.sayStart",
+      "data": {
+        "actor": "gen",
+        "text": "Dạ Sếp, hiện trên sân khấu chưa có module nào để cất vào kệ ạ."
+      }
+    },
+    {
+      "t": 1792972955407,
+      "event": "cmd.queued",
+      "data": {
+        "cmd": "actor.emote",
+        "actor": "gen",
+        "position": 1,
+        "dangChay": "actor.say"
+      }
+    },
+    {
+      "t": 1792972955424,
+      "event": "camera.moved",
+      "data": {
+        "preset": "toan-canh"
+      }
+    },
+    {
+      "t": 1792972960122,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "gen",
+        "text": "Dạ Sếp, hiện trên sân khấu chưa có module nào để cất vào kệ ạ."
+      }
+    },
+    {
+      "t": 1792972961923,
+      "event": "actor.emoteDone",
+      "data": {
+        "actor": "gen",
+        "emote": "boi-roi"
+      }
+    }
+  ],
+  "tongKet": {
+    "soBuoc": 16,
+    "soOk": 15,
+    "thatBai": [
+      "câu trả lời đầu ≤8 s (mục tiêu Sếp đặt): 5982 ms · 9314 ms"
+    ]
+  }
+}

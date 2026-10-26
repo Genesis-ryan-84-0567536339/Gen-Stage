@@ -376,7 +376,7 @@ export const LENH_ACTOR: CommandSpec[] = [
   {
     cmd: 'actor.say',
     group: 'actor',
-    events: ['actor.sayDone', 'user.text', 'cmd.queued'],
+    events: ['actor.sayStart', 'actor.sayDone', 'user.text', 'cmd.queued'],
     desc:
       'Nói: bong bóng chữ + nhép miệng + giọng trình duyệt nếu có. Bắn actor.sayDone; ' +
       'nếu actor là người Boss lái (controlledBy "owner") thì bắn thêm user.text để não nghe',
@@ -422,6 +422,10 @@ export const LENH_ACTOR: CommandSpec[] = [
 
       const tieng = await chuanBiGiong(id, chu, giong, camXuc);
       const hd = ctx.world.actorSay(id, chu, camXuc, giong);
+      // `actor.sayStart` bắn đúng lúc bong bóng chữ hiện ra (sau khi tải tiếng,
+      // trước khi chờ nói xong). Driver não (`scripts/nao-agy.mjs`) đo độ trễ
+      // "Sếp gõ → Gen bắt đầu nói" bằng mốc này, và tắt hẹn "xin Sếp chờ".
+      ctx.bus.emit('actor.sayStart', { actor: id, text: chu });
       tieng?.phat();
       void hd.done.then(() => {
         if (tieng) lopTieng()?.huy(id);

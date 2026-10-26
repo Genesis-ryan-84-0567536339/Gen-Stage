@@ -6,7 +6,8 @@ set -u
 cd "$(dirname "$0")/.."
 LOG=".cache/log"; mkdir -p "$LOG"
 if [ "${1:-}" = "tat" ]; then
-  tmux kill-session -t gen-stage-nao 2>/dev/null
+  pkill -f "scripts/nao-agy.mjs" 2>/dev/null     # driver não (chạy nền, không có cổng nên fuser không thấy)
+  tmux kill-session -t gen-stage-nao 2>/dev/null  # agy đang ấm trong tmux
   for p in 8787 8788 8789 5173; do fuser -k ${p}/tcp >/dev/null 2>&1; done
   echo "Đã tắt Gen-Stage."; exit 0
 fi
@@ -21,16 +22,29 @@ if ! curl -s -o /dev/null "http://127.0.0.1:8788/tts?text=a&voice=nu"; then
 fi
 pgrep -f "vite --host --port 5173" >/dev/null || (nohup pnpm exec vite --host --port 5173 > "$LOG/dev.log" 2>&1 &)
 for i in $(seq 1 30); do curl -s -o /dev/null http://localhost:5173/ && break; sleep 1; done
-# Não agy chạy trong tmux (cần terminal tương tác). Boss xem não nghĩ gì: tmux attach -t gen-stage-nao
-if command -v agy >/dev/null && ! tmux has-session -t gen-stage-nao 2>/dev/null; then
-  tmux new-session -d -s gen-stage-nao -c "$PWD" \
-    "agy --dangerously-skip-permissions --prompt-interactive \"\$(cat skills/gen-stage-nao/SKILL.md)\"; echo; echo '[não đã tắt — Enter để đóng]'; read"
-  # agy hỏi "Do you trust this folder?" lần đầu → tự chọn Yes (đang được tô sẵn)
-  for i in $(seq 1 20); do
-    sleep 1
-    if tmux capture-pane -pt gen-stage-nao 2>/dev/null | grep -q "trust"; then tmux send-keys -t gen-stage-nao Enter; break; fi
-  done
+# ------------------------------------------------------------------- não của Gen
+#
+# Bản cũ (GEN_STAGE_NAO=tmux) bật agy TƯƠNG TÁC rồi bỏ đó: agy chào một lượt
+# rồi về dấu nhắc `>` chờ người gõ **trong terminal**, nên Sếp gõ trong Firefox
+# thì không ai nghe. Mặc định bây giờ là DRIVER (`scripts/nao-agy.mjs`): nó
+# nghe `user.text` qua ws, bắn phản xạ trong ≤300 ms, rồi bơm một dòng vào agy
+# đang ấm trong tmux. Boss không phải chạm terminal.
+if command -v agy >/dev/null; then
+  if [ "${GEN_STAGE_NAO:-driver}" = "tmux" ]; then
+    # CHẾ ĐỘ CŨ — chỉ để so sánh, Sếp phải tự gõ trong tmux
+    if ! tmux has-session -t gen-stage-nao 2>/dev/null; then
+      tmux new-session -d -s gen-stage-nao -c "$PWD" \
+        "agy --dangerously-skip-permissions --prompt-interactive \"\$(cat skills/gen-stage-nao/SKILL.md)\"; echo; echo '[não đã tắt — Enter để đóng]'; read"
+      for i in $(seq 1 20); do
+        sleep 1
+        if tmux capture-pane -pt gen-stage-nao 2>/dev/null | grep -q "trust"; then tmux send-keys -t gen-stage-nao Enter; break; fi
+      done
+    fi
+  else
+    pgrep -f "scripts/nao-agy.mjs" >/dev/null || (nohup node scripts/nao-agy.mjs > "$LOG/nao.log" 2>&1 &)
+  fi
 fi
 URL="http://localhost:5173/"
 (firefox "$URL" >/dev/null 2>&1 &) || (xdg-open "$URL" >/dev/null 2>&1 &)
-echo "Gen-Stage đã bật: $URL  · não agy: tmux attach -t gen-stage-nao  · tắt: bash scripts/chay.sh tat"
+echo "Gen-Stage đã bật: $URL"
+echo "  não: $LOG/nao.log  ·  xem agy nghĩ gì: tmux attach -t gen-stage-nao  ·  tắt: bash scripts/chay.sh tat"

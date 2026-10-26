@@ -15,13 +15,15 @@
     "test:watch": "vitest",
     "bridge": "tsx bridge/server.ts",
     "mcp": "tsx bridge/mcp.ts",
+    "nao": "node scripts/nao-agy.mjs",
     "nao-demo": "node scripts/nao-demo.mjs",
     "kiem-a1": "node scripts/kiem-a1.mjs",
     "kiem-a3": "node scripts/kiem-a3.mjs",
     "kiem-lab2": "node scripts/kiem-lab2.mjs",
     "kiem-b2": "node scripts/kiem-b2.mjs",
     "kiem-b1": "node scripts/kiem-b1.mjs",
-    "kiem-b3": "node scripts/kiem-b3.mjs"
+    "kiem-b3": "node scripts/kiem-b3.mjs",
+    "kiem-nao": "node scripts/kiem-nao.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
