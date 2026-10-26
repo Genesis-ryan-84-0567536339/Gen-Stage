@@ -300,11 +300,14 @@ export function batPhim(
       case 'KeyE': {
         e.preventDefault();
         soModule += 1;
+        // H1 — BỎ `from: 'main'`: căn nhà không có màn hình nào tên `main`
+        // (chỉ `may-tinh` và `tivi`), nên phím `E` của Boss trước H1 **luôn**
+        // chết với «Không có màn hình "main"». Bỏ trống = kết tinh từ màn hình
+        // đầu tiên đang sống.
         void chay('module.build', {
           id: `module-phim-${soModule}`,
           shape: 'crystal',
           label: `Module ${soModule}`,
-          from: 'main',
         });
         break;
       }

@@ -366,6 +366,85 @@ export function buocLai(
 }
 
 /**
+ * **Bước mô phỏng cố định cho phần lái** (s) — H1 (#69 mục 1–3).
+ *
+ * Cùng nhịp 60 Hz với accumulator của camera trong `world.ts`, vì cùng một lý
+ * do: `heSoBam` làm *tốc độ hội tụ* độc lập FPS, nhưng **quãng đi trong một
+ * khung** vẫn là hàm của `dtLai` thật, mà `dtLai` thật nhảy 10–97 ms trên
+ * Firefox GPU (đo ở Cửa 2: FPS trung bình 29,5 mà 1 % xấu nhất 10,3). Mỗi
+ * khung một mốc tích phân khác nhau ⇒ `|v|` đọc ra lắc lư. Chia về bước
+ * 1/60 thì mọi bước con giống nhau, nên quỹ đạo không còn phụ thuộc nhịp
+ * khung hình.
+ */
+export const BUOC_LAI_CO_DINH = 1 / 60;
+/** Trần số bước con một khung lái (`BUOC_LAI_TOI_DA` / `BUOC_LAI_CO_DINH`). */
+const BUOC_LAI_CON_TOI_DA = 12;
+
+/** Kết quả một khung lái đã chạy bằng bước cố định (xem `buocLaiCoDinh`). */
+export interface KhungLaiCoDinh extends KhungLai {
+  /** Phần `dt` chưa tiêu, phải mang sang khung sau (s). */
+  du: number;
+  /** Số bước con 1/60 đã chạy trong khung này. */
+  soBuoc: number;
+}
+
+/**
+ * **Một khung lái chạy bằng BƯỚC CỐ ĐỊNH** — H1 (#69 mục 1–3).
+ *
+ * Tiêu `dt + duVao` thành từng bước `BUOC_LAI_CO_DINH`, giữ phần dư lại cho
+ * khung sau (accumulator). Không bước nào chạy (khung ngắn hơn 1/60, tức máy
+ * nhanh hơn 60 FPS) thì **trả nguyên trạng** — nhưng vẫn báo `dangDi` theo
+ * `|v|`, không theo quãng: quãng khung đó bằng 0 mà báo "không đi" là làm
+ * clip `walk` nháy về `idle` ở máy 144 Hz.
+ */
+export function buocLaiCoDinh(
+  x: number,
+  z: number,
+  vx: number,
+  vz: number,
+  mx: number,
+  mz: number,
+  dt: number,
+  duVao = 0,
+): KhungLaiCoDinh {
+  let du = duVao + Math.max(0, dt);
+  let st: KhungLai = { x, z, vx, vz, dangDi: false, tocThat: 0, chanX: false, chanZ: false };
+  let soBuoc = 0;
+  let quang = 0;
+  let chanX = false;
+  let chanZ = false;
+  while (du >= BUOC_LAI_CO_DINH && soBuoc < BUOC_LAI_CON_TOI_DA) {
+    const truoc = { x: st.x, z: st.z };
+    st = buocLai(st.x, st.z, st.vx, st.vz, mx, mz, BUOC_LAI_CO_DINH);
+    quang += Math.hypot(st.x - truoc.x, st.z - truoc.z);
+    chanX = chanX || st.chanX;
+    chanZ = chanZ || st.chanZ;
+    du -= BUOC_LAI_CO_DINH;
+    soBuoc += 1;
+  }
+  // Chạm trần bước: BỎ phần dư (không dồn sang khung sau — "spiral of death").
+  if (du >= BUOC_LAI_CO_DINH) du = 0;
+  if (soBuoc === 0) {
+    const toc = Math.hypot(vx, vz);
+    return { x, z, vx, vz, dangDi: toc > NGUONG_DI, tocThat: toc, chanX: false, chanZ: false, du, soBuoc };
+  }
+  const tongDt = soBuoc * BUOC_LAI_CO_DINH;
+  const tocThat = quang / tongDt;
+  return {
+    x: st.x,
+    z: st.z,
+    vx: st.vx,
+    vz: st.vz,
+    dangDi: tocThat > NGUONG_DI,
+    tocThat,
+    chanX,
+    chanZ,
+    du,
+    soBuoc,
+  };
+}
+
+/**
  * Quãng tối đa cho **một bước con** của `actor.moveTo` (m).
  *
  * Cùng lý lẽ với `BUOC_LAI_TOI_DA` của `actor.steer`, nhưng ở đây không có
@@ -654,6 +733,8 @@ export class NhanVat {
   private ketTu = 0;
   /** Mốc đồng hồ thật của khung `moveTo` trước (để cộng `ketTu`). */
   private tKetTruoc = 0;
+  /** H1 — phần `dt` chưa tiêu của accumulator phần LÁI (s). */
+  private duDtLai = 0;
   private phaBuoc = 0;
 
   // xoay người
@@ -1930,8 +2011,14 @@ export class NhanVat {
           ? Math.min((nay - this.tLaiTruoc) / 1000, BUOC_LAI_TOI_DA)
           : dt;
       this.tLaiTruoc = nay;
-      /* --- F2: toàn bộ vật lý một khung nằm trong `buocLai` (thuần, test được) --- */
-      const kq = buocLai(
+      /*
+       * F2: toàn bộ vật lý một khung nằm trong `buocLai` (thuần, test được).
+       * H1 (#69 mục 1–3): và `buocLai` giờ chạy theo **bước cố định 1/60** qua
+       * accumulator (`buocLaiCoDinh`), không còn tích phân thẳng `dtLai` thật.
+       * Cửa 2 đo trên Firefox GPU: giữ A/D/W dao động tốc độ 44/34/33 % — một
+       * phần là nhịp khung hình nhảy 10–97 ms nạp vào đúng phép tích phân này.
+       */
+      const kq = buocLaiCoDinh(
         this.goc.position.x,
         this.goc.position.z,
         this.vx,
@@ -1939,7 +2026,9 @@ export class NhanVat {
         mx,
         mz,
         dtLai,
+        this.duDtLai,
       );
+      this.duDtLai = kq.du;
       this.vx = kq.vx;
       this.vz = kq.vz;
       this.goc.position.x = kq.x;
@@ -1954,6 +2043,9 @@ export class NhanVat {
         /* --- hết hiệu lực VÀ đã dừng hẳn: nhả thân --- */
         this.phaBuoc = 0;
         this.tLaiTruoc = 0;
+        // H1: dừng hẳn thì bỏ luôn phần dư accumulator, đừng để nó nạp vào
+        // cú nhấn phím sau (một bước 1/60 "miễn phí" ngay khi vừa bấm).
+        this.duDtLai = 0;
         if (L) {
           this.dangLai = null;
           this.traViec(L.hd);

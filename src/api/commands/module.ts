@@ -31,7 +31,9 @@ export const LENH_MODULE: CommandSpec[] = [
   {
     cmd: 'module.build',
     group: 'module',
-    events: ['module.built'],
+    // H1: `module.fallback` — bắn khi `from` không tồn tại và lệnh tự lấy màn
+    // hình đầu tiên thay vì chết (xem handler).
+    events: ['module.built', 'module.fallback'],
     desc:
       'Hiệu ứng kết tinh: hạt sáng từ màn hình nguồn tụ thành vật thể rồi rơi vào tay nhân vật',
     params: [
@@ -47,18 +49,55 @@ export const LENH_MODULE: CommandSpec[] = [
       },
       pSo('durationMs', 'Thời lượng hiệu ứng (ms)', { min: 200, max: 20000, default: 2600 }),
     ],
+    /**
+     * H1 — **ví dụ KHÔNG còn `from: 'main'`.**
+     *
+     * Cửa 2 vòng 28/10 mục 6: *"Gen, dựng module connector Baserow"* → não gọi
+     * đúng câu ví dụ này, `module.build { from: 'main' }`, và chết với
+     * «Không có màn hình "main"». Sân khấu chưa bao giờ có màn hình tên `main`
+     * — `'main'` chỉ là chữ trong ví dụ, mà `stage.bootstrap` đưa ví dụ thẳng
+     * cho não. E1 đã sửa SKILL/AGENTS.md nhưng ví dụ trong registry vẫn dạy
+     * sai, nên lọt tiếp. Bỏ trống `from` = kết tinh từ màn hình đầu tiên.
+     */
     example: {
       cmd: 'module.build',
-      args: { id: 'connector-baserow', shape: 'book', label: 'Baserow', from: 'main' },
+      args: { id: 'connector-baserow', shape: 'book', label: 'Baserow' },
     },
     handler(a, ctx) {
       const id = s(a.id);
       if (ctx.world.coProp(id)) throw new Error(`Prop "${id}" đã có trên sân khấu`);
       const shape = s(a.shape);
       const label = s(a.label);
-      const from = a.from === undefined || a.from === '' ? undefined : s(a.from);
+      const xin = a.from === undefined || a.from === '' ? undefined : s(a.from);
+      /**
+       * H1 — **`from` sai thì LẤY MÀN HÌNH ĐẦU TIÊN, không chết.**
+       *
+       * Chốt ở server chứ không chỉ ở tài liệu: não có thể học `'main'` từ bất
+       * cứ bản SKILL/AGENTS cũ nào còn nằm trong `.cache`, trong ngữ cảnh một
+       * phiên agy đang ấm, hay trong đầu một LLM khác. Giao kèo "một lệnh
+       * không chạy được thì phải nói vì sao" vẫn giữ: cảnh báo đi ra bus
+       * (`module.fallback`) và vào nhật ký, nhưng **màn hình nguồn chỉ là chỗ
+       * hạt sáng bay ra** — không đáng để cả việc "dựng connector" chết.
+       *
+       * Vẫn chết khi sân khấu THỰC SỰ không có màn hình nào: lúc đó không có
+       * gì để rơi về, và im lặng mới là cái bẫy.
+       */
+      let from = xin;
       if (from !== undefined && !ctx.world.coScreen(from)) {
-        throw new Error(`Không có màn hình "${from}" để kết tinh từ đó`);
+        const thay = ctx.world.screenIds()[0];
+        if (!thay) {
+          throw new Error(
+            `Không có màn hình "${from}" để kết tinh từ đó, và sân khấu chưa có màn hình nào`,
+          );
+        }
+        ctx.bus.emit('module.fallback', {
+          module: id,
+          xin: from,
+          dung: thay,
+          coSan: ctx.world.screenIds(),
+          vi: `Không có màn hình "${from}" — kết tinh từ "${thay}" (màn hình đầu tiên đang sống)`,
+        });
+        from = thay;
       }
 
       const hd = ctx.world.moduleBuild({

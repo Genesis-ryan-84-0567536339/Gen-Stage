@@ -148,12 +148,64 @@ describe('E1 — module.demo: MỘT lệnh = cả màn diễn', () => {
     expect(world.coProp('con-x')).toBe(true);
   }, 30_000);
 
-  it('báo lỗi rõ tên màn hình thật khi não đưa id chết ("main")', async () => {
-    const { d } = dungBo();
+  /**
+   * H1 (#69, theo Cửa 2 vòng 28/10 mục 6) — **ĐỔI GIAO KÈO**: id màn hình chết
+   * không còn làm cả việc "dựng connector" chết.
+   *
+   * E1 chốt "báo lỗi rõ tên màn hình thật" và đã sửa SKILL/AGENTS.md, nhưng
+   * vòng Cửa 2 sau đó vẫn thấy não gửi `'main'` và Nhi nói "Dạ, kết tinh
+   * connector Baserow" rồi **không có gì xảy ra**. Một lời nhắn lỗi đẹp không
+   * cứu được điều đó: não đọc tài liệu từ `.cache` cũ, từ phiên agy đang ấm,
+   * hoặc đơn giản là nhớ sai. Nên chốt chuyển về **server**: màn hình nguồn
+   * chỉ là chỗ hạt sáng bay ra, sai thì lấy màn hình đầu tiên và **cảnh báo
+   * bằng sự kiện** `module.fallback` (vẫn vào nhật ký, vẫn truy được).
+   */
+  it('id màn hình chết ("main") → tự lấy màn hình đầu tiên + cảnh báo, KHÔNG chết', async () => {
+    const { d, bus, world } = dungBo();
     await d.run('screen.spawn', { id: 'may-tinh', at: 'ban-dieu-khien' });
-    const kq = await d.run('module.demo', { id: 'con-y', label: 'X', screen: 'main-khong-co' });
-    if (kq.ok) throw new Error('lẽ ra phải lỗi vì không có màn hình đó');
-    expect(kq.error).toContain('Màn hình đang có');
+    const canhBao: Array<Record<string, unknown>> = [];
+    bus.on('module.fallback', (e) => canhBao.push(e.data as Record<string, unknown>));
+    const kq = await d.run('module.demo', { id: 'con-y', label: 'X', screen: 'main' });
+    if (!kq.ok) throw new Error(kq.error);
+    expect((kq.result as { screen: string }).screen).toBe('may-tinh');
+    expect(canhBao).toHaveLength(1);
+    expect(canhBao[0]!.xin).toBe('main');
+    expect(canhBao[0]!.dung).toBe('may-tinh');
+    expect(String(canhBao[0]!.vi)).toContain('may-tinh');
+    void world;
+  }, 30_000);
+
+  it('module.build: from = "main" cũng tự lấy màn hình đầu tiên + cảnh báo', async () => {
+    const { d, bus, world } = dungBo();
+    await d.run('screen.spawn', { id: 'may-tinh', at: 'ban-dieu-khien' });
+    const canhBao: Array<Record<string, unknown>> = [];
+    bus.on('module.fallback', (e) => canhBao.push(e.data as Record<string, unknown>));
+    const kq = await d.run('module.build', {
+      id: 'con-z',
+      shape: 'book',
+      label: 'Baserow',
+      from: 'main',
+      durationMs: 300,
+    });
+    if (!kq.ok) throw new Error(kq.error);
+    expect(canhBao[0]?.dung).toBe('may-tinh');
+    expect(world.coProp('con-z')).toBe(true);
+  }, 30_000);
+
+  it('ví dụ của module.build trong registry KHÔNG còn dạy from: "main"', async () => {
+    const { d } = dungBo();
+    const boot = await d.run('stage.bootstrap', {});
+    if (!boot.ok) throw new Error(boot.error);
+    const ds = (boot.result as { commands: Array<{ cmd: string; example?: unknown }> }).commands;
+    const mb = ds.find((c) => c.cmd === 'module.build');
+    expect(JSON.stringify(mb?.example ?? {})).not.toContain('main');
+  });
+
+  it('không màn hình nào thì VẪN lỗi rõ ràng (im lặng mới là cái bẫy)', async () => {
+    const { d } = dungBo();
+    const kq = await d.run('module.build', { id: 'con-w', shape: 'book', label: 'X', from: 'main' });
+    if (kq.ok) throw new Error('lẽ ra phải lỗi: sân khấu không có màn hình nào');
+    expect(kq.error).toContain('chưa có màn hình nào');
   });
 
   it('mẩu code mang nhãn module nên Boss đọc màn hình là biết đang dựng gì', () => {

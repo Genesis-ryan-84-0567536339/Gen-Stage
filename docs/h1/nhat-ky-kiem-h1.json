@@ -1,0 +1,346 @@
+{
+  "khi": "2026-10-26T14:31:40.559Z",
+  "nhan": "sau",
+  "trinhDuyet": "firefox (playwright) — GPU thật, headless:false",
+  "banDo": "vite preview (BẢN BUILD)",
+  "moc": {
+    "lumaLechToiDa": 2,
+    "lumaLechP50ToiDa": 1,
+    "fpsToiThieu": 20,
+    "daoDongToiDa": 35,
+    "bangPhuToiDa": 5,
+    "nha": {
+      "hx": 7,
+      "hz": 5,
+      "yMin": 0,
+      "yMax": 2.8
+    }
+  },
+  "so": {
+    "bangLenh": {
+      "thuGon": true,
+      "phuPc": 0,
+      "rong": 390
+    },
+    "moduleFromMain": {
+      "ok": true,
+      "loi": null,
+      "canhBao": [
+        {
+          "module": "h1-connector-baserow",
+          "xin": "main",
+          "dung": "may-tinh",
+          "coSan": [
+            "may-tinh",
+            "tivi"
+          ],
+          "vi": "Không có màn hình \"main\" — kết tinh từ \"may-tinh\" (màn hình đầu tiên đang sống)"
+        }
+      ],
+      "coProp": true
+    },
+    "luma": {
+      "truoc": {
+        "n": 1296000,
+        "p5": 103.4,
+        "p50": 121.5,
+        "p95": 204.9,
+        "p99": 214.1,
+        "max": 252
+      },
+      "sau": {
+        "n": 1296000,
+        "p5": 50,
+        "p50": 121.5,
+        "p95": 204.9,
+        "p99": 214.9,
+        "max": 252
+      },
+      "lechP95Pc": 0,
+      "lechP50Pc": 0
+    },
+    "lumaSauR": {
+      "n": 1296000,
+      "p5": 48.7,
+      "p50": 121.5,
+      "p95": 204.9,
+      "p99": 214.9,
+      "max": 252,
+      "lechP95Pc": 0,
+      "lechP50Pc": 0
+    },
+    "fpsBaLuot": [
+      38.3,
+      41.6,
+      41.3
+    ],
+    "fps": "khung đếm được  414 trong 10s\n…đã bỏ          0.5s khởi động → 392 khung\nFPS trung bình  41.3\nFPS 1% xấu nhất 25.0  (khung 40 ms)\nlượt vẽ nhà     43\nlượt vẽ VRM     338\ntam giác        228485\nshadow map      1024\npixel ratio     1\n(bấm để đo lại)",
+    "hieuNang": {
+      "calls": 381,
+      "triangles": 228485,
+      "callsNha": 43,
+      "callsVrm": 338,
+      "mesh": 188,
+      "vatLieu": 91,
+      "cull": {
+        "meshVrm": 149,
+        "calls": 241,
+        "triangles": 189773
+      },
+      "buocCoDinh": 0.016666666666666666,
+      "khungTranBuoc": 0,
+      "may": {
+        "vt": [
+          0.9999999999999976,
+          1.9199999999999968,
+          4.299999999999977
+        ],
+        "tam": [
+          -0.5,
+          0.8199999999999994,
+          -3.899999999999996
+        ],
+        "xa": 8.408329203831137,
+        "kep": true
+      },
+      "hopNha": {
+        "hx": 6.6,
+        "hz": 4.6,
+        "yMin": 0.4,
+        "yMax": 2.5
+      }
+    },
+    "phimLap": {
+      "emote": 1,
+      "preset": 1,
+      "build": 1
+    },
+    "moveToSofa": {
+      "soMau": 60,
+      "xTayNhat": 3,
+      "sofa": {
+        "x0": -3.45,
+        "x1": -2.55,
+        "z0": -0.15,
+        "z1": 2.15
+      },
+      "cuoi": {
+        "pos": [
+          3,
+          0,
+          -2.6
+        ],
+        "state": "idle"
+      },
+      "soMauTrongSofa": 0
+    },
+    "camera": {
+      "soMau": 148,
+      "soMauNgoaiNha": 0,
+      "viDuNgoai": [],
+      "xMin": -4.66,
+      "xMax": 4.49,
+      "yMin": 1.13,
+      "yMax": 2.27,
+      "zMin": -1.66,
+      "zMax": 4.6
+    },
+    "daoDongTocDo": {
+      "KeyW": {
+        "tuDo": {
+          "soKhung": 11,
+          "max": 1.5987,
+          "min": 1.5836,
+          "daoDongPc": 0.9
+        },
+        "diDuoc": {
+          "soKhung": 12,
+          "max": 1.5987,
+          "min": 0.3881,
+          "daoDongPc": 75.7
+        },
+        "tatCa": {
+          "soKhung": 117,
+          "max": 1.5987,
+          "min": 0,
+          "daoDongPc": 100
+        },
+        "soKhungTuDo": 11,
+        "tyLeKhungBiChan": 77.8
+      },
+      "KeyS": {
+        "tuDo": {
+          "soKhung": 13,
+          "max": 1.5988,
+          "min": 1.5858,
+          "daoDongPc": 0.8
+        },
+        "diDuoc": {
+          "soKhung": 13,
+          "max": 1.5988,
+          "min": 1.5858,
+          "daoDongPc": 0.8
+        },
+        "tatCa": {
+          "soKhung": 131,
+          "max": 1.5988,
+          "min": 0,
+          "daoDongPc": 100
+        },
+        "soKhungTuDo": 13,
+        "tyLeKhungBiChan": 81.7
+      },
+      "KeyA": {
+        "tuDo": {
+          "soKhung": 29,
+          "max": 1.5999,
+          "min": 1.5812,
+          "daoDongPc": 1.2
+        },
+        "diDuoc": {
+          "soKhung": 29,
+          "max": 1.5999,
+          "min": 1.5812,
+          "daoDongPc": 1.2
+        },
+        "tatCa": {
+          "soKhung": 130,
+          "max": 1.5999,
+          "min": 0,
+          "daoDongPc": 100
+        },
+        "soKhungTuDo": 29,
+        "tyLeKhungBiChan": 68.5
+      },
+      "KeyD": {
+        "tuDo": {
+          "soKhung": 159,
+          "max": 1.6,
+          "min": 1.5812,
+          "daoDongPc": 1.2
+        },
+        "diDuoc": {
+          "soKhung": 159,
+          "max": 1.6,
+          "min": 1.5812,
+          "daoDongPc": 1.2
+        },
+        "tatCa": {
+          "soKhung": 159,
+          "max": 1.6,
+          "min": 1.5812,
+          "daoDongPc": 1.2
+        },
+        "soKhungTuDo": 159,
+        "tyLeKhungBiChan": 0
+      }
+    },
+    "fpsCuoi": "khung đếm được  414 trong 10s\n…đã bỏ          0.5s khởi động → 392 khung\nFPS trung bình  41.3\nFPS 1% xấu nhất 25.0  (khung 40 ms)\nlượt vẽ nhà     43\nlượt vẽ VRM     338\ntam giác        228485\nshadow map      1024\npixel ratio     1\n(bấm để đo lại)",
+    "khungTranBuocCuoi": 0,
+    "cullCuoi": {
+      "meshVrm": 149,
+      "calls": 217,
+      "triangles": 162929
+    }
+  },
+  "dat": {
+    "8-bang-lenh-thu-gon-mac-dinh-1440": {
+      "dat": true,
+      "thuGon": true,
+      "phuPc": 0,
+      "rong": 390,
+      "mocPc": 5,
+      "truocH1": 27.1
+    },
+    "8b-nut-keo-ra-mo-duoc-bang": {
+      "dat": true,
+      "thuGonSauKhiBam": false
+    },
+    "9-module-build-from-main-tu-lay-man-hinh-dau": {
+      "dat": true,
+      "ok": true,
+      "loi": null,
+      "xin": "main",
+      "dung": "may-tinh",
+      "coSan": [
+        "may-tinh",
+        "tivi"
+      ],
+      "moduleCoTrenSanKhau": true
+    },
+    "2-scene-light-sang-khong-doi-luma": {
+      "dat": true,
+      "p50Truoc": 121.5,
+      "p50Sau": 121.5,
+      "lechP50Pc": 0,
+      "p95Truoc": 204.9,
+      "p95Sau": 204.9,
+      "lechP95Pc": 0
+    },
+    "2b-phim-R-khong-doi-luma": {
+      "dat": true,
+      "p50Truoc": 121.5,
+      "p50SauR": 121.5,
+      "lechP50Pc": 0,
+      "p95SauR": 204.9,
+      "lechP95Pc": 0
+    },
+    "5-fps-tren-ban-build": {
+      "dat": true,
+      "baLuot": [
+        38.3,
+        41.6,
+        41.3
+      ],
+      "trungVi": 41.3,
+      "calls": 381,
+      "mocMain": "Cửa 2 trên main: 27,3 · mốc riêng lượt này đo được 31,6"
+    },
+    "1-giu-phim-mot-lenh": {
+      "dat": true,
+      "emote": 1,
+      "cameraPreset": 1,
+      "moduleBuild": 1,
+      "nhipLapDaBan": 30
+    },
+    "3-moveTo-khong-xuyen-sofa": {
+      "dat": true,
+      "soMauTrongSofa": 0,
+      "xTayNhat": 3,
+      "mepDongSofa": -2.55
+    },
+    "4-camera-luon-trong-AABB-nha": {
+      "dat": true,
+      "soMau": 148,
+      "soMauNgoaiNha": 0,
+      "hopNha": {
+        "hx": 7,
+        "hz": 5,
+        "yMin": 0,
+        "yMax": 2.8
+      },
+      "viDuNgoai": [],
+      "xMin": -4.66,
+      "xMax": 4.49,
+      "yMin": 1.13,
+      "yMax": 2.27,
+      "zMin": -1.66,
+      "zMax": 4.6
+    },
+    "7-dao-dong-toc-do-giu-phim": {
+      "dat": true,
+      "KeyW": 0.9,
+      "KeyS": 0.8,
+      "KeyA": 1.2,
+      "KeyD": 1.2,
+      "mocPc": 35,
+      "truocH1": "W 33 · S 6 · A 44 · D 34 (Cửa 2 trên main)"
+    },
+    "6-console-khong-loi": {
+      "dat": true,
+      "soLoi": 0,
+      "vaiDong": []
+    }
+  },
+  "loiConsole": []
+}
