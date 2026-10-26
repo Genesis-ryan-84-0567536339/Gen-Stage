@@ -187,6 +187,9 @@ async function khoiDong(): Promise<void> {
   // C2 — nạp danh sách place/emote/màn hình cho lớp hiểu lệnh (sinh từ bootstrap)
   await hieuLenh.lamMoi();
 
+  bus.on('bridge.replaced', () =>
+    toast('Tab khác vừa nối sân khấu — tab này tạm nghỉ. Tải lại trang để dùng tab này.'),
+  );
   if (coBatBridge()) bridge.bat();
 }
 

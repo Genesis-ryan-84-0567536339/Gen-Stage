@@ -68,10 +68,18 @@ export class BridgeClient {
 
     ws.addEventListener('message', (ev) => void this.nhan(String(ev.data)));
 
-    ws.addEventListener('close', () => {
+    ws.addEventListener('close', (ev) => {
       this.boNgheSuKien?.();
       this.boNgheSuKien = null;
       this.ws = null;
+      if (ev.code === 4001) {
+        // Tab khác vừa nối bridge: tab này lùi lại, KHÔNG tranh (tránh đá nhau).
+        this.dungHan = true;
+        xoaSoNao();
+        this.bus.emit('bridge.replaced', { url: this.url });
+        this.bus.emit('bridge.disconnected', { url: this.url });
+        return;
+      }
       // mất bridge = mất đường tới não: `brainConnected` phải về false ngay
       xoaSoNao();
       this.bus.emit('bridge.disconnected', { url: this.url });

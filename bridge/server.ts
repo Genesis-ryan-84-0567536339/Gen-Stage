@@ -137,8 +137,10 @@ wss.on('connection', (ws, req) => {
 
   if (vai === 'stage') {
     if (sanKhau && sanKhau.readyState === WebSocket.OPEN) {
-      ghi('sân khấu mới kết nối — đóng bản cũ');
-      sanKhau.close(1000, 'thay bằng kết nối mới');
+      ghi('sân khấu mới kết nối — đóng bản cũ (tab cũ sẽ KHÔNG tự nối lại)');
+      // Mã 4001 = "bị thay thế": tab cũ đọc mã này và ngừng nối lại, không thì
+      // hai tab đá nhau mỗi 2 s, sự kiện rơi hết (Boss 26/10: "chưa có não").
+      sanKhau.close(4001, 'thay-the');
     }
     sanKhau = ws;
     ghi('sân khấu đã nối. Client đang chờ:', clients.size);
