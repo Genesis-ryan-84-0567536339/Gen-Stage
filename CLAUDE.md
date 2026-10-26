@@ -1207,3 +1207,29 @@ kế đầy đủ: `docs/spec/actor-api.md` mục **3.2f**. Bằng chứng Firef
   (`prop.spawn` → `actor.hold` → `actor.drop` → `prop.moveTo`) mà bảng không
   khai — nên nó ≥ số bước trong bảng, không bằng.
 
+
+### Vòng 2 — sau lượt đo đầu trên Firefox thật (20/27 → sửa 1 lỗi app, 2 lỗi dụng cụ đo)
+
+- **LỖI APP: cờ "lượt này của tôi" làm Boss gõ KHÔNG cắt được hoạt động do não
+  gọi.** `coNguoiGoi()` gác bằng `dangChay`, nên chỉ cắt hoạt động do chính máy
+  tự sinh. Đo thật: Boss gõ giữa một `actor.activity` gửi từ bảng lệnh/não thì
+  **không có `actor.activityCancelled` nào**, và 2 s sau Nhi vẫn
+  `{activity:"di-dao", state:"walking", queued:2}` — đi tiếp hết vòng dạo trong
+  khi Boss đang chờ. Luật đúng: **một hoạt động không bao giờ là việc gấp**,
+  nên nó nhường chỗ bất kể ai đặt nó. Không phá "lệnh não > phản xạ": mọi lệnh
+  não khác (`moveTo`, `say`, `play`…) vẫn nguyên, chỉ chuỗi hoạt động bị cắt.
+  (Và `genId` phải đọc lại trong handler: Boss gõ được **trước** nhịp quét đầu.)
+- **DỤNG CỤ ĐO SAI 1: chấm "về idle" nửa giây sau mốc xong là chấm sai người.**
+  3/12 hoạt động hiện `playing`/`emoting` ở mốc +600 ms, và cả 3 đều kết thúc ở
+  `buc-trung-tam` — **nơi Nam đứng**. Nhi vừa rảnh thì phản xạ C0 chạy đúng
+  nhánh *"Boss đứng gần > 4 s → chào nhẹ"*: `actor.turnTo` (state `playing`,
+  xem `xoayVe`) + `actor.emote chao` (state `emoting`). App đúng; thước đo phải
+  chốt tư thế **đồng bộ trong handler `actor.activityDone`** (`doXuong()` là
+  hàm đồng bộ, `stage.describe` qua dispatcher thì đã là một `await`).
+- **DỤNG CỤ ĐO SAI 2: "cổng chết" đổi 0 lỗi console thành 3 lỗi console.**
+  Trỏ `ttsPort`/`sttPort` sang cổng không ai nghe thì Firefox ghi thẳng
+  `console.error` *"Cross-Origin Request Blocked … CORS request did not
+  succeed"* **trước khi** `chuanBiGiong`/`khoeStt` kịp `catch`. Cách đúng để
+  vô hiệu hoá một đường mà vẫn sạch console: trỏ `ttsUrl`/`sttUrl` vào một
+  đường **trên chính cổng web** — `vite preview` trả 404 cùng origin, code tự
+  bắt, chỉ còn `console.warn`.
