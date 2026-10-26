@@ -1,5 +1,5 @@
 {
-  "chay": "2026-10-26T20:02:07.442Z",
+  "chay": "2026-10-26T20:20:14.473Z",
   "issue": 79,
   "trinhDuyet": "Playwright firefox-1543, headless:false, llvmpipe (chỉ đo sự kiện + hình học)",
   "cong": {
@@ -23,7 +23,7 @@
     {
       "nhan": "hoạt động «Đọc sách trên sofa» (doc-sach-sofa) chạy trọn",
       "ok": true,
-      "chiTiet": "r.ok=true · actor.activityDone · 10 bước · state tại mốc xong idle (sau 600 ms: idle) · holding null · minY giữa 0.3912 / chốt 0.3091 / sau 0.3552 · 20356 ms (ước 10900 ms) · ảnh hd-01-doc-sach-sofa.png",
+      "chiTiet": "r.ok=true · actor.activityDone · 10 bước · state tại mốc xong idle (sau 600 ms: idle) · holding null · minY giữa 0.3937 / chốt 0.2074 / sau 0.3667 · 20173 ms (ước 10900 ms) · ảnh hd-01-doc-sach-sofa.png",
       "so": {
         "name": "doc-sach-sofa",
         "label": "Đọc sách trên sofa",
@@ -35,18 +35,18 @@
         "stateChot": "idle",
         "stateSau600": "idle",
         "holdingSau": null,
-        "minYChot": 0.3091,
-        "minYGiua": 0.3912,
-        "minYSau": 0.3552,
+        "minYChot": 0.2074,
+        "minYGiua": 0.3937,
+        "minYSau": 0.3667,
         "anh": "hd-01-doc-sach-sofa.png",
-        "msThat": 20356,
+        "msThat": 20173,
         "uocMs": 10900
       }
     },
     {
       "nhan": "hoạt động «Pha cà phê rồi mang về bàn» (pha-ca-phe) chạy trọn",
       "ok": true,
-      "chiTiet": "r.ok=true · actor.activityDone · 9 bước · state tại mốc xong idle (sau 600 ms: idle) · holding null · minY giữa 0.3564 / chốt 0.3841 / sau 0.3717 · 19176 ms (ước 10200 ms) · ảnh hd-02-pha-ca-phe.png",
+      "chiTiet": "r.ok=true · actor.activityDone · 9 bước · state tại mốc xong idle (sau 600 ms: idle) · holding null · minY giữa 0.3569 / chốt 0.375 / sau 0.3698 · 18479 ms (ước 10200 ms) · ảnh hd-02-pha-ca-phe.png",
       "so": {
         "name": "pha-ca-phe",
         "label": "Pha cà phê rồi mang về bàn",
@@ -58,18 +58,18 @@
         "stateChot": "idle",
         "stateSau600": "idle",
         "holdingSau": null,
-        "minYChot": 0.3841,
-        "minYGiua": 0.3564,
-        "minYSau": 0.3717,
+        "minYChot": 0.375,
+        "minYGiua": 0.3569,
+        "minYSau": 0.3698,
         "anh": "hd-02-pha-ca-phe.png",
-        "msThat": 19176,
+        "msThat": 18479,
         "uocMs": 10200
       }
     },
     {
       "nhan": "hoạt động «Gõ máy tính» (go-may-tinh) chạy trọn",
       "ok": true,
-      "chiTiet": "r.ok=true · actor.activityDone · 5 bước · state tại mốc xong idle (sau 600 ms: idle) · holding null · minY giữa 0.1661 / chốt 0.1225 / sau 0.179 · 10871 ms (ước 9400 ms) · ảnh hd-03-go-may-tinh.png",
+      "chiTiet": "r.ok=true · actor.activityDone · 5 bước · state tại mốc xong idle (sau 600 ms: idle) · holding null · minY giữa 0.166 / chốt 0.286 / sau 0.2238 · 9917 ms (ước 9400 ms) · ảnh hd-03-go-may-tinh.png",
       "so": {
         "name": "go-may-tinh",
         "label": "Gõ máy tính",
@@ -81,18 +81,18 @@
         "stateChot": "idle",
         "stateSau600": "idle",
         "holdingSau": null,
-        "minYChot": 0.1225,
-        "minYGiua": 0.1661,
-        "minYSau": 0.179,
+        "minYChot": 0.286,
+        "minYGiua": 0.166,
+        "minYSau": 0.2238,
         "anh": "hd-03-go-may-tinh.png",
-        "msThat": 10871,
+        "msThat": 9917,
         "uocMs": 9400
       }
     },
     {
       "nhan": "hoạt động «Vươn vai» (vuon-vai) chạy trọn",
       "ok": true,
-      "chiTiet": "r.ok=true · actor.activityDone · 3 bước · state tại mốc xong idle (sau 600 ms: idle) · holding null · minY giữa 0.3714 / chốt 0.3693 / sau 0.3727 · 6324 ms (ước 4114 ms) · ảnh hd-04-vuon-vai.png",
+      "chiTiet": "r.ok=true · actor.activityDone · 3 bước · state tại mốc xong idle (sau 600 ms: idle) · holding null · minY giữa 0.3662 / chốt 0.3695 / sau 0.3689 · 5953 ms (ước 4114 ms) · ảnh hd-04-vuon-vai.png",
       "so": {
         "name": "vuon-vai",
         "label": "Vươn vai",
@@ -104,18 +104,18 @@
         "stateChot": "idle",
         "stateSau600": "idle",
         "holdingSau": null,
-        "minYChot": 0.3693,
-        "minYGiua": 0.3714,
-        "minYSau": 0.3727,
+        "minYChot": 0.3695,
+        "minYGiua": 0.3662,
+        "minYSau": 0.3689,
         "anh": "hd-04-vuon-vai.png",
-        "msThat": 6324,
+        "msThat": 5953,
         "uocMs": 4114
       }
     },
     {
       "nhan": "hoạt động «Ra cửa sổ ngắm ra ngoài» (ngam-cua-so) chạy trọn",
       "ok": true,
-      "chiTiet": "r.ok=true · actor.activityDone · 5 bước · state tại mốc xong idle (sau 600 ms: idle) · holding null · minY giữa 0.3974 / chốt 0.361 / sau 0.3678 · 15861 ms (ước 8200 ms) · ảnh hd-05-ngam-cua-so.png",
+      "chiTiet": "r.ok=true · actor.activityDone · 5 bước · state tại mốc xong idle (sau 600 ms: idle) · holding null · minY giữa 0.3754 / chốt 0.3724 / sau 0.3667 · 15792 ms (ước 8200 ms) · ảnh hd-05-ngam-cua-so.png",
       "so": {
         "name": "ngam-cua-so",
         "label": "Ra cửa sổ ngắm ra ngoài",
@@ -127,18 +127,18 @@
         "stateChot": "idle",
         "stateSau600": "idle",
         "holdingSau": null,
-        "minYChot": 0.361,
-        "minYGiua": 0.3974,
-        "minYSau": 0.3678,
+        "minYChot": 0.3724,
+        "minYGiua": 0.3754,
+        "minYSau": 0.3667,
         "anh": "hd-05-ngam-cua-so.png",
-        "msThat": 15861,
+        "msThat": 15792,
         "uocMs": 8200
       }
     },
     {
       "nhan": "hoạt động «Tưới cây» (tuoi-cay) chạy trọn",
       "ok": true,
-      "chiTiet": "r.ok=true · actor.activityDone · 8 bước · state tại mốc xong idle (sau 600 ms: playing) · holding null · minY giữa 0.392 / chốt 0.3678 / sau 0.369 · 10793 ms (ước 8500 ms) · ảnh hd-06-tuoi-cay.png",
+      "chiTiet": "r.ok=true · actor.activityDone · 8 bước · state tại mốc xong idle (sau 600 ms: playing) · holding null · minY giữa 0.3699 / chốt 0.3676 / sau 0.3666 · 10894 ms (ước 8500 ms) · ảnh hd-06-tuoi-cay.png",
       "so": {
         "name": "tuoi-cay",
         "label": "Tưới cây",
@@ -150,18 +150,18 @@
         "stateChot": "idle",
         "stateSau600": "playing",
         "holdingSau": null,
-        "minYChot": 0.3678,
-        "minYGiua": 0.392,
-        "minYSau": 0.369,
+        "minYChot": 0.3676,
+        "minYGiua": 0.3699,
+        "minYSau": 0.3666,
         "anh": "hd-06-tuoi-cay.png",
-        "msThat": 10793,
+        "msThat": 10894,
         "uocMs": 8500
       }
     },
     {
       "nhan": "hoạt động «Dọn bàn ăn» (don-ban-an) chạy trọn",
       "ok": true,
-      "chiTiet": "r.ok=true · actor.activityDone · 5 bước · state tại mốc xong idle (sau 600 ms: idle) · holding null · minY giữa 0.3834 / chốt 0.3476 / sau 0.3704 · 20128 ms (ước 8700 ms) · ảnh hd-07-don-ban-an.png",
+      "chiTiet": "r.ok=true · actor.activityDone · 5 bước · state tại mốc xong idle (sau 600 ms: idle) · holding null · minY giữa 0.3596 / chốt 0.3679 / sau 0.369 · 20039 ms (ước 8700 ms) · ảnh hd-07-don-ban-an.png",
       "so": {
         "name": "don-ban-an",
         "label": "Dọn bàn ăn",
@@ -173,41 +173,41 @@
         "stateChot": "idle",
         "stateSau600": "idle",
         "holdingSau": null,
-        "minYChot": 0.3476,
-        "minYGiua": 0.3834,
-        "minYSau": 0.3704,
+        "minYChot": 0.3679,
+        "minYGiua": 0.3596,
+        "minYSau": 0.369,
         "anh": "hd-07-don-ban-an.png",
-        "msThat": 20128,
+        "msThat": 20039,
         "uocMs": 8700
       }
     },
     {
       "nhan": "hoạt động «Nhảy nhẹ theo nhạc» (nhay-theo-nhac) chạy trọn",
-      "ok": false,
-      "chiTiet": "r.ok=true · actor.activityCancelled · 4 bước · state tại mốc xong — (sau 600 ms: emoting) · holding null · minY giữa 0.3666 / chốt — / sau 0.3714 · 17963 ms (ước 9567 ms) · ảnh hd-08-nhay-theo-nhac.png",
+      "ok": true,
+      "chiTiet": "r.ok=true · actor.activityDone · 4 bước · state tại mốc xong idle (sau 600 ms: playing) · holding null · minY giữa 0.3951 / chốt 0.2501 / sau 0.3701 · 18217 ms (ước 9567 ms) · ảnh hd-08-nhay-theo-nhac.png",
       "so": {
         "name": "nhay-theo-nhac",
         "label": "Nhảy nhẹ theo nhạc",
-        "ok": false,
+        "ok": true,
         "rOk": true,
-        "suKien": "actor.activityCancelled",
+        "suKien": "actor.activityDone",
         "buoc": 4,
         "loiBuoc": null,
-        "stateChot": null,
-        "stateSau600": "emoting",
+        "stateChot": "idle",
+        "stateSau600": "playing",
         "holdingSau": null,
-        "minYChot": null,
-        "minYGiua": 0.3666,
-        "minYSau": 0.3714,
+        "minYChot": 0.2501,
+        "minYGiua": 0.3951,
+        "minYSau": 0.3701,
         "anh": "hd-08-nhay-theo-nhac.png",
-        "msThat": 17963,
+        "msThat": 18217,
         "uocMs": 9567
       }
     },
     {
       "nhan": "hoạt động «Tập thể dục ngắn» (tap-the-duc) chạy trọn",
       "ok": true,
-      "chiTiet": "r.ok=true · actor.activityDone · 4 bước · state tại mốc xong idle (sau 600 ms: idle) · holding null · minY giữa 0.3729 / chốt 0.3669 / sau 0.3683 · 7850 ms (ước 8800 ms) · ảnh hd-09-tap-the-duc.png",
+      "chiTiet": "r.ok=true · actor.activityDone · 4 bước · state tại mốc xong idle (sau 600 ms: idle) · holding null · minY giữa 0.3673 / chốt 0.3643 / sau 0.3669 · 9685 ms (ước 8800 ms) · ảnh hd-09-tap-the-duc.png",
       "so": {
         "name": "tap-the-duc",
         "label": "Tập thể dục ngắn",
@@ -219,18 +219,18 @@
         "stateChot": "idle",
         "stateSau600": "idle",
         "holdingSau": null,
-        "minYChot": 0.3669,
-        "minYGiua": 0.3729,
-        "minYSau": 0.3683,
+        "minYChot": 0.3643,
+        "minYGiua": 0.3673,
+        "minYSau": 0.3669,
         "anh": "hd-09-tap-the-duc.png",
-        "msThat": 7850,
+        "msThat": 9685,
         "uocMs": 8800
       }
     },
     {
       "nhan": "hoạt động «Đi dạo một vòng» (di-dao) chạy trọn",
       "ok": true,
-      "chiTiet": "r.ok=true · actor.activityDone · 4 bước · state tại mốc xong idle (sau 600 ms: emoting) · holding null · minY giữa 0.3637 / chốt 0.3592 / sau 0.2153 · 21416 ms (ước 10400 ms) · ảnh hd-10-di-dao.png",
+      "chiTiet": "r.ok=true · actor.activityDone · 4 bước · state tại mốc xong idle (sau 600 ms: emoting) · holding null · minY giữa 0.3632 / chốt 0.358 / sau 0.3611 · 21619 ms (ước 10400 ms) · ảnh hd-10-di-dao.png",
       "so": {
         "name": "di-dao",
         "label": "Đi dạo một vòng",
@@ -242,18 +242,18 @@
         "stateChot": "idle",
         "stateSau600": "emoting",
         "holdingSau": null,
-        "minYChot": 0.3592,
-        "minYGiua": 0.3637,
-        "minYSau": 0.2153,
+        "minYChot": 0.358,
+        "minYGiua": 0.3632,
+        "minYSau": 0.3611,
         "anh": "hd-10-di-dao.png",
-        "msThat": 21416,
+        "msThat": 21619,
         "uocMs": 10400
       }
     },
     {
       "nhan": "hoạt động «Ngồi ghế ăn uống nước» (uong-nuoc-ghe-an) chạy trọn",
       "ok": true,
-      "chiTiet": "r.ok=true · actor.activityDone · 9 bước · state tại mốc xong idle (sau 600 ms: idle) · holding null · minY giữa 0.382 / chốt 0.2714 / sau 0.3698 · 17299 ms (ước 7733 ms) · ảnh hd-11-uong-nuoc-ghe-an.png",
+      "chiTiet": "r.ok=true · actor.activityDone · 9 bước · state tại mốc xong idle (sau 600 ms: idle) · holding null · minY giữa 0.3864 / chốt 0.309 / sau 0.3593 · 17330 ms (ước 7733 ms) · ảnh hd-11-uong-nuoc-ghe-an.png",
       "so": {
         "name": "uong-nuoc-ghe-an",
         "label": "Ngồi ghế ăn uống nước",
@@ -265,18 +265,18 @@
         "stateChot": "idle",
         "stateSau600": "idle",
         "holdingSau": null,
-        "minYChot": 0.2714,
-        "minYGiua": 0.382,
-        "minYSau": 0.3698,
+        "minYChot": 0.309,
+        "minYGiua": 0.3864,
+        "minYSau": 0.3593,
         "anh": "hd-11-uong-nuoc-ghe-an.png",
-        "msThat": 17299,
+        "msThat": 17330,
         "uocMs": 7733
       }
     },
     {
       "nhan": "hoạt động «Ngủ gật trên sofa» (ngu-gat-sofa) chạy trọn",
       "ok": true,
-      "chiTiet": "r.ok=true · actor.activityDone · 6 bước · state tại mốc xong idle (sau 600 ms: idle) · holding null · minY giữa 0.3533 / chốt 0.1606 / sau 0.2727 · 20719 ms (ước 10600 ms) · ảnh hd-12-ngu-gat-sofa.png",
+      "chiTiet": "r.ok=true · actor.activityDone · 6 bước · state tại mốc xong idle (sau 600 ms: idle) · holding null · minY giữa 0.3579 / chốt 0.2105 / sau 0.3104 · 20210 ms (ước 10600 ms) · ảnh hd-12-ngu-gat-sofa.png",
       "so": {
         "name": "ngu-gat-sofa",
         "label": "Ngủ gật trên sofa",
@@ -288,20 +288,20 @@
         "stateChot": "idle",
         "stateSau600": "idle",
         "holdingSau": null,
-        "minYChot": 0.1606,
-        "minYGiua": 0.3533,
-        "minYSau": 0.2727,
+        "minYChot": 0.2105,
+        "minYGiua": 0.3579,
+        "minYSau": 0.3104,
         "anh": "hd-12-ngu-gat-sofa.png",
-        "msThat": 20719,
+        "msThat": 20210,
         "uocMs": 10600
       }
     },
     {
       "nhan": "MỐC 1 — cả 12 hoạt động chạy TRỌN, mỗi cái một ảnh",
-      "ok": false,
-      "chiTiet": "11/12 trọn · 12 ảnh trong docs/j2/",
+      "ok": true,
+      "chiTiet": "12/12 trọn · 12 ảnh trong docs/j2/",
       "so": {
-        "soTron": 11,
+        "soTron": 12,
         "soHoatDong": 12,
         "soAnh": 12
       }
@@ -309,11 +309,11 @@
     {
       "nhan": "MỐC 2 — đế giày (quét mesh) KHÔNG lún: minY ≥ −0,01 m ở mọi mẫu",
       "ok": true,
-      "chiTiet": "thấp nhất 0.1225 m (state idle, hoạt động «go-may-tinh»), xương bàn chân 0.3587 m",
+      "chiTiet": "thấp nhất 0.166 m (state playing, hoạt động «go-may-tinh»), xương bàn chân 0.269 m",
       "so": {
-        "state": "idle",
-        "minY": 0.1225,
-        "footY": 0.3587,
+        "minY": 0.166,
+        "footY": 0.269,
+        "state": "playing",
         "hoatDong": "go-may-tinh"
       }
     },
@@ -325,9 +325,9 @@
     {
       "nhan": "MỐC 4 — t(user.text) → t(actor.activityCancelled) ≤300 ms",
       "ok": true,
-      "chiTiet": "13 ms (cắt sau 1 bước; hoạt động bắt đầu 2533 ms trước đó)",
+      "chiTiet": "9 ms (cắt sau 1 bước; hoạt động bắt đầu 2514 ms trước đó)",
       "so": {
-        "treCatMs": 13,
+        "treCatMs": 9,
         "buocDaChay": 1
       }
     },
@@ -349,12 +349,12 @@
     {
       "nhan": "MỐC 3 — rảnh 65 s → ≥2 hoạt động TỰ SINH, khác nhau",
       "ok": true,
-      "chiTiet": "2 lượt: nhay-theo-nhac → di-dao (2 loại khác nhau)",
+      "chiTiet": "2 lượt: pha-ca-phe → vuon-vai (2 loại khác nhau)",
       "so": {
         "soLuot": 2,
         "ten": [
-          "nhay-theo-nhac",
-          "di-dao"
+          "pha-ca-phe",
+          "vuon-vai"
         ],
         "soKhacNhau": 2
       }
@@ -362,43 +362,43 @@
     {
       "nhan": "lệnh tự sinh đi qua dispatcher với nguồn \"tu-sinh-hoat\" (phân biệt được trong nhật ký)",
       "ok": true,
-      "chiTiet": "2 lệnh nguồn tu-sinh-hoat: nhay-theo-nhac, di-dao",
+      "chiTiet": "2 lệnh nguồn tu-sinh-hoat: pha-ca-phe, vuon-vai",
       "so": {
         "soLenhTuSinh": 2
       }
     },
     {
       "nhan": "lượt tự sinh đầu tiên nổ sau ~20 s im lặng (ngưỡng `ranhMs`)",
-      "ok": true,
-      "chiTiet": "lượt 1 ở +23919 ms · khoảng giữa hai lượt 32137 ms",
+      "ok": false,
+      "chiTiet": "lượt 1 ở +13708 ms · khoảng giữa hai lượt 39772 ms",
       "so": {
-        "luot1Ms": 23919,
-        "giuaHaiLuotMs": 32137
+        "luot1Ms": 13708,
+        "giuaHaiLuotMs": 39772
       }
     },
     {
       "nhan": "sau khi tự sinh hoạt, chân vẫn chạm sàn (minY ≥ −0,01 m)",
       "ok": true,
-      "chiTiet": "minY 0.3817 m (state walking)",
+      "chiTiet": "minY 0.37 m (state idle)",
       "so": {
-        "minY": 0.3817,
-        "footY": 0.4344,
-        "state": "walking"
+        "minY": 0.37,
+        "footY": 0.419,
+        "state": "idle"
       }
     },
     {
       "nhan": "r.ok = true cho MỌI lệnh trong cả phiên",
       "ok": true,
-      "chiTiet": "185 lệnh, 0 lỗi",
+      "chiTiet": "195 lệnh, 0 lỗi",
       "so": {
-        "soLenh": 185,
+        "soLenh": 195,
         "loi": []
       }
     },
     {
       "nhan": "hoạt động chạy bằng LỆNH CÓ SẴN qua ctx.run (nhật ký có đủ moveTo/sit/play/emote)",
       "ok": true,
-      "chiTiet": "16 lệnh actor.activity · 185 lệnh tổng"
+      "chiTiet": "16 lệnh actor.activity · 195 lệnh tổng"
     },
     {
       "nhan": "console 0 lỗi suốt cả vòng",
@@ -421,11 +421,11 @@
       "stateChot": "idle",
       "stateSau600": "idle",
       "holdingSau": null,
-      "minYChot": 0.3091,
-      "minYGiua": 0.3912,
-      "minYSau": 0.3552,
+      "minYChot": 0.2074,
+      "minYGiua": 0.3937,
+      "minYSau": 0.3667,
       "anh": "hd-01-doc-sach-sofa.png",
-      "msThat": 20356,
+      "msThat": 20173,
       "uocMs": 10900
     },
     {
@@ -439,11 +439,11 @@
       "stateChot": "idle",
       "stateSau600": "idle",
       "holdingSau": null,
-      "minYChot": 0.3841,
-      "minYGiua": 0.3564,
-      "minYSau": 0.3717,
+      "minYChot": 0.375,
+      "minYGiua": 0.3569,
+      "minYSau": 0.3698,
       "anh": "hd-02-pha-ca-phe.png",
-      "msThat": 19176,
+      "msThat": 18479,
       "uocMs": 10200
     },
     {
@@ -457,11 +457,11 @@
       "stateChot": "idle",
       "stateSau600": "idle",
       "holdingSau": null,
-      "minYChot": 0.1225,
-      "minYGiua": 0.1661,
-      "minYSau": 0.179,
+      "minYChot": 0.286,
+      "minYGiua": 0.166,
+      "minYSau": 0.2238,
       "anh": "hd-03-go-may-tinh.png",
-      "msThat": 10871,
+      "msThat": 9917,
       "uocMs": 9400
     },
     {
@@ -475,11 +475,11 @@
       "stateChot": "idle",
       "stateSau600": "idle",
       "holdingSau": null,
-      "minYChot": 0.3693,
-      "minYGiua": 0.3714,
-      "minYSau": 0.3727,
+      "minYChot": 0.3695,
+      "minYGiua": 0.3662,
+      "minYSau": 0.3689,
       "anh": "hd-04-vuon-vai.png",
-      "msThat": 6324,
+      "msThat": 5953,
       "uocMs": 4114
     },
     {
@@ -493,11 +493,11 @@
       "stateChot": "idle",
       "stateSau600": "idle",
       "holdingSau": null,
-      "minYChot": 0.361,
-      "minYGiua": 0.3974,
-      "minYSau": 0.3678,
+      "minYChot": 0.3724,
+      "minYGiua": 0.3754,
+      "minYSau": 0.3667,
       "anh": "hd-05-ngam-cua-so.png",
-      "msThat": 15861,
+      "msThat": 15792,
       "uocMs": 8200
     },
     {
@@ -511,11 +511,11 @@
       "stateChot": "idle",
       "stateSau600": "playing",
       "holdingSau": null,
-      "minYChot": 0.3678,
-      "minYGiua": 0.392,
-      "minYSau": 0.369,
+      "minYChot": 0.3676,
+      "minYGiua": 0.3699,
+      "minYSau": 0.3666,
       "anh": "hd-06-tuoi-cay.png",
-      "msThat": 10793,
+      "msThat": 10894,
       "uocMs": 8500
     },
     {
@@ -529,29 +529,29 @@
       "stateChot": "idle",
       "stateSau600": "idle",
       "holdingSau": null,
-      "minYChot": 0.3476,
-      "minYGiua": 0.3834,
-      "minYSau": 0.3704,
+      "minYChot": 0.3679,
+      "minYGiua": 0.3596,
+      "minYSau": 0.369,
       "anh": "hd-07-don-ban-an.png",
-      "msThat": 20128,
+      "msThat": 20039,
       "uocMs": 8700
     },
     {
       "name": "nhay-theo-nhac",
       "label": "Nhảy nhẹ theo nhạc",
-      "ok": false,
+      "ok": true,
       "rOk": true,
-      "suKien": "actor.activityCancelled",
+      "suKien": "actor.activityDone",
       "buoc": 4,
       "loiBuoc": null,
-      "stateChot": null,
-      "stateSau600": "emoting",
+      "stateChot": "idle",
+      "stateSau600": "playing",
       "holdingSau": null,
-      "minYChot": null,
-      "minYGiua": 0.3666,
-      "minYSau": 0.3714,
+      "minYChot": 0.2501,
+      "minYGiua": 0.3951,
+      "minYSau": 0.3701,
       "anh": "hd-08-nhay-theo-nhac.png",
-      "msThat": 17963,
+      "msThat": 18217,
       "uocMs": 9567
     },
     {
@@ -565,11 +565,11 @@
       "stateChot": "idle",
       "stateSau600": "idle",
       "holdingSau": null,
-      "minYChot": 0.3669,
-      "minYGiua": 0.3729,
-      "minYSau": 0.3683,
+      "minYChot": 0.3643,
+      "minYGiua": 0.3673,
+      "minYSau": 0.3669,
       "anh": "hd-09-tap-the-duc.png",
-      "msThat": 7850,
+      "msThat": 9685,
       "uocMs": 8800
     },
     {
@@ -583,11 +583,11 @@
       "stateChot": "idle",
       "stateSau600": "emoting",
       "holdingSau": null,
-      "minYChot": 0.3592,
-      "minYGiua": 0.3637,
-      "minYSau": 0.2153,
+      "minYChot": 0.358,
+      "minYGiua": 0.3632,
+      "minYSau": 0.3611,
       "anh": "hd-10-di-dao.png",
-      "msThat": 21416,
+      "msThat": 21619,
       "uocMs": 10400
     },
     {
@@ -601,11 +601,11 @@
       "stateChot": "idle",
       "stateSau600": "idle",
       "holdingSau": null,
-      "minYChot": 0.2714,
-      "minYGiua": 0.382,
-      "minYSau": 0.3698,
+      "minYChot": 0.309,
+      "minYGiua": 0.3864,
+      "minYSau": 0.3593,
       "anh": "hd-11-uong-nuoc-ghe-an.png",
-      "msThat": 17299,
+      "msThat": 17330,
       "uocMs": 7733
     },
     {
@@ -619,20 +619,19 @@
       "stateChot": "idle",
       "stateSau600": "idle",
       "holdingSau": null,
-      "minYChot": 0.1606,
-      "minYGiua": 0.3533,
-      "minYSau": 0.2727,
+      "minYChot": 0.2105,
+      "minYGiua": 0.3579,
+      "minYSau": 0.3104,
       "anh": "hd-12-ngu-gat-sofa.png",
-      "msThat": 20719,
+      "msThat": 20210,
       "uocMs": 10600
     }
   ],
   "tomTat": {
     "soBuoc": 27,
-    "soOk": 25,
+    "soOk": 26,
     "thatBai": [
-      "hoạt động «Nhảy nhẹ theo nhạc» (nhay-theo-nhac) chạy trọn: r.ok=true · actor.activityCancelled · 4 bước · state tại mốc xong — (sau 600 ms: emoting) · holding null · minY giữa 0.3666 / chốt — / sau 0.3714 · 17963 ms (ước 9567 ms) · ảnh hd-08-nhay-theo-nhac.png",
-      "MỐC 1 — cả 12 hoạt động chạy TRỌN, mỗi cái một ảnh: 11/12 trọn · 12 ảnh trong docs/j2/"
+      "lượt tự sinh đầu tiên nổ sau ~20 s im lặng (ngưỡng `ranhMs`): lượt 1 ở +13708 ms · khoảng giữa hai lượt 39772 ms"
     ]
   }
 }
