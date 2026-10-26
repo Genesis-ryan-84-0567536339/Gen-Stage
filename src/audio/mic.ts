@@ -177,6 +177,21 @@ export async function xinQuyenMic(): Promise<KetQuaQuyen | false> {
   return micDangChay ? await micDangChay.xinQuyen() : false;
 }
 
+/**
+ * Đọc quyền mic TRỰC TIẾP từ trình duyệt (bất đồng bộ) — dùng cho nút Bật tiếng
+ * kiểm lại sau khi gắn, vì `quyenMicHienTai()` đọc sổ đồng bộ có thể còn
+ * `chua-biet` lúc trang mới nạp (review PR #59: nút "Cho phép mic" hiện lại
+ * mỗi phiên dù quyền đã `duoc`).
+ */
+export async function doQuyenMicTrinhDuyet(): Promise<TrangThaiQuyen> {
+  try {
+    const t = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+    return t.state === 'granted' ? 'duoc' : t.state === 'denied' ? 'tu-choi' : 'cho';
+  } catch {
+    return 'chua-biet';
+  }
+}
+
 /** Quyền mic hiện tại (nút "🔊 Bật tiếng" đọc để chọn chữ trên nút). */
 export function quyenMicHienTai(): TrangThaiQuyen {
   return micDangChay?.quyen() ?? 'chua-biet';

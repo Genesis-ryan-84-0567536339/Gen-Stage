@@ -26,7 +26,7 @@
  * hiện lúc Boss đang rảnh tay, và từ đó phím V chạy ngay không trễ.
  */
 import type { LopTieng } from './tts-client';
-import { quyenMicHienTai, xinQuyenMic } from './mic';
+import { doQuyenMicTrinhDuyet, quyenMicHienTai, xinQuyenMic } from './mic';
 
 const KHOA_NHO = 'gen-stage:tieng';
 
@@ -133,6 +133,17 @@ export function ganNutTieng(tieng: LopTieng, toast?: (chu: string) => void): () 
     document.addEventListener('keydown', moKhoaNgam, true);
   } else {
     document.body.appendChild(nut);
+    // Lỗi đua (review PR #59): sổ quyền đồng bộ chưa kịp có lúc nạp trang →
+    // nút "Cho phép mic" hiện dù quyền đã được cấp. Hỏi lại trình duyệt rồi
+    // tự gỡ nút nếu đã `duoc`, chuyển sang mở khoá ngầm như nhánh trên.
+    if (daDongY) {
+      void doQuyenMicTrinhDuyet().then((q) => {
+        if (q !== 'duoc' || !nut.isConnected) return;
+        nut.remove();
+        document.addEventListener('pointerdown', moKhoaNgam, true);
+        document.addEventListener('keydown', moKhoaNgam, true);
+      });
+    }
   }
 
   return thao;
