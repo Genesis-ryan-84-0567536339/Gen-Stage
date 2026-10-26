@@ -28,6 +28,12 @@ npx wscat -c 'ws://192.168.1.9:8787/?token=abc123'    # hoặc gửi {"token":"a
 Không có `wscat` thì `node scripts/kiem-bridge.mjs` tự chạy trọn:
 gửi `actor.moveTo` rồi chờ `actor.arrived`. Cổng đổi bằng `GEN_STAGE_PORT`.
 
+**Heartbeat (Refs #37)**: client gửi `{"ping":<số>}` bất cứ lúc nào, bridge trả
+ngay `{"pong":<số>}` (không phải lệnh, không ghi vào nhật ký `→`). Driver não
+(`scripts/nao-agy.mjs`) dùng cặp này mỗi 15 s để tự phát hiện ws chết nửa chừng
+mà không có `close`/`error` nào bắn — xem "Quyết định HEARTBEAT + RECONNECT +
+WATCHDOG" trong `CLAUDE.md`.
+
 ## Giọng tiếng Việt (B2 — Issue #20)
 
 ```bash

@@ -7,11 +7,15 @@
  */
 import { describe, expect, it, vi } from 'vitest';
 import {
+  CAU_DA_NOI_LAI,
   DAU_BAN,
   dungDongNhac,
   gonDescribe,
   laCauCuaSep,
   lyDoNgan,
+  MS_BACKOFF_MAX,
+  MS_BACKOFF_MIN,
+  noiSanKhau,
   phanXa,
   promptDau,
   rutGonSkill,
@@ -20,6 +24,7 @@ import {
   taoLuot,
   taoNaoAm,
   taoNaoTmux,
+  tinhBackoff,
 } from '../nao-agy.mjs';
 
 const SKILL = `---
@@ -382,5 +387,172 @@ describe('lyDoNgan — lỗi dài thành một câu Gen nói được', () => {
     expect(lyDoNgan('không chạy được "agy": ENOENT')).toBe('não agy chưa bật');
     expect(lyDoNgan('')).toBe('không rõ');
     expect(lyDoNgan('a\nb\ndòng cuối')).toBe('dòng cuối');
+  });
+});
+
+/* ------------------------------------------------------- backoff nối lại */
+
+describe('tinhBackoff — tăng dần 1 s → 10 s, không giới hạn số lần', () => {
+  it('nhân đôi mỗi lần thử rồi kẹp ở max', () => {
+    expect(tinhBackoff(1)).toBe(1000);
+    expect(tinhBackoff(2)).toBe(2000);
+    expect(tinhBackoff(3)).toBe(4000);
+    expect(tinhBackoff(4)).toBe(8000);
+    expect(tinhBackoff(5)).toBe(MS_BACKOFF_MAX); // 16000 → kẹp 10000
+    expect(tinhBackoff(9)).toBe(MS_BACKOFF_MAX); // vẫn kẹp, không bỏ cuộc
+  });
+
+  it('tôn trọng min/max tuỳ biến', () => {
+    expect(tinhBackoff(1, { min: 500, max: 4000 })).toBe(500);
+    expect(tinhBackoff(10, { min: 500, max: 4000 })).toBe(4000);
+  });
+});
+
+/* --------------------------------------------------- heartbeat + nối lại */
+
+/** WebSocket giả tối thiểu, giống API của `ws`: on/send/close/terminate. */
+class WsGia {
+  static dsTao = [];
+  constructor(url) {
+    this.url = url;
+    this.readyState = 0; // CONNECTING
+    this.daGui = [];
+    this._cb = {};
+    WsGia.dsTao.push(this);
+  }
+  on(ev, f) {
+    (this._cb[ev] ??= []).push(f);
+    return this;
+  }
+  send(d) {
+    if (this.readyState !== 1) throw new Error('send trên socket đã đóng');
+    this.daGui.push(JSON.parse(d));
+  }
+  _bam(ev, ...a) {
+    for (const f of this._cb[ev] ?? []) f(...a);
+  }
+  /** Bên "bridge giả" chủ động mở xong. */
+  moXong() {
+    this.readyState = 1;
+    this._bam('open');
+  }
+  /** Bridge trả pong cho ping gần nhất đã gửi. */
+  traPong() {
+    const cuoi = this.daGui.filter((g) => typeof g.ping !== 'undefined').pop();
+    this._bam('message', JSON.stringify({ pong: cuoi?.ping ?? true }));
+  }
+  terminate() {
+    this.readyState = 3;
+    this._bam('close', 1006, Buffer.from('terminate'));
+  }
+  close(ma = 1000, lyDo = '') {
+    this.readyState = 3;
+    this._bam('close', ma, Buffer.from(lyDo));
+  }
+}
+
+function hangDoiWs() {
+  WsGia.dsTao = [];
+  return WsGia;
+}
+
+describe('noiSanKhau — heartbeat 2 chiều + backoff + báo nối lại 1 lần', () => {
+  it('gửi {ping} mỗi msNhipTim, và pong giữ kết nối sống (không bị coi là chết)', async () => {
+    vi.useFakeTimers();
+    const WebSocket = hangDoiWs();
+    const ghi = vi.fn();
+    const p = noiSanKhau({ WebSocket, cong: 8821, ghi, msNhipTim: 1000, msQuaHanTim: 3500 });
+    await vi.advanceTimersByTimeAsync(0);
+    const w = WebSocket.dsTao[0];
+    expect(w.url).toMatch(/\?role=nao$/); // Refs #37: driver phải xưng não để brainConnected đúng
+    w.moXong();
+
+    for (let i = 0; i < 5; i++) {
+      await vi.advanceTimersByTimeAsync(1000);
+      w.traPong(); // bridge trả lời đúng hạn → không bao giờ bị terminate
+    }
+    expect(w.readyState).toBe(1);
+    expect(w.daGui.filter((g) => typeof g.ping !== 'undefined').length).toBeGreaterThanOrEqual(5);
+    expect(WsGia.dsTao.length).toBe(1); // chưa rớt lần nào thì chưa nối lại lần nào
+
+    const san = await p;
+    san.dong();
+    vi.useRealTimers();
+  });
+
+  it('không thấy pong quá msQuaHanTim → tự terminate() rồi NỐI LẠI, có log lý do', async () => {
+    vi.useFakeTimers();
+    const WebSocket = hangDoiWs();
+    const ghi = vi.fn();
+    const p = noiSanKhau({ WebSocket, cong: 8822, ghi, msNhipTim: 1000, msQuaHanTim: 2500 });
+    await vi.advanceTimersByTimeAsync(0);
+    WebSocket.dsTao[0].moXong();
+    // im lặng không trả pong nào — quá 2500 ms là driver tự ngắt
+    await vi.advanceTimersByTimeAsync(3000);
+    expect(WebSocket.dsTao[0].readyState).toBe(3);
+    expect(ghi).toHaveBeenCalledWith(expect.stringMatching(/KHÔNG thấy pong/));
+    expect(ghi).toHaveBeenCalledWith(expect.stringMatching(/MẤT KẾT NỐI bridge.*nối lại lần 1/));
+
+    // backoff lần 1 = 1000 ms: chưa tới thì chưa có socket thứ hai
+    await vi.advanceTimersByTimeAsync(900);
+    expect(WebSocket.dsTao.length).toBe(1);
+    await vi.advanceTimersByTimeAsync(200);
+    expect(WebSocket.dsTao.length).toBe(2);
+
+    const san = await p;
+    san.dong();
+    vi.useRealTimers();
+  });
+
+  it('rớt liên tiếp (chưa kịp mở) thì backoff tăng dần 1 s, 2 s, 4 s — không cố định', async () => {
+    vi.useFakeTimers();
+    const WebSocket = hangDoiWs();
+    const p = noiSanKhau({ WebSocket, cong: 8823, ghi: () => {}, msNhipTim: 50_000 });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(WebSocket.dsTao.length).toBe(1);
+
+    WebSocket.dsTao[0].close(1006, 'rụng'); // rớt ngay khi chưa kịp mở
+    await vi.advanceTimersByTimeAsync(999);
+    expect(WebSocket.dsTao.length).toBe(1); // backoff lần 1 = 1000 ms, chưa tới
+    await vi.advanceTimersByTimeAsync(2);
+    expect(WebSocket.dsTao.length).toBe(2);
+
+    WebSocket.dsTao[1].close(1006, 'rụng nữa');
+    await vi.advanceTimersByTimeAsync(1999);
+    expect(WebSocket.dsTao.length).toBe(2); // backoff lần 2 = 2000 ms
+    await vi.advanceTimersByTimeAsync(2);
+    expect(WebSocket.dsTao.length).toBe(3);
+
+    const san = await p;
+    san.dong();
+    vi.useRealTimers();
+  });
+
+  it('phục hồi sau khi mất kết nối → Gen báo đúng MỘT lần, không lặp lại các lần sau', async () => {
+    vi.useFakeTimers();
+    const WebSocket = hangDoiWs();
+    const p = noiSanKhau({ WebSocket, cong: 8824, ghi: () => {}, msNhipTim: 50_000 });
+    await vi.advanceTimersByTimeAsync(0);
+    WebSocket.dsTao[0].moXong();
+
+    WebSocket.dsTao[0].close(1006, 'rớt'); // mất lần 1
+    await vi.advanceTimersByTimeAsync(1100); // qua backoff 1000 ms
+    expect(WebSocket.dsTao.length).toBe(2);
+    WebSocket.dsTao[1].moXong(); // nối lại xong
+
+    const baoSay = (w) => w.daGui.filter((g) => g.cmd === 'actor.say' && g.args?.text === CAU_DA_NOI_LAI);
+    expect(baoSay(WebSocket.dsTao[1])).toHaveLength(1); // đúng một câu báo
+
+    // mở rồi đóng lại lần nữa: nối thành công đã reset bộ đếm backoff, nên
+    // lần mất kế tiếp lại tính từ "lần 1" (1000 ms), không cộng dồn vô hạn.
+    WebSocket.dsTao[1].close(1006, 'rớt lần 2');
+    await vi.advanceTimersByTimeAsync(1100); // backoff lần 1 = 1000 ms (đã reset sau khi nối lại)
+    expect(WebSocket.dsTao.length).toBe(3);
+    WebSocket.dsTao[2].moXong();
+    expect(baoSay(WebSocket.dsTao[2])).toHaveLength(1); // mất lần 2 → lại báo đúng 1 lần, không dồn
+
+    const san = await p;
+    san.dong();
+    vi.useRealTimers();
   });
 });
