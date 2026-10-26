@@ -428,6 +428,7 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
       new THREE.MeshBasicMaterial({ map: troi, toneMapped: false }),
     );
     canh.position.set(CUA_SO.tai[0], CUA_SO.duoiSan + CUA_SO.cao / 2, nuaZ - 0.03);
+    canh.rotation.y = Math.PI; // quay mặt vào trong nhà — không thì bị cull, cửa sổ trắng phẳng (review #47)
     nhom.add(canh);
     const kinh = new THREE.Mesh(
       new THREE.PlaneGeometry(CUA_SO.rong - 0.1, CUA_SO.cao - 0.1),
@@ -440,6 +441,7 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
       }),
     );
     kinh.position.set(CUA_SO.tai[0], CUA_SO.duoiSan + CUA_SO.cao / 2, nuaZ - 0.02);
+    kinh.rotation.y = Math.PI;
     nhom.add(kinh);
     // khung gỗ viền cửa sổ + 1 thanh chia giữa
     const matKhung = new THREE.MeshStandardMaterial({ color: 0x5c3d24, roughness: 0.75 });

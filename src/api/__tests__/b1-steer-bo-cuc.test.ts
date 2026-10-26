@@ -7,7 +7,7 @@
  *  2. Kẹp trong phòng + không đi xuyên bàn/kệ (`bo-cuc.truotVaCham`).
  *  3. Đang steer thì `at` luôn `null` (giao kèo A1 không được phá), còn
  *     `nearest` vẫn luôn có.
- * Cộng thêm: bảng bố cục thẳng lưới, hành lang ≥ 3 m, `controlledBy`.
+ * Cộng thêm: bảng bố cục thẳng lưới, hành lang ≥ 2 m, `controlledBy`.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
 import { Dispatcher } from '../dispatcher';
