@@ -996,3 +996,8 @@ và cách tái hiện: **`docs/f2/GOC-DIEU-KHIEN-LOAN.md`**.
   bằng `ffmpeg -f x11grab` thay vào; (3) ngưỡng "nhả phím → dừng ≤ 0,3 s" khi
   chấm trên máy thật phải **cộng 2 khung hình đo từ chính sổ**, không thì đang
   đo tốc độ GPU của máy kiểm chứ không đo đường cong phanh.
+
+## Quy tắc đo trên Firefox thật (Boss 27/10: "bị gì mà cứ mở tắt trình duyệt hoài vậy")
+- Mỗi lượt đo mở Firefox **đúng một lần** (một browser/context/page), tải lại bằng `reload/goto`, đóng khi xong hẳn. Không chạy lặp script "cho chắc".
+- **Một lúc chỉ một agent** dùng Firefox thật: trước khi mở, `pgrep -f firefox-1543` phải trống; phần không cần trình duyệt (đọc code, test, build, merge-tree, viết script) làm trước trong lúc chờ.
+- Lý do: cửa sổ nhấp nháy làm phiền Boss, và nouveau gãy (`kernel rejected pushbuf`) khi ≥3 phiên Firefox GPU cùng lúc.
