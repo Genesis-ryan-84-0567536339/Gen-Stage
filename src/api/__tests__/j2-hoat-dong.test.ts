@@ -387,6 +387,24 @@ describe('J2 tự sinh hoạt khi rảnh', () => {
     expect(layHoatDong('gen')).toBeNull();
   });
 
+  it('phản xạ xếp hàng thì KHÔNG cắt hoạt động (ưu tiên thấp hơn)', async () => {
+    /*
+     * Lỗi đo được trên Firefox lượt 2: C0 chêm `actor.emote chao` vào khe giữa
+     * hai bước, bước kế tiếp đã chiếm chỗ nên cú chào xếp hàng → `cmd.queued`
+     * → máy tự cắt hoạt động của mình. Phản xạ chêm vào chỗ trống, không đòi
+     * chỗ — xem `nguon` trong payload `cmd.queued`.
+     */
+    const t = dungTuSinh();
+    await t.tien(21_000);
+    const dang = layHoatDong('gen');
+    expect(dang).not.toBeNull();
+    void t.dispatcher.run('actor.emote', { actor: 'gen', emote: 'chao' }, 'phan-xa');
+    expect(layHoatDong('gen'), 'phản xạ không được cắt hoạt động').toBe(dang);
+    // còn não thì vẫn cắt được
+    void t.dispatcher.run('actor.emote', { actor: 'gen', emote: 'vui' }, 'bridge');
+    expect(layHoatDong('gen')).toBeNull();
+  });
+
   it('Nam (controlledBy owner) KHÔNG bao giờ tự sinh hoạt', async () => {
     const t = dungTuSinh();
     const batDau: string[] = [];

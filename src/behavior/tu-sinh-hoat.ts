@@ -39,6 +39,7 @@
  * một danh sách sự kiện phải nhớ bổ sung mỗi lần thêm đường vào.
  */
 import type { EventBusLike, Result, StageState, StageWorld } from '../api/types';
+import { NGUON_PHAN_XA } from './phan-xa';
 import {
   BANG_HOAT_DONG,
   dangGuiBuoc,
@@ -260,6 +261,15 @@ export function batTuSinhHoat(ts: ThamSoTuSinhHoat): MayTuSinhHoat {
       // Bước của CHÍNH hoạt động xếp hàng sau một cú chêm của phản xạ — không
       // phải ai xen vào (xem `dangGuiBuoc` trong `hoat-dong.ts`).
       if (dangGuiBuoc(String(gen))) return;
+      /*
+       * **Phản xạ xếp hàng thì KHÔNG nhường chỗ.** C0 chêm `actor.turnTo` +
+       * `actor.emote chao` vào đúng khe giữa hai bước (Nhi vừa rảnh), và nếu
+       * bước kế tiếp đã kịp chiếm chỗ thì cú chào ấy xếp hàng → `cmd.queued`.
+       * Đo thật trên Firefox: hoạt động «Nhảy nhẹ theo nhạc» bị cắt oan vì
+       * một cú chào. Phản xạ là ưu tiên THẤP HƠN hoạt động tự sinh ở đây —
+       * nó chêm vào chỗ trống, không đòi chỗ.
+       */
+      if (e.data.nguon === NGUON_PHAN_XA) return;
       coNguoiGoi();
     }),
   );

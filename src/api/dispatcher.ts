@@ -217,6 +217,15 @@ export class Dispatcher {
           this.bus.emit('cmd.queued', {
             cmd,
             actor,
+            /**
+             * J2 (#79) — **ai xếp hàng**. Người nghe `cmd.queued` phải phân
+             * biệt được "não/Boss vừa xen vào" với "phản xạ chêm một cú chào":
+             * máy tự sinh hoạt nhường chỗ cho cái đầu, không nhường cho cái
+             * sau (phản xạ là ưu tiên thấp hơn chính nó). Không có trường này
+             * thì một cú `actor.emote chao` của C0 cũng cắt mất hoạt động —
+             * đo được trên Firefox, hoạt động «Nhảy nhẹ theo nhạc» bị cắt oan.
+             */
+            nguon,
             position: cho.length,
             dangChay: this.dangChay.get(actor)?.cmd ?? null,
           });

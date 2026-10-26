@@ -1233,3 +1233,12 @@ kế đầy đủ: `docs/spec/actor-api.md` mục **3.2f**. Bằng chứng Firef
   vô hiệu hoá một đường mà vẫn sạch console: trỏ `ttsUrl`/`sttUrl` vào một
   đường **trên chính cổng web** — `vite preview` trả 404 cùng origin, code tự
   bắt, chỉ còn `console.warn`.
+- **Vòng 2 đo lại: "cắt mọi hoạt động" hoá ra cắt cả vì MỘT CÚ CHÀO.** Sửa
+  xong lỗi trên thì «Nhảy nhẹ theo nhạc» bị `actor.activityCancelled` oan:
+  phản xạ C0 chêm `actor.turnTo` + `actor.emote chao` vào đúng khe giữa hai
+  bước (Nhi vừa rảnh), bước kế tiếp đã kịp chiếm chỗ nên **cú chào xếp hàng**
+  → `cmd.queued` cho Nhi → máy tự sinh hoạt tưởng não xen vào. `dangGuiBuoc`
+  không che được vì lệnh xếp hàng là của phản xạ, không phải của mình. Sửa ở
+  gốc: `cmd.queued` giờ mang **`nguon`**, và máy bỏ qua `nguon === 'phan-xa'`
+  — phản xạ **chêm vào chỗ trống, không đòi chỗ**; nó là ưu tiên thấp hơn
+  chính hoạt động tự sinh ở điểm này.
