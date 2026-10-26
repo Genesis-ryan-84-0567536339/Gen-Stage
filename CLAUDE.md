@@ -21,6 +21,7 @@ pnpm build                # tsc + vite build, phải không lỗi trước khi m
 pnpm test                 # vitest: dispatcher, hàng đợi, kịch bản, stage.describe, A3 screen/module/fx
 pnpm bridge               # bridge: ws lệnh (8787) + giọng tiếng Việt (8788) + MCP HTTP (8789)
 pnpm mcp                  # MCP qua stdio cho agy CLI (`agy mcp add gen-stage …`)
+pnpm nao                  # DRIVER não: nghe user.text qua ws → nuôi agy đang ấm trong tmux
 pnpm nao-demo             # não mẫu rule-based (không LLM) nối MCP stdio — vòng kín khi không có agy
 pnpm preview              # xem thử bản build
 
@@ -33,6 +34,7 @@ node scripts/kiem-a2.mjs      # bằng chứng A2: 15 emote + 13 clip + say + id
 node scripts/kiem-a2.mjs --chi-anh  # bản NHANH lúc đang làm (chỉ ảnh + số đo, không quay video, không đo FPS)
 node scripts/kiem-b1.mjs      # bằng chứng B1: bố cục 3 vùng + steer mượt + owner/gen vào docs/b1/ (CHẠY MỘT LẦN)
 node scripts/kiem-b3.mjs      # bằng chứng B3: Owner gõ → MCP → Gen diễn + nói, vào docs/b3/ (CHẠY MỘT LẦN)
+node scripts/kiem-nao.mjs     # bằng chứng DRIVER: Sếp gõ → driver → agy thật → Gen nói, đo độ trễ, vào docs/nao/ (CHẠY MỘT LẦN)
 bash scripts/fetch-anim.sh    # tải bộ chuyển động CC0 (Quaternius) về public/anim/ — chạy 1 lần sau khi clone
 ```
 
@@ -116,6 +118,7 @@ biết registry, **giao diện** không gọi thẳng vào sân khấu.
 | `bridge/mcp.ts` | **B3** — MCP server: tool **sinh tự động** từ registry (`a.b` → `a_b`) + `stage_events` (long-poll). Hai cửa: stdio (`pnpm mcp`) và HTTP streamable `127.0.0.1:8789/mcp`. Cả hai nói với sân khấu bằng **vai client ws** của bridge |
 | `src/ui/o-chat.ts` | **B3** — ô chat dưới màn hình: Enter = `actor.say` lên nhân vật `owner`, y như `Space` |
 | `skills/gen-stage-nao/SKILL.md` | **B3** — skill cho agy CLI: vòng `stage_events` → `stage_describe` → 1–3 lệnh → `actor_say` |
+| `scripts/nao-agy.mjs` | **DRIVER NÃO** — vòng lặp nằm ở đây, không ở agy: nghe `user.text` qua ws, phản xạ ≤300 ms, gộp câu 800 ms, hàng đợi 1 lượt, bơm một dòng vào agy đang ấm trong tmux |
 | `scripts/nao-demo.mjs` | **B3** — não mẫu rule-based (không LLM) chạy qua MCP stdio thật, làm bằng chứng vòng kín khi không có agy |
 | `bridge/tts.ts` | **B2** — giọng tiếng Việt: `GET /tts` (cổng 8788) gọi thẳng WebSocket Edge, trả mp3, cache `.cache/tts/<sha1>.mp3` |
 | `src/audio/tts-client.ts` | **B2** — tải + giải mã mp3, đo `durationMs` thật, phát bằng Web Audio, đẩy biên độ RMS mỗi 50 ms sang nhân vật |
@@ -299,3 +302,71 @@ lệnh mới cho các đợt sau — `stage.bootstrap` vẫn liệt kê đủ b�
 - **Bằng chứng chạy trên bộ cổng riêng 8797/8798/8799** vì máy Boss thường đã
   có `pnpm bridge` thật ở 8787 — script bằng chứng không được dùng chung lẫn
   giết bridge đó.
+
+## Quyết định DRIVER NÃO — agy tự lắng nghe sự kiện (26/10, Refs #21)
+
+- **Vòng lặp nằm ở driver, không ở agy.** Bản cũ bật
+  `agy --prompt-interactive "$(cat SKILL.md)"` trong tmux rồi bỏ đó: agy chào
+  một lượt rồi về dấu nhắc `>` **chờ người gõ trong terminal**, nó không tự lặp
+  `stage_events`. Sếp gõ trong Firefox thì không ai nghe → "nó chưa trả lời".
+  `scripts/nao-agy.mjs` đảo vai: driver là cái vòng lặp (client ws của bridge),
+  agy chỉ là cái não được gọi một lượt mỗi câu.
+- **Giữ agy ẤM trong tmux, không gọi `agy -p` mỗi câu.** Đo thật trên máy Boss,
+  Gemini 3.8 Flash low:
+
+  | Phương án | Khởi động | Một lượt (prompt rỗng) | Một lượt thật (2–3 tool MCP) |
+  | --- | --- | --- | --- |
+  | A. `agy -p` mỗi câu | 8–12 s **mỗi lần** | 8,1 / 10,9 / 11,8 s | 15–25 s |
+  | B. tmux ấm + `send-keys` | một lần | 3,4 / 3,6 / 5,2 s | **5,5 / 5,6 s** |
+
+  Đo trọn vòng "Sếp gõ → Gen bắt đầu nói" (`docs/nao/nhat-ky-kiem-nao.json`):
+  phản xạ **71–99 ms**, câu trả lời đầu **5554 / 5566 ms**, lượt thứ ba xếp
+  hàng sau lượt hai nên 19,6 s — đúng như thiết kế hàng đợi một-lượt.
+
+  `agy -p` phải nối lại cả 3 server MCP mỗi lần chạy — đó là phần 8–12 s đó.
+  Mặc định là B; A giữ làm dự phòng (`GEN_STAGE_NAO_CHE_DO=print`).
+- **Phản xạ tách khỏi suy nghĩ.** Driver bắn `actor.turnTo owner` +
+  `actor.emote suy-nghi` ngay từ **sự kiện thô**, trước cả cửa sổ gộp 800 ms —
+  đo được **71–87 ms**. Sếp thấy Gen quay sang và nghĩ ngay, trong lúc não còn
+  đang chạy 6 s nữa.
+- **`actor_say` TRƯỚC, diễn SAU.** Nhắc đầu phiên dặn gọi `actor_say` đầu tiên
+  rồi mới `screen_*`/`module_*`; nhờ vậy "câu trả lời đầu" là 6,2–6,9 s thay vì
+  phải chờ hết 3 lệnh diễn.
+- **Nhắc phải ngắn.** SKILL.md rút gọn ≤40 dòng (bỏ frontmatter, bỏ mục "Vòng
+  lặp" — driver lo việc đó, bỏ khối code), và `stage_describe` rút còn
+  gen + owner + screens + modules + **5 sự kiện cuối**, không mang theo bảng
+  khoảng cách tới mọi place.
+- **Mốc "Sếp nghe được tiếng" là sự kiện mới `actor.sayStart`** (bắn đúng lúc
+  bong bóng chữ hiện ra, sau khi tải tiếng). `actor.sayDone` chỉ nói "đã nói
+  xong" nên không đo được độ trễ. Driver dùng mốc này để tắt hẹn "xin Sếp chờ"
+  và để biết não có mở miệng hay không.
+- **Câu đã có lớp hiểu lệnh xử lý thì não KHÔNG nghĩ lại** (đồng bộ C2, PR #33):
+  driver bỏ qua `user.text`/`user.speech` mang `handled: true`, và không nghe
+  `user.command`. "Javis, đi tới bàn điều khiển" → lớp lệnh lo, tốn 0 token;
+  "Gen, hôm nay làm gì" → không lệnh nào khớp, đến lượt agy. Driver nghe
+  `user.speech` (C1 — nói bằng miệng) y hệt `user.text`.
+- **Ba cái chặn vòng lặp**: (1) bỏ `user.text` của `gen`; (2) hàng đợi tối đa
+  **một** lượt agy cùng lúc; (3) gộp câu 800 ms. Thiếu cái nào cũng ra hai bong
+  bóng chen nhau và hai lần tốn quota.
+- **Gộp câu 800 ms ít khi bắn trong thực tế, và đó là đúng.** `actor.say`
+  **chiếm** actor, nên câu thứ hai của Sếp nằm chờ owner nói xong (2–3 s) rồi
+  `user.text` mới bắn — quá cửa sổ gộp. Nó chỉ bắn khi hai câu tới thật sát:
+  Sếp gõ tiếp khi mình còn đang nói (`interrupt: true`), hoặc `user.speech` đẩy
+  liền mấy mẩu. Giữ cửa sổ gộp vì nó là cái lưới, không phải cái cổng.
+- **agy chạy trong thư mục RỖNG (`.cache/nao-agy`), kèm `AGENTS.md` vai diễn.**
+  Cạm bẫy đã đo: mở agy ngay trong repo thì nó đọc `CLAUDE.md` rồi tự đi chạy
+  `tsc`, `ls`, `cat package.json`; mở trong thư mục trắng thì plugin toàn cục
+  `pro-agent-harness` của Boss bắt nó `git init` + dựng `docs/ssot/`. Một
+  `AGENTS.md`/`GEMINI.md` ngay tại chỗ là chỉ dẫn gần nhất nên nó thắng; phần
+  bootstrap của plugin vẫn chạy **một lần** lúc ấm, không chen vào từng lượt.
+- **Bận/rảnh đọc bằng `tmux capture-pane`**: khung agy để dòng `esc to cancel`
+  ở cuối khi còn nghĩ. Bơm chữ bằng `send-keys -l` (literal) rồi `Enter` riêng,
+  và **mỗi lượt phải là MỘT dòng** — gặp `\n` là tmux bấm Enter giữa câu.
+- **`localhost` → `127.0.0.1` trong `src/bridge-client.ts`.** Chrome thử `::1`
+  trước, mà bridge chỉ nghe `127.0.0.1`, nên mỗi lần nối ném một
+  `ERR_CONNECTION_REFUSED` ra console rồi mới nối lại bằng IPv4 — console đầy
+  lỗi giả dù vẫn nối được.
+- **Bằng chứng tự dọn**: `scripts/kiem-nao.mjs` thêm MCP tạm `gen-stage-thu`
+  (trỏ 8799) vào cấu hình agy và **xoá ở cuối**, dùng session tmux riêng
+  `gen-stage-nao-thu`, và giải phóng đúng 3 cổng 8797–8799 của mình trước khi
+  bật — không bao giờ chạm 8787–8789 lẫn `gen-stage`/`gen-stage-nao` của Boss.

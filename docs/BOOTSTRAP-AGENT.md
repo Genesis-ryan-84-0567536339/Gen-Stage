@@ -10,7 +10,7 @@ Hết. Mọi thứ khác dưới đây chỉ là cách nối dây.
 
 ```bash
 cd ~/Documents/Games\ 3d/Gen-Stage
-pnpm start           # MỘT LỆNH: bridge (ws 8787 + giọng 8788 + MCP 8789) + sân khấu + não agy (tmux gen-stage-nao) + mở Firefox
+pnpm start           # MỘT LỆNH: bridge (ws 8787 + giọng 8788 + MCP 8789) + sân khấu + DRIVER não (scripts/nao-agy.mjs, log .cache/log/nao.log) + mở Firefox
 ```
 
 Trình duyệt mặc định tự nối bridge (tắt bằng `?bridge=0`); chưa nối thì mọi tool trả đúng một câu

@@ -115,8 +115,21 @@ export class BridgeClient {
 function macDinhUrl(): string {
   const cong = new URLSearchParams(location.search).get('bridgePort') ?? String(CONG_MAC_DINH);
   const giaoThuc = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const may = location.hostname || 'localhost';
-  return `${giaoThuc}//${may}:${cong}/?role=stage`;
+  return `${giaoThuc}//${mayBridge()}:${cong}/?role=stage`;
+}
+
+/**
+ * Máy chạy bridge, suy ra từ địa chỉ đang mở app.
+ *
+ * Cạm bẫy đã đo: để nguyên `localhost` thì Chrome thử `::1` TRƯỚC, mà bridge
+ * mặc định chỉ nghe `127.0.0.1` (IPv4) → mỗi lần nối đều ném một
+ * `ERR_CONNECTION_REFUSED` ra console rồi mới nối lại bằng IPv4. Nối vẫn
+ * được, nhưng console đầy lỗi giả. Đổi thẳng sang `127.0.0.1` cho khỏi phải
+ * thử hai lần.
+ */
+function mayBridge(): string {
+  const may = location.hostname || '127.0.0.1';
+  return may === 'localhost' ? '127.0.0.1' : may;
 }
 
 /**
@@ -130,8 +143,7 @@ export function urlTts(): string {
   const thang = q.get('ttsUrl');
   if (thang) return thang;
   const cong = q.get('ttsPort') ?? String(CONG_TTS_MAC_DINH);
-  const may = location.hostname || '127.0.0.1';
-  return `${location.protocol === 'https:' ? 'https:' : 'http:'}//${may}:${cong}`;
+  return `${location.protocol === 'https:' ? 'https:' : 'http:'}//${mayBridge()}:${cong}`;
 }
 
 /** Có bật bridge lúc mở app không. */
