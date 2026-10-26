@@ -47,7 +47,15 @@
  */
 import { firefox } from 'playwright';
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  readlinkSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { WebSocket } from 'ws';
@@ -116,14 +124,39 @@ const in_ = (...x) => console.log(...x);
  * đo vô nghĩa. Thà dừng với một câu rõ ràng còn hơn đo trên sân khấu đang
  * tranh GPU. Bộ này mở trình duyệt **đúng một lần** cho cả lượt.
  */
+function firefoxDangChay() {
+  /*
+   * Đọc **file nhị phân thật** của từng tiến trình (`/proc/<pid>/exe`), không
+   * khớp chuỗi trong dòng lệnh.
+   *
+   * Hai lượt trước sai ở đúng chỗ này: `pgrep -f firefox-1543` (và cả
+   * `pgrep -f firefox-1543/firefox/firefox`) khớp luôn cái vòng `bash -c` của
+   * các agent đang CHỜ Firefox — dòng lệnh chờ của họ có chứa chính chuỗi đó.
+   * Bộ kiểm tự chặn mình bằng những người đang chờ nó, kẹt vô hạn mà **không
+   * có một Firefox thật nào chạy**. `/proc/<pid>/exe` thì không thể nhầm:
+   * tiến trình bash có `exe` là `/usr/bin/bash`.
+   */
+  const ra = [];
+  for (const ten of readdirSync('/proc')) {
+    if (!/^\d+$/.test(ten)) continue;
+    try {
+      const exe = readlinkSync(`/proc/${ten}/exe`);
+      if (exe.includes('ms-playwright') && exe.endsWith('/firefox')) ra.push(ten);
+    } catch {
+      // tiến trình đã chết, hoặc không phải của mình — bỏ qua
+    }
+  }
+  return ra;
+}
+
+/** Không mở Firefox khi đã có phiên THẬT nào đang chạy (tranh GPU → nouveau gãy). */
 function kiemFirefoxTrong() {
-  const r = spawnSync('pgrep', ['-f', 'firefox-1543'], { encoding: 'utf8' });
-  const pid = String(r.stdout ?? '').trim().split(/\s+/).filter(Boolean);
+  const pid = firefoxDangChay();
   if (pid.length === 0) return;
   console.error(
-    `\n⛔ Đã có ${pid.length} tiến trình firefox-1543 đang chạy (PID ${pid.join(', ')}).\n` +
+    `\n⛔ Đã có ${pid.length} tiến trình Firefox của Playwright đang chạy (PID ${pid.join(', ')}).\n` +
       '   Chạy I1 lúc này là đo trên GPU đang bị tranh — nouveau gãy giữa lượt.\n' +
-      '   Chờ phiên kia xong (hoặc tắt nó) rồi chạy lại: node scripts/kiem-i1.mjs --lai\n',
+      '   Chờ phiên kia xong rồi chạy lại: node scripts/kiem-i1.mjs --lai\n',
   );
   process.exit(3);
 }
