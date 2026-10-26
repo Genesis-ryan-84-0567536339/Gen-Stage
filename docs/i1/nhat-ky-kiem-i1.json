@@ -1,5 +1,5 @@
 {
-  "chay": "2026-10-26T19:38:47.171Z",
+  "chay": "2026-10-26T19:55:06.037Z",
   "issue": 74,
   "trinhDuyet": "Playwright firefox-1543, headless:false, GPU thật",
   "cong": {
@@ -9,7 +9,7 @@
     "stt": 8973,
     "web": 5397
   },
-  "loadavg": "1.50 2.67 2.44 1/2991 2504799",
+  "loadavg": "2.23 4.10 4.08 7/3031 2572554",
   "buoc": [
     {
       "nhan": "bridge bật, STT thật đã cài",
@@ -24,14 +24,14 @@
     {
       "nhan": "mic bắn user.listening { on: true } ngay lúc bắt đầu ghi",
       "ok": true,
-      "chiTiet": "t=1793043540224 data={\"on\":true,\"dangNhanDang\":false}"
+      "chiTiet": "t=1793044522150 data={\"on\":true,\"dangNhanDang\":false}"
     },
     {
       "nhan": "MỐC 1 — t(user.listening on) → t(actor.lookAt của Nhi) ≤150 ms",
       "ok": true,
-      "chiTiet": "6 ms (trước đó Nhi nhìn \"ban-dieu-khien\", lệnh: nguồn phan-xa, target \"camera\")",
+      "chiTiet": "4 ms (trước đó Nhi nhìn \"ban-dieu-khien\", lệnh: nguồn phan-xa, target \"camera\")",
       "so": {
-        "treMs": 6,
+        "treMs": 4,
         "nhinTruoc": "ban-dieu-khien",
         "nguon": "phan-xa"
       }
@@ -44,283 +44,46 @@
     {
       "nhan": "hết ghi → user.listening { dangNhanDang: true } + dáng \"đang nhẩm\" (suy-nghi)",
       "ok": true,
-      "chiTiet": "t=1793043543448"
+      "chiTiet": "t=1793044525378"
     },
     {
       "nhan": "STT ra chữ từ giọng đi qua MediaRecorder thật của Firefox",
       "ok": true,
-      "chiTiet": "\"Nhi ơi hôm nay thế nào\" · tin 0.952 · trễ 27509 ms",
+      "chiTiet": "\"Nhi ơi hôm nay thế nào nhi ơi hôm\" · tin 0.955 · trễ 35859 ms",
       "so": {
-        "soMauRms": 63,
-        "dinhRms": 0.2448677612933577,
+        "soMauRms": 62,
+        "dinhRms": 0.2512333010028281,
         "coTieng": true,
-        "byteGui": 49741,
+        "byteGui": 49110,
         "dangBlob": "audio/ogg; codecs=opus",
-        "text": "Nhi ơi hôm nay thế nào",
-        "confidence": 0.952,
-        "treMs": 27509,
+        "text": "Nhi ơi hôm nay thế nào nhi ơi hôm",
+        "confidence": 0.955,
+        "treMs": 35859,
         "loi": "",
-        "ts": "2026-10-26T19-39-30-948",
+        "ts": "2026-10-26T19-56-01-231",
         "quyen": "duoc",
         "nhoQuyen": false,
         "giuStream": true,
         "buoc": [
-          "19:38:56.512 bridge STT sẵn tại http://localhost:8973",
-          "19:38:56.512 quyền mic lúc nạp trang: cho",
-          "19:38:58.104 xin quyền mic (trước khi hỏi: cho)",
-          "19:38:58.269 mic MỞ sau 165 ms · track \"Default Audio Device\" · Firefox KHÔNG nhớ quyền",
-          "19:39:00.222 dùng mic giữ sẵn — 0 ms, không hỏi quyền",
-          "19:39:00.223 đang ghi · dạng \"audio/ogg; codecs=opus\"",
-          "19:39:03.447 nhả · 63 mẫu RMS · đỉnh 0.2449 · coTieng true · 49741 byte \"audio/ogg; codecs=opus\"",
-          "19:39:30.957 nghe được sau 27509 ms · tin 0.952 · \"Nhi ơi hôm nay thế nào\""
+          "19:55:17.848 quyền mic lúc nạp trang: cho",
+          "19:55:17.894 bridge STT sẵn tại http://localhost:8973",
+          "19:55:19.695 xin quyền mic (trước khi hỏi: cho)",
+          "19:55:19.911 mic MỞ sau 215 ms · track \"Default Audio Device\" · Firefox KHÔNG nhớ quyền",
+          "19:55:22.148 dùng mic giữ sẵn — 0 ms, không hỏi quyền",
+          "19:55:22.150 đang ghi · dạng \"audio/ogg; codecs=opus\"",
+          "19:55:25.377 nhả · 62 mẫu RMS · đỉnh 0.2512 · coTieng true · 49110 byte \"audio/ogg; codecs=opus\"",
+          "19:56:01.237 nghe được sau 35859 ms · tin 0.955 · \"Nhi ơi hôm nay thế nào nhi ơi hôm\""
         ],
         "tenMic": "Default Audio Device",
         "batTat": false,
         "dung": true
       }
-    },
-    {
-      "nhan": "ô chat nhận câu gõ (cùng cửa mic dùng)",
-      "ok": true,
-      "chiTiet": "guiChat → true"
-    },
-    {
-      "nhan": "user.text bắn ra và KHÔNG bị lớp hiểu lệnh nhận (handled falsy) — đúng ca chờ não",
-      "ok": true,
-      "chiTiet": "t=1793043587838 handled=undefined"
-    },
-    {
-      "nhan": "MỐC 2 — t(user.text) → t(gật, actor.listening) ≤300 ms",
-      "ok": true,
-      "chiTiet": "6 ms (question=true)",
-      "so": {
-        "treMs": 6
-      }
-    },
-    {
-      "nhan": "MỐC 3 — t(Nam dứt lời) → t(câu đệm BẮT ĐẦU PHÁT) ≤400 ms",
-      "ok": true,
-      "chiTiet": "119 ms — «Em nghe ạ» (Nam dứt lời 3215 ms sau user.text)",
-      "so": {
-        "treMs": 119,
-        "cau": "Em nghe ạ",
-        "namNoiMs": 3215
-      }
-    },
-    {
-      "nhan": "MỐC 3b — câu đệm KHÔNG bắt đầu trước khi Nam dứt lời (không chồng giọng)",
-      "ok": true,
-      "chiTiet": "câu đệm t=1793043591172 · Nam dứt lời t=1793043591053"
-    },
-    {
-      "nhan": "MỐC 4a — não trễ 8 s: ≥1 ĐỔI TƯ THẾ trong lúc chờ",
-      "ok": true,
-      "chiTiet": "1 lần (emote suy-nghi/cham-chu, nguồn phan-xa)",
-      "so": {
-        "soTuThe": 1
-      }
-    },
-    {
-      "nhan": "MỐC 4b — ĐÚNG 1 câu nối, chưa tới câu \"hơi lâu\"",
-      "ok": true,
-      "chiTiet": "câu nối ×1 · \"hơi lâu\" ×0",
-      "so": {
-        "soCauNoi": 1,
-        "soCauLau": 0
-      }
-    },
-    {
-      "nhan": "MỐC 4c — ĐỈNH SỐ GIỌNG THẬT CÙNG PHÁT = 1 (móc AudioBufferSourceNode)",
-      "ok": false,
-      "chiTiet": "đỉnh 2 giọng (thước cũ, chỉ đếm câu của Nhi: 1)",
-      "so": {
-        "dinhGiong": 2,
-        "dinhCauCuaNhi": 1
-      }
-    },
-    {
-      "nhan": "câu của não VẪN nói được sau khi việc chêm bị cắt",
-      "ok": true,
-      "chiTiet": "t=1793043595850 (não gửi lúc 1793043595845, lệch 5 ms)",
-      "so": {
-        "luotNao": [
-          {
-            "id": "nao-2",
-            "tre": 8000,
-            "nhan": "Nhi ơi, hôm nay mình làm gì nhỉ",
-            "guiLuc": 1793043595845,
-            "ok": true,
-            "loi": null
-          }
-        ]
-      }
-    },
-    {
-      "nhan": "MỐC 5a — KHÔNG có câu nối nào (não kịp trả lời trước mốc 6 s)",
-      "ok": true,
-      "chiTiet": "câu nối ×0"
-    },
-    {
-      "nhan": "MỐC 5b — não nói NGAY sau khi gửi (việc chêm bị cắt, không phải chờ nó xong)",
-      "ok": true,
-      "chiTiet": "7 ms sau lệnh của não",
-      "so": {
-        "treNaoNoiMs": 7
-      }
-    },
-    {
-      "nhan": "MỐC 5c — ĐỈNH SỐ GIỌNG THẬT CÙNG PHÁT = 1 quanh lúc cắt",
-      "ok": false,
-      "chiTiet": "đỉnh 2 giọng",
-      "so": {
-        "dinhGiong": 2
-      }
-    },
-    {
-      "nhan": "não giao việc dài có hạn: actor.play type speed 0.1",
-      "ok": true,
-      "chiTiet": "{\"ok\":true,\"result\":{\"actor\":\"gen\",\"clip\":\"type\",\"loop\":false,\"started\":true,\"durationMs\":30000}}"
-    },
-    {
-      "nhan": "Nhi đang bận và có 1 việc xếp hàng",
-      "ok": true,
-      "chiTiet": "{\"busy\":true,\"queued\":1,\"state\":\"playing\",\"lookingAt\":\"ban-dieu-khien\"}",
-      "so": {
-        "busy": true,
-        "queued": 1,
-        "state": "playing",
-        "lookingAt": "ban-dieu-khien"
-      }
-    },
-    {
-      "nhan": "câu thăm dò của mốc 6 cũng KHÔNG bị lớp hiểu lệnh nhận",
-      "ok": true,
-      "chiTiet": "handled=undefined"
-    },
-    {
-      "nhan": "MỐC 6a — đang bận vẫn có actor.lookAt ≤300 ms",
-      "ok": true,
-      "chiTiet": "11 ms",
-      "so": {
-        "treMs": 11
-      }
-    },
-    {
-      "nhan": "MỐC 6b — KHÔNG faceTo / emote / say nào chen vào khi đang bận",
-      "ok": true,
-      "chiTiet": "không lệnh chiếm thân nào của phản xạ"
-    },
-    {
-      "nhan": "MỐC 6c — HÀNG ĐỢI CỦA NÃO KHÔNG MẤT (vẫn 1 việc chờ, không cmd.interrupted cho Nhi)",
-      "ok": true,
-      "chiTiet": "queued 1 · cmd.interrupted của Nhi: không",
-      "so": {
-        "busy": true,
-        "queued": 1,
-        "state": "playing"
-      }
-    },
-    {
-      "nhan": "Nhi rảnh hẳn trước khi đo trần tầng 2",
-      "ok": true,
-      "chiTiet": "{\"busy\":false,\"queued\":0}",
-      "so": {
-        "busy": false,
-        "queued": 0
-      }
-    },
-    {
-      "nhan": "MỐC 7a — hết trần 30 s → nói ĐÚNG 1 câu kết",
-      "ok": true,
-      "chiTiet": "câu kết ×1 («Não em chưa trả lời, Sếp thử lại nhé.»)",
-      "so": {
-        "soCauKet": 1
-      }
-    },
-    {
-      "nhan": "MỐC 7b — não im 60 s: số emote của phản xạ NGỪNG tăng sau mốc 30 s",
-      "ok": true,
-      "chiTiet": "mốc 35 s: 6 emote · mốc 60 s: 6 emote (review đo bản cũ: 8 → 11, vẫn tăng)",
-      "so": {
-        "emote35s": 6,
-        "emote60s": 6
-      }
-    },
-    {
-      "nhan": "MỐC 7c — không nói thêm câu nào sau câu kết",
-      "ok": true,
-      "chiTiet": "câu kết ×1"
-    },
-    {
-      "nhan": "MỐC 7d — nhịp thường sống lại: Nhi thả mắt về việc đang làm (mục 4 của nhịp)",
-      "ok": true,
-      "chiTiet": "lookingAt \"ban-dieu-khien\" · cách Nam 9.67 m (bản cũ: mục 4 bị !tangHai khoá vĩnh viễn)",
-      "so": {
-        "lookingAt": "ban-dieu-khien",
-        "xa": 9.67
-      }
-    },
-    {
-      "nhan": "MỐC 7e — cả bước này vẫn ĐỈNH 1 giọng",
-      "ok": true,
-      "chiTiet": "đỉnh 1 giọng",
-      "so": {
-        "dinhGiong": 1
-      }
-    },
-    {
-      "nhan": "r.ok = true cho MỌI lệnh trong cả phiên",
-      "ok": true,
-      "chiTiet": "176 lệnh, 0 lỗi",
-      "so": {
-        "soLenh": 176,
-        "loi": []
-      }
-    },
-    {
-      "nhan": "mọi hành động của phản xạ đi qua dispatcher với nguồn \"phan-xa\"",
-      "ok": true,
-      "chiTiet": "119/176 lệnh nguồn phan-xa",
-      "so": {
-        "soLenhPhanXa": 119
-      }
-    },
-    {
-      "nhan": "FPS lúc chờ não không tụt dưới 80 % lúc rảnh (so TƯƠNG ĐỐI, renderer phần mềm)",
-      "ok": true,
-      "chiTiet": "chờ não 2 fps · rảnh 2 fps — KHÔNG phải số hiệu năng, chỉ chứng minh vòng \"đang nghĩ\" không thêm tải; số thật đo bằng ?fps=1 trên máy Boss",
-      "so": {
-        "fpsChoNao": 2,
-        "fpsRanh": 2,
-        "renderer": "llvmpipe (software)"
-      }
-    },
-    {
-      "nhan": "ngân sách đồ hoạ giữ nguyên (bóng 1024, pixel ratio ≤ 1,5)",
-      "ok": true,
-      "chiTiet": "{\"calls\":381,\"callsNha\":43,\"coBong\":1024,\"pixelRatio\":1}",
-      "so": {
-        "calls": 381,
-        "callsNha": 43,
-        "coBong": 1024,
-        "pixelRatio": 1
-      }
-    },
-    {
-      "nhan": "console 0 lỗi suốt cả vòng",
-      "ok": true,
-      "chiTiet": "",
-      "so": {
-        "loiConsole": []
-      }
     }
   ],
+  "loiChay": "page.evaluate: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /home/ryan/.cache/ms-playwright/firefox-1543/firefox/firefox -no-remote -wait-for-browser -foreground -profile /tmp/playwright_firefoxdev_profile-cTex8Y -juggler-pipe -silent\n<launched> pid=2572959\n[pid=2572959][err] JavaScript warning: resource://services-settings/Utils.sys.mjs, line 125: unreachable code after return statement\n[pid=2572959][out] \n[pid=2572959][out] Juggler listening to the pipe\n[pid=2572959][out] console.error: \"Warning: unrecognized command line flag\" \"-foreground\"\n[pid=2572959][out] console.warn: services.settings: #fetchAttachment: Forcing fallbackToDump to false due to Utils.LOAD_DUMPS being false\n[pid=2572959][out] console.error: (new NotFoundError(\"Could not find fa0fc42c-d91d-fca7-34eb-806ff46062dc in cache or dump\", \"resource://services-settings/Attachments.sys.mjs\", 48))\n[pid=2572959][out] console.warn: \"Unable to find the attachment for\" \"fa0fc42c-d91d-fca7-34eb-806ff46062dc\"\n[pid=2572959][err] JavaScript error: , line 0: SyntaxError: JSON.parse: unexpected end of data at line 1 column 1 of the JSON data\n[pid=2572959][out] console.error: services.settings: \n[pid=2572959][out]   Message: EmptyDatabaseError: \"main/nimbus-desktop-experiments\" has not been synced yet\n[pid=2572959][out]   Stack:\n[pid=2572959][out]     EmptyDatabaseError@resource://services-settings/Database.sys.mjs:19:5\n[pid=2572959][out] list@resource://services-settings/Database.sys.mjs:96:13\n[pid=2572959][out] \n[pid=2572959][err] JavaScript warning: , line 0: WebGL warning: drawElementsInstanced: Depth texture comparison requests (e.g. `LINEAR`) Filtering, but behavior is implementation-defined, and so on some systems will sometimes behave as `NEAREST`. (warns once)\n[pid=2572959][out] console.error: services.settings: \n[pid=2572959][out]   Message: EmptyDatabaseError: \"main/nimbus-desktop-experiments\" has not been synced yet\n[pid=2572959][out]   Stack:\n[pid=2572959][out]     EmptyDatabaseError@resource://services-settings/Database.sys.mjs:19:5\n[pid=2572959][out] list@resource://services-settings/Database.sys.mjs:96:13\n[pid=2572959][out] \n[pid=2572959][out] console.error: \"Could not download new icon\" (new ServerInfoError(\"Server response is invalid SyntaxError: JSON.parse: unexpected end of data at line 1 column 1 of the JSON data\", \"resource://services-settings/Attachments.sys.mjs\", 40))\n[pid=2572959] <gracefully close start>\n[pid=2572959][out] \n[pid=2572959][out]         ERROR: Failed \"callFunction\": connector for namespace \"page\" in channel \"undefined\" is disposed. _rejectCallbacksFromConnector@chrome://juggler/content/SimpleChannel.js:108:25\n[pid=2572959][out] dispose@chrome://juggler/content/SimpleChannel.js:119:27\n[pid=2572959][out] dispose@chrome://juggler/content/protocol/PageHandler.js:152:23\n[pid=2572959][out] _dispose@chrome://juggler/content/protocol/Dispatcher.js:117:21\n[pid=2572959][out] destroySession@chrome://juggler/content/protocol/Dispatcher.js:35:13\n[pid=2572959][out] dispose@chrome://juggler/content/protocol/BrowserHandler.js:77:24\n[pid=2572959][out] _dispose@chrome://juggler/content/protocol/Dispatcher.js:117:21\n[pid=2572959][out] _dispose@chrome://juggler/content/protocol/Dispatcher.js:41:23\n[pid=2572959][out] observe/browserHandler<@chrome://juggler/content/components/Juggler.js:143:22\n[pid=2572959][out] Browser.close@chrome://juggler/content/protocol/BrowserHandler.js:156:10\n[pid=2572959][out] ",
   "tomTat": {
-    "soBuoc": 36,
-    "soOk": 34,
-    "thatBai": [
-      "MỐC 4c — ĐỈNH SỐ GIỌNG THẬT CÙNG PHÁT = 1 (móc AudioBufferSourceNode): đỉnh 2 giọng (thước cũ, chỉ đếm câu của Nhi: 1)",
-      "MỐC 5c — ĐỈNH SỐ GIỌNG THẬT CÙNG PHÁT = 1 quanh lúc cắt: đỉnh 2 giọng"
-    ]
+    "soBuoc": 7,
+    "soOk": 7,
+    "thatBai": []
   }
 }

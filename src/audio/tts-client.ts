@@ -319,10 +319,26 @@ export class LopTieng {
    */
   private khoaGiong: Promise<unknown> = Promise.resolve();
 
+  /**
+   * Khoá **phải có TRẦN**, không thì nó wedge cả sân khấu.
+   *
+   * Đo thật ngay lượt đầu có khoá: bộ bằng chứng treo 2 phút ở mốc 2. Một
+   * `phatNgay` không bao giờ giải quyết (vd `AudioContext` bị treo ở
+   * `suspended` nên `resume()` không settle) sẽ giữ khoá vĩnh viễn — và vì
+   * khoá này là TOÀN SÂN KHẤU, một câu hỏng làm **mọi** nhân vật câm, nặng hơn
+   * hẳn bản cũ (hỏng theo từng người). Trần 8 s > câu dài nhất đời thường.
+   */
+  private static TRAN_KHOA_MS = 8000;
+
   private vaoKhoaGiong(viec: () => Promise<void>): Promise<void> {
     const sau = this.khoaGiong.then(viec, viec);
-    // nuốt lỗi khi lưu lại: một câu hỏng không được làm đứt khoá của câu sau
-    this.khoaGiong = sau.catch(() => undefined);
+    // Chuỗi khoá đi tiếp theo cái nào xong TRƯỚC: việc thật, hay trần thời
+    // gian. Việc thật vẫn chạy tới cùng (audio không bị cắt), chỉ là nó không
+    // còn quyền chặn câu sau mãi mãi.
+    this.khoaGiong = Promise.race([
+      sau.catch(() => undefined),
+      new Promise((r) => setTimeout(r, LopTieng.TRAN_KHOA_MS)),
+    ]);
     return sau;
   }
 
@@ -338,9 +354,17 @@ export class LopTieng {
     return [...this.dangPhat.keys()];
   }
 
-  /** Chờ tới khi **không còn giọng nào** trên sân khấu (bubble phải chờ cùng). */
+  /**
+   * Chờ tới khi **không còn giọng nào** trên sân khấu (bubble phải chờ cùng).
+   *
+   * Cũng có trần riêng: bên gọi là `actor.say`, mà nó đang giữ chỗ actor trong
+   * dispatcher — chờ vô hạn ở đây là khoá luôn cả hàng đợi của nhân vật đó.
+   */
   choGiongRanh(): Promise<void> {
-    return this.vaoKhoaGiong(async () => undefined);
+    return Promise.race([
+      this.vaoKhoaGiong(async () => undefined),
+      new Promise<void>((r) => setTimeout(r, LopTieng.TRAN_KHOA_MS)),
+    ]);
   }
 
   private async phatNgay(

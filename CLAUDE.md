@@ -1179,3 +1179,12 @@ sân khấu hết tiếng)**.
   `bash -c` của agent khác đang chờ Firefox → bộ kiểm tự chặn mình bằng người
   đang chờ nó. Giữ thêm thước thứ hai độc lập (`/proc/<pid>/exe`, vì tiến trình
   bash có `exe` là `/usr/bin/bash` nên không thể tự khớp).
+
+- **Khoá toàn sân khấu PHẢI có trần.** Lượt bằng chứng đầu có `khoaGiong` treo
+  **2 phút** ở mốc 2: một `phatNgay` không bao giờ giải quyết (vd `AudioContext`
+  kẹt `suspended` nên `resume()` không settle) giữ khoá vĩnh viễn — và vì khoá
+  là **toàn** sân khấu, một câu hỏng làm **mọi** nhân vật câm, nặng hơn hẳn bản
+  cũ (hỏng theo từng người). `TRAN_KHOA_MS` = 8 s: chuỗi khoá đi tiếp theo cái
+  nào xong trước (việc thật hay trần), việc thật vẫn chạy tới cùng nên audio
+  không bị cắt — nó chỉ mất quyền chặn câu sau mãi mãi. Quy tắc chung: **thêm
+  một khoá dùng chung thì phải thêm trần cho nó trong cùng một lần sửa.**

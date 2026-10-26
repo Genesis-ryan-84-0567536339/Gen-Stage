@@ -303,6 +303,34 @@ describe('LopTieng — tải, phát, nhép miệng', () => {
     expect(dinh).toBe(1);
   });
 
+  /**
+   * **Khoá toàn sân khấu PHẢI có trần.** Lượt bằng chứng đầu có khoá treo
+   * 2 phút ở mốc 2: một `phatNgay` không bao giờ giải quyết (vd `AudioContext`
+   * kẹt ở `suspended` nên `resume()` không settle) giữ khoá vĩnh viễn, và vì
+   * khoá là toàn sân khấu nên **mọi** nhân vật câm — nặng hơn hẳn bản cũ
+   * (hỏng theo từng người).
+   */
+  it('câu treo vô hạn KHÔNG wedge cả sân khấu (khoá có trần)', async () => {
+    const { ctx } = ctxGia();
+    // `resume()` không bao giờ settle → `phatNgay` của Nam treo mãi
+    const ctxTreo = {
+      ...(ctx as unknown as Record<string, unknown>),
+      state: 'suspended' as AudioContextState,
+      resume: () => new Promise<void>(() => undefined),
+    } as unknown as AudioContext;
+    ghiMiengNhep('owner', miengGia().mieng);
+    const t = new LopTieng({ fetchFn: fetchGia(2048), taoCtx: () => ctxTreo });
+    const cau = await t.chuanBi('owner', 'Câu treo.', {});
+    cau!.phat();
+
+    // chờ quá trần (8 s) thì khoá phải nhả — dùng đồng hồ giả cho nhanh
+    vi.useFakeTimers();
+    const cho = t.choGiongRanh();
+    await vi.advanceTimersByTimeAsync(9000);
+    vi.useRealTimers();
+    await expect(cho).resolves.toBeUndefined();
+  });
+
   it('choGiongRanh() chờ hết câu đang phát rồi mới trả về', async () => {
     const { ctx } = ctxGia();
     ghiMiengNhep('owner', miengGia().mieng);
