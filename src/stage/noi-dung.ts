@@ -44,64 +44,52 @@ export function layMatGhe(id: string): number {
 }
 
 /**
- * Places v0.1 của cảnh LAB VIỄN TƯỞNG (A3, `phong.ts`).
+ * Places của cảnh CĂN NHÀ ẤM (D1, Issue #43, `phong.ts` + `bo-cuc.ts`).
  *
- * 25/10 — Boss xem thật và chốt "không gian quá chật chội": phòng nở từ
- * 7,2 × 7,2 m lên **16 × 16 m**, trần 5,6 m. Toạ độ place dãn ra theo phòng
- * mới nhưng **giữ nguyên id** — `kiem-a1.mjs` và bộ test A1/A3 viết theo *tên*
- * place và theo hình học suy ra từ chính bảng này (`standAt` → `at`), không
- * chôn số, nên đổi toạ độ không phá bằng chứng cũ.
- *
- * Spec mục 3.4b chốt 4 place bắt buộc: `ban-dieu-khien`, `buc-trung-tam`,
- * `ke-module`, `cua`. `ban-1/ban-2/ghe-1/ghe-2` của A1 vẫn còn (đã bỏ khối
- * bàn/ghế văn phòng cũ khỏi cảnh theo ý Boss, nhưng place vẫn là mốc hợp lệ
- * để `actor.moveTo` / `actor.sit` / test A1 dùng).
+ * 26/10 — Boss: "nhân vật phát sáng chói mắt, nội thất lộn xộn" → đổi lab
+ * viễn tưởng thành một căn nhà 1 tầng 14×10 m đầy đủ nội thất, ánh sáng tự
+ * nhiên. **Giữ nguyên id place cũ** (hợp đồng với agent/test không đổi),
+ * chỉ đổi Ý NGHĨA + toạ độ theo đúng bảng `bo-cuc.ts`:
+ *   · `buc-trung-tam` → giữa thảm phòng khách (place `tham` trong bo-cuc).
+ *   · `ban-dieu-khien` → bàn làm việc góc văn phòng.
+ *   · `ke-module` → kệ sách.
+ *   · `cua` → cửa ra vào (tường bắc).
+ *   · `ghe-1`/`ghe-2` → ghế ăn / ghế làm việc (seatY đo thật từ model).
+ *   · `ban-1`/`ban-2` giữ làm MỐC TEST trung tính (không gắn nội thất riêng).
+ * Thêm mới: `sofa`, `ban-an`, `bep`, `cua-so`.
  */
 export const PLACES: readonly DinhNghiaPlace[] = [
-  // Vùng B — điều khiển (bên phải). Bàn cong áp tường phải, mặt bàn hướng −X;
-  // người vận hành (Gen) đứng ở `standAt` quay mặt về +X, tức nhìn vào bàn.
+  // Góc làm việc: bàn áp tường bắc, mặt bàn hướng +Z — đứng ở `standAt` quay
+  // mặt về -Z (180°), tức nhìn vào bàn. Phải khớp `KHOI_CANH['ban-dieu-khien'].tai`.
   {
     id: 'ban-dieu-khien',
-    // phải khớp `BAN_CONG.tai` trong `bo-cuc.ts` — có test canh (`b1-*.test.ts`)
-    pos: [6, 0, -1],
+    pos: [4, 0, -4.5],
     kind: 'desk',
-    standAt: [4.8, 0, -1],
-    facing: 90,
-  },
-  // `ban-1`/`ban-2` của A1: không còn bàn thật trong cảnh (Boss "gọn"), giữ
-  // làm MỐC TEST ở hai bên khoảng trống phía trước — nơi duy nhất còn rộng.
-  {
-    id: 'ban-1',
-    pos: [-3, 0, 3],
-    kind: 'desk',
-    standAt: [-3, 0, 2],
+    // standAt cách ghế làm việc (`ghe-2`, z = −3,5) ít nhất 0,8 m — đứng gần
+    // quá thì chân lún vào mẫu ghế (ảnh thử D1).
+    standAt: [4, 0, -2.6],
     facing: 180,
   },
-  {
-    id: 'ban-2',
-    pos: [3, 0, 3],
-    kind: 'desk',
-    standAt: [3, 0, 2],
-    facing: 180,
-  },
-  // Hai ghế đẩu trước bàn cong (vùng B). `seatY` ở đây chỉ là FALLBACK:
-  // `phong.ts` đo mặt ghế thật trên model vừa dựng rồi ghi đè qua `datSeatY()`.
-  { id: 'ghe-1', pos: [5, 0, -2.5], kind: 'seat', facing: 90, seatY: 0.45 },
-  { id: 'ghe-2', pos: [5, 0, 0.5], kind: 'seat', facing: 90, seatY: 0.45 },
-  // Vùng A — bục ở ĐÚNG gốc toạ độ: tâm phòng, và là mốc mặc định của sân
-  // khấu giả trong test (`SanKhauGia` đặt actor mới ở [0,0,0]).
-  { id: 'buc-trung-tam', pos: [0, 0, 0], kind: 'stage', facing: 0 },
-  // Vùng C — cửa áp TƯỜNG TRÁI phía trước (không ở mép trước phòng): máy quay
-  // toàn cảnh đứng ngoài mép trước, cửa đặt ở đó thì khung cửa cao 3,4 m chắn
-  // ngay tiền cảnh. `facing: 90` = quay mặt về +X, nhìn vào trong phòng.
-  { id: 'cua', pos: [-7.5, 0, 5], kind: 'door', standAt: [-6.2, 0, 5], facing: 90 },
-  {
-    id: 'ke-module',
-    pos: [-7, 0, -1],
-    kind: 'shelf',
-    standAt: [-5.5, 0, -1],
-    facing: 270,
-  },
+  // Mốc test trung tính (A1), đặt ở hai khoảng sàn trống không chạm nội thất.
+  { id: 'ban-1', pos: [-1, 0, -2], kind: 'desk', standAt: [-1, 0, -1], facing: 180 },
+  { id: 'ban-2', pos: [-1, 0, 2.5], kind: 'desk', standAt: [-1, 0, 3.5], facing: 0 },
+  // `ghe-1` = ghế ăn (bàn ăn khu bếp), `ghe-2` = ghế làm việc. `seatY` ở đây
+  // chỉ là FALLBACK: `phong.ts` đo mặt ghế thật trên model rồi ghi đè `datSeatY()`.
+  { id: 'ghe-1', pos: [3.5, 0, 1.5], kind: 'seat', facing: 0, seatY: 0.46 },
+  { id: 'ghe-2', pos: [4, 0, -3.5], kind: 'seat', facing: 180, seatY: 0.46 },
+  // Trên thảm phòng khách, phía nam sofa (mặt quay vào sofa + TV, −Z) — tránh
+  // đứng chồng lên hộp chắn của sofa (z ≤ 2,0, xem `bo-cuc.ts`). Mốc mặc định
+  // của sân khấu giả trong test.
+  { id: 'buc-trung-tam', pos: [-4.5, 0, 2.6], kind: 'stage', facing: 180 },
+  // Cửa ra vào, tường bắc — `facing: 0` = quay mặt vào trong nhà (+Z).
+  { id: 'cua', pos: [0, 0, -5], kind: 'door', standAt: [0, 0, -3.8], facing: 0 },
+  // Kệ sách, tường đông góc làm việc.
+  { id: 'ke-module', pos: [6.5, 0, -4], kind: 'shelf', standAt: [5.3, 0, -4], facing: 90 },
+  // Mới (D1): sofa phòng khách, bàn ăn + bếp, cửa sổ lớn tường nam.
+  { id: 'sofa', pos: [-4.5, 0, 1.5], kind: 'seat', standAt: [-4.5, 0, 0.9], facing: 0, seatY: 0.42 },
+  { id: 'ban-an', pos: [3.5, 0, 2.5], kind: 'desk', standAt: [3.5, 0, 1.1], facing: 0 },
+  { id: 'bep', pos: [6.5, 0, 2], kind: 'desk', standAt: [5.3, 0, 2], facing: 90 },
+  { id: 'cua-so', pos: [-1, 0, 5], kind: 'door', standAt: [-1, 0, 3.8], facing: 0 },
 ] as const;
 
 /**
@@ -197,6 +185,13 @@ export const PRESET_MAY = [
   'ban-2',
   'hop',
   'truoc-mat',
+  // D1 (Issue #43): 4 góc máy căn nhà — khai tay trong `world.cameraPreset`
+  // (không rơi vào `cameraFocus` chung) để không bị offset chéo cố định đẩy
+  // camera xuyên tường khi mục tiêu nằm sát cửa sổ/tường.
+  'phong-khach',
+  'ban-lam-viec',
+  'bep',
+  'cua-so',
 ] as const;
 
 export function timPlace(id: string): DinhNghiaPlace | undefined {

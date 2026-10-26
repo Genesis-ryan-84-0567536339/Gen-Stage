@@ -16,11 +16,16 @@ export const DAI_MAC_DINH: Record<string, number> = {
   success: 1800,
 };
 
+/**
+ * D1 (Issue #43): `fx.*` dịu lại — bỏ cyan/neon, chuyển sang vàng ấm nhạt.
+ * `alert` giữ đỏ (ý nghĩa cảnh báo không đổi), `success` giữ xanh lá nhưng
+ * nhạt hơn — không còn rực như neon.
+ */
 export const MAU_FX: Record<string, number> = {
-  scan: 0x5fe0ff,
-  pulse: 0x5fe0ff,
-  alert: 0xff4d4d,
-  success: 0x7cffb0,
+  scan: 0xffd27a,
+  pulse: 0xffd27a,
+  alert: 0xff6b5c,
+  success: 0x9fe0a0,
 };
 
 export interface HieuUng {

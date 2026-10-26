@@ -13,6 +13,14 @@ import { SanKhauGia, NHIP_MS } from './san-khau-gia';
 import { batPhanXa, CAU_DEM, MAC_DINH, naoToiThieu, NGUON_PHAN_XA } from '../../behavior/phan-xa';
 import { laCauHoi } from '../commands/actor';
 import { coNao, datSoNao, soNao, xoaSoNao } from '../../behavior/so-nao';
+import { timPlace } from '../../stage/noi-dung';
+
+/**
+ * Owner mặc định đứng ở `buc-trung-tam` (D1, Issue #43: giữa thảm phòng
+ * khách, KHÔNG còn ở gốc toạ độ [0,0,0] như bản lab cũ) — mọi toạ độ Gen
+ * trong test này phải tính TƯƠNG ĐỐI theo điểm đó, không chôn số tuyệt đối.
+ */
+const OWNER_MAC_DINH = timPlace('buc-trung-tam')!.pos;
 
 /** Chờ cho mọi `.then()` đang treo chạy xong (dispatcher trả lời bất đồng bộ). */
 const nhipMicro = () => new Promise<void>((r) => setTimeout(r, 0));
@@ -23,9 +31,12 @@ async function dung(opts: { ganNhau?: boolean } = {}) {
   const world = new SanKhauGia(['owner', 'gen']);
   const bus = new EventBus();
   const dispatcher = new Dispatcher({ registry: taoRegistry(), world, bus });
-  // Owner ở gốc, Gen ở bàn điều khiển (~4,9 m) — đúng bố cục thật lúc mở app.
-  // Phải CHỜ hành động giả chạy xong thì toạ độ mới dời thật.
-  await world.actorMoveTo('gen', opts.ganNhau ? [1, 0, 0] : [4.8, 0, -1]).done;
+  // Owner đứng ở `buc-trung-tam` (mặc định của sân khấu giả); Gen đặt CÁCH
+  // owner 1,2 m (ganNhau) hoặc ~4,9 m (xa) theo đúng ngưỡng 3 m mà phan-xa.ts
+  // dùng để quyết định có cú liếc hay không. Phải CHỜ hành động giả chạy xong
+  // thì toạ độ mới dời thật.
+  const [ox, oy, oz] = OWNER_MAC_DINH;
+  await world.actorMoveTo('gen', opts.ganNhau ? [ox + 1.2, oy, oz] : [ox + 4.8, oy, oz - 1]).done;
   world.lichSu.length = 0;
   let dongHo = 1_000_000;
   const may = batPhanXa({
@@ -283,8 +294,12 @@ describe('phản xạ: Owner lại gần / đi xa', () => {
     t.tien(0);
     expect(t.world.describe().actors.find((a) => a.id === 'gen')!.lookingAt).not.toBe('owner');
 
-    // Sếp đi tới sát Gen
-    void t.world.actorMoveTo('owner', [4.0, 0, -1]);
+    // Sếp đi tới sát Gen — `dung()` không `ganNhau` đặt Gen ở owner + [4.8,0,-1]
+    void t.world.actorMoveTo('owner', [
+      OWNER_MAC_DINH[0] + 4.8,
+      0,
+      OWNER_MAC_DINH[2] - 1,
+    ]);
     await choHanhDong();
     t.world.lichSu.length = 0;
 
@@ -316,7 +331,13 @@ describe('phản xạ: Owner lại gần / đi xa', () => {
     await nhipMicro();
     expect(t.world.describe().actors.find((a) => a.id === 'gen')!.lookingAt).toBe('owner');
 
-    void t.world.actorMoveTo('owner', [-6, 0, 5]);
+    // ganNhau:true đặt Gen ở owner + [1,2, 0, 0] — dời Owner đủ xa (> 4 m)
+    // TƯƠNG ĐỐI theo điểm đó, không chôn toạ độ tuyệt đối.
+    void t.world.actorMoveTo('owner', [
+      OWNER_MAC_DINH[0] - 1.5,
+      0,
+      OWNER_MAC_DINH[2] + 4.0,
+    ]);
     await choHanhDong();
     t.tien(MAC_DINH.giuNhinMs + 300);
     await nhipMicro();

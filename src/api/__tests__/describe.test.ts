@@ -67,7 +67,7 @@ describe('khuôn stage.describe', () => {
     });
   });
 
-  it('places v0.1 đủ 8 điểm của cảnh lab hiện tại, kèm toạ độ mét', async () => {
+  it('places D1 đủ 12 điểm của cảnh căn nhà hiện tại, kèm toạ độ mét', async () => {
     const st = await moTa();
     expect(st.places.map((p) => p.id)).toEqual([
       'ban-dieu-khien',
@@ -78,6 +78,10 @@ describe('khuôn stage.describe', () => {
       'buc-trung-tam',
       'cua',
       'ke-module',
+      'sofa',
+      'ban-an',
+      'bep',
+      'cua-so',
     ]);
     for (const p of st.places) {
       expect(p.pos.length).toBe(3);
@@ -209,7 +213,7 @@ describe('stage.bootstrap là sách hướng dẫn tự sinh', () => {
       quyUocDo: Record<string, unknown>;
     };
     expect(boot.version).toBe('0.1');
-    expect(boot.places.length).toBe(8);
+    expect(boot.places.length).toBe(12);
     expect(boot.clips).toContain('wave');
     expect(boot.expressions).toContain('happy');
     // 15 emote A2 + `chu-y` của C0 (#28)

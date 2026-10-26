@@ -1,0 +1,53 @@
+{
+  "anh": {
+    "toan-canh": "docs/d1/toan-canh-1440.png",
+    "phong-khach": "docs/d1/phong-khach-1440.png",
+    "ban-lam-viec": "docs/d1/ban-lam-viec-1440.png",
+    "bep": "docs/d1/bep-1440.png",
+    "cua-so": "docs/d1/cua-so-1440.png",
+    "mobile": "docs/d1/mobile-390x844.png",
+    "owner-mat": "docs/d1/owner-mat-nang.png",
+    "gen-mat": "docs/d1/gen-mat-nang.png",
+    "man-hinh-stream": "docs/d1/man-hinh-stream.png",
+    "module-build": "docs/d1/module-build.png"
+  },
+  "luma": {
+    "javisMat": {
+      "n": 144400,
+      "p5": 1.6,
+      "p50": 156.5,
+      "p95": 166.3,
+      "p99": 178.8,
+      "max": 208.8
+    },
+    "genMat": {
+      "n": 144400,
+      "p5": 7.2,
+      "p50": 107.7,
+      "p95": 177.2,
+      "p99": 184.8,
+      "max": 209.3
+    },
+    "toanCanh": {
+      "n": 1296000,
+      "p5": 124.8,
+      "p50": 162.3,
+      "p95": 246.3,
+      "p99": 253.1,
+      "max": 255
+    },
+    "phongKhach": {
+      "n": 1296000,
+      "p5": 109.6,
+      "p50": 167.1,
+      "p95": 250,
+      "p99": 253.1,
+      "max": 255
+    }
+  },
+  "fps": {
+    "do": 1.05,
+    "mocYeuCau": "FPS tương đối, so với lab cũ"
+  },
+  "consoleLoi": []
+}

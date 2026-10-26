@@ -94,11 +94,15 @@ export class SanKhauGia implements StageWorld {
   suKienGia: StageEvent[] = [];
 
   constructor(ids: string[] = ['lan']) {
+    // D1 (Issue #43): `buc-trung-tam` không còn ở gốc toạ độ [0,0,0] (giờ là
+    // giữa thảm phòng khách) — actor mặc định phải đứng ĐÚNG ở đó, không phải
+    // ở toạ độ [0,0,0] viết tay (coincidence của bản lab cũ).
+    const macDinh = timPlace('buc-trung-tam')!.pos;
     for (const id of ids) {
       this.actors.set(id, {
         id,
         name: id,
-        pos: [0, 0, 0],
+        pos: [macDinh[0], macDinh[1], macDinh[2]],
         facing: 0,
         state: 'idle',
         expression: 'neutral',
