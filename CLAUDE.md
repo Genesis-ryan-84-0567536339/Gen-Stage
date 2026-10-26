@@ -56,7 +56,9 @@ node scripts/kiem-e1.mjs      # bằng chứng E1: UI 390 px, não diễn thật
   Tên biến/hàm tiếng Việt không dấu cho phần nghiệp vụ cảnh (`phong`, `nhanVat`…);
   **tên lệnh, tên tham số, khoá JSON trong Actor API giữ nguyên tiếng Anh** theo
   spec (`actor.moveTo`, `durationMs`, `distances`) — đổi là phá hợp đồng với agent.
-- **Hiệu năng**: pixel ratio ≤ 2, shadow map 2048, chạy mượt trên điện thoại.
+- **Hiệu năng**: pixel ratio ≤ 1,5, **shadow map 1024 CỐ ĐỊNH** (chỉ lên 2048 khi
+  đo thật ≥ 50 FPS liên tục 5 s — không gate theo `maxTextureSize`), chạy mượt
+  trên điện thoại.
   Khung bóng của đèn chính phải **bó sát cảnh** (`shadow.camera.near/far`): để
   khoảng near/far rộng quá thì depth loãng và cả mặt sàn tự che bóng chính mình.
 - **Không viết số euler cho xương tay.** Mọi cử chỉ dùng tay đi qua
@@ -806,4 +808,38 @@ bằng ánh sáng + màu + chất liệu + bố cục, KHÔNG bằng hậu kỳ*
   **2 mái nhà hàng xóm** (tường + mái dốc + ô cửa sáng đèn) và tán cây 3 lớp
   thay quả cầu mờ; bụi nắng co về đúng luồng nắng cửa sổ (48 hạt, 0,022 m).
 - Bằng chứng: `scripts/kiem-d1b.mjs` (CHẠY MỘT LẦN, cờ `docs/d1b/.da-chay`,
-  cổng riêng **5211**).
+  cổng riêng **5252**).
+
+### Vòng 3 — sau kiểm độc lập PR #51 (3 điểm chặn)
+
+- **Shadow map 1024 là CỐ ĐỊNH, không gate theo `maxTextureSize`.** Gate cũ
+  (`>= 8192` thì 2048) vô dụng: swiftshader cũng báo 8192, GPU tích hợp báo
+  16384 → nhánh 2048 **luôn** trúng, 1024 không bao giờ chạy. Nay chỉ nâng khi
+  **đo thật** ≥ 50 FPS liên tục 5 s (`theoDoiFps`), nâng một lần, không nhảy
+  qua nhảy lại.
+- **Draw call phần nhà: 190 → 39.** Nút thắt KHÔNG phải số mesh mà là
+  **`color`**: 119 vật liệu Kenney khác nhau *chỉ ở `color`* nên khoá gộp theo
+  `vl.uuid` không gộp được gì. Vòng 3 **nướng `color` vào màu đỉnh**
+  (`chuanHoaThuocTinh`) rồi gộp theo chữ ký vật liệu BỎ MÀU (`khoaGop`: texture
+  + nhám + kim + trong suốt + chữ ký shader + cờ đổ bóng), vật liệu gộp để
+  `color` trắng + `vertexColors` → không nhân màu hai lần. Nhà còn **34 mesh**
+  (trước 122). Cạm bẫy: `Material.copy()` **không** mang theo `onBeforeCompile`
+  / `customProgramCacheKey` (thuộc tính riêng) — quên chép tay là mất sạch vân.
+  Tường cũng bỏ `khongGop` (7 mảnh chung một vật liệu → 1 mesh).
+- **Model Kenney KHÔNG có UV dùng được.** Vòng 2 gán `ban.map = van` cho model
+  không có `map` → mọi đỉnh lấy cùng một điểm texture = **khối màu phẳng**
+  (đúng điểm kiểm độc lập chấm). Nay **luôn** phủ vân bằng `onBeforeCompile`
+  với toạ độ lấy từ vị trí đỉnh; tần số theo nhóm (`TAN_SO_VAN`): gỗ 1,6 · vải
+  **0,6** · kim loại 1,2, và vân vải tăng tương phản cho khớp tần số mới.
+- **FPS phải đo trên GPU thật.** Script bằng chứng chạy swiftshader, nhiễu
+  ±40 % — LỚN HƠN mọi chênh lệch D1/D1b nên không kết luận được gì. Thêm thước
+  trong app: mở **`?fps=1`** (`src/ui/do-fps.ts`) → đếm 10 s rồi chốt FPS trung
+  bình / 1 % xấu nhất / lượt vẽ nhà / lượt vẽ VRM / cỡ shadow map. Thước chính
+  của PR vẫn là **calls / triangles / shadow size**.
+- `window.stage.hieuNang()` **tách `callsNha` và `callsVrm`** bằng cách vẽ một
+  khung với VRM ẩn rồi đọc `renderer.info` — số thật, không ước lượng.
+- Luma cảnh đo **cả khung đã ẩn giao diện**, bỏ ô cắt tay `{300,110,720,560}`.
+  Cờ `docs/d1b/.da-chay` ra khỏi git (`.gitignore`), script nhận `--lai`, và
+  ảnh bằng chứng được nén về ≤ 1280 px (docs/d1b: 4,5 MB → 1,6 MB).
+- `bloom-layer.ts` + mọi `batSang()` đã xoá hẳn (bloom bỏ từ vòng 1, chỉ còn là
+  bit layer không ai đọc).

@@ -1,7 +1,7 @@
 /**
  * kiem-d1b.mjs — bằng chứng D1b (Issue #48): hoàn thiện mỹ thuật căn nhà ấm.
  *
- * CHẠY ĐÚNG MỘT LẦN (cờ khoá `docs/d1b/.da-chay`). Cổng dev riêng **5211**
+ * CHẠY ĐÚNG MỘT LẦN (cờ khoá `docs/d1b/.da-chay`). Cổng dev riêng **5252**
  * (không đụng 5173 của Sếp, không đụng 5210 của `kiem-d1.mjs`, không đụng
  * 8787–8790/tmux). Không `pkill` bất cứ tiến trình nào không do chính script
  * này sinh ra — giết bằng PID ÂM của process group mình spawn.
@@ -13,8 +13,8 @@
  * tam giác (`stage.hieuNang()`), console lỗi.
  */
 import { chromium } from 'playwright';
-import { spawn } from 'node:child_process';
-import { mkdirSync, writeFileSync, existsSync } from 'node:fs';
+import { spawn, spawnSync } from 'node:child_process';
+import { mkdirSync, writeFileSync, existsSync, rmSync, statSync, readdirSync } from 'node:fs';
 import { createConnection as netConnect } from 'node:net';
 import { lumaStats } from './lib-png.mjs';
 
@@ -22,8 +22,13 @@ const THU_MUC = 'docs/d1b';
 const CO_DA_CHAY = `${THU_MUC}/.da-chay`;
 mkdirSync(THU_MUC, { recursive: true });
 
+// `--lai`: xoá cờ khoá rồi chạy lại (vòng 2 PR #51 — cờ không còn nằm trong git).
+if (process.argv.includes('--lai')) {
+  rmSync(CO_DA_CHAY, { force: true });
+  console.log('↻ --lai: đã xoá cờ khoá, chạy lại.');
+}
 if (existsSync(CO_DA_CHAY)) {
-  console.log(`⛔ Đã chạy rồi (${CO_DA_CHAY}) — không chạy lại. Xoá cờ nếu thật sự muốn.`);
+  console.log(`⛔ Đã chạy rồi (${CO_DA_CHAY}) — không chạy lại. Chạy lại bằng \`--lai\`.`);
   process.exit(0);
 }
 
@@ -42,7 +47,7 @@ async function congBan(cong) {
   });
 }
 
-const PORT = 5211;
+const PORT = 5252;
 if (await congBan(PORT)) {
   console.error(`⛔ Cổng ${PORT} đang bận — đổi PORT, KHÔNG giết tiến trình của Sếp.`);
   process.exit(3);
@@ -95,6 +100,19 @@ try {
   });
   page.on('pageerror', (e) => loiConsole.push('[pageerror] ' + e.message));
 
+  /*
+   * ẨN GIAO DIỆN trước khi chụp 5 ảnh preset (PR #51 vòng 2). Kiểm độc lập
+   * đúng ở chỗ này: bản vòng 1 đo luma trong một **ô cắt tay** `{300,110,720,
+   * 560}` chỉ chiếm 31 % khung hình — nhìn như chọn ô cho vừa ngưỡng. Ẩn bảng
+   * lệnh + HUD rồi đo **CẢ KHUNG** thì không còn chỗ nào để chọn.
+   */
+  const anGiaoDien = async () => {
+    await page.addStyleTag({
+      content:
+        '#bang,#hud,#toast,#loading,#o-chat,#goi-y-phim,#nut-tieng,#o-noi-nhanh{display:none!important}',
+    });
+  };
+
   const chup = async (ten, tenFile) => {
     const duong = `${THU_MUC}/${tenFile}`;
     await page.screenshot({ path: duong });
@@ -124,6 +142,10 @@ try {
     await page.evaluate(({ vt, tam }) => window.stage.datMay(vt, tam), PRESET_CAM[name]);
     await nghi(400);
   };
+  // một ảnh CÓ giao diện (bằng chứng app thật: nhân vật không bị bảng lệnh che)
+  await datCam('toan-canh');
+  await chup('toan-canh-giao-dien', 'toan-canh-giao-dien.png');
+  await anGiaoDien();
   for (const name of Object.keys(PRESET_CAM)) {
     await datCam(name);
     await chup(name, `${name}-1440.png`);
@@ -212,7 +234,8 @@ try {
   ketQua.fps = {
     d1b: +fps.toFixed(2),
     d1DoCungCach: 0.81,
-    ghiChu: 'swiftshader (renderer phần mềm), 4 s ổn định — số tuyệt đối vô nghĩa, chỉ so TƯƠNG ĐỐI với D1 đo cùng máy cùng cách',
+    ghiChu:
+      'swiftshader (renderer PHẦN MỀM) — biên độ nhiễu ±40 % giữa hai lượt đo liền nhau, LỚN HƠN mọi chênh lệch D1/D1b, nên con số này KHÔNG kết luận được gì về hiệu năng. Thước chính của PR là calls/triangles/shadow size. FPS thật: mở `?fps=1` trên Firefox + GPU thật (xem src/ui/do-fps.ts).',
   };
   console.log(`   FPS D1b ${fps.toFixed(2)} (D1 đo cùng cách: 0,81)`);
 
@@ -251,14 +274,14 @@ try {
 ketQua.luma.javisMat = lumaStats(`${THU_MUC}/owner-mat-nang.png`, ketQua.hopMat.javis);
 ketQua.luma.genMat = lumaStats(`${THU_MUC}/gen-mat-nang.png`, ketQua.hopMat.gen);
 /*
- * Luma CẢNH phải đo trên **vùng 3D thuần**, không phải cả ảnh: bảng lệnh
- * trắng bên phải chiếm 27 % bề ngang và mấy thẻ HUD góc trái đều là ~250, nên
- * đo cả ảnh thì p95 luôn dính 246–250 **bất kể chỉnh exposure thế nào** (đúng
- * con số kiểm độc lập báo). Ô này nằm gọn trong khung hình 3D.
+ * Luma CẢNH đo trên **CẢ KHUNG 1440×900 đã ẩn giao diện** (PR #51 vòng 2).
+ * Bản vòng 1 đo trong một ô cắt tay 720×560 vì bảng lệnh trắng bên phải kéo
+ * p95 lên 246–250 — chữa đúng bệnh nhưng sai thuốc. Ẩn hẳn giao diện lúc chụp
+ * thì cả khung đều là ảnh 3D, không còn ô nào để chọn.
  */
-const O_CANH = { x: 300, y: 110, w: 720, h: 560 };
 for (const ten of ['toan-canh', 'phong-khach', 'ban-lam-viec', 'bep', 'cua-so']) {
-  ketQua.luma[ten] = lumaStats(`${THU_MUC}/${ten}-1440.png`, O_CANH);
+  // CẢ KHUNG 1440×900, giao diện đã ẩn — không còn ô cắt tay nào.
+  ketQua.luma[ten] = lumaStats(`${THU_MUC}/${ten}-1440.png`);
 }
 ketQua.consoleLoi = loiConsole;
 
@@ -268,16 +291,42 @@ console.log('==> hiệu năng:', JSON.stringify(ketQua.hieuNang));
 console.log(`==> console.error: ${loiConsole.length}`);
 loiConsole.forEach((l) => console.log('    ' + l));
 
-writeFileSync(`${THU_MUC}/ket-qua.json`, JSON.stringify(ketQua, null, 2));
-console.log(`\n==> đã ghi ${THU_MUC}/ket-qua.json`);
+/*
+ * NÉN ẢNH BẰNG CHỨNG (PR #51 vòng 2 — kiểm độc lập: "4,5 MB PNG vào git").
+ * Hạ về 1280 px + bảng màu 192 màu bằng ImageMagick nếu máy có; không có thì
+ * bỏ qua, chỉ cảnh báo. Mốc tự áp: **< 400 KB mỗi ảnh**.
+ */
+function nenAnh() {
+  const coIM = spawnSync('convert', ['-version'], { stdio: 'ignore' }).status === 0;
+  if (!coIM) {
+    console.log('⚠ không có ImageMagick (`convert`) — bỏ qua bước nén ảnh.');
+    return;
+  }
+  for (const f of readdirSync(THU_MUC).filter((x) => x.endsWith('.png'))) {
+    const duong = `${THU_MUC}/${f}`;
+    spawnSync('convert', [duong, '-resize', '1280x>', '-colors', '192', '-strip', duong]);
+    const kb = Math.round(statSync(duong).size / 1024);
+    console.log(`   🗜 ${f}: ${kb} KB${kb > 400 ? ' ⚠ > 400 KB' : ''}`);
+  }
+}
+nenAnh();
 
 const mat = [ketQua.luma.javisMat, ketQua.luma.genMat];
 const matOk = mat.every((m) => m.p95 <= 230 && m.p5 >= 70);
-// Kiểm độc lập (#48): luma TOÀN CẢNH p95 phải về 215–225, không còn 246–250.
+/*
+ * Mốc: **không cháy** (p95 ≤ 235) và **không chìm** (p50 ≥ 100). Vòng 1 chốt
+ * `p95 <= 236` — vừa khít số đo được 234,9, đúng cái kiểm độc lập gọi là "nới
+ * ngưỡng theo kết quả". 235 là mốc của dòng 14 (205–235), không phải mốc vẽ
+ * quanh số đo.
+ */
 const canhOk = ['toan-canh', 'phong-khach', 'ban-lam-viec', 'bep', 'cua-so'].every(
-  (t) => ketQua.luma[t].p95 <= 236 && ketQua.luma[t].p50 >= 100,
+  (t) => ketQua.luma[t].p95 <= 235 && ketQua.luma[t].p50 >= 100,
 );
 ketQua.datMoc = { mat: matOk, canh: canhOk, bangMobile: ketQua.bangThuGonMobile };
+// GHI SAU khi chấm mốc (vòng 1 ghi TRƯỚC nên `datMoc` không bao giờ vào file).
+writeFileSync(`${THU_MUC}/ket-qua.json`, JSON.stringify(ketQua, null, 2));
+console.log(`\n==> đã ghi ${THU_MUC}/ket-qua.json`);
+
 const ok = loiConsole.length === 0 && matOk && canhOk && ketQua.bangThuGonMobile;
 if (ok) {
   writeFileSync(CO_DA_CHAY, new Date().toISOString());

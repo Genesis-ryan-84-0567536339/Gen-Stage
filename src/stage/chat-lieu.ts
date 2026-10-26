@@ -351,18 +351,20 @@ export function vanVai(): THREE.Texture {
   const rnd = ngauNhien(202);
   g.fillStyle = '#ffffff';
   g.fillRect(0, 0, 128, 128);
+  // Tương phản ĐẬM hơn bản vòng 1 (0,13/0,22/0,11): tần số vân vải đã hạ về
+  // 0,6 ô/m nên sợi dệt to ra, phải đậm tương ứng mới "đọc" được ở 1440 px.
   for (let i = 0; i < 128; i += 4) {
-    g.fillStyle = 'rgba(120,110,95,0.13)';
+    g.fillStyle = 'rgba(112,100,84,0.26)';
     g.fillRect(i, 0, 2, 128);
-    g.fillStyle = 'rgba(255,255,255,0.22)';
+    g.fillStyle = 'rgba(255,255,255,0.34)';
     g.fillRect(i + 2, 0, 2, 128);
   }
   for (let j = 0; j < 128; j += 4) {
-    g.fillStyle = 'rgba(120,110,95,0.11)';
+    g.fillStyle = 'rgba(112,100,84,0.22)';
     g.fillRect(0, j, 128, 2);
   }
-  for (let i = 0; i < 900; i++) {
-    g.fillStyle = `rgba(90,80,65,${rnd() * 0.1})`;
+  for (let i = 0; i < 1400; i++) {
+    g.fillStyle = `rgba(86,76,62,${rnd() * 0.18})`;
     g.fillRect(rnd() * 128, rnd() * 128, 1, 1);
   }
   return tex(cv, [6, 6], false);
@@ -431,14 +433,18 @@ const KHO_VAT_LIEU = new Map<string, THREE.Material>();
  * không gian model** (không dùng `uv` atlas). Không thêm pass, không thêm
  * render target, chỉ một lần `texture2D` thêm trên mỗi điểm ảnh.
  */
-function phuVanLenMap(mat: THREE.MeshStandardMaterial, van: THREE.Texture): void {
+function phuVanLenMap(
+  mat: THREE.MeshStandardMaterial,
+  van: THREE.Texture,
+  tanSo: number,
+): void {
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.vanMap = { value: van };
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec2 vVanUv;')
       .replace(
         '#include <begin_vertex>',
-        '#include <begin_vertex>\nvVanUv = vec2(position.x + position.z, position.y - position.z) * 1.6;',
+        `#include <begin_vertex>\nvVanUv = vec2(position.x + position.z, position.y - position.z) * ${tanSo.toFixed(3)};`,
       );
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', '#include <common>\nuniform sampler2D vanMap;\nvarying vec2 vVanUv;')
@@ -448,9 +454,24 @@ function phuVanLenMap(mat: THREE.MeshStandardMaterial, van: THREE.Texture): void
       );
   };
   // Hai vật liệu cùng `onBeforeCompile` khác nhau phải biên dịch riêng.
-  mat.customProgramCacheKey = () => 'van-' + van.uuid;
+  mat.customProgramCacheKey = () => `van-${van.uuid}-${tanSo}`;
   mat.needsUpdate = true;
 }
+
+/**
+ * TẦN SỐ VÂN (số ô texture trên mỗi mét) theo nhóm chất liệu.
+ *
+ * Kiểm độc lập PR #51: "`* 1.6` làm vân quá mịn, sofa/ghế/tủ vẫn là khối màu
+ * phẳng ở 1440 px" → vải hạ về **0,6** (một ô vân ≈ 1,7 m: sợi dệt to bằng
+ * đúng cỡ nhìn thấy được), gỗ giữ 1,6 (sớ gỗ mịn mới ra gỗ), kim loại 1,2.
+ */
+const TAN_SO_VAN: Record<NhomChatLieu, number> = {
+  go: 1.6,
+  vai: 0.6,
+  'kim-loai': 1.2,
+  tham: 1,
+  nham: 1.0,
+};
 
 function nhuom(mat: THREE.MeshStandardMaterial, mauDich: number): void {
   const dich = new THREE.Color(mauDich);
@@ -485,10 +506,15 @@ export function apChatLieu(obj: THREE.Object3D, nhom: NhomChatLieu, mauVai?: num
       const co = KHO_VAT_LIEU.get(khoa);
       if (co) return co;
       const ban = goc.clone();
-      if (van) {
-        if (ban.map) phuVanLenMap(ban, van);
-        else ban.map = van;
-      }
+      /*
+       * LUÔN phủ vân bằng shader, KHÔNG gán `map = van` nữa (PR #51 vòng 2).
+       * Lý do: model Kenney Furniture Kit không có kênh UV dùng được (vật liệu
+       * là màu phẳng, không atlas) — gán `map` thì mọi đỉnh lấy cùng một điểm
+       * texture, ra đúng "khối màu phẳng" mà kiểm độc lập chấm. Phủ bằng toạ
+       * độ ĐỈNH thì vân hiện trên mọi model, không phụ thuộc UV, và vẫn chỉ
+       * tốn thêm MỘT lần `texture2D` trên mỗi điểm ảnh.
+       */
+      if (van) phuVanLenMap(ban, van, TAN_SO_VAN[nhom]);
       ban.roughness = ts.nham;
       ban.metalness = ts.kim;
       if (mauVai !== undefined) nhuom(ban, mauVai);

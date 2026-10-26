@@ -30,7 +30,6 @@ import type { EventBus } from '../events';
 import {
   denDiem,
   dungPhong,
-  haiSuongBuc,
   KICH_THUOC_PHONG,
   KICH_THUOC_SAU,
   MAU_CAM,
@@ -90,6 +89,14 @@ export const ACTOR_MAC_DINH = { id: GEN.id, ten: GEN.ten, model: GEN.model };
  * chuyển sang canh hai thứ còn đắt nhất trong cảnh.
  */
 const FPS_HA_CHAT_LUONG = 24;
+
+/** Bóng đổ MẶC ĐỊNH — cố định, không gate theo `maxTextureSize` (PR #51 vòng 2). */
+const BONG_CO_BAN = 1024;
+/** Bóng đổ bản "máy khoẻ" — chỉ bật khi đo thật đạt mốc dưới đây. */
+const BONG_MANH = 2048;
+/** FPS phải đạt mức này LIÊN TỤC `BONG_CAN_MS` mới cho nâng bóng lên 2048. */
+const FPS_NANG_BONG = 50;
+const BONG_CAN_MS = 5000;
 
 interface DoVat {
   id: string;
@@ -170,6 +177,10 @@ export class World implements StageWorld {
    */
   private fpsThapTu = 0;
   private daHaChatLuong = false;
+  /** ms FPS đã liên tục ≥ `FPS_NANG_BONG` (gate nâng bóng 1024 → 2048). */
+  private fpsCaoTu = 0;
+  /** Đã nâng bóng lên 2048 chưa — nâng MỘT LẦN, không nhảy qua nhảy lại. */
+  private daNangBong = false;
   /** Hai đèn điểm ấm (đèn sàn + đèn bàn) — D1b, không bóng đổ, tầm ngắn. */
   private denAm: THREE.PointLight[] = [];
 
@@ -271,10 +282,16 @@ export class World implements StageWorld {
     // cụt — đúng chỗ Boss kêu "thô").
     this.nang.position.set(-4.5, 4.6, 11.0);
     this.nang.castShadow = true;
-    // D1b (Boss: đừng đòi GPU lớn): bóng 1024 là mặc định; chỉ máy có
-    // `maxTextureSize` lớn mới lên 2048. Một đèn đổ bóng duy nhất trong cảnh.
-    const manhGPU = this.renderer.capabilities.maxTextureSize >= 8192;
-    this.nang.shadow.mapSize.set(manhGPU ? 2048 : 1024, manhGPU ? 2048 : 1024);
+    /*
+     * BÓNG CỐ ĐỊNH 1024 (Boss 27/10: "đừng đòi GPU lớn"; kiểm độc lập PR #51
+     * vòng 1 chặn đúng chỗ này). Bản cũ gate theo `maxTextureSize >= 8192` —
+     * vô dụng: swiftshader cũng báo 8192, GPU tích hợp báo 16384, nên nhánh
+     * 2048 LUÔN trúng và 1024 không bao giờ chạy.
+     *
+     * Chỉ nâng lên 2048 khi ĐO THẬT đạt ≥ 50 FPS liên tục 5 s (xem
+     * `theoDoiFps`) — tức máy thừa sức, không phải vì bảng thông số.
+     */
+    this.nang.shadow.mapSize.set(BONG_CO_BAN, BONG_CO_BAN);
     // Khoảng near/far PHẢI bó sát cảnh: phòng giờ chỉ 14×10 m (không còn
     // 16×16), đèn cách điểm xa nhất trong nhà ~18 m → 5…22 là vừa đủ, không
     // loãng depth (bài học 25/10, vẫn đúng với khung nhà mới).
@@ -318,7 +335,6 @@ export class World implements StageWorld {
   async napCanh(tienTrinh?: (chu: string) => void): Promise<{ dungKenney: boolean }> {
     tienTrinh?.('Đang dựng căn nhà…');
     const phong = await dungPhong(this.scene);
-    haiSuongBuc(this.scene);
 
     tienTrinh?.('Đang nạp nhân vật…');
     // 1) Boss (nam) trên bục trung tâm, quay mặt về camera — phím WASD lái người này
@@ -443,6 +459,32 @@ export class World implements StageWorld {
       this.fpsThapTu = 0;
       if (fps > FPS_HA_CHAT_LUONG + 8) this.haChatLuong(false);
     }
+
+    /*
+     * Cổng NÂNG BÓNG (PR #51 vòng 2): 1024 là mặc định cho mọi máy. Chỉ khi
+     * khung hình thật đạt ≥ 50 FPS liên tục 5 s mới đổi sang 2048 — đo thật,
+     * không đoán theo `maxTextureSize`. Tụt xuống dưới mốc thì đồng hồ reset,
+     * nên máy yếu không bao giờ chạm tới nhánh này.
+     */
+    if (!this.daNangBong && !this.daHaChatLuong) {
+      if (fps >= FPS_NANG_BONG) {
+        this.fpsCaoTu += dt * 1000;
+        if (this.fpsCaoTu >= BONG_CAN_MS) {
+          this.daNangBong = true;
+          this.nang.shadow.mapSize.set(BONG_MANH, BONG_MANH);
+          // phải huỷ render target cũ, three mới cấp lại đúng kích thước mới
+          this.nang.shadow.map?.dispose();
+          this.nang.shadow.map = null;
+        }
+      } else {
+        this.fpsCaoTu = 0;
+      }
+    }
+  }
+
+  /** Kích thước shadow map đang dùng (bằng chứng số cho PR, không đoán). */
+  coBong(): number {
+    return this.nang.shadow.mapSize.x;
   }
 
   /** Bật/tắt chế độ tiết kiệm (bóng đổ + pixel ratio) — D1b. */
@@ -470,8 +512,30 @@ export class World implements StageWorld {
     };
   }
 
-  /** Số lượt vẽ / tam giác của khung vừa rồi — bằng chứng hiệu năng cho PR. */
+  /**
+   * Số lượt vẽ / tam giác — bằng chứng hiệu năng cho PR.
+   *
+   * PR #51 vòng 2: TÁCH phần **nhà** và phần **VRM**. Không ước lượng bằng
+   * công thức: vẽ một khung với VRM ẩn rồi đọc `renderer.info` → `callsNha`
+   * là số thật; phần VRM là hiệu số. Mốc tự áp: **nhà ≤ 120 lượt vẽ** (VRM là
+   * model người thật, nhiều mesh, không thuộc phần mỹ thuật căn nhà).
+   */
   doHieuNang(): Record<string, unknown> {
+    const gocActor: THREE.Object3D[] = [];
+    this.scene.traverse((o) => {
+      if (o.name.startsWith('actor:')) gocActor.push(o);
+    });
+    this.renderer.render(this.scene, this.camera);
+    const tongCalls = this.renderer.info.render.calls;
+    const tongTri = this.renderer.info.render.triangles;
+    const hien = gocActor.map((o) => o.visible);
+    for (const o of gocActor) o.visible = false;
+    this.renderer.render(this.scene, this.camera);
+    const callsNha = this.renderer.info.render.calls;
+    const triNha = this.renderer.info.render.triangles;
+    gocActor.forEach((o, i) => (o.visible = hien[i]));
+    this.renderer.render(this.scene, this.camera);
+
     const r = this.renderer.info.render;
     let mesh = 0;
     const theoGoc: Record<string, number> = {};
@@ -493,7 +557,19 @@ export class World implements StageWorld {
       }
       theoGoc[ten] = (theoGoc[ten] ?? 0) + 1;
     });
-    return { calls: r.calls, triangles: r.triangles, mesh, vatLieu: vl.size, theoGoc };
+    return {
+      calls: r.calls,
+      triangles: r.triangles,
+      callsNha,
+      callsVrm: Math.max(0, tongCalls - callsNha),
+      trianglesNha: triNha,
+      trianglesVrm: Math.max(0, tongTri - triNha),
+      coBong: this.coBong(),
+      pixelRatio: this.renderer.getPixelRatio(),
+      mesh,
+      vatLieu: vl.size,
+      theoGoc,
+    };
   }
 
   private datGocMay(): void {

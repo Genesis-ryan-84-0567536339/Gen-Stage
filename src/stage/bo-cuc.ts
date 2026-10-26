@@ -129,8 +129,8 @@ export const KHOI_CANH: readonly KhoiCanh[] = [
   // bàn trà giữa sofa và kệ TV
   { id: 'ban-tra', vung: 'phong-khach', tai: [-4.5, 0.5], quay: 0, kenney: 'tableCoffee', kenneyPhu: 'tableCoffeeGlass', cao: 0.38, rongToiDa: 1.1, chan: [0.55, 0.4], mauVai: 0x6b4a2f },
   // 2 cây chậu trang trí, không chắn đường
-  { id: 'cay-1', vung: 'phong-khach', tai: [-6.5, 4.5], quay: 0, kenney: 'plantSmall1', kenneyPhu: 'plantSmall2', cao: 1.1 },
-  { id: 'cay-2', vung: 'phong-khach', tai: [-1.5, 4.5], quay: 0, kenney: 'plantSmall2', kenneyPhu: 'plantSmall1', cao: 1.0 },
+  { id: 'cay-1', vung: 'phong-khach', tai: [-6, 4], quay: 0, kenney: 'plantSmall1', kenneyPhu: 'plantSmall2', cao: 1.1 },
+  { id: 'cay-2', vung: 'phong-khach', tai: [-2, 4], quay: 0, kenney: 'plantSmall2', kenneyPhu: 'plantSmall1', cao: 1.0 },
   // đèn sàn cạnh cửa sổ — NGUỒN BLOOM "rất nhẹ" DUY NHẤT được phép ở D1
   { id: 'den-san', vung: 'phong-khach', tai: [-1.5, 1.0], quay: 0, kenney: 'lampRoundFloor', kenneyPhu: 'lampSquareFloor', cao: 1.5 },
 
@@ -169,9 +169,9 @@ export const KHOI_CANH: readonly KhoiCanh[] = [
   { id: 'sach-ban-tra', vung: 'phong-khach', tai: [-4.5, 0.5], lech: [-0.2, 0.02], tren: 'ban-tra', quay: 18, kenney: 'books', rong: 0.28, chat: 'nham' },
   { id: 'coc-tra', vung: 'phong-khach', tai: [-4.5, 0.5], lech: [0.2, -0.1], tren: 'ban-tra', quay: 0, rong: 0.1, chat: 'nham' },
   { id: 'cay-3', vung: 'phong-khach', tai: [-6.5, -3.5], quay: 0, kenney: 'pottedPlant', kenneyPhu: 'plantSmall3', cao: 1.35 },
-  { id: 'tranh-1', vung: 'phong-khach', tai: [-7, 1], datY: 1.55, quay: 90 },
-  { id: 'tranh-2', vung: 'phong-khach', tai: [-7, 2.5], datY: 1.65, quay: 90 },
-  { id: 'tranh-3', vung: 'phong-khach', tai: [-3, -5], datY: 1.6, quay: 0 },
+  { id: 'tranh-1', vung: 'phong-khach', tai: [-7, 1], datY: 1.45, quay: 90 },
+  { id: 'tranh-2', vung: 'phong-khach', tai: [-7, 2.5], datY: 1.45, quay: 90 },
+  { id: 'tranh-3', vung: 'phong-khach', tai: [-3, -5], datY: 1.45, quay: 0 },
 
   /* --- bàn làm việc: máy tính, đèn bàn, sách, cốc, bảng ghim --- */
   { id: 'ban-phim', vung: 'ban-lam-viec', tai: [4, -4.5], lech: [0, 0.2], tren: 'ban-dieu-khien', quay: 0, kenney: 'computerKeyboard', rong: 0.42, chat: 'nham' },

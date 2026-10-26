@@ -12,6 +12,7 @@ import { Dispatcher } from './api/dispatcher';
 import { World } from './stage/world';
 import { dungGiaoDien } from './ui/index';
 import { batPhim } from './ui/phim';
+import { batDoFps, coDoFps } from './ui/do-fps';
 // B3 (#21) — ô chat dưới màn hình: cùng đường với Space, bắn `user.text`.
 import { batOChat, type OChat } from './ui/o-chat';
 // C2 (#32) — lớp hiểu lệnh giọng: nghe `user.text`/`user.speech` trên bus.
@@ -208,6 +209,13 @@ async function khoiDong(): Promise<void> {
   // C0 (#28) — bật "tuỷ sống" của Gen. Đặt sau khi cảnh đã có đủ nhân vật, và
   // trước `stage.ready` để câu đầu tiên của Sếp cũng được phản xạ bắt.
   batPhanXa({ dispatcher, bus });
+
+  /*
+   * D1b vòng 2 — `?fps=1`: thước FPS trong app để Boss TỰ ĐO trên Firefox +
+   * GPU thật. Số FPS từ script bằng chứng (Chromium + swiftshader) chỉ dùng so
+   * tương đối, không phải thước hiệu năng thật.
+   */
+  if (coDoFps()) batDoFps({ hieuNang: () => world.doHieuNang() });
 
   loading.classList.add('xong');
   sanSang = true;

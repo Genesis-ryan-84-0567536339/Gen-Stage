@@ -18,7 +18,6 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import * as BGU from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { datSeatY } from './noi-dung';
-import { batSang } from './bloom-layer';
 import {
   apChatLieu,
   bangGhim,
@@ -142,7 +141,7 @@ function denSanTuDung(): THREE.Group {
   g.add(cot);
   const chup = khoiSangNhe(0.26, 0.3, 0.26, MAU_DEN_AM, 0.5);
   chup.position.y = 1.4;
-  g.add(batSang(chup));
+  g.add(chup);
   return g;
 }
 
@@ -306,8 +305,18 @@ async function napKenneyNha(loader: GLTFLoader): Promise<KhoNoiThat> {
 
 /* ---------------------------------------------------------- gộp mesh tĩnh */
 
-/** Chỉ giữ 3 thuộc tính chuẩn để `mergeGeometries` không từ chối vì lệch khuôn. */
-function chuanHoaThuocTinh(geo: THREE.BufferGeometry): THREE.BufferGeometry | null {
+/**
+ * Chỉ giữ 4 thuộc tính chuẩn (`position`, `normal`, `uv`, `color`) để
+ * `mergeGeometries` không từ chối vì lệch khuôn.
+ *
+ * `color` là mấu chốt vòng 2: màu phẳng của model Kenney được **nướng vào màu
+ * đỉnh**, nhờ đó 119 vật liệu "khác nhau chỉ ở `color`" gộp được về vài bản
+ * duy nhất (xem `gopTinh`).
+ */
+function chuanHoaThuocTinh(
+  geo: THREE.BufferGeometry,
+  mau: THREE.Color,
+): THREE.BufferGeometry | null {
   const g = geo.index ? geo.toNonIndexed() : geo.clone();
   const pos = g.getAttribute('position');
   if (!pos) return null;
@@ -318,9 +327,59 @@ function chuanHoaThuocTinh(geo: THREE.BufferGeometry): THREE.BufferGeometry | nu
   for (const ten of Object.keys(g.attributes)) {
     if (ten !== 'position' && ten !== 'normal' && ten !== 'uv') g.deleteAttribute(ten);
   }
+  // màu đỉnh = `material.color` (đang ở không gian LÀM VIỆC, đúng cái three
+  // mong đợi ở `vertexColors`), nên `color` × `vertexColor` không nhân hai lần
+  // miễn là vật liệu gộp để `color` trắng.
+  const mc = new Float32Array(pos.count * 3);
+  for (let i = 0; i < pos.count; i++) {
+    mc[i * 3] = mau.r;
+    mc[i * 3 + 1] = mau.g;
+    mc[i * 3 + 2] = mau.b;
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(mc, 3));
   g.clearGroups();
   g.morphAttributes = {};
   return g;
+}
+
+/**
+ * KHOÁ GỘP: hai vật liệu chỉ gộp được khi mọi thứ ảnh hưởng tới shader/uniform
+ * giống nhau — **trừ `color`**, vì `color` đã được nướng vào màu đỉnh.
+ *
+ * Trả `null` nghĩa là "không gộp cái này" (đã có màu đỉnh riêng thì nướng thêm
+ * sẽ sai màu).
+ */
+function khoaGop(m: THREE.Material, bong: boolean): string | null {
+  const s = m as unknown as Record<string, unknown>;
+  if (s.vertexColors) return null;
+  const t = (x: unknown) => (x && (x as THREE.Texture).uuid ? (x as THREE.Texture).uuid : '-');
+  return [
+    m.type,
+    bong ? 1 : 0,
+    t(s.map),
+    t(s.roughnessMap),
+    t(s.normalMap),
+    t(s.aoMap),
+    t(s.alphaMap),
+    t(s.emissiveMap),
+    t(s.metalnessMap),
+    t(s.lightMap),
+    String(s.roughness ?? '-'),
+    String(s.metalness ?? '-'),
+    s.emissive ? (s.emissive as THREE.Color).getHexString() : '-',
+    String(s.emissiveIntensity ?? '-'),
+    m.transparent ? 1 : 0,
+    m.opacity,
+    m.side,
+    m.blending,
+    m.depthWrite ? 1 : 0,
+    m.alphaTest,
+    s.flatShading ? 1 : 0,
+    s.toneMapped === false ? 0 : 1,
+    // vật liệu có `onBeforeCompile` (vân phủ bằng shader) chỉ gộp với vật liệu
+    // dùng ĐÚNG shader đó — `customProgramCacheKey` chính là chữ ký ấy.
+    m.customProgramCacheKey ? m.customProgramCacheKey() : '-',
+  ].join('|');
 }
 
 /**
@@ -347,16 +406,26 @@ export function gopTinh(goc: THREE.Object3D): { truoc: number; sau: number } {
     // gộp nó là phá: `mergeGeometries` chỉ lấy hình gốc ở gốc toạ độ.
     if ((m as unknown as THREE.InstancedMesh).isInstancedMesh) return;
     const vl = m.material as THREE.Material;
-    // Gộp theo (vật liệu, có đổ bóng hay không): một mesh gộp chỉ mang được
-    // MỘT cờ `castShadow`, nên đồ lớn (vào khung bóng) và đồ nhỏ (không) phải
-    // nằm hai rổ khác nhau.
-    const khoa = `${vl.uuid}|${m.castShadow ? 1 : 0}`;
+    if (!vl) return;
+    /*
+     * Gộp theo (chữ ký vật liệu BỎ MÀU, có đổ bóng hay không). Vòng 1 khoá
+     * theo `vl.uuid` nên 119 vật liệu Kenney "khác nhau chỉ ở `color`" không
+     * gộp được gì → phần nhà còn ~190 lượt vẽ (kiểm độc lập chặn). Vòng 2
+     * nướng `color` vào màu đỉnh, chữ ký còn lại chỉ là (texture, nhám, kim,
+     * trong suốt, shader) → gộp cả dãy đồ gỗ thành MỘT mesh.
+     *
+     * Một mesh gộp chỉ mang được MỘT cờ `castShadow`, nên đồ lớn (vào khung
+     * bóng) và đồ nhỏ (không) vẫn phải nằm hai rổ khác nhau.
+     */
+    const khoa = khoaGop(vl, m.castShadow);
+    if (khoa === null) return;
     if (!theoVatLieu.has(khoa)) {
       theoVatLieu.set(khoa, { vl, bong: m.castShadow, geo: [], nhan: [] });
     }
     const o2 = theoVatLieu.get(khoa)!;
     m.updateWorldMatrix(true, false);
-    const g = chuanHoaThuocTinh(m.geometry);
+    const mau = (vl as THREE.MeshStandardMaterial).color ?? new THREE.Color(0xffffff);
+    const g = chuanHoaThuocTinh(m.geometry, mau);
     if (!g) return;
     g.applyMatrix4(m.matrixWorld);
     o2.geo.push(g);
@@ -373,7 +442,18 @@ export function gopTinh(goc: THREE.Object3D): { truoc: number; sau: number } {
     }
     if (!gop) continue;
     for (const m of nhan) m.removeFromParent();
-    const moi = new THREE.Mesh(gop, vl);
+    // Vật liệu GỘP: `color` trắng + `vertexColors` — màu từng món nằm trong
+    // thuộc tính `color` của hình học, nên không nhân màu hai lần.
+    const vlGop = vl.clone();
+    const vs = vlGop as THREE.MeshStandardMaterial;
+    if (vs.color) vs.color.setRGB(1, 1, 1);
+    // `Material.copy()` KHÔNG mang theo `onBeforeCompile`/`customProgramCacheKey`
+    // (chúng là thuộc tính riêng do `phuVanLenMap` gắn) — mất là mất sạch vân.
+    vlGop.onBeforeCompile = vl.onBeforeCompile;
+    vlGop.customProgramCacheKey = vl.customProgramCacheKey;
+    vlGop.vertexColors = true;
+    vlGop.needsUpdate = true;
+    const moi = new THREE.Mesh(gop, vlGop);
     moi.name = 'gop-tinh';
     moi.castShadow = bong;
     moi.receiveShadow = true;
@@ -602,7 +682,8 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
     t.position.set(x, y, z);
     t.rotation.y = ry;
     t.receiveShadow = true;
-    t.userData.khongGop = true;
+    // KHÔNG `khongGop` nữa (PR #51 vòng 2): 7 mảnh tường dùng CHUNG `matTuong`
+    // nên `gopTinh()` nhập cả 4 mặt tường + 3 mảnh quanh cửa sổ thành MỘT mesh.
     nhom.add(t);
   };
   themTuong(KICH_THUOC_PHONG, CAO_TUONG, 0, CAO_TUONG / 2, -nuaZ, 0);
@@ -699,6 +780,40 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
     phao.position.set(x, CAO_TUONG - 0.05, z);
     phao.rotation.y = ry;
     nhom.add(phao);
+  }
+
+  /*
+   * DÃY BẾP LIỀN MẠCH (PR #51 vòng 2, kiểm độc lập mục 2 thẩm mỹ: "tủ bếp,
+   * bếp nấu, bồn rửa đứng rời từng cục có khe hở").
+   *
+   * Rẻ nhất mà hiệu quả: một **mặt bếp** gỗ chạy liền suốt dãy đông (z −1,6…
+   * 2,6, đúng khoảng chứa `tu-duoi-1`/`tu-bep`/`bep-nau`) ở cao độ mặt tủ
+   * 0,95 m, cộng một dải **backsplash** mỏng từ mặt bếp lên chân tủ trên. Hai
+   * khối hộp, gộp luôn vào mesh tĩnh → gần như không tốn thêm lượt vẽ, mà khe
+   * hở giữa các cục tủ bị che và khu bếp đọc ra một dãy.
+   */
+  {
+    const zTu = -1.6;
+    const zDen = 2.6;
+    const dai = zDen - zTu;
+    const zGiua = (zTu + zDen) / 2;
+    const xTuong = nuaX - 0.04;
+    const matBep = new THREE.Mesh(
+      new THREE.BoxGeometry(0.76, 0.045, dai),
+      new THREE.MeshStandardMaterial({ color: 0x8a6a44, roughness: 0.5 }),
+    );
+    matBep.position.set(xTuong - 0.37, 0.962, zGiua);
+    matBep.castShadow = true;
+    matBep.receiveShadow = true;
+    nhom.add(matBep);
+
+    const op = new THREE.Mesh(
+      new THREE.BoxGeometry(0.03, 0.52, dai),
+      new THREE.MeshStandardMaterial({ color: 0xe9dcc2, roughness: 0.8 }),
+    );
+    op.position.set(xTuong - 0.015, 0.985 + 0.26, zGiua);
+    op.receiveShadow = true;
+    nhom.add(op);
   }
 
   /* ------------------------------------------------------------------------
@@ -857,40 +972,3 @@ export function denDiem(
   return d;
 }
 
-/**
- * Bụi nắng lơ lửng trong luồng sáng cửa sổ — 70 điểm, một lượt vẽ, không đổ
- * bóng. Chi tiết nhỏ rẻ nhất trong cả cảnh, mà đúng cái "nắng chiều mềm" của
- * ảnh tham chiếu.
- */
-export function haiSuongBuc(scene: THREE.Scene): void {
-  const soHat = 48;
-  const pos = new Float32Array(soHat * 3);
-  for (let i = 0; i < soHat; i++) {
-    // chỉ trong luồng nắng từ cửa sổ — rải khắp phòng thì thành đốm lổn nhổn
-    pos[i * 3] = -2.6 + Math.random() * 2.6;
-    pos[i * 3 + 1] = 0.5 + Math.random() * 1.5;
-    pos[i * 3 + 2] = 2.6 + Math.random() * 2.2;
-  }
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  const cv = document.createElement('canvas');
-  cv.width = cv.height = 32;
-  const g2 = cv.getContext('2d')!;
-  const gr = g2.createRadialGradient(16, 16, 0, 16, 16, 16);
-  gr.addColorStop(0, 'rgba(255,241,214,1)');
-  gr.addColorStop(1, 'rgba(255,241,214,0)');
-  g2.fillStyle = gr;
-  g2.fillRect(0, 0, 32, 32);
-  const mat = new THREE.PointsMaterial({
-    color: 0xfff1d6,
-    map: new THREE.CanvasTexture(cv),
-    size: 0.022,
-    transparent: true,
-    opacity: 0.26,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-  });
-  const diem = new THREE.Points(geo, mat);
-  diem.name = 'bokehNang';
-  scene.add(diem);
-}
