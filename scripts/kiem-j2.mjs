@@ -477,6 +477,19 @@ try {
    */
   in_('   … chờ 36 s cho vòng "đang nghĩ" của I1 hết trần 30 s rồi mới bấm đồng hồ');
   await nghi(36000);
+  /*
+   * **Bấm lại đồng hồ rảnh bằng một lệnh thật** trước khi đo mốc 3.
+   *
+   * Lượt 3 đo được "lượt tự sinh đầu ở +13,7 s" và chấm KHÔNG ĐẠT ngưỡng 20 s
+   * — nhưng app đúng: Nhi đã rảnh suốt 36 s chờ ở trên, nên đồng hồ `ranhMs`
+   * của máy đã chạy từ trước `tYen`. Thước đo giả định sai rằng khoảng rảnh
+   * bắt đầu đúng lúc script bấm giờ.
+   *
+   * Một lệnh chiếm thân ngắn làm Nhi bận một nhịp ⇒ máy tự reset `tRanhTu`
+   * (nhánh "bận vì việc của người khác"), và từ đó `tYen` mới là mốc thật.
+   */
+  await page.evaluate(() => window.stage.run('actor.emote', { actor: 'gen', emote: 'dong-y' }));
+  await nghi(2500);
 
   /* ================================ MỐC 3: rảnh 65 s → ≥2 hoạt động tự sinh */
   in_('\n--- MỐC 3: để yên 65 s → Nhi tự sinh ≥2 hoạt động khác nhau ---');
@@ -507,7 +520,7 @@ try {
   );
   const dinhThoiGian = tuSinh.length >= 2 ? tuSinh[1].t - tuSinh[0].t : null;
   ghi(
-    'lượt tự sinh đầu tiên nổ sau ~20 s im lặng (ngưỡng `ranhMs`)',
+    'lượt tự sinh đầu tiên nổ sau ~20 s im lặng (ngưỡng `ranhMs`), không sớm hơn',
     tuSinh.length >= 1 && tuSinh[0].t - tYen >= 19000 && tuSinh[0].t - tYen <= 40000,
     `lượt 1 ở +${tuSinh.length ? tuSinh[0].t - tYen : '—'} ms · khoảng giữa hai lượt ${dinhThoiGian} ms`,
     { luot1Ms: tuSinh.length ? tuSinh[0].t - tYen : null, giuaHaiLuotMs: dinhThoiGian },
