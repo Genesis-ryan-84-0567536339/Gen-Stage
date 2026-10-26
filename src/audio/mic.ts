@@ -685,9 +685,15 @@ export function batMic(ch: CauHinhMic): Mic {
      *
      * Chỉ gắn nút khi bridge có trả `ts`: không có audio thì sửa cũng vô ích.
      */
+    /*
+     * CHỤP `ts` ra biến, không đọc `tk.ts` trong closure: `tk` bị gán lại ở
+     * mỗi `batGhi()`, nên Boss bấm "✎ Sửa" sau khi đã bắt đầu lượt nói kế
+     * tiếp là mẫu bị gắn vào mã lượt rỗng — mất đúng câu Boss muốn sửa.
+     */
+    const tsLuot = tk.ts;
     ch.oChat.trangThai(
       `nghe được: «${tk.text}»`,
-      tk.ts ? { luu: (chuDung) => void guiMau(tk.ts, chuDung) } : undefined,
+      tsLuot ? { luu: (chuDung) => void guiMau(tsLuot, chuDung) } : undefined,
     );
     // Phiếu giọng để `actor.say` biết câu này đến từ mic → bắn `user.speech`.
     datPhieuGiong({

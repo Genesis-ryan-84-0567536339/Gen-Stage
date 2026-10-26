@@ -429,4 +429,18 @@ describe('G3 (#62) — nút Sửa đem mẫu về bridge', () => {
     await nghi(30);
     expect(sk.mauDaGui).toHaveLength(0);
   });
+
+  /*
+   * Boss bắt đầu nói lượt sau RỒI mới bấm "✎ Sửa" của lượt trước. `tk` bị gán
+   * lại mỗi `batGhi()`, nên nút phải giữ mã lượt ĐÃ CHỤP, không đọc lại `tk`.
+   */
+  it('bấm Sửa sau khi đã bắt đầu lượt nói kế tiếp vẫn gắn đúng mã lượt cũ', async () => {
+    await mic.batGhi();
+    sk.bamLuuMau('Nhi ơi, qua ghế ngồi đi');
+    await nghi(30);
+    expect(sk.mauDaGui).toEqual([
+      { ts: '2026-10-28T10-00-00-000', text: 'Nhi ơi, qua ghế ngồi đi' },
+    ]);
+    await mic.ketGhi();
+  });
 });
