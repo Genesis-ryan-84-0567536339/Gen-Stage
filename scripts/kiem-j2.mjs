@@ -489,7 +489,19 @@ try {
    * (nhánh "bận vì việc của người khác"), và từ đó `tYen` mới là mốc thật.
    */
   await page.evaluate(() => window.stage.run('actor.emote', { actor: 'gen', emote: 'dong-y' }));
-  await nghi(2500);
+  /*
+   * Và bấm giờ ĐÚNG LÚC Nhi rảnh lại, không phải một con số chờ cho chắc.
+   *
+   * Lượt 4 chờ cứng 2500 ms cho một emote dài 1300 ms, nên `tYen` trễ ~1,2 s
+   * so với lúc khoảng rảnh thật bắt đầu — và lượt tự sinh đầu rơi vào
+   * **+18552 ms** thay vì ≥19 s. Lệch 448 ms đó là **toàn bộ** khoảng cách
+   * giữa ĐẠT và KHÔNG ĐẠT, và nó nằm trong thước đo chứ không nằm trong app.
+   */
+  await page.waitForFunction(
+    () => window.stage.doXuong('gen').state === 'idle',
+    null,
+    { timeout: 20000 },
+  );
 
   /* ================================ MỐC 3: rảnh 65 s → ≥2 hoạt động tự sinh */
   in_('\n--- MỐC 3: để yên 65 s → Nhi tự sinh ≥2 hoạt động khác nhau ---');

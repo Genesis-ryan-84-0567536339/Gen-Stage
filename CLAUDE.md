@@ -1248,3 +1248,9 @@ kế đầy đủ: `docs/spec/actor-api.md` mục **3.2f**. Bằng chứng Firef
   bấm. Muốn đo đúng ngưỡng 20 s thì phải **bấm lại đồng hồ bằng một lệnh
   thật** (một `actor.emote` ngắn làm Nhi bận một nhịp ⇒ máy reset `tRanhTu`
   qua nhánh "bận vì việc của người khác"), rồi mới tính từ đó.
+- **Vòng 4: chờ cứng "cho chắc" làm lệch đúng 448 ms giữa ĐẠT và KHÔNG ĐẠT.**
+  Thước đo bấm giờ sau `nghi(2500)` cho một emote dài 1300 ms, nên mốc "Boss
+  để yên" trễ ~1,2 s so với lúc Nhi rảnh thật → lượt tự sinh đầu rơi vào
+  **+18552 ms** thay vì ≥19 s. Mốc nào cũng phải bấm theo **trạng thái đọc
+  được** (`waitForFunction` tới khi `doXuong().state === 'idle'`), không theo
+  một con số chờ cho chắc.
