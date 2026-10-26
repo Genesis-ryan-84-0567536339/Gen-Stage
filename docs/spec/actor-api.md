@@ -365,6 +365,65 @@ với chính mình. Khi Nhi nói, Nam quay mắt + thân về Nhi; Nhi **nói xo
 Nam gật nhẹ 1,2 s. Cả hai chỉ làm khi Nam đang rảnh — Boss có thể đang lái anh
 ta bằng WASD.
 
+### 3.2f Bảng hoạt động + tự sinh hoạt khi rảnh (Sửa spec 27/10 — J2, Issue #79)
+
+Boss 27/10: *"tăng thêm các động tác hành vi của các nhân vật cho phong phú"*.
+
+Bộ lệnh v0.1 chỉ có **động tác lẻ** (`moveTo`, `sit`, `emote`, `play`). Người
+thật thì không "emote" — người thật **ra bếp pha cà phê rồi mang cốc về bàn**,
+tức một CHUỖI có đầu có cuối. J2 thêm một tầng dữ liệu trên bộ lệnh cũ, **không
+đổi nghĩa lệnh nào**:
+
+| Lệnh | Chiếm thân | Việc |
+| --- | --- | --- |
+| `actor.activities` | không | Liệt kê **BẢNG HOẠT ĐỘNG** (`src/behavior/hoat-dong.ts`): `name`, `label`, `desc`, `steps`, `prop`, `estimatedMs` |
+| `actor.activity { actor?, name }` | theo từng bước (xem dưới) | Làm trọn một hoạt động. Bắn `actor.activityStart` → `actor.activityDone { steps, errors? }`, hoặc `actor.activityCancelled { steps }` khi bị cắt |
+
+`stage.describe().actors[].activity` = id hoạt động đang làm, `null` khi không
+làm gì. Nó được ghép vào snapshot ở **tầng lệnh**, đúng chỗ `busy`/`queued`
+được ghép từ hàng đợi của dispatcher — sân khấu không biết "chuỗi" là gì.
+
+**12 hoạt động v1**: `doc-sach-sofa`, `pha-ca-phe`, `go-may-tinh`, `vuon-vai`,
+`ngam-cua-so`, `tuoi-cay`, `don-ban-an`, `nhay-theo-nhac`, `tap-the-duc`,
+`di-dao`, `uong-nuoc-ghe-an`, `ngu-gat-sofa`. Thêm một hoạt động = thêm **một
+dòng** vào bảng; `stage.bootstrap`, bảng lệnh UI, ô kịch bản và tool MCP
+`actor_activity` tự biết.
+
+Bốn giao kèo, mỗi cái có test giữ (`src/api/__tests__/j2-hoat-dong.test.ts`):
+
+1. **`actor.activity` cố ý KHÔNG khai `chiemActor`.** Dispatcher đánh dấu actor
+   bận *trước* khi gọi handler, nên bước đầu (`ctx.run('actor.moveTo')`) sẽ
+   xếp hàng chờ chính lệnh đang gọi nó → deadlock. Thân vẫn bị chiếm thật, chỉ
+   là **theo từng bước**: mỗi `moveTo`/`sit`/`play`/`emote` đều `chiemActor`,
+   nên `busy` bật suốt hoạt động và lệnh của não gửi tới giữa chừng vẫn xếp
+   hàng đúng chỗ. Cùng mẫu `module.demo` (mục 3.4b).
+2. **Về idle, chân chạm sàn.** Ngồi thì phải `actor.stand`, cầm thì lệnh tự
+   `actor.drop` + trả prop về chỗ cũ; `actor.activityDone` chỉ bắn khi thân
+   **thật sự** rảnh (`ctx.hangDoi()`), không bắn lúc bước cuối vừa bắt đầu.
+3. **Cắt bằng `world.actorInterrupt`, KHÔNG `actor.stop`/`catNgang`** (xem mục
+   3.2d/3.2e): `catNgang` xoá sạch hàng đợi → giết luôn lệnh não vừa xếp hàng.
+4. **Prop dựng bằng hình khối đơn giản của A1** (`HINH_PROP`), dựng một lần
+   rồi dùng mãi: Kenney Furniture Kit CC0 không có cốc/bình tưới, và asset
+   không được commit.
+
+**Tự sinh hoạt khi rảnh** (`src/behavior/tu-sinh-hoat.ts`, nhịp 500 ms):
+
+| Điều kiện | Nhi làm gì |
+| --- | --- |
+| rảnh (`idle` + `busy === false`) liên tục **> 20 s**, không ai ra lệnh | chọn **ngẫu nhiên** một hoạt động (trừ cái vừa làm) rồi `actor.activity` với nguồn `tu-sinh-hoat` |
+| xong một lượt | nghỉ **3 s** rồi được phép tự sinh lượt kế (nhờ vậy *"rảnh 60 s → ≥2 hoạt động"* đạt được) |
+| `user.text` / `user.speech` / `user.listening` / `user.command`, hoặc `cmd.queued` cho Nhi | **cắt NGAY, đồng bộ trong handler** — không chờ nhịp quét |
+
+Ưu tiên: **lệnh Boss/não > phản xạ (3.2d/3.2e) > tự sinh hoạt**. Nam
+(`controlledBy: 'owner'`) **không bao giờ** tự sinh hoạt — Boss có thể đang
+lái anh ta bằng WASD. Và máy này không chêm giọng bao giờ: nó chỉ gửi lệnh khi
+Nhi đang rảnh, nên lời hứa "một giọng, không chồng" của 3.2e còn nguyên.
+
+"Rảnh" đo bằng `describe()` + `dangBan()` mỗi nhịp, **không** bằng một danh
+sách sự kiện: không có sự kiện nào nghĩa là *"não vừa ra lệnh"* cho mọi đường
+vào (ws, MCP, bảng lệnh, phím), nhưng lệnh nào chiếm thân cũng làm `busy` bật
+— một thước đo thay cho một danh sách phải nhớ bổ sung.
+
 ### 3.5 Sự kiện sân khấu → agent
 `actor.arrived`, `actor.steerDone`, `actor.clipDone`, `actor.sayDone`, `actor.emoteDone`, `script.done`, `user.speech` (Boss nói, đã chuyển thành chữ), `user.click` (Boss bấm vào actor/prop), `user.text` (Boss gõ).
 

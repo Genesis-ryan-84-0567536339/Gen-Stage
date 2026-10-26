@@ -50,6 +50,7 @@ bash scripts/fetch-stt.sh     # C1: venv + model PhoWhisper-small ct2 vào .cach
 node scripts/kiem-f2.mjs      # bằng chứng F2: điều khiển mượt trên FIREFOX + GPU THẬT, vào docs/f2/ (CHẠY MỘT LẦN)
 node scripts/kiem-e1.mjs      # bằng chứng E1: UI 390 px, não diễn thật, /tts retry, hiểu "Javis", cài 1 lệnh, vào docs/e1/ (CHẠY MỘT LẦN)
 node scripts/kiem-i1.mjs      # bằng chứng I1: phản ứng tức thì 3 tầng (mốc bus/nhật ký) trên FIREFOX thật, vào docs/i1/ (CHẠY MỘT LẦN)
+node scripts/kiem-j2.mjs      # bằng chứng J2: 12 hoạt động + tự sinh hoạt khi rảnh, trên FIREFOX thật, vào docs/j2/ (CHẠY MỘT LẦN)
 ```
 
 ## Quy ước
@@ -134,6 +135,9 @@ biết registry, **giao diện** không gọi thẳng vào sân khấu.
 | `bridge/mcp.ts` | **B3** — MCP server: tool **sinh tự động** từ registry (`a.b` → `a_b`) + `stage_events` (long-poll). Hai cửa: stdio (`pnpm mcp`) và HTTP streamable `127.0.0.1:8789/mcp`. Cả hai nói với sân khấu bằng **vai client ws** của bridge |
 | `src/behavior/phan-xa.ts` | **C0** — PHẢN XẠ XÃ HỘI: máy trạng thái chạy trong trình duyệt, không chờ não. Mọi hành động đi qua dispatcher, nguồn `phan-xa`, ưu tiên thấp nhất |
 | `src/behavior/so-nao.ts` | **C0** — sổ "có mấy client MCP đang nối" (bridge ghi vào, `stage.describe` đọc ra) |
+| `src/behavior/hoat-dong.ts` | **J2 (#79)** — **BẢNG HOẠT ĐỘNG**: 12 chuỗi lệnh có đầu có cuối (ra bếp pha cà phê, ngồi sofa đọc sách…) + sổ "ai đang làm hoạt động gì". Dữ liệu thuần, KHÔNG import gì |
+| `src/api/commands/hoat-dong.ts` | **J2 (#79)** — `actor.activity` + `actor.activities`: chạy từng bước qua `ctx.run` (mẫu `module.demo`), **không** khai `chiemActor` (sẽ deadlock), huỷ được bằng `huyHoatDong()` |
+| `src/behavior/tu-sinh-hoat.ts` | **J2 (#79)** — rảnh > 20 s thì Nhi tự chọn một hoạt động mà làm; Boss gõ/nói hay não ra lệnh là cắt ngay. Ưu tiên THẤP NHẤT, thấp hơn cả phản xạ |
 | `src/ui/o-chat.ts` | **B3** — ô chat dưới màn hình: Enter = `actor.say` lên nhân vật `owner`, y như `Space` |
 | `skills/gen-stage-nao/SKILL.md` | **B3** — skill cho agy CLI: vòng `stage_events` → `stage_describe` → 1–3 lệnh → `actor_say` |
 | `scripts/nao-agy.mjs` | **DRIVER NÃO** — vòng lặp nằm ở đây, không ở agy: nghe `user.text` qua ws, phản xạ ≤300 ms, gộp câu 800 ms, hàng đợi 1 lượt, bơm một dòng vào agy đang ấm trong tmux |
@@ -1068,3 +1072,78 @@ lệnh để tăng trải nghiệm chân thực trong quá trình nó suy nghĩ"
   lại — kiểm "đang bận thì im" phải đẩy ngắn (≤500 ms) hoặc kiểm bằng
   `soCho()`. Và `actorSay` ghi **hai** dòng `say:` (nội dung + hành động chiếm
   thân), đếm cả hai là mỗi câu thành hai câu.
+
+## Quyết định J2 — bảng hoạt động + tự sinh hoạt khi rảnh (27/10, Issue #79)
+
+Boss: *"tăng thêm các động tác hành vi của các nhân vật cho phong phú"*. Thiết
+kế đầy đủ: `docs/spec/actor-api.md` mục **3.2f**. Bằng chứng Firefox thật:
+`node scripts/kiem-j2.mjs` (cổng web riêng 5393, `?bridge=0`, chạy MỘT LẦN).
+
+- **Cái thiếu không phải thêm emote — là thêm CHUỖI.** Bộ v0.1 có 13 clip + 16
+  emote, vẫn trông như demo vì mọi thứ Nhi làm đều là **một lệnh lẻ**. Người
+  thật *ra bếp pha cà phê rồi mang cốc về bàn*: 5 lệnh, có đầu có cuối. Nên J2
+  không thêm một động tác nào mới, chỉ thêm một **tầng dữ liệu** trên bộ lệnh
+  cũ (`src/behavior/hoat-dong.ts`, 12 hoạt động) — thêm hoạt động = thêm một
+  dòng, y như bảng bố cục (`bo-cuc.ts`) và bảng emote (`emotes.ts`).
+- **`actor.activity` cố ý KHÔNG khai `chiemActor` — khai là DEADLOCK, mà là
+  deadlock treo chứ không đỏ.** Dispatcher đánh dấu actor bận **trước** khi gọi
+  handler (`Dispatcher.chay`), nên bước đầu `ctx.run('actor.moveTo')` thấy
+  actor bận → xếp hàng → chờ chính cái lệnh đang gọi nó xong. `pnpm test` khi
+  đó **treo**, không báo lỗi. Thân vẫn bị chiếm thật, chỉ là theo từng bước:
+  mỗi `moveTo`/`sit`/`play`/`emote` đều `chiemActor` nên `busy` bật suốt hoạt
+  động. Cùng mẫu `module.demo` (E1 #48) — cũng 5 bước, cũng không khai.
+- **`ctx.run` trả lời khi hành động BẮT ĐẦU, không khi nó xong.** Quy ước
+  "thời gian là lời hứa" nói thẳng thế (`durationMs` + `done`), nên chuỗi
+  `await` chỉ nối đúng các bước GIỮA: bước 2 xếp hàng sau bước 1 nên nó chờ
+  thật, còn **bước cuối không có ai xếp hàng sau**. Bắn `actor.activityDone`
+  ngay lúc đó là sự kiện nói dối — đo thật trên sân khấu giả: `state` còn
+  `playing` khi `Done` tới, test "về idle" đỏ. Phải chờ `ctx.hangDoi()[ai]`
+  hết `busy` (đúng nguồn sự thật `Dispatcher.dangChay`) rồi mới dọn + báo xong,
+  trần 12 s làm dây an toàn cho trường hợp não chen một clip `loop: true`.
+- **Máy tự sinh hoạt là FILE RIÊNG, không nhét vào `phan-xa.ts`.** Hai máy trả
+  lời hai câu hỏi khác nhau: phản xạ là *"có ai vừa gọi mình không"* (theo sự
+  kiện, ngân sách trăm mili giây), tự sinh hoạt là *"đã lâu không ai gọi mình"*
+  (theo đồng hồ, ngân sách chục giây). Trộn vào vòng 100 ms của I1 thì mọi cờ
+  (`dangDienCho`, `tangHai`, `choNao`) phải thêm một nhánh "mà có đang tự sinh
+  hoạt không" — đúng chỗ dễ sai nhất của C0/I1.
+- **"Rảnh" đo bằng `describe()` + `dangBan()` mỗi nhịp, KHÔNG bằng danh sách
+  sự kiện.** Không có sự kiện nào nghĩa là *"não vừa ra lệnh"* cho mọi đường
+  vào (ws, MCP, bảng lệnh, ô kịch bản, phím) — `cmd.queued` chỉ bắn **khi
+  actor đang bận**. Nhưng lệnh nào chiếm thân cũng làm `busy` bật và `state`
+  khác `idle`: một thước đo, thay cho một danh sách phải nhớ bổ sung mỗi lần
+  thêm đường vào.
+- **Cờ `dangGuiBuoc` — nếu không có nó thì máy tự sinh hoạt TỰ CẮT CHÍNH
+  MÌNH.** Giữa hai bước có một khe Nhi rảnh, và phản xạ được phép chêm đúng
+  vào khe đó (nhánh "Boss lại gần → chào nhẹ"); bước kế tiếp khi ấy xếp hàng
+  sau cú chào và bắn `cmd.queued` cho Nhi — máy nghe `cmd.queued` sẽ tưởng não
+  xen vào. Cờ bật/tắt **đồng bộ quanh đúng một lời gọi `ctx.run`** (dispatcher
+  bắn `cmd.queued` trước `await` đầu tiên), cùng mẫu `tuGui` của `phan-xa.ts`.
+- **Nghỉ giữa hai lượt là 3 s, không phải 20 s nữa.** Thước đo của Issue là
+  *"rảnh 60 s → ≥2 hoạt động khác nhau"*; hoạt động dài 8–20 s nên chờ lại 20 s
+  là lượt thứ hai rơi ra ngoài phút đo. Đời thực cũng vậy: người đang rảnh làm
+  việc nọ tiếp việc kia, chỉ nghỉ một nhịp.
+- **`actor.stop`/`actor.remove` phải cắt cả CHUỖI, không chỉ bước đang chạy.**
+  `catNgang` gọi `cancel` của hành động hiện tại (một `actor.moveTo` chẳng
+  hạn), còn chuỗi thì vẫn chạy sang bước sau — Boss bấm "dừng" mà nhân vật vẫn
+  đi tiếp. Hai lệnh đó giờ gọi `huyHoatDong(id)` trước `catNgang`, và
+  `stage.reset` gọi `donSoHoatDong()`.
+- **Cắt vẫn đi qua `world.actorInterrupt`, KHÔNG `catNgang`** (bài học C0,
+  nhắc lại ở I1): `catNgang` xoá sạch hàng đợi → giết luôn lệnh não vừa xếp
+  hàng, đúng cái ta đang nhường chỗ cho. Cắt chạy **đồng bộ trong handler**
+  `user.text`/`user.listening`, không chờ nhịp 500 ms.
+- **Prop cốc/sách/bình tưới = hình khối A1, không thêm asset.** Kenney
+  Furniture Kit CC0 đang tải về `public/kenney/` **không có** cốc hay bình
+  tưới (`books.glb` thì có, nhưng `World.propSpawn` chưa nạp model cho prop),
+  mà asset không được commit — thêm file mới chỉ để ba cái prop nhỏ là đổi lấy
+  một bước cài đặt nữa cho Boss. Dựng **một lần** rồi dùng mãi, cuối hoạt động
+  tự `actor.drop` + `prop.moveTo` về chỗ cũ.
+- **Vùng giữa tạm là `buc-trung-tam`** (hằng `VUNG_GIUA`): `bo-cuc.ts` chưa có
+  `VUNG_HOAT_DONG`, và J1 đang sửa file đó — có hằng thật thì đổi đúng một dòng.
+- **Cạm bẫy đo trên sân khấu giả, bản J2**: hành động giả dài **20 ms thật**
+  còn đồng hồ do test đẩy tay, hai cái không dính nhau. Nhịp chỉ nghỉ 2 ms
+  thật thì một hoạt động 10 bước cần ~100 nhịp mới xong, tức "50 giây" trên
+  đồng hồ giả, và phép đo *"rảnh 60 s → ≥2 hoạt động"* **không bao giờ đạt dù
+  logic đúng**. Nghỉ 12 ms mỗi nhịp đưa tỉ lệ về gần bản thật.
+- **`steps` trong `actor.activityDone` đếm MỌI lệnh đã chạy**, kể cả phần prop
+  (`prop.spawn` → `actor.hold` → `actor.drop` → `prop.moveTo`) mà bảng không
+  khai — nên nó ≥ số bước trong bảng, không bằng.

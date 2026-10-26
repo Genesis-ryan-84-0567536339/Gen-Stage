@@ -15,6 +15,7 @@ Một agent mở `http://localhost:<cổng riêng>` bằng Firefox thật, KHÔN
 6. "Nhi, dựng connector X" → màn hình chạy chữ, module vào tay Nhi, cất lên kệ.
 7. Nghe 3 câu: một giọng, không méo, không chồng.
 7b. **I1 (#74)** — nói vào mic → nhân vật **quay/nhìn ngay trước khi có chữ**; chờ não → **có tư thế nghĩ + câu nối, không chồng giọng**.
+7c. **J2 (#79)** — **rảnh thì tự sinh hoạt, gọi là dừng ngay**: để yên 1 phút → Nhi tự làm ≥2 việc khác nhau (đi lại, ngồi, pha cà phê…), chân chạm sàn, không xuyên nội thất; gõ/nói giữa chừng → **dừng trong ≤0,3 s** rồi quay sang Boss, không đi tiếp việc cũ.
 8. `?fps=1` 10 s: số hợp lý; `hieuNang()` calls nhà ≤120, bóng 1024.
 9. Để yên 3 phút → não vẫn nối; mở tab 2 → tab 1 nhường, không lặp.
 10. Console 0 lỗi suốt vòng.
