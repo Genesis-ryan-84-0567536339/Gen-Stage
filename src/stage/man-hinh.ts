@@ -10,6 +10,11 @@
 import * as THREE from 'three';
 import { KHOI_CANH } from './bo-cuc';
 
+/** Cao của trụ chân đế (m) — dùng cả khi dựng và khi tính `beDuoi()`. */
+const CHAN_CAO = 0.05;
+/** Khe giữa đáy panel và đỉnh trụ chân (m). */
+const CHAN_HO = 0.06;
+
 const DOI_MAU: Record<string, { vien: number; chu: number; nen: number }> = {
   text: { vien: 0xd8c9a8, chu: 0xf5ead2, nen: 0x1c140c },
   code: { vien: 0xd8c9a8, chu: 0xc9e8c0, nen: 0x161108 },
@@ -28,7 +33,7 @@ function tuKhoi(
   dy: number,
   lech: number,
   size: number,
-): { pos: THREE.Vector3; rotY: number; size: number } {
+): MacDinhManHinh {
   const k = KHOI_CANH.find((q) => q.id === id)!;
   const rad = (k.quay * Math.PI) / 180;
   const dx = Math.sin(rad) * lech;
@@ -37,10 +42,25 @@ function tuKhoi(
     pos: new THREE.Vector3(k.tai[0] + dx, dy, k.tai[1] + dz),
     rotY: rad,
     size,
+    doTren: id,
   };
 }
 
-export const MAC_DINH_MAN_HINH: Record<string, { pos: THREE.Vector3; rotY: number; size: number }> = {
+export interface MacDinhManHinh {
+  pos: THREE.Vector3;
+  rotY: number;
+  size: number;
+  /**
+   * E2 (#48 mục 3) — **khối đỡ bên dưới**: `world.screenSpawn` đo mặt trên
+   * THẬT của khối này trong cảnh (`khoi:<id>`, Box3) rồi hạ chân màn hình
+   * đứng đúng lên đó. `pos.y` ở trên chỉ còn là **dự phòng** cho lúc chưa
+   * dựng phòng (test dùng sân khấu giả): model Kenney được chuẩn hoá theo
+   * `rong`/`cao` nên chiều cao mặt bàn KHÔNG đoán được từ bảng bố cục.
+   */
+  doTren?: string;
+}
+
+export const MAC_DINH_MAN_HINH: Record<string, MacDinhManHinh> = {
   // màn hình máy tính trên bàn — cỡ thật ~0,55 m, không phải tấm hologram lớn
   'may-tinh': tuKhoi('ban-dieu-khien', 1.1, 0.25, 0.55),
   // TV treo trên kệ phòng khách — cỡ thật ~1,1 m
@@ -102,10 +122,10 @@ export class ManHinh {
 
     // chân đế gỗ/nhựa mờ — KHÔNG phát sáng (khác bản hologram cũ).
     this.chan = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.02, 0.09, 0.05, 16),
+      new THREE.CylinderGeometry(0.02, 0.09, CHAN_CAO, 16),
       new THREE.MeshStandardMaterial({ color: 0x2a2018, roughness: 0.6 }),
     );
-    this.chan.position.y = -h / 2 - 0.06;
+    this.chan.position.y = -h / 2 - CHAN_HO - CHAN_CAO / 2;
     this.group.add(this.chan);
 
     this.group.position.copy(pos);
@@ -118,6 +138,21 @@ export class ManHinh {
   /** Bề ngang panel tính theo mét. */
   beRong(): number {
     return this.size;
+  }
+
+  /** Bề cao panel tính theo mét (theo tỉ lệ canvas). */
+  beCao(): number {
+    return this.size * (this.canvas.height / this.canvas.width);
+  }
+
+  /**
+   * Khoảng cách từ gốc nhóm xuống điểm THẤP NHẤT của màn hình (đáy chân đế).
+   *
+   * `world.screenSpawn` cộng số này vào mặt bàn đo được để màn hình đứng đúng
+   * trên mặt bàn — không nổi lơ lửng, không chìm (E2, #48 mục 3).
+   */
+  beDuoi(): number {
+    return this.beCao() / 2 + CHAN_HO + CHAN_CAO;
   }
 
   /** Nội dung tĩnh — thay toàn bộ. */
@@ -200,11 +235,26 @@ export class ManHinh {
     c.fillStyle = rgba(bang.chu, 0.95);
     c.textBaseline = 'top';
 
-    if (!this.kind || !this.noiDung) {
+    if (!this.noiDung) {
+      /**
+       * E2 (#48 mục 3) — phân biệt **trống** với **đang chờ nội dung**.
+       *
+       * Bản cũ vẽ "— trống —" cho cả hai trường hợp, nên một màn hình vừa
+       * `screen.stream { source: "agent" }` mà agent chưa đẩy mẩu nào (hoặc
+       * `screen.focus` một màn hình chưa ai ghi gì) trông y như màn hình tắt
+       * — đúng cái Boss nhìn thấy và nghĩ là lỗi. Giờ: đang stream thì ghi
+       * "đang nhận…" + con trỏ nhấp nháy, thật trống thì mới "— trống —".
+       */
+      const cho = this.streaming;
       c.font = '600 28px "Courier New", monospace';
-      c.globalAlpha = 0.5;
-      c.fillText('— trống —', 28, 24);
+      c.globalAlpha = cho ? 0.85 : 0.5;
+      const nhan = cho ? 'đang nhận…' : '— trống —';
+      c.fillText(nhan, 28, 24);
       c.globalAlpha = 1;
+      if (cho && Math.floor(this.tGian * 3) % 2 === 0) {
+        c.fillStyle = rgba(bang.vien, 0.95);
+        c.fillRect(28 + c.measureText(nhan).width + 8, 22, 16, 30);
+      }
     } else if (this.kind === 'chart') {
       this.veChart(c, w, h, bang);
     } else if (this.kind === 'image') {

@@ -406,14 +406,23 @@ export class SanKhauGia implements StageWorld {
   }
 
   actorHold(id: string, prop: string, hand: 'left' | 'right'): void {
-    if (!this.props.has(prop)) throw new Error(`Không có prop "${prop}"`);
+    const d = this.props.get(prop);
+    if (!d) throw new Error(`Không có prop "${prop}"`);
     this.a(id).holding = prop;
+    // E2 (#48 mục 3) — sân khấu thật phơi `props[].state.heldBy` khớp với
+    // `actors[].holding`; sân khấu giả phải giữ ĐÚNG hợp đồng đó, không thì
+    // test không bắt được lệch trạng thái.
+    d.state = { ...d.state, heldBy: id };
     this.lichSu.push(`hold:${prop}:${hand}`);
   }
 
   actorDrop(id: string): string | null {
     const x = this.a(id);
     const p = x.holding;
+    if (p) {
+      const d = this.props.get(p);
+      if (d) d.state = { ...d.state, heldBy: null };
+    }
     x.holding = null;
     return p;
   }
@@ -563,6 +572,10 @@ export class SanKhauGia implements StageWorld {
       showing: mh.kind,
       streaming: mh.streaming,
       lines: mh.content ? mh.content.split('\n').length : 0,
+      chars: mh.content.length,
+      // sân khấu giả không có hình học: màn hình "đứng" ngay tại pos
+      bottomY: mh.pos[1],
+      restsOn: null,
     };
   }
 

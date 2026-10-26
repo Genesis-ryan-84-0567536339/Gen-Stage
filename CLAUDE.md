@@ -592,3 +592,50 @@ phút → `brainConnected` về 0, Gen nói 'chưa có não', không có dòng l
   stream, module đang kết tinh, bảng luma (mặt p95 ≤ 230 — đo thật: Javis
   166,3, Gen 177,2), FPS tương đối (~1 fps, cùng tầm lab cũ trên swiftshader),
   console 0 lỗi.
+
+## Quyết định E2 — màn hình giữ nội dung, module vào tay, nhìn nhau (26/10, Refs #48)
+
+Bằng chứng: `node scripts/kiem-e2.mjs` (CHẠY MỘT LẦN, cờ `docs/e2/.da-chay`) —
+cổng riêng vite 5220 + stub TTS 8851, **không đụng** 5173/8787-8790 của Boss.
+
+- **Màn hình KHÔNG hề mất nội dung sau `screen.stream`** — đo lại trên bản
+  thật: chunks lẫn `source:"agent"` đều giữ `showing`/`lines`/`chars` đúng,
+  pixel vùng màn hình đổi 4053 điểm sau khi stream 6 mẩu code. Cái reviewer
+  thấy ("— trống —", `lines: 0`) là **màn hình chưa có nội dung**, không phải
+  texture chết: `screen.focus` một màn hình trắng, hoặc `screen.stream
+  { source:"agent" }` mà não không `feed` mẩu nào (đúng cảnh dòng 6 — não bị
+  chặn ở 2 lệnh), đều vẽ ra y hệt màn hình tắt. `man-hinh.ts` giờ phân biệt
+  hai trạng thái: **đang stream mà chưa có chữ → "đang nhận…" + con trỏ**,
+  thật trống mới "— trống —".
+- **`actors[].holding` suy ra TỪ bảng prop (`camBoi`)**, không đọc
+  `NhanVat.dangCam` nữa — `describe()` và `props[].state.heldBy` giờ cùng đọc
+  một chỗ nên không thể lệch. (Chỗ lệch thật đã tìm ra: `moduleBuild().cancel()`
+  xoá prop khỏi bảng mà không trả tay người đang cầm.)
+- **`module.build` phải THỬ LẠI `actor.hold`.** Bản cũ gọi đúng một lần rồi
+  nuốt lỗi; nhân vật đang nói/đi là module ở lại sàn vĩnh viễn trong khi sự
+  kiện vẫn báo "built". Nay thử tới 6 lần cách nhau 450 ms và báo `heldBy` +
+  `error` thật lên `module.built`. Đo trên renderer phần mềm: module vào tay
+  sau **8,0 s** kể từ lệnh (hiệu ứng kết tinh cần nhiều khung hình) — vì thế
+  mọi script bằng chứng phải **chờ theo điều kiện**, không `sleep` cố định.
+- **Màn hình đứng đúng trên mặt bàn, đo chứ không đoán.** Chiều cao mặt bàn
+  KHÔNG suy ra được từ `bo-cuc.ts` (model Kenney chuẩn hoá theo `rong`/`cao`
+  lúc dựng), nên `screenSpawn` đo `Box3` của khối `khoi:<id>` trong cảnh rồi hạ
+  chân màn hình đúng lên đó. `ScreenSnapshot` thêm `bottomY` + `restsOn` để
+  kiểm được bằng số: đo thật `bottomY = 0,53 m` = mặt bàn `0,53 m`, lệch 0.
+- **Hai nhân vật nhìn nhau: nguồn sự thật là `actor.say`, không phải
+  `user.text`.** Người nghe giờ quay **cả thân** (`actorFaceTo`), không chỉ
+  mắt — đó là lý do "Javis nói với Gen" mà Gen vẫn đứng hướng máy quay. Và
+  phản xạ lấy cặp hội thoại từ **`actor.sayStart` (đã mang thêm `to`)**: lớp
+  hiểu lệnh đánh dấu `handled: true` cho mọi câu nó khớp, nên nghe `user.text`
+  thì phản xạ bị bỏ qua đúng trường hợp cần nhất. Đo thật: giữa câu **0,3°**
+  cho cả hai, **vẫn 0,3° sau khi đổi `camera.preset` giữa câu**.
+- **Nói xong người nghe liếc máy quay** (`actor.say` đổi mắt người nghe về
+  `camera`, phản xạ giữ cú liếc `liecMs = 700 ms`). Cú liếc chỉ sống dưới 1
+  giây rồi Gen vào câu trả lời của mình, nên **không đo được bằng một lần
+  `describe()`** — bằng chứng lấy mẫu 60 ms/lần trong trang: liếc sau **30 ms**
+  kể từ `actor.sayDone` của Javis.
+- **Phản xạ im khi câu không gửi cho Gen** (`to` khác `camera` và khác id của
+  Gen): không câu đệm, không não rule-based. Đo thật với nhân vật thứ ba (Lan).
+- **`choSauBridge` là CỬA ĐỂ SẴN cho E1** (`ThamSoPhanXa`): trả `true` trong
+  khoảng chờ sau `bridge.connected` thì phản xạ không nói "Em chưa có não".
+  Mặc định `() => false` — hành vi E2 không đổi, E1 chỉ nối dây ở `main.ts`.

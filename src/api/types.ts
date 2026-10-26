@@ -210,6 +210,18 @@ export interface ScreenSnapshot {
   showing: string | null;
   streaming: boolean;
   lines: number;
+  /** Số ký tự đang có trên màn hình — `lines` không phân biệt "1 dòng rỗng". */
+  chars: number;
+  /**
+   * E2 (#48 mục 3) — số đo CHỖ ĐỨNG của màn hình, để kiểm được "đặt đúng lên
+   * mặt bàn, không nổi không chìm" mà không phải đoán:
+   *   · `bottomY` = điểm thấp nhất của màn hình (đáy chân đế), mét.
+   *   · `restsOn` = khối nội thất đỡ bên dưới (`bo-cuc.ts`) và mặt trên ĐO
+   *     ĐƯỢC của nó; `null` khi màn hình không đứng trên khối nào.
+   * Đạt = `bottomY` ≈ `restsOn.surfaceY` (lệch ≤ 5 mm).
+   */
+  bottomY: number;
+  restsOn: { block: string; surfaceY: number } | null;
 }
 
 export interface PropSnapshot {

@@ -136,6 +136,8 @@ export class World implements StageWorld {
 
   /* A3 — màn hình hologram, hiệu ứng kết tinh, fx ngắn */
   private screens = new Map<string, ManHinh>();
+  /** E2 — khối đỡ + mặt trên ĐO ĐƯỢC của từng màn hình (xem `ScreenSnapshot.restsOn`). */
+  private doDungManHinh = new Map<string, { block: string; surfaceY: number }>();
   private ketTinhDangChay = new Map<string, KetTinh>();
   private fxDangChay: HieuUng[] = [];
 
@@ -1171,6 +1173,24 @@ export class World implements StageWorld {
     }
 
     const mh = new ManHinh(p.id, p.size ?? mac?.size ?? 0.6, pos, rotY, p.tilt ?? 0);
+    /**
+     * E2 (#48 mục 3) — **đặt đúng lên mặt bàn**, không nổi không chìm.
+     *
+     * Toạ độ ngang vẫn lấy từ bảng bố cục (`bo-cuc.ts`), nhưng chiều cao mặt
+     * bàn thì KHÔNG đoán được từ bảng: model Kenney được chuẩn hoá theo
+     * `rong`/`cao` lúc dựng phòng, nên mặt trên thật chỉ biết sau khi đo khối
+     * trong cảnh. Đo xong thì hạ chân màn hình đúng lên mặt đó.
+     */
+    if (p.at === undefined && mac?.doTren) {
+      const mat = this.matTrenKhoi(mac.doTren);
+      if (mat !== null) {
+        mh.group.position.y = mat + mh.beDuoi();
+        this.doDungManHinh.set(p.id, { block: mac.doTren, surfaceY: tronMm(mat) });
+        // chỗ "đậu" cũng phải là chỗ ĐÃ hạ, không thì `screen.focus` bay về
+        // lại đúng cái độ cao lơ lửng cũ.
+        mh.docked.pos.y = mh.group.position.y;
+      }
+    }
     this.scene.add(mh.group);
     this.screens.set(p.id, mh);
     return this.snapScreen(mh);
@@ -1182,6 +1202,20 @@ export class World implements StageWorld {
     this.scene.remove(mh.group);
     mh.dispose();
     this.screens.delete(id);
+    this.doDungManHinh.delete(id);
+  }
+
+  /**
+   * Mặt TRÊN (y lớn nhất) của một khối nội thất đã dựng, tính bằng mét —
+   * `null` khi chưa dựng phòng (test chạy sân khấu giả) hoặc không có khối.
+   * `phong.ts` đặt tên nhóm mỗi khối là `khoi:<id>` (nguồn sự thật duy nhất).
+   */
+  private matTrenKhoi(id: string): number | null {
+    const g = this.scene.getObjectByName(`khoi:${id}`);
+    if (!g) return null;
+    const hop = new THREE.Box3().setFromObject(g);
+    if (hop.isEmpty()) return null;
+    return hop.max.y;
   }
 
   private manHinh(id: string): ManHinh {
@@ -1281,12 +1315,16 @@ export class World implements StageWorld {
   }
 
   private snapScreen(mh: ManHinh): ScreenSnapshot {
+    const do_ = this.doDungManHinh.get(mh.id) ?? null;
     return {
       id: mh.id,
       pos: [tron(mh.group.position.x), tron(mh.group.position.y), tron(mh.group.position.z)],
       showing: mh.kind,
       streaming: mh.streaming,
       lines: mh.soDong(),
+      chars: mh.noiDung.length,
+      bottomY: tronMm(mh.group.position.y - mh.beDuoi()),
+      restsOn: do_,
     };
   }
 
@@ -1365,6 +1403,16 @@ export class World implements StageWorld {
         huy = true;
         kt.huy();
         this.ketTinhDangChay.delete(p.id);
+        // E2 — huỷ giữa đường mà module đã vào tay ai thì phải trả tay người
+        // đó về rỗng, không để `dangCam` trỏ vào prop vừa bị xoá.
+        if (d.camBoi) {
+          const nv = this.actors.get(d.camBoi);
+          if (nv) {
+            nv.dangCam = null;
+            nv.objCam = null;
+          }
+          d.camBoi = null;
+        }
         this.scene.remove(obj);
         this.props.delete(p.id);
       },
@@ -1505,13 +1553,27 @@ export class World implements StageWorld {
       busy: nv.busy,
       mood: nv.mood,
       expression: nv.bieuCamHienTai,
-      holding: nv.dangCam,
+      /**
+       * E2 (#48 mục 3) — **một nguồn sự thật**: `holding` suy ra từ chính
+       * bảng prop (`camBoi`), không đọc `nv.dangCam`. Hai cờ song song từng
+       * lệch nhau (module bị `moduleBuild().cancel()` xoá khỏi bảng prop mà
+       * `dangCam` của nhân vật vẫn trỏ vào nó), nên `describe()` nói một đằng
+       * `props[].state.heldBy` nói một nẻo. Giờ hai trường LUÔN khớp vì cùng
+       * đọc một chỗ.
+       */
+      holding: this.propDangCam(nv.id),
       lookingAt: nv.nhinTen,
       distances,
       queued: 0,
       controlledBy: nv.dieuKhienBoi,
       facingTarget: nv.huongVe,
     };
+  }
+
+  /** Prop mà actor này đang cầm theo BẢNG PROP (`camBoi`) — nguồn sự thật. */
+  private propDangCam(actorId: string): string | null {
+    for (const d of this.props.values()) if (d.camBoi === actorId) return d.id;
+    return null;
   }
 
   private snapProp(d: DoVat): PropSnapshot {
@@ -1530,6 +1592,11 @@ export class World implements StageWorld {
 
 function tron(n: number): number {
   return Math.round(n * 100) / 100;
+}
+
+/** Tròn tới mm — chiều cao mặt bàn cần 3 số lẻ mới kiểm được "không nổi không chìm". */
+function tronMm(n: number): number {
+  return Math.round(n * 1000) / 1000;
 }
 
 /** Tên map chứa texture trên vật liệu — dọn hết để không rò GPU memory. */

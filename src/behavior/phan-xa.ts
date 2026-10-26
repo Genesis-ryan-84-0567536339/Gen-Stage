@@ -125,6 +125,18 @@ export interface ThamSoPhanXa {
   chonCauDem?: (ds: readonly string[]) => string;
   /** Có não nối hay không — mặc định đọc `so-nao.ts`. */
   coNaoNoi?: () => boolean;
+  /**
+   * **Hook cho E1 (#48 mục 8)** — "đừng nói *chưa có não* quá sớm".
+   *
+   * Trả `true` khi vừa nối bridge và CHƯA hết khoảng chờ (E1 đặt 3 s): trong
+   * khoảng đó phản xạ KHÔNG dùng não rule-based (`naoToiThieu`), vì gói
+   * `bridge.brain` thường tới muộn vài giây sau `bridge.connected` và Gen hay
+   * buột miệng "Em chưa có não, Sếp bật agy nhé" dù driver đã nối từ trước.
+   *
+   * E2 chỉ ĐẶT SẴN cửa này (mặc định `() => false`, hành vi không đổi) — E1
+   * nối dây đồng hồ 3 s vào `main.ts` ở đúng một chỗ, không sửa file này.
+   */
+  choSauBridge?: () => boolean;
 }
 
 export interface TrangThaiPhanXa {
@@ -158,6 +170,8 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
   const bayGio = ts.bayGio ?? (() => Date.now());
   const chon = ts.chonCauDem ?? ((ds) => ds[Math.floor(Math.random() * ds.length)]!);
   const coNaoNoi = ts.coNaoNoi ?? coNao;
+  /** Xem `ThamSoPhanXa.choSauBridge` — mặc định: không chờ gì cả. */
+  const choSauBridge = ts.choSauBridge ?? (() => false);
 
   let ownerId: string | null = null;
   let genId: string | null = null;
@@ -255,6 +269,24 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
      * với nhau trong phòng, Gen quay về Javis.
      */
     const noiTrongPhong = toi !== 'camera' && toi === gen;
+    /**
+     * E2 (#48 mục 7) — **câu này có gửi cho Gen không?**
+     *
+     * `to: "camera"` = Sếp nói với Gen qua màn hình; `to: <id của Gen>` = một
+     * nhân vật trong phòng nói với Gen. Mọi giá trị khác (vd Javis nói với
+     * một nhân vật thứ ba) thì Gen chỉ là người ngoài: KHÔNG chêm câu đệm,
+     * KHÔNG để não rule-based trả lời — reviewer đo được Gen chen "Sếp cần gì
+     * ạ?" vào giữa câu không gửi cho mình.
+     */
+    const guiChoGen = toi === 'camera' || toi === gen;
+    if (!guiChoGen) {
+      choNao = false;
+      if (henNoiBo) clearTimeout(henNoiBo);
+      henNoiBo = null;
+      // hướng nhìn của cặp đang nói do chính `actor.say` lo (một nguồn sự
+      // thật), phản xạ không chen vào.
+      return;
+    }
     nguoiNgheCuaGen = noiTrongPhong ? owner : 'camera';
 
     // 1) Javis (avatar của Sếp) quay về Gen — người nói luôn hướng về người nghe.
@@ -284,7 +316,7 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
     // 5) Não không nối → tự trả lời bằng não rule-based, sau câu đệm.
     if (henNoiBo) clearTimeout(henNoiBo);
     henNoiBo = null;
-    if (!coNaoNoi()) {
+    if (!coNaoNoi() && !choSauBridge()) {
       const cau = naoToiThieu(chu);
       henNoiBo = setTimeout(() => {
         henNoiBo = null;
@@ -389,6 +421,42 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
   );
 
   /**
+   * **Cặp hội thoại lấy từ chính `actor.say`** (E2, #48 mục 7).
+   *
+   * Trước đây phản xạ chỉ biết "ai nói với ai" qua `user.text`, mà lớp hiểu
+   * lệnh (`hieu-lenh.ts`) đánh dấu `handled = true` cho mọi câu nó đã khớp —
+   * nên đúng trường hợp Boss gõ *"Javis, nói với Gen …"* thì phản xạ bị bỏ
+   * qua hoàn toàn và Gen đứng nguyên hướng máy quay (reviewer đo được).
+   * `actor.sayStart` thì LUÔN bắn, cho cả lệnh từ hiểu lệnh, từ não, từ ws —
+   * nên đây là nguồn sự thật duy nhất về người nghe của Gen.
+   */
+  boNghe.push(
+    bus.on('actor.sayStart', (e) => {
+      const ai = String(e.data.actor ?? '');
+      const toi = String(e.data.to ?? 'camera');
+      const { st, owner, gen } = doc();
+      if (!owner || !gen) return;
+      if (ai === gen) {
+        // Gen đang nói: hướng về đúng người nghe của câu đó
+        nguoiNgheCuaGen = toi === 'cursor' ? 'camera' : toi;
+        nhinTamDen = 0;
+        return;
+      }
+      if (ai !== owner) return;
+      // Javis nói VỚI GEN → Gen quay cả mắt lẫn thân về Javis, ngay lúc mở
+      // miệng. Nói với Sếp/máy quay → Gen giữ hướng máy quay như cũ.
+      nguoiNgheCuaGen = toi === gen ? owner : 'camera';
+      if (toi === gen) {
+        nhinTamDen = 0;
+        const g = st.actors.find((a) => a.id === gen);
+        nhinVe(gen, owner, g?.lookingAt ?? null);
+        quayVe(gen, owner);
+        giuNhinDen = bayGio() + so.giuNhinMs;
+      }
+    }),
+  );
+
+  /**
    * Não vừa xếp hàng sau câu đệm → cắt câu đệm để não nói ngay.
    *
    * `tuGui` loại chính lệnh của phản xạ (emote `chu-y` xếp sau `turnTo`, câu
@@ -410,6 +478,21 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
       if (ai === ownerId) {
         // Sếp nói xong → Gen thôi dáng lắng nghe
         if (genId) dispatcher.world.actorNgheNgong(genId, false);
+        /**
+         * E2 (#48 mục 7) — Javis nói với Gen xong thì **Gen liếc máy quay**
+         * (Sếp vẫn đang xem). `actor.say` đã đổi mắt người nghe; chỗ này đổi
+         * luôn "người nghe của Gen" để nhịp quét không kéo mắt Gen về lại
+         * Javis ngay khung hình sau.
+         */
+        if (genId && e.data.to === genId) {
+          nguoiNgheCuaGen = 'camera';
+          nhinVe(genId, 'camera', null);
+          // GIỮ cú liếc đủ lâu để thấy được: không có mốc này thì nhịp quét
+          // sau (Sếp đang đứng gần ≤ 2,5 m) kéo mắt Gen về Javis ngay 100 ms
+          // sau, Boss không kịp thấy Gen có nhìn mình.
+          nhinTamDen = bayGio() + so.liecMs;
+          giuNhinDen = bayGio() + so.giuNhinMs;
+        }
         return;
       }
       if (ai !== genId) return;
