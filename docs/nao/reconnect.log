@@ -1,0 +1,44 @@
+[2026-10-26T04:34:03.912Z] === kiểm reconnect: 10 phút · bridge thử cổng 8821 · giết bridge ở mốc 300000 ms ===
+[2026-10-26T04:34:04.493Z] [bridge] [bridge 11:34:04] đang nghe ws://127.0.0.1:8821  (kiểm bằng: ss -ltn | grep 8821)
+[2026-10-26T04:34:04.493Z] [bridge] [bridge 11:34:04] sân khấu nối vào  ws://127.0.0.1:8821/?role=stage  (mở app với ?bridge=1)
+[bridge 11:34:04] client ra lệnh    ws://127.0.0.1:8821/
+[2026-10-26T04:34:04.494Z] [bridge] [bridge 11:34:04] token: tắt (chỉ nghe trên máy này nên không cần)
+[2026-10-26T04:34:04.505Z] [bridge] [tts ] đang nghe http://127.0.0.1:8822/tts?text=Xin%20ch%C3%A0o&voice=nu
+[2026-10-26T04:34:04.505Z] [bridge] [tts ] giọng: nữ vi-VN-HoaiMyNeural · nam vi-VN-NamMinhNeural · cache .cache/tts/
+[2026-10-26T04:34:04.507Z] [bridge] [mcp ] đang nghe http://127.0.0.1:8823/mcp  (POST, streamable)
+[2026-10-26T04:34:04.507Z] [bridge] [mcp ] 43 tool sinh từ registry · token: tắt (chỉ máy này)
+[2026-10-26T04:34:04.507Z] [bridge] [stt ] đang nghe http://127.0.0.1:8824/stt  (POST audio)
+[2026-10-26T04:34:04.508Z] [bridge] [stt ] CHƯA CÀI model — chạy: bash scripts/fetch-stt.sh
+[2026-10-26T04:34:04.515Z] [bridge] [bridge 11:34:04] client nối. Tổng: 1
+[2026-10-26T04:34:04.571Z] [sân khấu giả] đã nối (role=stage)
+[2026-10-26T04:34:04.572Z] [sân khấu giả] <- bridge.brain connected:false (count 0)
+[2026-10-26T04:34:04.572Z] [bridge] [bridge 11:34:04] sân khấu đã nối. Client đang chờ: 1
+[bridge 11:34:04] não đang nối: 0
+[2026-10-26T04:34:04.684Z] [bridge] [bridge 11:34:04] não đang nối: 1
+[2026-10-26T04:34:04.684Z] [bridge] [bridge 11:34:04] client nối. Tổng: 2 (não)
+[2026-10-26T04:39:04.867Z] === MỐC GIẾT BRIDGE (mô phỏng crash: kill -9) lúc 300 s ===
+[2026-10-26T04:39:04.875Z] [sân khấu giả] mất kết nối (mã 1006) — tự nối lại
+[2026-10-26T04:39:05.377Z] [sân khấu giả] mất kết nối (mã 1006) — tự nối lại
+[2026-10-26T04:39:05.878Z] [sân khấu giả] mất kết nối (mã 1006) — tự nối lại
+[2026-10-26T04:39:06.247Z] [bridge] [bridge 11:39:06] đang nghe ws://127.0.0.1:8821  (kiểm bằng: ss -ltn | grep 8821)
+[2026-10-26T04:39:06.247Z] [bridge] [bridge 11:39:06] sân khấu nối vào  ws://127.0.0.1:8821/?role=stage  (mở app với ?bridge=1)
+[2026-10-26T04:39:06.247Z] [bridge] [bridge 11:39:06] client ra lệnh    ws://127.0.0.1:8821/
+[2026-10-26T04:39:06.248Z] [bridge] [bridge 11:39:06] token: tắt (chỉ nghe trên máy này nên không cần)
+[2026-10-26T04:39:06.259Z] [bridge] [tts ] đang nghe http://127.0.0.1:8822/tts?text=Xin%20ch%C3%A0o&voice=nu
+[2026-10-26T04:39:06.259Z] [bridge] [tts ] giọng: nữ vi-VN-HoaiMyNeural · nam vi-VN-NamMinhNeural · cache .cache/tts/
+[2026-10-26T04:39:06.259Z] [bridge] [mcp ] đang nghe http://127.0.0.1:8823/mcp  (POST, streamable)
+[2026-10-26T04:39:06.261Z] [bridge] [mcp ] 43 tool sinh từ registry · token: tắt (chỉ máy này)
+[2026-10-26T04:39:06.261Z] [bridge] [stt ] đang nghe http://127.0.0.1:8824/stt  (POST audio)
+[2026-10-26T04:39:06.261Z] [bridge] [stt ] CHƯA CÀI model — chạy: bash scripts/fetch-stt.sh
+[2026-10-26T04:39:06.268Z] [bridge] [bridge 11:39:06] client nối. Tổng: 1
+[2026-10-26T04:39:06.380Z] [sân khấu giả] đã nối (role=stage)
+[2026-10-26T04:39:06.380Z] [bridge] [bridge 11:39:06] sân khấu đã nối. Client đang chờ: 1
+[2026-10-26T04:39:06.380Z] [sân khấu giả] <- bridge.brain connected:false (count 0)
+[2026-10-26T04:39:06.380Z] [bridge] [bridge 11:39:06] não đang nối: 0
+[2026-10-26T04:39:07.883Z] [bridge] [bridge 11:39:07] não đang nối: 1
+[2026-10-26T04:39:07.883Z] [bridge] [bridge 11:39:07] client nối. Tổng: 2 (não)
+[2026-10-26T04:39:07.885Z] [bridge] [bridge 11:39:07] → actor.say {"actor":"gen","text":"Em vừa mất kết nối não, giờ đã nối lại ạ","emotion":"nhe-nhom","interrupt":true}
+[2026-10-26T04:39:07.885Z] [bridge] [bridge 11:39:07] ← ok
+[2026-10-26T04:39:08.278Z] === driver đã NỐI LẠI sau 3411 ms ===
+[2026-10-26T04:39:08.278Z] === brainConnected VỀ TRUE sau 3016 ms kể từ lúc giết ===
+[2026-10-26T04:44:05.567Z] === hết 10 phút — dọn dẹp ===

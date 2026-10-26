@@ -35,6 +35,8 @@ node scripts/kiem-a2.mjs --chi-anh  # bản NHANH lúc đang làm (chỉ ảnh +
 node scripts/kiem-b1.mjs      # bằng chứng B1: bố cục 3 vùng + steer mượt + owner/gen vào docs/b1/ (CHẠY MỘT LẦN)
 node scripts/kiem-b3.mjs      # bằng chứng B3: Owner gõ → MCP → Gen diễn + nói, vào docs/b3/ (CHẠY MỘT LẦN)
 node scripts/kiem-nao.mjs     # bằng chứng DRIVER: Sếp gõ → driver → agy thật → Gen nói, đo độ trễ, vào docs/nao/ (CHẠY MỘT LẦN)
+node scripts/kiem-mo-phong-loi-cu.mjs  # mô phỏng nguyên nhân gốc #37 (naoHttpDen hết hạn, ws không hề rớt) vào docs/nao/mo-phong-loi-cu.*
+node scripts/kiem-reconnect.mjs        # bằng chứng heartbeat + backoff + watchdog (#37): driver sống 10 phút, giết bridge giữa chừng, vào docs/nao/reconnect.* (CHẠY MỘT LẦN)
 node scripts/kiem-c0.mjs      # bằng chứng C0: phản xạ xã hội + nhân vật nam anime, vào docs/c0/ (CHẠY MỘT LẦN)
 node scripts/kiem-c1.mjs      # bằng chứng C1: giữ V nói → bridge nhận chữ → user.speech → Gen phản ứng, vào docs/c1/ (CHẠY MỘT LẦN)
 bash scripts/fetch-anim.sh    # tải bộ chuyển động CC0 (Quaternius) về public/anim/ — chạy 1 lần sau khi clone
@@ -476,3 +478,67 @@ Số đo đầy đủ và lý do loại từng lựa chọn: **`docs/c1/so-sanh.
 - **Cạm bẫy Chrome**: `--use-file-for-fake-audio-capture` với đường có **khoảng
   trắng** làm Chrome tự tắt sau 4 s, không một dòng lỗi. Thư mục dự án của Boss
   có khoảng trắng, nên `scripts/kiem-c1.mjs` chép wav sang `/tmp` trước.
+
+## Quyết định HEARTBEAT + RECONNECT + WATCHDOG (26/10, Issue #37)
+
+Báo cáo E2E: "`scripts/nao-agy.mjs` rớt kết nối ws tới bridge âm thầm sau vài
+phút → `brainConnected` về 0, Gen nói 'chưa có não', không có dòng log nào."
+
+- **Nguyên nhân gốc KHÔNG phải ws rớt tầng mạng — là driver không hề tự xưng
+  "não".** `noiSanKhau()` (bản trước #37) nối bridge **không có** `?role=nao`,
+  nên `naoWs` (bộ đếm "não đang nối" trong `bridge/server.ts`) không bao giờ
+  thấy nó. `brainConnected` khi đó chỉ sống nhờ MỘT nguồn khác: mỗi lần agy gọi
+  một tool MCP qua HTTP, bridge đặt `naoHttpDen = now + 60000 ms`
+  (`GEN_STAGE_BRAIN_TTL`). Driver chỉ gọi agy **một lượt mỗi câu Sếp nói**
+  (không polling) — Sếp im hơn 60 giây (rất bình thường) là đồng hồ đó hết
+  hạn, bridge tự bắn `bridge.brain {connected:false}` cho sân khấu, **không hề
+  có sự kiện `close`/`error` nào** (ws của driver vẫn `OPEN` 100 %) → không một
+  dòng log. Tái hiện sống bằng `scripts/kiem-mo-phong-loi-cu.mjs` (rút TTL
+  xuống vài giây để "mô phỏng" vài phút im lặng, không cần chờ thật):
+  `brainConnected` về `false` đúng lúc, `readyState` ws vẫn `1` suốt.
+  **Sửa cốt lõi: driver nối `?role=nao`** — còn sống là còn được tính, không
+  phụ thuộc agy có vừa gọi tool trong 60 s gần nhất hay không.
+- **Cạm bẫy thứ hai, nặng hơn, lộ ra khi ĐO THẬT bằng chứng 10 phút:** hẹn giờ
+  nối lại (`henNoiLai = setTimeout(noi, cho)`) bản đầu có `.unref()` (bắt
+  chước bản cũ). Lúc driver **rảnh** (không lượt não nào đang chạy, `cheDo:
+  print` không có tmux nào giữ event loop) và ws vừa chết, cái hẹn giờ unref
+  đó là handle **DUY NHẤT** còn sống — unref nó thì Node thấy "chẳng còn gì để
+  làm" và **tự thoát sạch** (code 0, không crash, không log). Không phải driver
+  mất kết nối — **cả tiến trình biến mất**. Bỏ `.unref()` ở cả hẹn giờ nối lại
+  lẫn nhịp tim; đo lại 10 phút: driver sống hết giờ, không thoát.
+- **Heartbeat ứng dụng hai chiều, không phải ping/pong tầng WebSocket.** Trình
+  duyệt không cho script gửi ping tầng giao thức, và tầng ứng dụng thì log
+  được lý do. Mỗi 15 s (`GEN_STAGE_NAO_NHIP_TIM`) driver gửi `{ping}`, bridge
+  trả `{pong}` ngay (`bridge/server.ts` xử lý trước cả khi đòi `cmd`, không ghi
+  vào nhật ký `→`). Quá 35 s (`GEN_STAGE_NAO_QUA_HAN_TIM`, > 2 nhịp) không
+  thấy pong nào → driver tự `terminate()` để `close` CHẮC CHẮN bắn, thay vì
+  treo ở `readyState=OPEN` giả.
+- **Backoff nối lại tăng dần 1 s → 10 s (`tinhBackoff`), không giới hạn số lần
+  thử** — không còn hẹn cố định 1,5 s (dễ dội bridge lúc nó mới bật lại chưa
+  kịp nghe cổng, đã đo thấy `ECONNREFUSED` ở lần thử đầu khi bridge mới restart
+  dưới 1 giây). Bộ đếm lần thử **reset về 0 mỗi lần mở lại thành công** — một
+  lần mất kế tiếp lại tính từ 1 s, không cộng dồn vô hạn.
+- **Mỗi lần mất/nối lại đều ghi log kèm lý do** (mã đóng ws + lần thử thứ mấy +
+  đợi bao lâu) ở cả hai đầu: driver (`MẤT KẾT NỐI bridge (mã … · …) — nối lại
+  lần N sau … ms`) và bridge (`client ngắt… mã … · …`). Bản cũ không ghi gì ở
+  cả hai phía — khớp đúng "không có dòng log nào" trong báo cáo.
+- **Mất bridge rồi phục hồi → Gen báo ĐÚNG MỘT LẦN** ("Em vừa mất kết nối não,
+  giờ đã nối lại ạ"), không lặp lại mỗi lần ping lỡ nhịp hay mỗi lần mở lại
+  không thành công. Không làm "hàng đợi câu Sếp gõ lúc mất kết nối" (nhánh kia
+  của đề bài): bridge không giữ buffer sự kiện cho một não đang offline, nên
+  câu gõ đúng lúc driver mất kết nối vẫn mất — chấp nhận được vì bridge/sân
+  khấu không hề rớt, chỉ driver rớt, và ô chat vẫn hiện câu đó cho Sếp thấy.
+- **`goi()` hết khe nứt "rụng giữa `choMo()` và `ws.send()`"** (đã bị PR #34
+  review chỉ ra): khoá biến `ws` vào một hằng cục bộ trước khi gửi, bọc
+  `ws.send` trong try/catch — không còn ném `TypeError` làm rơi cả lượt não.
+- **Watchdog tiến trình trong `scripts/chay.sh`**: một vòng `while true` nhẹ
+  trong nohup bọc `node scripts/nao-agy.mjs` — driver crash là tự bật lại ngay
+  (log `[watchdog HH:MM:SS] driver não thoát (mã …) — bật lại sau 2 s`).
+  `pkill -f "scripts/nao-agy.mjs"` ở nhánh `tat` khớp CẢ dòng lệnh của vòng lặp
+  lẫn tiến trình node con, nên tắt là tắt thật, không tự sống lại.
+- **Cạm bẫy đo bằng chứng: `tsx` (cả qua `npx` lẫn gọi thẳng) tự sinh thêm MỘT
+  tiến trình node con** (nạp `--require preflight.cjs --import loader.mjs`).
+  `kill -9` đúng PID mà `spawn()` trả về chỉ giết cái vỏ — bridge thật (con)
+  vẫn sống, giữ cổng (`EADDRINUSE` khi bật lại, ping vẫn được trả lời sau khi
+  "giết" vì chẳng ai chết). `scripts/kiem-reconnect.mjs` dùng `detached: true`
+  rồi giết bằng PID ÂM (`kill(-pid)`, cả process group) để giết thật.

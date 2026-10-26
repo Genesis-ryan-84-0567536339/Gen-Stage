@@ -46,6 +46,8 @@
  *   GEN_STAGE_NAO_TMUX   tên session tmux (mặc định "gen-stage-nao")
  *   GEN_STAGE_NAO_GOP    ms gộp câu tới liên tiếp (mặc định 800)
  *   GEN_STAGE_NAO_HAN    ms chờ một lượt não (mặc định 120000)
+ *   GEN_STAGE_NAO_NHIP_TIM  ms nhịp heartbeat ws tới bridge (mặc định 15000)
+ *   GEN_STAGE_NAO_QUA_HAN_TIM  ms không thấy pong thì coi là mất (mặc định 35000)
  */
 import { execFileSync, spawn } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -512,9 +514,61 @@ export function phanXa(san) {
 
 /* ============================================================ 8. nối bridge */
 
-/** Lớp mỏng nói với bridge bằng vai client ws (giống `noiBridgeWs` của MCP). */
-export async function noiSanKhau({ WebSocket, cong, token = '', ghi = console.log, hanMs = 35_000 }) {
-  const url = `ws://127.0.0.1:${cong}/`;
+/** Nhịp tim: driver gửi {ping}, bridge trả {pong} — hai chiều, mỗi 15 s. */
+export const MS_NHIP_TIM_MAC_DINH = 15_000;
+/** Không thấy pong quá bấy lâu (> 2 nhịp) thì coi là chết, đóng để nối lại. */
+export const MS_QUA_HAN_TIM_MAC_DINH = 35_000;
+/** Backoff nối lại: 1 s → … → 10 s, không giới hạn số lần thử. */
+export const MS_BACKOFF_MIN = 1_000;
+export const MS_BACKOFF_MAX = 10_000;
+/** Câu Gen nói đúng MỘT lần sau khi vừa phục hồi một lần mất kết nối. */
+export const CAU_DA_NOI_LAI = 'Em vừa mất kết nối não, giờ đã nối lại ạ';
+
+/** Độ trễ nối lại lần thứ `lanThu` (1, 2, 3…): tăng gấp đôi, kẹp ở `max`. */
+export function tinhBackoff(lanThu, { min = MS_BACKOFF_MIN, max = MS_BACKOFF_MAX } = {}) {
+  const n = Math.max(1, Math.floor(lanThu));
+  return Math.min(min * 2 ** (n - 1), max);
+}
+
+/**
+ * Lớp mỏng nói với bridge bằng vai client ws, xưng `?role=nao` (bridge đếm
+ * vào `brainConnected` — trước đây driver nối "trần", không role nào, nên
+ * `brainConnected` chỉ sống nhờ agy gọi MCP trong 60 s gần nhất: Sếp im hơn
+ * 1 phút là Gen tự báo "chưa có não" dù driver vẫn khoẻ mạnh).
+ *
+ * Có **ba lớp chống rớt-mà-không-ai-biết** (nguyên nhân gốc đã đo: `ws` không
+ * tự phát hiện socket chết nửa chừng — máy ngủ, rút mạng, bridge bị `kill -9`
+ * không kịp bắt tay FIN — nên `close`/`error` có thể KHÔNG BAO GIỜ bắn, và
+ * `readyState` nằm lì ở `OPEN` dù không còn ai ở đầu kia):
+ *
+ *  1. **Heartbeat ứng dụng** (không phải ping/pong tầng WebSocket — cấp đó
+ *     trình duyệt không cho script gửi tay, và ta cần log được lý do):
+ *     mỗi `msNhipTim` gửi `{ping}`, bridge trả `{pong}` ngay. Quá
+ *     `msQuaHanTim` (> 2 nhịp) không thấy pong nào → `terminate()` chính tay,
+ *     để `close` CHẮC CHẮN bắn và vòng nối lại chạy.
+ *  2. **Backoff tăng dần, không giới hạn số lần**: 1 s, 2 s, 4 s, 8 s, rồi kẹp
+ *     ở 10 s — không đợi cố định 1,5 s như bản cũ (dễ dội bridge lúc nó còn
+ *     bận khởi động lại) mà cũng không bỏ cuộc.
+ *  3. **Log rõ mỗi lần mất/nối lại kèm lý do** (mã đóng + lý do WebSocket, số
+ *     lần đã thử) — bản cũ `rot()` không ghi gì, nên "không có dòng log nào"
+ *     đúng là triệu chứng, không phải lỗi hiếm.
+ *
+ * Mất kết nối rồi phục hồi → Gen nói **đúng một câu** báo Sếp biết vừa có một
+ * khoảng mất não (không phải mỗi lần ping lỡ một nhịp), qua chính kênh ws này
+ * (không chờ `goi()` vì lúc đó có thể còn trong lượt não khác).
+ */
+export async function noiSanKhau({
+  WebSocket,
+  cong,
+  token = '',
+  ghi = console.log,
+  hanMs = 35_000,
+  msNhipTim = MS_NHIP_TIM_MAC_DINH,
+  msQuaHanTim = MS_QUA_HAN_TIM_MAC_DINH,
+  backoff = { min: MS_BACKOFF_MIN, max: MS_BACKOFF_MAX },
+}) {
+  const goc = `ws://127.0.0.1:${cong}/?role=nao`;
+  const url = token ? `${goc}&token=${encodeURIComponent(token)}` : goc;
   let ws = null;
   let dem = 0;
   const dangCho = new Map();
@@ -522,20 +576,84 @@ export async function noiSanKhau({ WebSocket, cong, token = '', ghi = console.lo
   const genNoi = new Set();
   const cuoi = [];
   let dungHan = false;
+  let henTim = null;
+  let gioPongCuoi = 0;
+  let lanThuNoiLai = 0;
+  /** Đã từng mất kết nối (chờ một dịp để báo Sếp — đúng một lần). */
+  let tungMat = false;
+  let henNoiLai = null;
+
+  function dungNhipTim() {
+    if (henTim) clearInterval(henTim);
+    henTim = null;
+  }
+
+  function batNhipTim(w) {
+    dungNhipTim();
+    gioPongCuoi = Date.now();
+    henTim = setInterval(() => {
+      if (ws !== w || w.readyState !== 1) return;
+      if (Date.now() - gioPongCuoi > msQuaHanTim) {
+        ghi(
+          `[nao] ${gio()} KHÔNG thấy pong của bridge quá ${msQuaHanTim} ms — coi như đã chết, đóng để nối lại.`,
+        );
+        try {
+          (w.terminate ?? w.close).call(w);
+        } catch {
+          /* đã chết sẵn rồi */
+        }
+        return;
+      }
+      try {
+        const t = Date.now();
+        w.send(JSON.stringify({ ping: t }));
+        if (process.env.GEN_STAGE_NAO_DEBUG_NHIP_TIM) ghi(`[nao] ${gio()} -> ping ${t}`);
+      } catch {
+        /* send lỗi thì close/error sẽ tự bắn ngay sau */
+      }
+    }, msNhipTim); // KHÔNG unref — cùng lý do ở henNoiLai bên dưới
+  }
+
+  function baoDaNoiLaiNeuCan(w) {
+    if (!tungMat) return;
+    tungMat = false;
+    try {
+      w.send(
+        JSON.stringify({
+          id: `nao-hb-${++dem}`,
+          cmd: 'actor.say',
+          args: { actor: 'gen', text: CAU_DA_NOI_LAI, emotion: 'nhe-nhom', interrupt: true },
+        }),
+      );
+    } catch {
+      /* không sao, lượt não bình thường vẫn chạy */
+    }
+  }
 
   function noi() {
     if (ws || dungHan) return;
-    const w = new WebSocket(token ? `${url}?token=${encodeURIComponent(token)}` : url);
+    const w = new WebSocket(url);
     ws = w;
     w.on('open', () => {
       if (token) w.send(JSON.stringify({ token }));
-      ghi(`[nao] ${gio()} đã nối bridge ${url}`);
+      ghi(
+        `[nao] ${gio()} đã nối bridge ${goc}` +
+          (lanThuNoiLai > 0 ? ` (sau ${lanThuNoiLai} lần thử nối lại)` : ''),
+      );
+      lanThuNoiLai = 0;
+      batNhipTim(w);
+      baoDaNoiLaiNeuCan(w);
     });
     w.on('message', (tho) => {
       let g;
       try {
         g = JSON.parse(String(tho));
       } catch {
+        return;
+      }
+      if (typeof g.pong !== 'undefined') {
+        gioPongCuoi = Date.now();
+        if (process.env.GEN_STAGE_NAO_DEBUG_NHIP_TIM) ghi(`[nao] ${gio()} <- pong ${g.pong}`);
         return;
       }
       if (typeof g.event === 'string') {
@@ -554,13 +672,29 @@ export async function noiSanKhau({ WebSocket, cong, token = '', ghi = console.lo
         f({ ok: g.ok === true, result: g.result, error: g.error });
       }
     });
-    const rot = () => {
+    const rot = (ma, lyDoTho) => {
+      dungNhipTim();
       if (ws === w) ws = null;
       if (dungHan) return;
-      setTimeout(noi, 1500).unref?.();
+      tungMat = true;
+      lanThuNoiLai++;
+      const cho = tinhBackoff(lanThuNoiLai, backoff);
+      const lyDo = lyDoTho ? String(lyDoTho) : '';
+      ghi(
+        `[nao] ${gio()} MẤT KẾT NỐI bridge (mã ${ma ?? '?'}${lyDo ? ' · ' + lyDo : ''}) — ` +
+          `nối lại lần ${lanThuNoiLai} sau ${cho} ms.`,
+      );
+      if (henNoiLai) clearTimeout(henNoiLai);
+      // KHÔNG unref() hẹn giờ này — đã đo thật bằng chính bằng chứng #37: khi
+      // ws chết lúc driver đang rảnh (không lượt não nào, cheDo print không
+      // có tmux nào giữ event loop), một hẹn giờ unref là handle DUY NHẤT còn
+      // sống; unref nó thì Node thấy "chẳng còn gì để làm" và tự thoát sạch
+      // (code 0, không log, không crash) — driver biến mất, không phải chỉ
+      // mất ws. Đây CHÍNH LÀ kiểu "rớt kết nối âm thầm, không log nào".
+      henNoiLai = setTimeout(noi, cho);
     };
-    w.on('close', rot);
-    w.on('error', rot);
+    w.on('close', (ma, lyDo) => rot(ma, lyDo?.toString?.() ?? lyDo));
+    w.on('error', (e) => ghi(`[nao] ${gio()} lỗi ws bridge: ${e?.message ?? e}`));
   }
   noi();
 
@@ -575,7 +709,7 @@ export async function noiSanKhau({ WebSocket, cong, token = '', ghi = console.lo
   }
 
   return {
-    url,
+    url: goc,
     choMo,
     khiSuKien: (f) => nghe.add(f),
     /** Đăng ký "gen bắt đầu nói"; trả hàm thôi nghe. */
@@ -584,12 +718,18 @@ export async function noiSanKhau({ WebSocket, cong, token = '', ghi = console.lo
       return () => genNoi.delete(f);
     },
     suKienCuoi: () => cuoi.slice(-GIU_SU_KIEN),
+    /** Đang mất kết nối tại thời điểm gọi? (để chẩn đoán/test). */
+    dangMat: () => ws?.readyState !== 1,
     dong() {
       dungHan = true;
+      dungNhipTim();
+      if (henNoiLai) clearTimeout(henNoiLai);
       ws?.close();
     },
     async goi(cmd, args = {}) {
-      if (!(await choMo(3000))) return { ok: false, error: `chưa nối được bridge ${url}` };
+      if (!(await choMo(3000))) return { ok: false, error: `chưa nối được bridge ${goc}` };
+      const w = ws; // khoá tại chỗ: tránh khe nứt "rụng giữa choMo() và send()"
+      if (!w || w.readyState !== 1) return { ok: false, error: `chưa nối được bridge ${goc}` };
       const id = `nao-${++dem}`;
       return await new Promise((xong) => {
         const het = setTimeout(() => {
@@ -600,7 +740,13 @@ export async function noiSanKhau({ WebSocket, cong, token = '', ghi = console.lo
           clearTimeout(het);
           xong(kq);
         });
-        ws.send(JSON.stringify({ id, cmd, args }));
+        try {
+          w.send(JSON.stringify({ id, cmd, args }));
+        } catch (e) {
+          clearTimeout(het);
+          dangCho.delete(id);
+          xong({ ok: false, error: `gửi lệnh lỗi: ${e?.message ?? e}` });
+        }
       });
     },
   };
@@ -623,12 +769,14 @@ export async function chay() {
   const tenTmux = process.env.GEN_STAGE_NAO_TMUX ?? 'gen-stage-nao';
   const msGop = Number(process.env.GEN_STAGE_NAO_GOP ?? MS_GOP_MAC_DINH);
   const hanMs = Number(process.env.GEN_STAGE_NAO_HAN ?? MS_HAN);
+  const msNhipTim = Number(process.env.GEN_STAGE_NAO_NHIP_TIM ?? MS_NHIP_TIM_MAC_DINH);
+  const msQuaHanTim = Number(process.env.GEN_STAGE_NAO_QUA_HAN_TIM ?? MS_QUA_HAN_TIM_MAC_DINH);
   const skill = readFileSync(resolve(GOC, 'skills/gen-stage-nao/SKILL.md'), 'utf8');
 
   console.log(
     `[nao] ${gio()} driver não agy · bridge ${cong} · MCP "${tenMcp}" · ${cheDo} · ${model} · gộp ${msGop} ms`,
   );
-  const san = await noiSanKhau({ WebSocket, cong, token });
+  const san = await noiSanKhau({ WebSocket, cong, token, msNhipTim, msQuaHanTim });
   if (!(await san.choMo())) {
     console.error(`[nao] không nối được bridge cổng ${cong}. Bật \`pnpm bridge\` trước.`);
     process.exit(1);

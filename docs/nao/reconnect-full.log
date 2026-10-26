@@ -1,0 +1,128 @@
+[2026-10-26T04:34:03.912Z] === kiểm reconnect: 10 phút · bridge thử cổng 8821 · giết bridge ở mốc 300000 ms ===
+[2026-10-26T04:34:04.493Z] [bridge] [bridge 11:34:04] đang nghe ws://127.0.0.1:8821  (kiểm bằng: ss -ltn | grep 8821)
+[2026-10-26T04:34:04.493Z] [bridge] [bridge 11:34:04] sân khấu nối vào  ws://127.0.0.1:8821/?role=stage  (mở app với ?bridge=1)
+[bridge 11:34:04] client ra lệnh    ws://127.0.0.1:8821/
+[2026-10-26T04:34:04.494Z] [bridge] [bridge 11:34:04] token: tắt (chỉ nghe trên máy này nên không cần)
+[2026-10-26T04:34:04.505Z] [bridge] [tts ] đang nghe http://127.0.0.1:8822/tts?text=Xin%20ch%C3%A0o&voice=nu
+[2026-10-26T04:34:04.505Z] [bridge] [tts ] giọng: nữ vi-VN-HoaiMyNeural · nam vi-VN-NamMinhNeural · cache .cache/tts/
+[2026-10-26T04:34:04.507Z] [bridge] [mcp ] đang nghe http://127.0.0.1:8823/mcp  (POST, streamable)
+[2026-10-26T04:34:04.507Z] [bridge] [mcp ] 43 tool sinh từ registry · token: tắt (chỉ máy này)
+[2026-10-26T04:34:04.507Z] [bridge] [stt ] đang nghe http://127.0.0.1:8824/stt  (POST audio)
+[2026-10-26T04:34:04.508Z] [bridge] [stt ] CHƯA CÀI model — chạy: bash scripts/fetch-stt.sh
+[2026-10-26T04:34:04.515Z] [bridge] [bridge 11:34:04] client nối. Tổng: 1
+[2026-10-26T04:34:04.571Z] [sân khấu giả] đã nối (role=stage)
+[2026-10-26T04:34:04.572Z] [sân khấu giả] <- bridge.brain connected:false (count 0)
+[2026-10-26T04:34:04.572Z] [bridge] [bridge 11:34:04] sân khấu đã nối. Client đang chờ: 1
+[bridge 11:34:04] não đang nối: 0
+   [nao] [nao] 11:34:04 driver não agy · bridge 8821 · MCP "gen-stage" · print · gemini-3.8-flash-low · gộp 800 ms
+[2026-10-26T04:34:04.684Z] [bridge] [bridge 11:34:04] não đang nối: 1
+[2026-10-26T04:34:04.684Z] [bridge] [bridge 11:34:04] client nối. Tổng: 2 (não)
+   [nao] [nao] 11:34:04 đã nối bridge ws://127.0.0.1:8821/?role=nao
+   [nao] [nao] 11:34:04 đang nghe user.text/user.speech — Sếp gõ trong Firefox là em nghe.
+   [nao] [nao] 11:34:19 -> ping 1792989259692
+   [nao] [nao] 11:34:19 <- pong 1792989259692
+   [nao] [nao] 11:34:34 -> ping 1792989274706
+   [nao] [nao] 11:34:34 <- pong 1792989274706
+   [nao] [nao] 11:34:49 -> ping 1792989289721
+   [nao] [nao] 11:34:49 <- pong 1792989289721
+   [nao] [nao] 11:35:04 -> ping 1792989304736
+   [nao] [nao] 11:35:04 <- pong 1792989304736
+   [nao] [nao] 11:35:19 -> ping 1792989319751
+   [nao] [nao] 11:35:19 <- pong 1792989319751
+   [nao] [nao] 11:35:34 -> ping 1792989334766
+   [nao] [nao] 11:35:34 <- pong 1792989334766
+   [nao] [nao] 11:35:49 -> ping 1792989349781
+   [nao] [nao] 11:35:49 <- pong 1792989349781
+   [nao] [nao] 11:36:04 -> ping 1792989364796
+   [nao] [nao] 11:36:04 <- pong 1792989364796
+   [nao] [nao] 11:36:19 -> ping 1792989379811
+   [nao] [nao] 11:36:19 <- pong 1792989379811
+   [nao] [nao] 11:36:34 -> ping 1792989394826
+   [nao] [nao] 11:36:34 <- pong 1792989394826
+   [nao] [nao] 11:36:49 -> ping 1792989409841
+   [nao] [nao] 11:36:49 <- pong 1792989409841
+   [nao] [nao] 11:37:04 -> ping 1792989424856
+   [nao] [nao] 11:37:04 <- pong 1792989424856
+   [nao] [nao] 11:37:19 -> ping 1792989439871
+   [nao] [nao] 11:37:19 <- pong 1792989439871
+   [nao] [nao] 11:37:34 -> ping 1792989454886
+   [nao] [nao] 11:37:34 <- pong 1792989454886
+   [nao] [nao] 11:37:49 -> ping 1792989469901
+   [nao] [nao] 11:37:49 <- pong 1792989469901
+   [nao] [nao] 11:38:04 -> ping 1792989484916
+   [nao] [nao] 11:38:04 <- pong 1792989484916
+   [nao] [nao] 11:38:19 -> ping 1792989499932
+   [nao] [nao] 11:38:19 <- pong 1792989499932
+   [nao] [nao] 11:38:34 -> ping 1792989514947
+   [nao] [nao] 11:38:34 <- pong 1792989514947
+   [nao] [nao] 11:38:49 -> ping 1792989529962
+   [nao] [nao] 11:38:49 <- pong 1792989529962
+[2026-10-26T04:39:04.867Z] === MỐC GIẾT BRIDGE (mô phỏng crash: kill -9) lúc 300 s ===
+[2026-10-26T04:39:04.875Z] [sân khấu giả] mất kết nối (mã 1006) — tự nối lại
+   [nao] [nao] 11:39:04 MẤT KẾT NỐI bridge (mã 1006) — nối lại lần 1 sau 1000 ms.
+[2026-10-26T04:39:05.377Z] [sân khấu giả] mất kết nối (mã 1006) — tự nối lại
+[2026-10-26T04:39:05.878Z] [sân khấu giả] mất kết nối (mã 1006) — tự nối lại
+   [nao] [nao] 11:39:05 lỗi ws bridge: connect ECONNREFUSED 127.0.0.1:8821
+[nao] 11:39:05 MẤT KẾT NỐI bridge (mã 1006) — nối lại lần 2 sau 2000 ms.
+[2026-10-26T04:39:06.247Z] [bridge] [bridge 11:39:06] đang nghe ws://127.0.0.1:8821  (kiểm bằng: ss -ltn | grep 8821)
+[2026-10-26T04:39:06.247Z] [bridge] [bridge 11:39:06] sân khấu nối vào  ws://127.0.0.1:8821/?role=stage  (mở app với ?bridge=1)
+[2026-10-26T04:39:06.247Z] [bridge] [bridge 11:39:06] client ra lệnh    ws://127.0.0.1:8821/
+[2026-10-26T04:39:06.248Z] [bridge] [bridge 11:39:06] token: tắt (chỉ nghe trên máy này nên không cần)
+[2026-10-26T04:39:06.259Z] [bridge] [tts ] đang nghe http://127.0.0.1:8822/tts?text=Xin%20ch%C3%A0o&voice=nu
+[2026-10-26T04:39:06.259Z] [bridge] [tts ] giọng: nữ vi-VN-HoaiMyNeural · nam vi-VN-NamMinhNeural · cache .cache/tts/
+[2026-10-26T04:39:06.259Z] [bridge] [mcp ] đang nghe http://127.0.0.1:8823/mcp  (POST, streamable)
+[2026-10-26T04:39:06.261Z] [bridge] [mcp ] 43 tool sinh từ registry · token: tắt (chỉ máy này)
+[2026-10-26T04:39:06.261Z] [bridge] [stt ] đang nghe http://127.0.0.1:8824/stt  (POST audio)
+[2026-10-26T04:39:06.261Z] [bridge] [stt ] CHƯA CÀI model — chạy: bash scripts/fetch-stt.sh
+[2026-10-26T04:39:06.268Z] [bridge] [bridge 11:39:06] client nối. Tổng: 1
+[2026-10-26T04:39:06.380Z] [sân khấu giả] đã nối (role=stage)
+[2026-10-26T04:39:06.380Z] [bridge] [bridge 11:39:06] sân khấu đã nối. Client đang chờ: 1
+[2026-10-26T04:39:06.380Z] [sân khấu giả] <- bridge.brain connected:false (count 0)
+[2026-10-26T04:39:06.380Z] [bridge] [bridge 11:39:06] não đang nối: 0
+   [nao] [nao] 11:39:07 đã nối bridge ws://127.0.0.1:8821/?role=nao (sau 2 lần thử nối lại)
+[2026-10-26T04:39:07.883Z] [bridge] [bridge 11:39:07] não đang nối: 1
+[2026-10-26T04:39:07.883Z] [bridge] [bridge 11:39:07] client nối. Tổng: 2 (não)
+[2026-10-26T04:39:07.885Z] [bridge] [bridge 11:39:07] → actor.say {"actor":"gen","text":"Em vừa mất kết nối não, giờ đã nối lại ạ","emotion":"nhe-nhom","interrupt":true}
+[2026-10-26T04:39:07.885Z] [bridge] [bridge 11:39:07] ← ok
+[2026-10-26T04:39:08.278Z] === driver đã NỐI LẠI sau 3411 ms ===
+[2026-10-26T04:39:08.278Z] === brainConnected VỀ TRUE sau 3016 ms kể từ lúc giết ===
+   [nao] [nao] 11:39:22 -> ping 1792989562886
+   [nao] [nao] 11:39:22 <- pong 1792989562886
+   [nao] [nao] 11:39:37 -> ping 1792989577901
+   [nao] [nao] 11:39:37 <- pong 1792989577901
+   [nao] [nao] 11:39:52 -> ping 1792989592916
+   [nao] [nao] 11:39:52 <- pong 1792989592916
+   [nao] [nao] 11:40:07 -> ping 1792989607931
+   [nao] [nao] 11:40:07 <- pong 1792989607931
+   [nao] [nao] 11:40:22 -> ping 1792989622947
+   [nao] [nao] 11:40:22 <- pong 1792989622947
+   [nao] [nao] 11:40:37 -> ping 1792989637961
+   [nao] [nao] 11:40:37 <- pong 1792989637961
+   [nao] [nao] 11:40:52 -> ping 1792989652976
+   [nao] [nao] 11:40:52 <- pong 1792989652976
+   [nao] [nao] 11:41:07 -> ping 1792989667991
+   [nao] [nao] 11:41:07 <- pong 1792989667991
+   [nao] [nao] 11:41:23 -> ping 1792989683007
+   [nao] [nao] 11:41:23 <- pong 1792989683007
+   [nao] [nao] 11:41:38 -> ping 1792989698021
+   [nao] [nao] 11:41:38 <- pong 1792989698021
+   [nao] [nao] 11:41:53 -> ping 1792989713036
+[nao] 11:41:53 <- pong 1792989713036
+   [nao] [nao] 11:42:08 -> ping 1792989728051
+   [nao] [nao] 11:42:08 <- pong 1792989728051
+   [nao] [nao] 11:42:23 -> ping 1792989743066
+   [nao] [nao] 11:42:23 <- pong 1792989743066
+   [nao] [nao] 11:42:38 -> ping 1792989758081
+   [nao] [nao] 11:42:38 <- pong 1792989758081
+   [nao] [nao] 11:42:53 -> ping 1792989773086
+   [nao] [nao] 11:42:53 <- pong 1792989773086
+   [nao] [nao] 11:43:08 -> ping 1792989788100
+   [nao] [nao] 11:43:08 <- pong 1792989788100
+   [nao] [nao] 11:43:23 -> ping 1792989803115
+   [nao] [nao] 11:43:23 <- pong 1792989803115
+   [nao] [nao] 11:43:38 -> ping 1792989818130
+   [nao] [nao] 11:43:38 <- pong 1792989818130
+   [nao] [nao] 11:43:53 -> ping 1792989833146
+   [nao] [nao] 11:43:53 <- pong 1792989833146
+[2026-10-26T04:44:05.567Z] === hết 10 phút — dọn dẹp ===
+[2026-10-26T04:44:05.568Z] ==> {"cong":8821,"tongPhut":10,"mocGietMs":300000,"gioGietMs":300300,"msNoiLaiSauGiet":3411,"msBrainTrueSauGiet":3016,"noiLaiTrong10s":true,"soLanBrainTrue":2,"soLanBrainFalse":2,"soPingGuiDi":38,"soPongNhanDuoc":38,"bienCoBrain":[{"t":1792989244572,"event":"bridge.brain","data":{"count":0,"connected":false}},{"t":1792989244684,"event":"bridge.brain","data":{"count":1,"connected":true}},{"t":1792989546380,"event":"bridge.brain","data":{"count":0,"connected":false}},{"t":1792989547883,"event":"bridge.brain","data":{"count":1,"connected":true}}]}

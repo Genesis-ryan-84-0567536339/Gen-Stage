@@ -172,10 +172,14 @@ wss.on('connection', (ws, req) => {
   if (daXac.has(ws)) chaoClient(ws);
 
   ws.on('message', (tho) => tuClient(ws, String(tho)));
-  ws.on('close', () => {
+  ws.on('close', (ma, lyDo) => {
     clients.delete(ws);
-    if (naoWs.delete(ws)) baoNao();
-    ghi('client ngắt. Tổng:', clients.size);
+    const laiLaNao = naoWs.delete(ws);
+    if (laiLaNao) baoNao();
+    ghi(
+      'client ngắt. Tổng:', clients.size,
+      laiLaNao ? '(não)' : '', `mã ${ma}${lyDo?.length ? ' · ' + lyDo.toString() : ''}`,
+    );
   });
   ws.on('error', (e) => ghi('lỗi client:', e.message));
 });
@@ -232,11 +236,17 @@ function chaoClient(ws: WebSocket): void {
 
 function tuClient(ws: WebSocket, tho: string): void {
   if (!daXac.has(ws)) return; // khung đầu là token, không phải lệnh
-  let goi: { id?: unknown; cmd?: unknown; args?: unknown };
+  let goi: { id?: unknown; cmd?: unknown; args?: unknown; ping?: unknown };
   try {
     goi = JSON.parse(tho);
   } catch {
     ws.send(JSON.stringify({ ok: false, error: 'JSON không đọc được' }));
+    return;
+  }
+  // Heartbeat tầng ứng dụng (Refs #37) — driver não gửi {"ping":…} mỗi 15 s để
+  // tự phát hiện socket chết nửa chừng (không phải lệnh, không log "→ cmd").
+  if (goi && (typeof goi.ping === 'number' || goi.ping === true)) {
+    ws.send(JSON.stringify({ pong: goi.ping }));
     return;
   }
   if (!goi || typeof goi.cmd !== 'string') {

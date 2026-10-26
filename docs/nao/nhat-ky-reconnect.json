@@ -1,0 +1,47 @@
+{
+  "cong": 8821,
+  "tongPhut": 10,
+  "mocGietMs": 300000,
+  "gioGietMs": 300300,
+  "msNoiLaiSauGiet": 3411,
+  "msBrainTrueSauGiet": 3016,
+  "noiLaiTrong10s": true,
+  "soLanBrainTrue": 2,
+  "soLanBrainFalse": 2,
+  "soPingGuiDi": 38,
+  "soPongNhanDuoc": 38,
+  "bienCoBrain": [
+    {
+      "t": 1792989244572,
+      "event": "bridge.brain",
+      "data": {
+        "count": 0,
+        "connected": false
+      }
+    },
+    {
+      "t": 1792989244684,
+      "event": "bridge.brain",
+      "data": {
+        "count": 1,
+        "connected": true
+      }
+    },
+    {
+      "t": 1792989546380,
+      "event": "bridge.brain",
+      "data": {
+        "count": 0,
+        "connected": false
+      }
+    },
+    {
+      "t": 1792989547883,
+      "event": "bridge.brain",
+      "data": {
+        "count": 1,
+        "connected": true
+      }
+    }
+  ]
+}

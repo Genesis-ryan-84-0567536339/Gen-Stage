@@ -42,7 +42,20 @@ if command -v agy >/dev/null; then
       done
     fi
   else
-    pgrep -f "scripts/nao-agy.mjs" >/dev/null || (nohup node scripts/nao-agy.mjs > "$LOG/nao.log" 2>&1 &)
+    # WATCHDOG (Refs #37): nếu tiến trình driver chết (crash, bị kill ngoài ý
+    # muốn…) thì vòng `while true` nhẹ này tự bật lại ngay, không cần Sếp chạy
+    # lại chay.sh. `pkill -f "scripts/nao-agy.mjs"` (ở nhánh "tat" trên) khớp
+    # CẢ dòng lệnh của vòng lặp này lẫn tiến trình node con — tắt là tắt thật,
+    # không tự sống lại.
+    pgrep -f "scripts/nao-agy.mjs" >/dev/null || (nohup bash -c '
+      while true; do
+        echo "[watchdog $(date +%T)] bật driver não — scripts/nao-agy.mjs"
+        node scripts/nao-agy.mjs
+        ma=$?
+        echo "[watchdog $(date +%T)] driver não thoát (mã $ma) — bật lại sau 2 s"
+        sleep 2
+      done
+    ' > "$LOG/nao.log" 2>&1 &)
   fi
 fi
 URL="http://localhost:5173/"

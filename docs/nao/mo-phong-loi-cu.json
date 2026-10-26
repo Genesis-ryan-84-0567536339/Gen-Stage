@@ -1,0 +1,17 @@
+{
+  "cong": 8825,
+  "ttlMoPhong": 3000,
+  "soKienBrain": [
+    {
+      "t": 1792988575541,
+      "count": 1,
+      "connected": true
+    },
+    {
+      "t": 1792988578637,
+      "count": 0,
+      "connected": false
+    }
+  ],
+  "ketLuan": true
+}
