@@ -542,3 +542,53 @@ phút → `brainConnected` về 0, Gen nói 'chưa có não', không có dòng l
   vẫn sống, giữ cổng (`EADDRINUSE` khi bật lại, ping vẫn được trả lời sau khi
   "giết" vì chẳng ai chết). `scripts/kiem-reconnect.mjs` dùng `detached: true`
   rồi giết bằng PID ÂM (`kill(-pid)`, cả process group) để giết thật.
+## Quyết định D1 — căn nhà ấm, bỏ lab neon (26/10, Issue #43)
+
+- **Scene + ánh sáng đổi, Actor API KHÔNG đổi.** `bo-cuc.ts` thay toàn bộ bảng
+  3 vùng lab (`dieu-khien`/`kho`/`tuong-sau`, bục trung tâm, bàn cong ghép 5
+  mảnh) bằng một **căn nhà 1 tầng 14 × 10 m** (`phong-khach`/`ban-lam-viec`/
+  `bep` + hành lang trung tâm rộng `HANH_LANG = 2 m` nối cửa ↔ cửa sổ). Place
+  id cũ giữ nguyên, chỉ đổi ý nghĩa: `buc-trung-tam` → thảm phòng khách,
+  `ban-dieu-khien` → bàn làm việc, `ke-module` → kệ sách, `cua` → cửa ra vào,
+  `ghe-1`/`ghe-2` → ghế ăn/ghế làm việc. Thêm `sofa`, `ban-an`, `bep`, `cua-so`.
+- **Ánh sáng "nắng chiều" ĐÃ CÓ SẴN từ C3 (#40)** — directional ấm
+  (0xffe0b0, ~giống 3200 K) + bóng mềm PCFSoft + bloom chọn lọc gần như không
+  bật cho gì ngoài đèn sàn/đèn bàn đã tồn tại từ trước, D1 chỉ cần đổi hướng
+  đèn (chiếu từ phía tường nam có cửa sổ), thu hẹp khung bóng (`shadow.camera`)
+  theo kích thước nhà mới 14×10 (thay vì 16×16), và đổi màu hemisphere đất
+  thành nâu ấm thay xanh-đen lạnh. Không viết lại hệ bloom.
+- **Màn hình hologram → màn hình máy tính/TV ấm**: `man-hinh.ts` bỏ hẳn
+  scan-line + viền phát sáng (`batSang()`), khung tối gỗ/nhựa đen, chữ
+  trắng-kem. Kích cỡ tách theo loại (máy tính ~0,55 m, TV ~1,1 m) qua
+  `MAC_DINH_MAN_HINH[...].size` — bản lab cũ dùng chung 2,2 m cho mọi hologram,
+  với màn hình bàn làm việc thì to như một bức tường (ảnh thử D1 vòng 1).
+- **`camera.preset` 4 góc nhà MỚI (`phong-khach`/`ban-lam-viec`/`bep`/
+  `cua-so`) khai TAY toạ độ trong `world.ts`, không rơi vào `cameraFocus`
+  chung.** `cameraFocus` cộng một offset chéo CỐ ĐỊNH vào mục tiêu — với mục
+  tiêu nằm sát tường/cửa sổ (như `cua-so`) offset đó đẩy camera xuyên ra ngoài
+  nhà. Toạ độ chọn tay, đứng trong nhà, nhìn đúng hướng nội thất khu đó.
+- **Bài học bố cục nhà (khác lab — khoảng cách thật, không phải hộp lớn)**:
+  đặt `standAt` của một place quá gần nội thất KHÔNG có `chan` (ghế) làm nhân
+  vật đứng chồng lên mẫu ghế (ảnh thử D1 vòng 1: Gen đứng trên ghế làm việc).
+  Phải cách tối thiểu 0,8 m. Tương tự chỗ đứng mặc định `buc-trung-tam` từng
+  trùng mép hộp chắn của sofa — nhân vật "đứng xuyên" sofa.
+- **Camera bay (`tamTuBay`, lerp `dt · 3,2`, `dt` kẹp ≤ 1/20 s) KHÔNG đủ thời
+  gian "tới nơi" trên renderer phần mềm (~1 fps đo được)**: chờ 1,5–1,6 s chỉ
+  đi được ~30 % quãng đường (đo thật trong `kiem-d1.mjs`), ảnh chụp bị kẹt
+  giữa hai góc máy. Bằng chứng D1 gọi `camera.preset` (để `stage.describe()`
+  đúng tên) RỒI `datMay(vt, tam)` — đúng toạ độ đã khai trong
+  `world.ts cameraPreset()` — để đặt máy TỨC THÌ, cùng cách `kiem-c3.mjs` chụp
+  cận mặt. Đây là vấn đề của renderer phần mềm lúc kiểm, không phải bug thật.
+- **`fx.*`/`module.build` đổi màu qua đúng 2 hằng `MAU_CAM`/`MAU_CYAN` trong
+  `phong.ts`** (giờ là cam/vàng ấm, không còn cam/cyan neon) — không phải sửa
+  từng chỗ dùng màu trong `hat-ket-tinh.ts`/`world.ts`, chỉ `hieu-ung.ts`
+  (`MAU_FX`) cần đổi riêng vì không import từ `phong.ts`.
+- **Bảng lệnh mobile (390 px) phủ kín màn hình khi mở trang — hành vi CÓ TỪ
+  TRƯỚC D1** (`#bang.thu-gon` + nút `›` đã có trong `style.css`/`panel.ts`,
+  chỉ mặc định mở), không phải lỗi do đổi cảnh — ngoài phạm vi D1, ghi lại cho
+  đợt sau nếu Boss muốn mặc định thu gọn trên màn hình hẹp.
+- Bằng chứng: `scripts/kiem-d1.mjs` (CHẠY MỘT LẦN, cờ `docs/d1/.da-chay`) — 5
+  ảnh preset 1440, 1 ảnh 390×844, cận mặt Javis/Gen dưới nắng, màn hình đang
+  stream, module đang kết tinh, bảng luma (mặt p95 ≤ 230 — đo thật: Javis
+  166,3, Gen 177,2), FPS tương đối (~1 fps, cùng tầm lab cũ trên swiftshader),
+  console 0 lỗi.

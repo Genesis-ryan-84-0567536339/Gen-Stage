@@ -1,41 +1,51 @@
 /**
- * man-hinh.ts — màn hình hologram A3 (spec mục 3.4b).
+ * man-hinh.ts — màn hình MÁY TÍNH/TV ấm (D1, Issue #43 — thay hologram A3).
  *
- * Tấm phẳng trong suốt phát sáng, vẽ nội dung bằng `CanvasTexture` (text/code/
- * log/chart/image), có scan-line chạy dọc và viền phát sáng (bắt sáng qua
- * `UnrealBloomPass` ở `world.ts`). `screen.stream` chạy chữ dần bằng cách nối
- * `content` rồi vẽ lại canvas; `source: "agent"` nối qua `screenAppend()` từ
- * `window.stage.feed(screen, chunk)` (nối dây ở `main.ts`).
+ * Boss 26/10: "không scan-line neon, không viền phát sáng" — khung tối gỗ/
+ * nhựa đen ấm, nội dung chữ trắng-kem, KHÔNG scan-line, KHÔNG đi qua
+ * `batSang()` (bloom chọn lọc): đây không còn là vật phát sáng, chỉ là một
+ * tấm nền tối có chữ sáng vẽ bằng `CanvasTexture`. Giữ nguyên hợp đồng
+ * `screen.*` (tham số, sự kiện) — chỉ đổi DIỆN MẠO.
  */
 import * as THREE from 'three';
-import { HOLOGRAM } from './bo-cuc';
-import { batSang } from './bloom-layer';
+import { KHOI_CANH } from './bo-cuc';
 
 const DOI_MAU: Record<string, { vien: number; chu: number; nen: number }> = {
-  text: { vien: 0x5fe0ff, chu: 0xdfffff, nen: 0x02181f },
-  code: { vien: 0x5fe0ff, chu: 0x9dffb0, nen: 0x02181f },
-  log: { vien: 0xff9d5f, chu: 0xffd9a8, nen: 0x2a1a08 },
-  chart: { vien: 0x5fe0ff, chu: 0xdfffff, nen: 0x02181f },
-  image: { vien: 0x5fe0ff, chu: 0xdfffff, nen: 0x041018 },
+  text: { vien: 0xd8c9a8, chu: 0xf5ead2, nen: 0x1c140c },
+  code: { vien: 0xd8c9a8, chu: 0xc9e8c0, nen: 0x161108 },
+  log: { vien: 0xe0a86a, chu: 0xffd9a8, nen: 0x241608 },
+  chart: { vien: 0xd8c9a8, chu: 0xf5ead2, nen: 0x1c140c },
+  image: { vien: 0xd8c9a8, chu: 0xf5ead2, nen: 0x18130c },
 };
 
 /**
- * Vị trí + góc mặc định của 3 hologram — **đọc từ bảng bố cục** (`bo-cuc.ts`).
- *
- * B1 (Issue #18): 3 hologram thuộc VÙNG A (trình diễn), treo ngay phía sau bục
- * trung tâm chứ không còn úp vào bàn điều khiển. Toạ độ không còn viết tay ở
- * đây: đổi bố cục là sửa đúng một bảng.
+ * Vị trí + góc mặc định của 2 màn hình — tính từ bảng bố cục (`bo-cuc.ts`):
+ *   · `may-tinh` = màn hình trên bàn làm việc (`ban-dieu-khien`).
+ *   · `tivi` = TV trên kệ phòng khách (`ke-tivi`).
  */
-export const MAC_DINH_MAN_HINH: Record<string, { pos: THREE.Vector3; rotY: number }> =
-  Object.fromEntries(
-    HOLOGRAM.map((h) => [
-      h.id,
-      {
-        pos: new THREE.Vector3(h.tai[0], h.y, h.tai[1]),
-        rotY: (h.quay * Math.PI) / 180,
-      },
-    ]),
-  );
+function tuKhoi(
+  id: string,
+  dy: number,
+  lech: number,
+  size: number,
+): { pos: THREE.Vector3; rotY: number; size: number } {
+  const k = KHOI_CANH.find((q) => q.id === id)!;
+  const rad = (k.quay * Math.PI) / 180;
+  const dx = Math.sin(rad) * lech;
+  const dz = Math.cos(rad) * lech;
+  return {
+    pos: new THREE.Vector3(k.tai[0] + dx, dy, k.tai[1] + dz),
+    rotY: rad,
+    size,
+  };
+}
+
+export const MAC_DINH_MAN_HINH: Record<string, { pos: THREE.Vector3; rotY: number; size: number }> = {
+  // màn hình máy tính trên bàn — cỡ thật ~0,55 m, không phải tấm hologram lớn
+  'may-tinh': tuKhoi('ban-dieu-khien', 1.1, 0.25, 0.55),
+  // TV treo trên kệ phòng khách — cỡ thật ~1,1 m
+  tivi: tuKhoi('ke-tivi', 0.95, 0.35, 1.1),
+};
 
 export class ManHinh {
   readonly id: string;
@@ -55,7 +65,6 @@ export class ManHinh {
   readonly docked: { pos: THREE.Vector3; rotY: number };
 
   private tGian = 0;
-  private flicker = 0;
   /** Bề ngang panel (m) — `World.screenFocus` cần để tính chỗ đặt vừa khung. */
   private readonly size: number;
 
@@ -71,31 +80,33 @@ export class ManHinh {
     this.tex.colorSpace = THREE.SRGBColorSpace;
 
     const h = size * (this.canvas.height / this.canvas.width);
+    // D1: KHÔNG `toneMapped: false` (không còn giả đồ phát sáng) — màn hình
+    // vẽ chữ sáng trên nền tối, nhưng là vật liệu THƯỜNG, ăn đèn như mọi đồ
+    // nội thất khác. KHÔNG `batSang()` — không còn trong danh sách bloom.
     this.mat = new THREE.MeshBasicMaterial({
       map: this.tex,
       transparent: true,
-      opacity: 0.94,
+      opacity: 0.97,
       side: THREE.DoubleSide,
-      toneMapped: false,
     });
     this.panel = new THREE.Mesh(new THREE.PlaneGeometry(size, h), this.mat);
-    // C3 (#40): nội dung hologram nằm trong danh sách BLOOM chọn lọc.
-    this.group.add(batSang(this.panel));
+    this.group.add(this.panel);
 
-    const vienGeo = new THREE.EdgesGeometry(new THREE.PlaneGeometry(size * 1.015, h * 1.03));
+    // khung tối gỗ/nhựa đen ấm quanh màn hình — không viền phát sáng neon.
+    const vienGeo = new THREE.EdgesGeometry(new THREE.PlaneGeometry(size * 1.06, h * 1.1));
     this.khung = new THREE.LineSegments(
       vienGeo,
-      new THREE.LineBasicMaterial({ color: 0x5fe0ff, transparent: true, opacity: 0.85 }),
+      new THREE.LineBasicMaterial({ color: 0x2a2018, transparent: true, opacity: 0.9 }),
     );
-    this.group.add(batSang(this.khung));
+    this.group.add(this.khung);
 
-    // chân đế hologram mỏng, phát sáng nhẹ dưới màn hình
+    // chân đế gỗ/nhựa mờ — KHÔNG phát sáng (khác bản hologram cũ).
     this.chan = new THREE.Mesh(
       new THREE.CylinderGeometry(0.02, 0.09, 0.05, 16),
-      new THREE.MeshBasicMaterial({ color: 0x5fe0ff, transparent: true, opacity: 0.5, toneMapped: false }),
+      new THREE.MeshStandardMaterial({ color: 0x2a2018, roughness: 0.6 }),
     );
     this.chan.position.y = -h / 2 - 0.06;
-    this.group.add(batSang(this.chan));
+    this.group.add(this.chan);
 
     this.group.position.copy(pos);
     this.group.rotation.y = rotY;
@@ -145,18 +156,15 @@ export class ManHinh {
     return this.noiDung.length ? this.noiDung.split('\n').length : 0;
   }
 
-  /** Nhịp hoạt hình: scan-line + nhấp nháy hologram nhẹ. */
+  /** Nhịp hoạt hình: KHÔNG còn flicker hologram (D1 — màn hình ấm, tĩnh). */
   capNhat(dt: number): void {
     this.tGian += dt;
-    this.flicker = 0.92 + Math.sin(this.tGian * 9) * 0.04 + (Math.random() - 0.5) * 0.015;
-    this.mat.opacity = 0.9 * this.flicker;
-    (this.khung.material as THREE.LineBasicMaterial).opacity = 0.75 * this.flicker;
     if (this.streaming && Math.floor(this.tGian * 6) % 2 === 0) this.ve(); // con trỏ nhấp nháy khi stream
   }
 
-  dat(bloomDuocBat: boolean): void {
-    // khi tắt bloom vì FPS thấp, tăng nhẹ độ sáng nền để viền vẫn rõ
-    this.mat.opacity = bloomDuocBat ? this.mat.opacity : Math.min(1, this.mat.opacity + 0.05);
+  dat(_bloomDuocBat: boolean): void {
+    // D1: màn hình không còn phụ thuộc bloom (không ở danh sách bloom chọn
+    // lọc nữa) — giữ phương thức để `world.ts` gọi không lỗi, không làm gì.
   }
 
   dispose(): void {
@@ -204,15 +212,6 @@ export class ManHinh {
     } else {
       this.veChu(c, w, h, bang);
     }
-
-    // scan-line quét dọc, chạy theo thời gian
-    const yQuet = ((this.tGian * 140) % (h + 80)) - 40;
-    const qg = c.createLinearGradient(0, yQuet - 40, 0, yQuet + 40);
-    qg.addColorStop(0, rgba(bang.vien, 0));
-    qg.addColorStop(0.5, rgba(bang.vien, 0.16));
-    qg.addColorStop(1, rgba(bang.vien, 0));
-    c.fillStyle = qg;
-    c.fillRect(0, 0, w, h);
 
     this.tex.needsUpdate = true;
   }

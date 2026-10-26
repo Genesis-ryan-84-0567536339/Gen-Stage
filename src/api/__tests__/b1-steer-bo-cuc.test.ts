@@ -7,7 +7,7 @@
  *  2. Kẹp trong phòng + không đi xuyên bàn/kệ (`bo-cuc.truotVaCham`).
  *  3. Đang steer thì `at` luôn `null` (giao kèo A1 không được phá), còn
  *     `nearest` vẫn luôn có.
- * Cộng thêm: bảng bố cục thẳng lưới, hành lang ≥ 3 m, `controlledBy`.
+ * Cộng thêm: bảng bố cục thẳng lưới, hành lang ≥ 2 m, `controlledBy`.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
 import { Dispatcher } from '../dispatcher';
@@ -16,11 +16,11 @@ import { EventBus } from '../../events';
 import { SanKhauGia, NHIP_MS } from './san-khau-gia';
 import type { StageEvent, StageState } from '../types';
 import {
-  BAN_CONG,
-  BAN_KINH_BUC,
   HANH_LANG,
   KHOI_CANH,
-  NUA_PHONG,
+  NUA_HANH_LANG,
+  NUA_RONG,
+  NUA_SAU,
   biChan,
   hopChan,
   kepTrongPhong,
@@ -143,77 +143,77 @@ describe('actor.steer — lái bằng vận tốc', () => {
   });
 });
 
-describe('kẹp phòng + va chạm (bo-cuc.ts)', () => {
+describe('kẹp phòng + va chạm (bo-cuc.ts, D1 — căn nhà 14×10 m)', () => {
   it('kẹp trong phòng: đi ra ngoài tường thì dừng ở lề', () => {
-    expect(kepTrongPhong(99, 0)[0]).toBeCloseTo(NUA_PHONG - 0.6, 5);
-    expect(kepTrongPhong(0, -99)[1]).toBeCloseTo(-(NUA_PHONG - 0.6), 5);
+    expect(kepTrongPhong(99, 0)[0]).toBeCloseTo(NUA_RONG - 0.5, 5);
+    expect(kepTrongPhong(0, -99)[1]).toBeCloseTo(-(NUA_SAU - 0.5), 5);
     const [x, z] = truotVaCham(0, 0, 50, 50);
-    expect(Math.abs(x)).toBeLessThanOrEqual(NUA_PHONG - 0.6 + 1e-9);
-    expect(Math.abs(z)).toBeLessThanOrEqual(NUA_PHONG - 0.6 + 1e-9);
+    expect(Math.abs(x)).toBeLessThanOrEqual(NUA_RONG - 0.5 + 1e-9);
+    expect(Math.abs(z)).toBeLessThanOrEqual(NUA_SAU - 0.5 + 1e-9);
   });
 
-  it('không đi xuyên bàn điều khiển: tâm bàn bị chặn, trước bàn thì không', () => {
-    expect(biChan(BAN_CONG.tai[0], BAN_CONG.tai[1])).toBe('ban-dieu-khien');
+  it('không đi xuyên bàn làm việc: tâm bàn bị chặn, trước bàn thì không', () => {
+    const ban = KHOI_CANH.find((k) => k.id === 'ban-dieu-khien')!;
+    expect(biChan(ban.tai[0], ban.tai[1])).toBe('ban-dieu-khien');
     const dung = timPlace('ban-dieu-khien')!.standAt!;
     expect(biChan(dung[0], dung[2])).toBeNull();
   });
 
-  it('không đi xuyên kệ module, nhưng chỗ đứng trước kệ vẫn đi được', () => {
+  it('không đi xuyên kệ sách, nhưng chỗ đứng trước kệ vẫn đi được', () => {
     const ke = timPlace('ke-module')!;
     expect(biChan(ke.pos[0], ke.pos[2])).toBe('ke-module');
     expect(biChan(ke.standAt![0], ke.standAt![2])).toBeNull();
   });
 
-  it('đi thẳng vào bàn thì dừng trước bàn, không lọt vào trong', () => {
-    const [x, z] = truotVaCham(3, -1, BAN_CONG.tai[0], -1);
+  it('đi thẳng vào sofa thì dừng trước sofa, không lọt vào trong', () => {
+    const sofa = KHOI_CANH.find((k) => k.id === 'sofa')!;
+    const [x, z] = truotVaCham(-4.5, -3, sofa.tai[0], sofa.tai[1]);
     expect(biChan(x, z)).toBeNull();
-    expect(x).toBeLessThan(BAN_CONG.tai[0]);
+    expect(z).toBeLessThan(sofa.tai[1]);
   });
 
-  it('TRƯỢT dọc vật cản: đi chéo vào mép bàn vẫn nhích được theo trục còn lại', () => {
-    // từ trước bàn, đẩy chéo (+x vào bàn, +z men theo mép)
-    const z0 = -1;
-    const [x, z] = truotVaCham(5.2, z0, 5.9, z0 + 0.3);
-    expect(x).toBeCloseTo(5.2, 5); // trục X bị bàn chặn
+  it('TRƯỢT dọc vật cản: đi chéo vào mép bàn ăn vẫn nhích được theo trục còn lại', () => {
+    // bàn ăn ở [3.5, 2.5], chan [0.6,0.6] → mép x = 2.9. Từ phía -x đẩy chéo vào.
+    const z0 = 2.5;
+    const [x, z] = truotVaCham(2.2, z0, 3.2, z0 + 0.3);
+    expect(x).toBeCloseTo(2.2, 5); // trục X bị bàn chặn
     expect(z).toBeGreaterThan(z0); // trục Z vẫn đi được → men theo mép
   });
 
   it('bị chặn cả hai trục thì đứng yên, không bị đẩy xuyên', () => {
-    const [x, z] = truotVaCham(5.2, -1, 6.2, -1);
-    expect([x, z]).toEqual([5.2, -1]);
+    const [x, z] = truotVaCham(2.2, 2.5, 3.6, 2.5);
+    expect([x, z]).toEqual([2.2, 2.5]);
   });
 });
 
-describe('bảng bố cục 3 vùng (Issue #18 mục 1)', () => {
+describe('bảng bố cục căn nhà (Issue #43 — D1)', () => {
   it('mọi toạ độ nằm trên lưới nửa ô (0,5 m)', () => {
     expect(kiemLuoi()).toEqual([]);
   });
 
-  it(`hành lang hai bên bục thoáng ≥ ${HANH_LANG} m`, () => {
+  it(`hành lang trung tâm thoáng ≥ ${HANH_LANG} m`, () => {
     expect(kiemHanhLang()).toEqual([]);
     for (const h of hopChan()) {
-      // không hộp nào đè lên mặt bục
-      const gan = Math.hypot(
-        Math.max(h.x0, Math.min(0, h.x1)),
-        Math.max(h.z0, Math.min(0, h.z1)),
-      );
-      expect(gan).toBeGreaterThan(BAN_KINH_BUC);
+      // không hộp nào lấn vào dải hành lang |x| < NUA_HANH_LANG
+      expect(h.x0 >= NUA_HANH_LANG || h.x1 <= -NUA_HANH_LANG).toBe(true);
     }
   });
 
-  it('đủ 3 vùng, và không khối nào đứng giữa phòng phía trước', () => {
+  it('đủ 3 khu chức năng, và không khối nào đứng trong hành lang', () => {
     const vung = new Set(KHOI_CANH.map((k) => k.vung));
-    expect(vung.has('dieu-khien')).toBe(true);
-    expect(vung.has('kho')).toBe(true);
-    expect(vung.has('tuong-sau')).toBe(true);
+    expect(vung.has('phong-khach')).toBe(true);
+    expect(vung.has('ban-lam-viec')).toBe(true);
+    expect(vung.has('bep')).toBe(true);
     for (const k of KHOI_CANH) {
-      if (k.tai[1] > -3) expect(Math.abs(k.tai[0])).toBeGreaterThan(2.2);
+      if (k.id === 'cua') continue; // cửa đứng giữa hành lang, không có `chan`
+      expect(Math.abs(k.tai[0])).toBeGreaterThan(NUA_HANH_LANG);
     }
   });
 
   it('place `ban-dieu-khien` khớp đúng bảng bố cục', () => {
     const p = timPlace('ban-dieu-khien')!;
-    expect([p.pos[0], p.pos[2]]).toEqual([BAN_CONG.tai[0], BAN_CONG.tai[1]]);
+    const ban = KHOI_CANH.find((k) => k.id === 'ban-dieu-khien')!;
+    expect([p.pos[0], p.pos[2]]).toEqual([ban.tai[0], ban.tai[1]]);
   });
 
   it('mọi chỗ đứng của place đều đi tới được (không nằm trong vật cản)', () => {
