@@ -29,7 +29,7 @@ import {
   tuongKem,
   type NhomChatLieu,
 } from './chat-lieu';
-import { CUA_SO, KHOI_CANH, ROOM_D, ROOM_W, type KhoiCanh } from './bo-cuc';
+import { CUA_SO, DAY_BEP, KHOI_CANH, ROOM_D, ROOM_W, type KhoiCanh } from './bo-cuc';
 
 /** Bề ngang / bề sâu nhà (m) — phải khớp `bo-cuc.ts`. */
 export const KICH_THUOC_PHONG = ROOM_W;
@@ -783,37 +783,59 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
   }
 
   /*
-   * DÃY BẾP LIỀN MẠCH (PR #51 vòng 2, kiểm độc lập mục 2 thẩm mỹ: "tủ bếp,
-   * bếp nấu, bồn rửa đứng rời từng cục có khe hở").
+   * DÃY BẾP LIỀN MẠCH THEO CHỮ L (F1 #56; nối tiếp PR #51 vòng 2).
    *
-   * Rẻ nhất mà hiệu quả: một **mặt bếp** gỗ chạy liền suốt dãy đông (z −1,6…
-   * 2,6, đúng khoảng chứa `tu-duoi-1`/`tu-bep`/`bep-nau`) ở cao độ mặt tủ
-   * 0,95 m, cộng một dải **backsplash** mỏng từ mặt bếp lên chân tủ trên. Hai
-   * khối hộp, gộp luôn vào mesh tĩnh → gần như không tốn thêm lượt vẽ, mà khe
-   * hở giữa các cục tủ bị che và khu bếp đọc ra một dãy.
+   * Kiểm độc lập PR #51 chấm: "tủ bếp, bếp nấu, bồn rửa đứng rời từng cục có
+   * khe hở". Cách chữa rẻ nhất: một **mặt bếp** gỗ + một dải **backsplash**
+   * chạy liền suốt dãy, che hết khe giữa các cục tủ.
+   *
+   * Bản D1b viết toạ độ TAY ngay tại đây (`zTu = -1.6 … zDen = 2.6`, chỉ một
+   * nhánh dọc tường đông). F1 chuyển bếp sang **chữ L góc đông-bắc** nên số
+   * đó lệch hẳn ra giữa phòng → giờ đọc `DAY_BEP` trong `bo-cuc.ts` và dựng
+   * ĐỦ CẢ HAI NHÁNH. Bốn hộp (2 nhánh × mặt + ốp) dùng chung 2 vật liệu nên
+   * `gopTinh()` gộp hết, gần như không tốn thêm lượt vẽ.
    */
   {
-    const zTu = -1.6;
-    const zDen = 2.6;
-    const dai = zDen - zTu;
-    const zGiua = (zTu + zDen) / 2;
-    const xTuong = nuaX - 0.04;
-    const matBep = new THREE.Mesh(
-      new THREE.BoxGeometry(0.76, 0.045, dai),
-      new THREE.MeshStandardMaterial({ color: 0x8a6a44, roughness: 0.5 }),
-    );
-    matBep.position.set(xTuong - 0.37, 0.962, zGiua);
-    matBep.castShadow = true;
-    matBep.receiveShadow = true;
-    nhom.add(matBep);
+    const matMatBep = new THREE.MeshStandardMaterial({ color: 0x8a6a44, roughness: 0.5 });
+    const matOp = new THREE.MeshStandardMaterial({ color: 0xe9dcc2, roughness: 0.8 });
+    for (const nh of DAY_BEP.nhanh) {
+      const dai = Math.abs(nh.den - nh.tu);
+      if (dai < 0.1) continue;
+      const giua = (nh.tu + nh.den) / 2;
+      // tâm dãy theo trục áp tường: lùi vào trong nhà nửa bề sâu mặt bếp
+      const xTuong = nh.tuong === 'dong' ? nuaX - 0.04 : 0;
+      const zTuong = nh.tuong === 'bac' ? -nuaZ + 0.04 : 0;
+      const doc = nh.truc === 'z';
 
-    const op = new THREE.Mesh(
-      new THREE.BoxGeometry(0.03, 0.52, dai),
-      new THREE.MeshStandardMaterial({ color: 0xe9dcc2, roughness: 0.8 }),
-    );
-    op.position.set(xTuong - 0.015, 0.985 + 0.26, zGiua);
-    op.receiveShadow = true;
-    nhom.add(op);
+      const mat = new THREE.Mesh(
+        doc
+          ? new THREE.BoxGeometry(DAY_BEP.sau, 0.045, dai)
+          : new THREE.BoxGeometry(dai, 0.045, DAY_BEP.sau),
+        matMatBep,
+      );
+      mat.position.set(
+        doc ? xTuong - DAY_BEP.sau / 2 : giua,
+        DAY_BEP.caoMat,
+        doc ? giua : zTuong + DAY_BEP.sau / 2,
+      );
+      mat.castShadow = true;
+      mat.receiveShadow = true;
+      nhom.add(mat);
+
+      const op = new THREE.Mesh(
+        doc
+          ? new THREE.BoxGeometry(0.03, DAY_BEP.caoOp, dai)
+          : new THREE.BoxGeometry(dai, DAY_BEP.caoOp, 0.03),
+        matOp,
+      );
+      op.position.set(
+        doc ? xTuong - 0.015 : giua,
+        DAY_BEP.caoMat + 0.023 + DAY_BEP.caoOp / 2,
+        doc ? giua : zTuong + 0.015,
+      );
+      op.receiveShadow = true;
+      nhom.add(op);
+    }
   }
 
   /* ------------------------------------------------------------------------
@@ -824,11 +846,14 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
 
   const DU_PHONG: Record<string, () => THREE.Object3D> = {
     sofa: sofaTuDung,
-    'ke-tivi': () => tuTuDung(0.55, 1.4, 0x5c3d24),
+    'ke-tivi': () => tuTuDung(0.55, 1.6, 0x5c3d24),
+    // F1 (#56): TV đặt lên nóc kệ + màn hình bàn làm việc — không có model
+    // Kenney thì dựng một khối mỏng tối, vẫn đọc ra "cái màn hình".
+    'man-hinh-ban': () => hop(0.56, 0.36, 0.05, 0x2b2b2b, 0.4, 0.2),
     'ban-tra': () => tuTuDung(0.38, 1.0, 0x6b4a2f),
     'cay-1': () => cayTuDung(1.1),
     'cay-2': () => cayTuDung(1.0),
-    'cay-3': () => cayTuDung(1.35),
+    'cay-4': () => cayTuDung(1.4),
     'den-san': denSanTuDung,
     'ban-dieu-khien': () => tuTuDung(0.75, 1.3, 0x6b4a2f),
     'ghe-1': gheTuDung,
@@ -839,10 +864,14 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
     'ghe-don-1': gheTuDung,
     'ghe-don-2': gheTuDung,
     'ke-module': () => tuTuDung(1.9, 1.4, 0x6b4a2f),
-    'tu-bep': () => tuTuDung(1.0, 1.2, 0xd8d2c4),
+    'tu-bep': () => tuTuDung(0.95, 1.0, 0xd8d2c4),
+    'tu-bep-goc': () => tuTuDung(0.95, 1.1, 0xd8d2c4),
     'tu-duoi-1': () => tuTuDung(0.95, 1.0, 0xd8d2c4),
+    'tu-duoi-2': () => tuTuDung(0.95, 1.0, 0xd8d2c4),
     'tu-tren-1': () => tuTuDung(0.7, 1.0, 0xe6e0d2),
     'tu-tren-2': () => tuTuDung(0.7, 1.0, 0xe6e0d2),
+    'tu-tren-3': () => tuTuDung(0.7, 1.0, 0xe6e0d2),
+    'tu-bat-dia': () => tuTuDung(0.95, 1.3, 0x8a6a44),
     'bep-nau': () => tuTuDung(0.95, 1.1, 0x3a3a3a),
     'tu-lanh': () => tuTuDung(1.8, 1.1, 0xe8e8e8),
     'ban-an': () => tuTuDung(0.75, 1.3, 0x6b4a2f),
@@ -854,8 +883,10 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
     'tranh-1': () => tranhTuDung(0),
     'tranh-2': () => tranhTuDung(1, 0.46, 0.58),
     'tranh-3': () => tranhTuDung(2, 0.58, 0.72),
+    'tranh-4': () => tranhTuDung(0, 0.5, 0.62),
     'bang-ghim': bangGhimTuDung,
     tham: () => new THREE.Group(),
+    'tham-an': () => new THREE.Group(),
     'tham-cua': () => new THREE.Group(),
     cua: khungCuaTuDung,
   };
@@ -909,7 +940,7 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
       g.clear();
       g.add(g2);
     } else {
-      apChatLieu(g, nhomChat, k.mauVai);
+      apChatLieu(g, nhomChat, k.mauVai, k.cay === true);
     }
 
     // ĐỒ NHỎ KHÔNG ĐỔ BÓNG (Boss: đừng đòi GPU lớn) — chỉ nội thất có hộp

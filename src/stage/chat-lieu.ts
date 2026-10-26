@@ -128,22 +128,22 @@ export function tuongKem(): THREE.Texture {
 export function thamHoaVan(): THREE.Texture {
   const N = 512;
   const [cv, g] = canvas(N, N);
-  g.fillStyle = '#9c5c45';
+  g.fillStyle = '#b57a60';
   g.fillRect(0, 0, N, N);
   // viền ngoài
-  g.strokeStyle = '#e8cfa6';
+  g.strokeStyle = '#efdcb8';
   g.lineWidth = 14;
   g.strokeRect(26, 26, N - 52, N - 52);
-  g.strokeStyle = '#6d3b2c';
+  g.strokeStyle = '#8f5a44';
   g.lineWidth = 5;
   g.strokeRect(46, 46, N - 92, N - 92);
   // ô trám giữa thảm
   g.save();
   g.translate(N / 2, N / 2);
   for (const [r, mau] of [
-    [150, '#e8cfa6'],
-    [104, '#c88a5e'],
-    [58, '#e8cfa6'],
+    [150, '#efdcb8'],
+    [104, '#d4a07a'],
+    [58, '#efdcb8'],
   ] as const) {
     g.beginPath();
     g.moveTo(0, -r);
@@ -162,7 +162,7 @@ export function thamHoaVan(): THREE.Texture {
     [96, N - 96],
     [N - 96, N - 96],
   ] as const) {
-    g.fillStyle = '#e8cfa6';
+    g.fillStyle = '#efdcb8';
     g.beginPath();
     g.arc(x, y, 17, 0, Math.PI * 2);
     g.fill();
@@ -473,6 +473,57 @@ const TAN_SO_VAN: Record<NhomChatLieu, number> = {
   nham: 1.0,
 };
 
+/* ------------------------------------------- F1 (#56): ép về MỘT TÔNG ẤM */
+
+/** Màu ĐẤT — mọi sắc lam/xanh dương/tím của model Kenney bị xoay về đây. */
+const MAU_DAT = /* @__PURE__ */ new THREE.Color(0xa98a66);
+/** Xanh lục DỊU — cây/lá Kenney đang xanh chói bị xoay về đây (Boss #56). */
+const MAU_LA = /* @__PURE__ */ new THREE.Color(0x6f8f5a);
+
+function hsl(c: THREE.Color): { h: number; s: number; l: number } {
+  const o = { h: 0, s: 0, l: 0 };
+  c.getHSL(o);
+  return o;
+}
+
+/**
+ * ĐƯA MỘT VẬT LIỆU VỀ TÔNG NHÀ GỖ ẤM (F1, Issue #56 mục 1).
+ *
+ * Boss xem bản D1b: *"màu lạc tông — sofa xanh/olive, ghế xanh, cây xanh lục
+ * chói"*. Gốc của chuyện đó: 141 model Kenney CC0 mang **bảng màu riêng của
+ * tác giả** (có cả xanh dương, cả xanh lục rực), còn `nhuom()` chỉ sửa được
+ * những model có khai `mauVai` trong bảng bố cục — tức chưa tới một nửa.
+ *
+ * Nên chặn ở GỐC, một hàm cho mọi model: xoay **sắc** (hue) về tông nhà, giữ
+ * nguyên độ sáng nên khối vẫn đọc ra hình.
+ *   · hue 170°–290° (lam / xanh dương / tím) → **màu đất** `0xa98a66`.
+ *   · hue 65°–170° (xanh lục chói)          → **xanh lục dịu** `0x6f8f5a`.
+ *   · s < 0,08 (trắng / xám / đen: khung kim loại, chân gỗ tối) → ĐỂ YÊN.
+ * Vàng/cam/đỏ/nâu (hue < 65 hoặc > 290) đã đúng tông, không đụng.
+ *
+ * Chạy MỘT LẦN lúc dựng cảnh (trong `apChatLieu`), không phải mỗi khung hình
+ * → 0 chi phí GPU, đúng giao kèo "đừng đòi GPU lớn".
+ */
+export function donTongAm(mat: THREE.MeshStandardMaterial, laCay = false): void {
+  const g = hsl(mat.color);
+  if (g.s < 0.08) return;
+  const do360 = g.h * 360;
+  if (do360 < 65 || do360 > 290) return; // vàng / cam / đỏ / nâu: đã đúng tông
+  // CÂY: giữ là xanh lục, chỉ hạ chói về `0x6f8f5a`.
+  if (laCay && do360 < 200) {
+    const d = hsl(MAU_LA);
+    mat.color.setHSL(
+      d.h,
+      Math.min(g.s, d.s * 1.2),
+      THREE.MathUtils.clamp(g.l * 0.6 + d.l * 0.5, 0.14, 0.6),
+    );
+    return;
+  }
+  // MỌI THỨ KHÁC: lục / lam / xanh dương / tím đều về MÀU ĐẤT.
+  const d = hsl(MAU_DAT);
+  mat.color.setHSL(d.h, Math.min(g.s, d.s), THREE.MathUtils.clamp(g.l, 0.12, 0.78));
+}
+
 function nhuom(mat: THREE.MeshStandardMaterial, mauDich: number): void {
   const dich = new THREE.Color(mauDich);
   const hslD = { h: 0, s: 0, l: 0 };
@@ -493,7 +544,12 @@ function nhuom(mat: THREE.MeshStandardMaterial, mauDich: number): void {
  * bài học "vật liệu không nhân màu hai lần" (CLAUDE.md) thành lợi thế thay vì
  * cạm bẫy — và là cách phủ chất liệu cho 140 model CC0 mà không tô tay cái nào.
  */
-export function apChatLieu(obj: THREE.Object3D, nhom: NhomChatLieu, mauVai?: number): void {
+export function apChatLieu(
+  obj: THREE.Object3D,
+  nhom: NhomChatLieu,
+  mauVai?: number,
+  laCay = false,
+): void {
   const van = vanCua(nhom);
   const ts = THONG_SO[nhom];
   obj.traverse((o) => {
@@ -502,7 +558,7 @@ export function apChatLieu(obj: THREE.Object3D, nhom: NhomChatLieu, mauVai?: num
     const doi = (vl: THREE.Material): THREE.Material => {
       const goc = vl as THREE.MeshStandardMaterial;
       if (!goc || !('roughness' in goc)) return vl;
-      const khoa = `${goc.uuid}|${nhom}|${mauVai ?? ''}`;
+      const khoa = `${goc.uuid}|${nhom}|${mauVai ?? ''}|${laCay ? 'cay' : ''}`;
       const co = KHO_VAT_LIEU.get(khoa);
       if (co) return co;
       const ban = goc.clone();
@@ -517,6 +573,9 @@ export function apChatLieu(obj: THREE.Object3D, nhom: NhomChatLieu, mauVai?: num
       if (van) phuVanLenMap(ban, van, TAN_SO_VAN[nhom]);
       ban.roughness = ts.nham;
       ban.metalness = ts.kim;
+      // F1 (#56): ép về MỘT TÔNG trước — chặn xanh dương / xanh lục chói ở
+      // gốc cho cả 141 model Kenney; `nhuom()` (chỉ với `mauVai`) ghi đè sau.
+      donTongAm(ban, laCay);
       if (mauVai !== undefined) nhuom(ban, mauVai);
       ban.needsUpdate = true;
       KHO_VAT_LIEU.set(khoa, ban);
