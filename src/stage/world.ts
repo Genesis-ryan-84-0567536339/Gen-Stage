@@ -134,6 +134,52 @@ const MAY_NGANG: GocMay = {
  * — nhà trần thấp (2,8 m) nên lệch thấp hơn hẳn bản lab.
  */
 const LECH_THEO_OWNER = /* @__PURE__ */ new THREE.Vector3(1.8, 2.0, 2.6);
+/**
+ * F2 (#56 mục 2) — **tần số riêng của lò xo camera bám** (rad/s).
+ *
+ * Bản B1 bám bằng `position.lerp(dich, min(1, dt*2,6))`. Hai tật:
+ *   1. `dt*k` không độc lập FPS (xem `heSoBam` trong `nhanvat.ts`), nên cùng
+ *      code cho cảm giác khác nhau giữa máy kiểm ~1 FPS và 60 FPS của Boss;
+ *   2. lọc bậc một thì **luôn trễ tỉ lệ với tốc độ**: đo trên Firefox GPU
+ *      thật, nhân vật đi 1,6 m/s thì camera tụt lại ~0,6 m so với vị trí lệch
+ *      mong muốn, và bám "đuổi theo" chứ không "đi cùng".
+ *
+ * Giờ dùng **lò xo giảm chấn tới hạn** (critically damped): tích phân nửa ẩn
+ * (semi-implicit) nên ổn định ở mọi `dt`, và vì damping = tới hạn nên KHÔNG
+ * bao giờ vọt quá rồi dội lại — tức không rung.
+ *
+ * Chọn ω = 9 rad/s bằng số, không bằng cảm giác: với lò xo tới hạn bám một
+ * mục tiêu chạy ĐỀU tốc độ `v`, độ trễ xác lập đúng bằng `2v/ω`. Nhân vật lái
+ * 1,6 m/s ⇒ trễ 0,36 m — camera đi *cùng* nhân vật (bản lerp cũ `dt·2,6` trễ
+ * `v/2,6` = 0,62 m, tức luôn *đuổi theo*). Tăng ω nữa thì camera bám cứng vào
+ * từng bước chân, lúc đó chính nhịp bước lại thành rung.
+ */
+export const OMEGA_MAY = 9;
+/** Trần `dt` cho lò xo camera (s) — tab bị ẩn quay lại thì bám chứ không nhảy. */
+const DT_MAY_TOI_DA = 1 / 15;
+
+/**
+ * Một bước lò xo giảm chấn tới hạn cho `v` tiến tới `muc`, có mang `vel`.
+ *
+ * Công thức semi-implicit (ổn định vô điều kiện):
+ *   `vel ← (vel + ω²·dt·(muc − v)) / (1 + 2ω·dt + ω²·dt²)`, rồi `v ← v + vel·dt`.
+ * Xuất ra ngoài để test đo được (`src/api/__tests__/f2-dieu-khien-muot.test.ts`).
+ */
+export function buocLoXo(
+  v: THREE.Vector3,
+  vel: THREE.Vector3,
+  muc: THREE.Vector3,
+  omega: number,
+  dt: number,
+): void {
+  if (!(dt > 0)) return;
+  const w2 = omega * omega;
+  const chia = 1 + 2 * omega * dt + w2 * dt * dt;
+  vel.x = (vel.x + w2 * dt * (muc.x - v.x)) / chia;
+  vel.y = (vel.y + w2 * dt * (muc.y - v.y)) / chia;
+  vel.z = (vel.z + w2 * dt * (muc.z - v.z)) / chia;
+  v.addScaledVector(vel, dt);
+}
 
 const MAY_DOC: GocMay = {
   vt: new THREE.Vector3(-1.3, 1.62, 4.3),
@@ -200,6 +246,19 @@ export class World implements StageWorld {
    * theo tới đó mà vẫn giữ đúng góc 3/4 nhìn xuống.
    */
   private theoOwner: string | null = null;
+  /* --- F2: trạng thái lò xo camera bám (xem `buocLoXo`) --- */
+  private readonly mayVel = new THREE.Vector3();
+  private readonly mayTamVel = new THREE.Vector3();
+  private readonly mayDich = new THREE.Vector3();
+  private readonly mayTam = new THREE.Vector3();
+  /**
+   * F2 — **sổ ghi từng khung của camera bám** (bằng chứng "không rung").
+   *
+   * `[t ms, dt s, cam.x, cam.z, |vel|]`. Ghi tại chỗ, không cấp phát; script
+   * bằng chứng đọc một lần qua `doHieuNang().soMay` thay vì lấy mẫu mỗi khung
+   * (lấy mẫu từ ngoài kéo FPS 60 → 8,5, tức làm hỏng đúng cái đang đo).
+   */
+  private soMay: Array<[number, number, number, number, number]> = [];
   private bossDaXoay = false;
   private lanCuoiBossHoatDong = Date.now();
 
@@ -423,13 +482,33 @@ export class World implements StageWorld {
         this.theoOwner = null;
       } else {
         const p = nv.goc.position;
-        const dich = new THREE.Vector3(p.x, 0, p.z).add(LECH_THEO_OWNER);
-        const tam = new THREE.Vector3(p.x, 1.1, p.z);
-        // lerp êm: 2,6/s đủ bám sát khi đi 1,6 m/s mà không rung theo bước chân
-        const k = Math.min(1, dt * 2.6);
-        this.camera.position.lerp(dich, k);
-        this.controls.target.lerp(tam, k);
+        this.mayDich.set(p.x, 0, p.z).add(LECH_THEO_OWNER);
+        this.mayTam.set(p.x, 1.1, p.z);
+        /**
+         * F2 — lò xo giảm chấn tới hạn cho CẢ vị trí và tâm ngắm, dùng **cùng
+         * một** `dt` và `omega` nên hiệu (vị trí − tâm) không bị méo giữa hai
+         * khung: đó mới là điều mắt đọc ra thành "rung". Xem `buocLoXo`.
+         */
+        const dtMay = Math.min(dt, DT_MAY_TOI_DA);
+        buocLoXo(this.camera.position, this.mayVel, this.mayDich, OMEGA_MAY, dtMay);
+        buocLoXo(this.controls.target, this.mayTamVel, this.mayTam, OMEGA_MAY, dtMay);
+        // Đầy thì NGỪNG ghi (xem ghi chú cùng loại ở `NhanVat.soLai`).
+        if (this.soMay.length < 900)
+        this.soMay.push([
+          +performance.now().toFixed(1),
+          +dtMay.toFixed(4),
+          +this.camera.position.x.toFixed(4),
+          +this.camera.position.z.toFixed(4),
+          +this.mayVel.length().toFixed(4),
+        ]);
       }
+    } else if (this.mayVel.lengthSq() > 0 || this.mayTamVel.lengthSq() > 0 || this.soMay.length) {
+      // rời preset `theo-owner` → bỏ quán tính, đừng để lò xo kéo thêm
+      this.mayVel.set(0, 0, 0);
+      this.mayTamVel.set(0, 0, 0);
+      // …và **xoá sổ**: `doHieuNang()` luôn trả `soMay`, để sổ cũ lại thì
+      // người đọc sau có thể chấm điểm camera trên một lượt bám khác hẳn.
+      this.soMay = [];
     }
 
     if (this.tamTuBay) {
@@ -577,6 +656,8 @@ export class World implements StageWorld {
       mesh,
       vatLieu: vl.size,
       theoGoc,
+      // F2 — sổ camera bám (xem `soMay`); rỗng khi không ở preset `theo-owner`
+      soMay: this.soMay,
     };
   }
 

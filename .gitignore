@@ -37,5 +37,7 @@ docs/c0/.da-chay
 # D1b (#48) — cờ khoá "đã chạy kiem-d1b.mjs" (xoá bằng --lai)
 docs/d1b/.da-chay
 docs/f1/.da-chay
+# F2 (#56) — cờ khoá "đã chạy kiem-f2.mjs" (xoá bằng --lai)
+docs/f2/.da-chay
 # F3 (#56) — cờ "đã chạy bằng chứng", của máy chạy, không vào repo
 docs/f3/.da-chay

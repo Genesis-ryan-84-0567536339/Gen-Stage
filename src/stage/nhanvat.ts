@@ -184,15 +184,186 @@ export const TOC_DO_STEER = 1.6;
  * hình ở 60 fps: đủ mềm để không "giật" khi nhấn/nhả, đủ nhanh để không
  * thành trượt băng.
  */
-export const LERP_VAN_TOC = 0.15;
+export const LERP_VAN_TOC = 0.12;
+/**
+ * F2 (#56 mục 2) — **PHANH riêng, nhanh hơn ga.** Boss chốt "nhả phím → dừng
+ * êm ≤ 0,3 s". Với nội suy hàm mũ `1 − e^(−dt/τ)`, thời gian từ 1,6 m/s về
+ * `NGUONG_PHANH` là `τ·ln(1,6/0,12)` — τ = 0,08 s cho ra ~0,21 s, dư biên an
+ * toàn dưới 0,3 s. Dùng chung một τ cho cả ga và phanh (bản B1 cũ) thì hoặc
+ * vào bị trễ, hoặc ra bị cắt cụt; tách hai hằng số là cách duy nhất giữ được
+ * cả hai lời hứa.
+ */
+export const LERP_PHANH = 0.08;
 /**
  * Trần thời gian một khung hình được tích phân cho phần lái (s). Vận tốc tối
  * đa 1,6 m/s × 0,2 s = 0,32 m — nhỏ hơn nửa bề dày của vật cản mỏng nhất
  * trong `bo-cuc.ts` (dãy tủ: 0,4 m) nên không bao giờ lọt xuyên.
  */
 const BUOC_LAI_TOI_DA = 0.2;
-/** Dưới ngưỡng này (m/s) coi là đã dừng hẳn → về `idle`. */
-const NGUONG_DUNG = 0.05;
+/**
+ * Đang PHANH mà chậm hơn ngưỡng này (m/s) thì cắt thẳng về 0 — không rê thêm
+ * vài xăng-ti-mét. Chỉ dùng cho lúc phanh: đây là một **bậc nhảy vận tốc**,
+ * chấp nhận được khi đang dừng lại (mắt không đọc ra) nhưng sẽ sai nếu đem
+ * dùng làm ngưỡng "có đang đi hay không".
+ */
+const NGUONG_PHANH = 0.12;
+/**
+ * Trên ngưỡng này (m/s) mới coi là **đang đi**: chạy clip `walk`, nhún thân,
+ * cập nhật hướng mặt.
+ *
+ * Tách khỏi `NGUONG_PHANH` sau review F2: một hằng số làm hai việc thì khung
+ * đầu tăng tốc từ 0 (|v| còn < 0,12) bị coi là "không đi" → `state` nháy một
+ * khung ở FPS cao. Ngưỡng "đang đi" phải thấp hơn hẳn ngưỡng "cắt phanh".
+ */
+const NGUONG_DI = 0.04;
+/**
+ * F2 — **tốc độ quay người tối đa khi lái** (rad/s).
+ *
+ * Bản B1 cũ xoay bằng `lech * min(1, dt*9)`: ở 1 FPS (máy kiểm swiftshader)
+ * `dt*9 = 9` → kẹp về 1 → **quay tức thì**, nên mọi bằng chứng cũ không bao
+ * giờ thấy cú lật; ở 60 FPS thì 180° hết ~0,3 s = 600°/s, mắt Boss đọc ra
+ * thành "giật lia". Giờ xoay theo **thời gian thật** (hàm mũ) *và* kẹp trần
+ * tốc độ góc: đổi hướng 180° luôn mất ~0,5 s bất kể FPS.
+ */
+const TOC_XOAY_LAI = Math.PI * 2;
+/** Hằng thời gian bám hướng mặt khi lái (s). */
+const LERP_XOAY_LAI = 0.1;
+
+/**
+ * Hệ số nội suy **độc lập FPS**: `1 − e^(−dt/τ)`.
+ *
+ * Vì sao không dùng `min(1, dt/τ)` như bản B1: `dt/τ` chỉ xấp xỉ đúng khi
+ * `dt ≪ τ`. Ở 60 FPS (`dt` = 1/60, τ = 0,12) nó cho 0,139 còn công thức
+ * đúng cho 0,130 — lệch 7 %; ở 10 FPS (`dt` = 0,1) nó cho 0,833 còn đúng là
+ * 0,565 — lệch 47 %, tức **tốc độ hội tụ phụ thuộc FPS**. Đó chính là lý do
+ * cùng một đoạn code cho cảm giác khác nhau giữa máy kiểm ~1 FPS và Firefox
+ * GPU thật 60 FPS của Boss (Issue #56 mục 2).
+ */
+export function heSoBam(dt: number, tau: number): number {
+  if (!(dt > 0)) return 0;
+  if (!(tau > 0)) return 1;
+  return 1 - Math.exp(-dt / tau);
+}
+
+/**
+ * Chuẩn hoá hiệu hai góc về (−π, π].
+ *
+ * Kẹp đúng mốc π: `lech` đúng bằng ±π là **đối xứng**, quay trái hay phải
+ * cũng xa như nhau. Nếu để trôi theo dấu của phép trừ thì hai khung liền
+ * nhau có thể chọn hai chiều ngược nhau (nhiễu số học) → thân lắc qua lắc
+ * lại. Chốt về `+π` cho **xác định**, không phụ thuộc nhiễu.
+ */
+export function lechGoc(goc: number, tu: number): number {
+  let d = (goc - tu) % (Math.PI * 2);
+  if (d <= -Math.PI) d += Math.PI * 2;
+  if (d > Math.PI) d -= Math.PI * 2;
+  return d;
+}
+
+/** Kết quả một khung lái (xem `buocLai`). */
+export interface KhungLai {
+  x: number;
+  z: number;
+  vx: number;
+  vz: number;
+  /** Có DỊCH CHUYỂN thật trong khung này không (gate clip đi + nhún thân). */
+  dangDi: boolean;
+  /** Tốc độ THẬT của khung = quãng đi được / dt (≠ |v| khi đụng vật cản). */
+  tocThat: number;
+  chanX: boolean;
+  chanZ: boolean;
+}
+
+/**
+ * **Một khung lái, thuần tuý** — toàn bộ phần vật lý của `actor.steer`.
+ *
+ * Tách ra khỏi `NhanVat.capNhat` sau review F2 vì một lý do thực dụng: dựng
+ * một `NhanVat` cần cả model VRM, nên trước đó **không có test nào chạm được
+ * vào gốc va chạm** — giao kèo "đụng sofa thì về `idle`" chỉ tồn tại bằng lời
+ * văn trong PR. Giờ hàm này không đụng `THREE`, không đụng DOM, nên
+ * `f2-dieu-khien-muot.test.ts` lái thẳng vào hộp chắn thật của `bo-cuc.ts` và
+ * chấm bằng số. `capNhat` chỉ còn là nơi *gọi* nó.
+ *
+ * @param mx,mz vận tốc MỤC TIÊU của khung (0, 0 = đang phanh)
+ */
+export function buocLai(
+  x: number,
+  z: number,
+  vx: number,
+  vz: number,
+  mx: number,
+  mz: number,
+  dt: number,
+): KhungLai {
+  /**
+   * Bám vận tốc bằng hàm mũ `1 − e^(−dt/τ)` (xem `heSoBam`), **ga và phanh
+   * hai τ khác nhau**: vào mượt (0,12 s), nhả dừng gắt hơn (0,08 s) để kịp
+   * lời hứa "nhả phím → dừng êm ≤ 0,3 s".
+   */
+  const phanh = mx === 0 && mz === 0;
+  const k = heSoBam(dt, phanh ? LERP_PHANH : LERP_VAN_TOC);
+  let nvx = vx + (mx - vx) * k;
+  let nvz = vz + (mz - vz) * k;
+  // đã nhả phím và chậm hơn ngưỡng → cắt hẳn, không rê thêm vài xăng-ti-mét
+  if (phanh && Math.hypot(nvx, nvz) <= NGUONG_PHANH) {
+    nvx = 0;
+    nvz = 0;
+  }
+
+  // Kẹp trong phòng + trượt dọc bàn/kệ (`bo-cuc.ts`): giải TỪNG TRỤC nên đi
+  // chéo vào mép bàn thì men theo mép chứ không dính cứng.
+  const [nx, nz] = truotVaCham(x, z, x + nvx * dt, z + nvz * dt, BAN_KINH_THAN);
+  const diX = nx - x;
+  const diZ = nz - z;
+
+  /**
+   * **Vận tốc theo trục = quãng THẬT ĐÃ ĐI của trục đó, chia `dt`.**
+   *
+   * Bản B1 nhân `0,2` khi bị chặn. Nghe nhẹ nhàng nhưng tạo một **điểm cân
+   * bằng bẩn**: mỗi khung ga kéo vận tốc lên, va chạm lại nhân 0,2, hai bên
+   * gặp nhau ở một giá trị KHÁC 0 (đo trên Firefox GPU thật: 0,23 m/s) trong
+   * khi toạ độ **không hề nhích** — đúng cái "chạy bộ tại chỗ" trước sofa mà
+   * Boss thấy.
+   *
+   * Vòng F2 đầu sửa thành "xoá hẳn về 0", nhưng review chỉ ra nó sai kiểu
+   * khác: chỉ cần kẹp mất 1 % của bước là **mất toàn bộ** vận tốc trục đó rồi
+   * gây dựng lại từ 0 ở khung sau ⇒ trượt men mép bàn theo đường chéo giật
+   * nhẹ theo chu kỳ.
+   *
+   * Quy tắc hiện tại không cần phân biệt "chặn hẳn" với "kẹp một phần": lấy
+   * đúng quãng đã đi được. Chặn hoàn toàn ⇒ quãng 0 ⇒ vận tốc 0 (hết vận tốc
+   * ảo); kẹp một phần ⇒ **giữ đúng phần đi được** (trượt mượt dọc mép). So
+   * sánh theo tỉ lệ (`1 − 1e-9`) chứ không theo hằng số tuyệt đối: ở 60 FPS
+   * một bước chỉ 0,027 m, ngưỡng tuyệt đối hoặc báo chặn oan (bản B1: "nửa
+   * bước") hoặc không bao giờ báo (bản F2 đầu: trừ `1e-6` làm vế phải âm với
+   * bước nhỏ).
+   */
+  let chanX = false;
+  let chanZ = false;
+  if (dt > 0) {
+    if (Math.abs(diX) < Math.abs(nvx * dt) * (1 - 1e-9)) {
+      nvx = diX / dt;
+      chanX = true;
+    }
+    if (Math.abs(diZ) < Math.abs(nvz * dt) * (1 - 1e-9)) {
+      nvz = diZ / dt;
+      chanZ = true;
+    }
+  }
+
+  /**
+   * **"Đang đi" tính SAU va chạm, từ quãng thật.**
+   *
+   * Vòng F2 đầu đặt `dangDi = |v| > ngưỡng` *trước* khi giải va chạm, nên khi
+   * ép vào sofa thì mỗi khung ga vẫn kéo `|v|` lên trước khi bị xoá ⇒ `dangDi`
+   * luôn `true` ⇒ thân vẫn **nhún** (`position.y = |sin(phaBuoc)|·0,022`).
+   * Vận tốc ảo đã hết, nhưng mắt Boss vẫn đọc ra "chạy bộ tại chỗ". Nguồn sự
+   * thật duy nhất cho "có đi hay không" là **quãng đường khung này thật sự
+   * dịch được**.
+   */
+  const tocThat = dt > 0 ? Math.hypot(diX, diZ) / dt : 0;
+  return { x: nx, z: nz, vx: nvx, vz: nvz, dangDi: tocThat > NGUONG_DI, tocThat, chanX, chanZ };
+}
 /** Bán kính thân người khi kiểm va chạm với bàn/kệ (m). */
 const BAN_KINH_THAN = 0.34;
 
@@ -218,6 +389,59 @@ function henGioCoCo(durationMs: number, ket: (biHuy: boolean) => void): HanhDong
     ket(biHuy);
   });
   return Object.assign(hd, { cancelled: () => biCat });
+}
+
+/** Hành động lái: như `henGioCoCo` nhưng **đẩy được hạn** (F2, Issue #56). */
+interface HanhDongLai extends HanhDongCoCo {
+  /** Đẩy hạn tự xong ra `ms` kể từ BÂY GIỜ (không tạo hành động mới). */
+  giaHan(ms: number): void;
+}
+
+/**
+ * Hẹn giờ **gia hạn được** cho `actor.steer` (F2, Issue #56 mục 2).
+ *
+ * `hanhDongHenGio` trong `stage/hanh-dong.ts` là lõi A1 — không sửa. Chỗ này
+ * dựng riêng một hành động cùng hợp đồng (`durationMs`, `done`, `cancel`,
+ * `cancelled`) nhưng thêm `giaHan`: phím giữ W 3 giây chỉ cần MỘT hành động
+ * được đẩy hạn nhiều lần, thay vì 30 hành động xé-dựng-lại như bản B1.
+ *
+ * `durationMs` báo ra ngoài là hạn của *lần đặt đầu tiên* (dispatcher chỉ đọc
+ * số này để ước lượng); `done` resolve đúng một lần, ở hạn CUỐI CÙNG.
+ */
+function henGioLai(durationMs: number, ket: (biHuy: boolean) => void): HanhDongLai {
+  let hen: ReturnType<typeof setTimeout> | null = null;
+  let xongRoi = false;
+  let biCat = false;
+  let giaiQuyet: () => void = () => undefined;
+  const done = new Promise<void>((r) => {
+    giaiQuyet = r;
+  });
+  const dong = (biHuy: boolean) => {
+    if (xongRoi) return;
+    xongRoi = true;
+    if (hen !== null) clearTimeout(hen);
+    hen = null;
+    if (biHuy) biCat = true;
+    ket(biHuy);
+    giaiQuyet();
+  };
+  const dat = (ms: number) => {
+    if (xongRoi) return;
+    if (hen !== null) clearTimeout(hen);
+    hen = setTimeout(() => {
+      hen = null;
+      dong(false);
+    }, Math.max(0, ms));
+  };
+  dat(durationMs);
+  return {
+    durationMs,
+    done,
+    xong: () => dong(false),
+    cancel: () => dong(true),
+    cancelled: () => biCat,
+    giaHan: (ms: number) => dat(ms),
+  };
 }
 
 interface ClipDangChay {
@@ -258,7 +482,7 @@ interface LanLai {
   vzMuc: number;
   /** Mốc đồng hồ thật (ms) mà lệnh hết hiệu lực. */
   han: number;
-  hd: HanhDongCoTay;
+  hd: HanhDongLai;
   /** Token của lần lái này — steer mới thay steer cũ, token đổi. */
   token: number;
 }
@@ -612,6 +836,23 @@ export class NhanVat {
   private tKhungTruoc = 0;
   /** Mốc đồng hồ thật của khung trước, riêng cho phần LÁI (xem `capNhat`). */
   private tLaiTruoc = 0;
+  /* --- F2 (#56): số đo chẩn đoán của khung lái vừa rồi (xem `vanToc()`) --- */
+  private chanLaiX = false;
+  private chanLaiZ = false;
+  private dtLaiCuoi = 0;
+  /**
+   * F2 — **sổ ghi TỪNG KHUNG của lượt lái đang chạy** (bằng chứng số).
+   *
+   * Vì sao phải ghi ở đây chứ không để script Playwright lấy mẫu: vòng dò đầu
+   * tiên gọi `stage.describe()` + `doXuong()` mỗi khung và **chính nó** kéo
+   * FPS từ 60 xuống 8,5 — tức dụng cụ đo làm hỏng cái cần đo, rồi lại kết luận
+   * về độ mượt từ số liệu đó. Giờ sân khấu tự ghi (vài phép gán mỗi khung,
+   * không cấp phát), script chỉ đọc MỘT lần ở cuối qua `doXuong()`.
+   *
+   * Sổ được xoá khi một lượt lái bắt đầu từ lúc đứng yên, nên mỗi lần Boss
+   * nhấn phím là một lượt sạch.
+   */
+  private soLai: Array<[number, number, number, number, number, number, number]> = [];
   private apDungChibi(): void {
     const h = this.vrm.humanoid;
     if (!h) return;
@@ -921,6 +1162,34 @@ export class NhanVat {
     }
     const dai = Math.max(0, ms);
 
+    /**
+     * F2 (#56 mục 2) — **GIA HẠN TẠI CHỖ khi vector không đổi.**
+     *
+     * Đây là gốc chính của "điều khiển loạn tùm lum" trên GPU thật. Bản B1
+     * gửi một `actor.steer` mới mỗi 100 ms, và *mỗi* lệnh mới chạy trọn bộ
+     * `huyViec()` + `roiGhe()` + `clip = null` + `batDauViec()`. Ở ~1 FPS
+     * (máy kiểm) cả chục lệnh rơi vào **cùng một khung hình** nên chỉ lệnh
+     * cuối để lại dấu — bằng chứng cũ sạch sẽ. Ở 60 FPS thì cứ 6 khung lại có
+     * một cú xé-dựng-lại hành động: `viec` nhả rồi chiếm lại, `state` nhảy
+     * `walking → idle → walking`, lớp clip bị xoá, và `han` cũ (180 ms) có lúc
+     * hết trước khi lệnh sau kịp tới → vận tốc mục tiêu tụt về 0 rồi vọt lại.
+     *
+     * Sửa tận gốc: cùng một vector thì KHÔNG tạo lệnh mới — chỉ **đẩy `han`**
+     * của lần lái đang chạy ra xa và trả lại đúng hành động đó. Phím chỉ còn
+     * phải gia hạn (`src/ui/phim.ts`), không còn phải gối lệnh.
+     */
+    const L = this.dangLai;
+    if (
+      L &&
+      this.viec === L.hd &&
+      Math.abs(L.vxMuc - mx) < 1e-6 &&
+      Math.abs(L.vzMuc - mz) < 1e-6
+    ) {
+      L.han = bayGio() + dai;
+      L.hd.giaHan(dai);
+      return L.hd;
+    }
+
     // giữ vận tốc đang có khi THAY steer (xem `dangThaySteer`)
     this.dangThaySteer = true;
     this.huyViec();
@@ -931,7 +1200,7 @@ export class NhanVat {
     this.xoay = null;
 
     const token = ++this.demTokenLai;
-    const hd = henGioCoCo(dai, (biHuy) => {
+    const hd = henGioLai(dai, (biHuy) => {
       // Hết giờ bình thường: KHÔNG xoá `lai` — để `capNhat` giảm tốc về 0 rồi
       // mới nhả thân. Bị cắt: dừng ngay, nhường thân cho lệnh mới.
       if (!biHuy) return;
@@ -942,17 +1211,50 @@ export class NhanVat {
         this.vz = 0;
       }
     });
+    // F2 — lượt lái mới bắt đầu từ lúc ĐỨNG YÊN → sổ bằng chứng sạch
+    if (this.vx === 0 && this.vz === 0) this.soLai = [];
     this.dangLai = { vxMuc: mx, vzMuc: mz, han: bayGio() + dai, hd, token };
     this.batDauViec(hd, 'walking');
     return hd;
   }
 
   /** Vận tốc hiện tại (m/s) + tốc độ — bằng chứng số cho `kiem-b1.mjs`. */
-  vanToc(): { vx: number; vz: number; toc: number } {
+  vanToc(): {
+    vx: number;
+    vz: number;
+    toc: number;
+    x: number;
+    z: number;
+    facing: number;
+    chanX: boolean;
+    chanZ: boolean;
+    dt: number;
+    lai: boolean;
+    /**
+     * Sổ từng khung của lượt lái hiện tại:
+     * `[t ms, dt s, x, z, |v|, facing rad, chặn]` — `chặn` là cờ bit
+     * (1 = trục X bị vật cản, 2 = trục Z). Xem `NhanVat.soLai`.
+     */
+    so: Array<[number, number, number, number, number, number, number]>;
+  } {
     return {
       vx: +this.vx.toFixed(4),
       vz: +this.vz.toFixed(4),
       toc: +Math.hypot(this.vx, this.vz).toFixed(4),
+      /**
+       * F2 — toạ độ **KHÔNG làm tròn 2 số** như `stage.describe().pos`.
+       * Vòng dò đầu tiên trên Firefox GPU thật suýt kết luận sai vì `pos` của
+       * `describe` chỉ có 2 chữ số thập phân: 0,02 m/khung ở 60 FPS lọt hết
+       * vào chữ số bị cắt, nên "đi rất chậm" và "đứng im" trông y như nhau.
+       */
+      x: +this.goc.position.x.toFixed(4),
+      z: +this.goc.position.z.toFixed(4),
+      facing: +this.goc.rotation.y.toFixed(4),
+      chanX: this.chanLaiX,
+      chanZ: this.chanLaiZ,
+      dt: +this.dtLaiCuoi.toFixed(4),
+      lai: this.dangLai !== null,
+      so: this.soLai,
     };
   }
 
@@ -1444,9 +1746,9 @@ export class NhanVat {
     if (this.di) return { khoa: 'walk', tocDo: this.di.tocDo / TOC_DO_DI };
     // Lái bằng vận tốc: blend walk/idle theo TỐC ĐỘ THẬT — chậm thì clip walk
     // phát chậm lại (đọc ra như bước nhỏ), dưới ngưỡng thì về idle.
-    if (this.dangLai || Math.hypot(this.vx, this.vz) > NGUONG_DUNG) {
+    if (this.dangLai || Math.hypot(this.vx, this.vz) > NGUONG_DI) {
       const toc = Math.hypot(this.vx, this.vz);
-      if (toc > NGUONG_DUNG) {
+      if (toc > NGUONG_DI) {
         return { khoa: 'walk', tocDo: THREE.MathUtils.clamp(toc / TOC_DO_DI, 0.45, 1.8) };
       }
     }
@@ -1531,15 +1833,28 @@ export class NhanVat {
           ? Math.min((nay - this.tLaiTruoc) / 1000, BUOC_LAI_TOI_DA)
           : dt;
       this.tLaiTruoc = nay;
-      // bám tới vận tốc yêu cầu trong LERP_VAN_TOC giây (gia tốc = giảm tốc)
-      const k = Math.min(1, dtLai / LERP_VAN_TOC);
-      this.vx += (mx - this.vx) * k;
-      this.vz += (mz - this.vz) * k;
+      /* --- F2: toàn bộ vật lý một khung nằm trong `buocLai` (thuần, test được) --- */
+      const kq = buocLai(
+        this.goc.position.x,
+        this.goc.position.z,
+        this.vx,
+        this.vz,
+        mx,
+        mz,
+        dtLai,
+      );
+      this.vx = kq.vx;
+      this.vz = kq.vz;
+      this.goc.position.x = kq.x;
+      this.goc.position.z = kq.z;
+      this.chanLaiX = kq.chanX;
+      this.chanLaiZ = kq.chanZ;
+      this.dtLaiCuoi = dtLai;
       const toc = Math.hypot(this.vx, this.vz);
+      dangDi = kq.dangDi;
 
-      if (toc <= NGUONG_DUNG && hetHan) {
-        this.vx = 0;
-        this.vz = 0;
+      if (toc === 0 && hetHan) {
+        /* --- hết hiệu lực VÀ đã dừng hẳn: nhả thân --- */
         this.phaBuoc = 0;
         this.tLaiTruoc = 0;
         if (L) {
@@ -1549,33 +1864,58 @@ export class NhanVat {
           this.trangThai = this.dangNgoi ? 'sitting' : 'idle';
         }
       } else {
-        dangDi = true;
-        // Kẹp trong phòng + trượt dọc bàn/kệ (`bo-cuc.ts`): giải TỪNG TRỤC nên
-        // đi chéo vào mép bàn thì men theo mép chứ không dính cứng.
-        const [nx, nz] = truotVaCham(
-          this.goc.position.x,
-          this.goc.position.z,
-          this.goc.position.x + this.vx * dtLai,
-          this.goc.position.z + this.vz * dtLai,
-          BAN_KINH_THAN,
-        );
-        // va vào vật thì bỏ luôn thành phần vận tốc theo trục bị chặn, để
-        // không tích luỹ một vận tốc "ảo" mà thân không hề đi được
-        if (Math.abs(nx - this.goc.position.x) < Math.abs(this.vx * dtLai) * 0.5) this.vx *= 0.2;
-        if (Math.abs(nz - this.goc.position.z) < Math.abs(this.vz * dtLai) * 0.5) this.vz *= 0.2;
-        this.goc.position.x = nx;
-        this.goc.position.z = nz;
-        this.phaBuoc += dtLai * 7.5 * Math.max(0.35, toc / TOC_DO_DI);
+        /**
+         * F2 vòng 2 — bị vật cản chặn CỨNG dù Boss **vẫn giữ phím** thì báo
+         * `idle` ngay, không chờ `hetHan` (giữ phím là `hetHan` luôn `false`,
+         * nên nhánh nhả thân ở trên không bao giờ tới lượt — đó là lý do
+         * `state` mắc ở `walking` vĩnh viễn trước sofa).
+         *
+         * Cố ý **không** huỷ `dangLai` và không `traViec`: lệnh lái vẫn còn
+         * chủ thân, nên lúc Boss xoay sang hướng thoáng là đi tiếp ngay trong
+         * khung sau. Nếu huỷ thì mỗi lượt gia hạn 200 ms lại dựng một hành
+         * động mới và `state` nháy `walking ↔ idle` 5 lần/giây — đúng cái tật
+         * gối lệnh mà F2 vừa bỏ.
+         */
+        if (!dangDi && !this.di && this.trangThai === 'walking') {
+          this.trangThai = this.dangNgoi ? 'sitting' : 'idle';
+        } else if (dangDi && L && this.viec === L.hd && this.trangThai !== 'walking') {
+          this.trangThai = 'walking';
+        }
+        // F2 vòng 2 — pha bước theo TỐC THẬT: sàn 0,35 cũ vẫn quay chân khi
+        // đứng im. Đứng im thì pha về 0 để lần đi sau bắt đầu từ đầu bước.
+        if (dangDi) this.phaBuoc += dtLai * 7.5 * Math.max(0.35, kq.tocThat / TOC_DO_DI);
+        else this.phaBuoc = 0;
 
-        // xoay mặt theo hướng đi, slerp mềm (không nhảy bậc)
-        if (toc > 0.12) {
-          const goc = Math.atan2(this.vx, this.vz);
-          let lech = goc - this.goc.rotation.y;
-          while (lech > Math.PI) lech -= Math.PI * 2;
-          while (lech < -Math.PI) lech += Math.PI * 2;
-          this.goc.rotation.y += lech * Math.min(1, dtLai * 9);
+        /**
+         * F2 — hướng mặt bám hướng ĐI theo **thời gian thật**, có trần tốc độ
+         * góc. Quay theo vận tốc *mục tiêu* chứ không theo vận tốc hiện tại:
+         * lúc vừa đổi phím A→D vận tốc còn đang qua 0, nếu lấy hướng của vận
+         * tốc hiện tại thì hướng mặt quay loạn quanh điểm đó.
+         */
+        const hx = hetHan ? this.vx : mx;
+        const hz = hetHan ? this.vz : mz;
+        if (Math.hypot(hx, hz) > NGUONG_DI) {
+          const goc = Math.atan2(hx, hz);
+          const lech = lechGoc(goc, this.goc.rotation.y);
+          const buoc = lech * heSoBam(dtLai, LERP_XOAY_LAI);
+          const tran = TOC_XOAY_LAI * dtLai;
+          this.goc.rotation.y +=
+            Math.sign(buoc) * Math.min(Math.abs(buoc), tran, Math.abs(lech));
         }
       }
+      /* --- F2: một dòng sổ bằng chứng cho khung lái này (xem `soLai`) --- */
+      // Đầy thì NGỪNG ghi, không `shift()` mỗi khung (O(n) trong đường render).
+      // Sổ reset mỗi lần Boss nhấn phím từ lúc đứng yên nên 900 khung là thừa.
+      if (this.soLai.length < 900)
+      this.soLai.push([
+        +nay.toFixed(1),
+        +dtLai.toFixed(4),
+        +this.goc.position.x.toFixed(4),
+        +this.goc.position.z.toFixed(4),
+        +Math.hypot(this.vx, this.vz).toFixed(4),
+        +this.goc.rotation.y.toFixed(4),
+        (this.chanLaiX ? 1 : 0) + (this.chanLaiZ ? 2 : 0),
+      ]);
     }
 
     /* --- đi lại: nội suy theo đồng hồ thật, tới nơi đúng durationMs --- */
@@ -1593,11 +1933,14 @@ export class NhanVat {
         d.hd.xong();
       } else {
         dangDi = true;
+        // F2 — cùng một phép xoay độc lập FPS như phần lái (xem `heSoBam`):
+        // `dt * 7` cũ quay tức thì ở FPS thấp và quay 600°/s ở 60 FPS.
         const goc = Math.atan2(d.den.x - d.tu.x, d.den.z - d.tu.z);
-        let lech = goc - this.goc.rotation.y;
-        while (lech > Math.PI) lech -= Math.PI * 2;
-        while (lech < -Math.PI) lech += Math.PI * 2;
-        this.goc.rotation.y += lech * Math.min(1, dt * 7);
+        const lech = lechGoc(goc, this.goc.rotation.y);
+        const buoc = lech * heSoBam(dt, LERP_XOAY_LAI);
+        const tran = TOC_XOAY_LAI * dt;
+        this.goc.rotation.y +=
+          Math.sign(buoc) * Math.min(Math.abs(buoc), tran, Math.abs(lech));
       }
     }
 
