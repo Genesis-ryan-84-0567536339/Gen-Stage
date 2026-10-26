@@ -816,11 +816,27 @@ try {
     demCau(ds, CAU_NOI, evText2?.t ?? tGo2, tNao2 + 500) === 0,
     `câu nối ×${demCau(ds, CAU_NOI, evText2?.t ?? tGo2, tNao2 + 500)}`,
   );
+/**
+   * **MỐC 5b tính từ max(lệnh của não, lúc sân khấu hết tiếng)** — I1 vòng 2c.
+   *
+   * Từ vòng 2c, `actor.say` chờ `choGiongRanh()` trước khi mở miệng (một giọng
+   * cho cả sân khấu). Não trả lời ở mốc 2 s thì **Nam còn đang đọc câu của
+   * Boss**, nên câu của não đúng ra phải chờ — đo từ lúc gửi lệnh là đo cả cái
+   * chờ đó rồi kết luận "não nói muộn", sai hẳn ý.
+   */
+  const namXong2 = evText2
+    ? sauEv(ds, 'actor.sayDone', evText2.t, (e) => e.data?.actor === 'owner')
+    : null;
+  const goc5 = Math.max(tNao2, namXong2?.t ?? 0);
   ghi(
-    'MỐC 5b — não nói NGAY sau khi gửi (việc chêm bị cắt, không phải chờ nó xong)',
-    evNao2 !== null && evNao2.t - tNao2 <= 1500,
-    evNao2 ? `${evNao2.t - tNao2} ms sau lệnh của não` : 'não không nói được',
-    { treNaoNoiMs: evNao2 ? evNao2.t - tNao2 : null },
+    'MỐC 5b — não nói NGAY sau khi sân khấu hết tiếng (việc chêm bị cắt)',
+    evNao2 !== null && evNao2.t - goc5 <= 1500,
+    evNao2
+      ? `${evNao2.t - goc5} ms sau max(lệnh của não, Nam dứt lời) — lệnh của não tới ${
+          namXong2 ? tNao2 - namXong2.t : '—'
+        } ms so với lúc Nam dứt lời`
+      : 'não không nói được',
+    { treNaoNoiMs: evNao2 ? evNao2.t - goc5 : null },
   );
   const dinhAm2 = await dinhGiong(page);
   ghi(
@@ -1093,7 +1109,7 @@ try {
     `| **giọng thật cùng phát** (não 2 s, lúc cắt) | đỉnh 1 | **${dinhAm2}** | ${dinhAm2 === 1 ? '✅' : '❌'} |`,
     `| **giọng thật cùng phát** (trần tầng 2) | đỉnh 1 | **${dinhAm7}** | ${dinhAm7 <= 1 ? '✅' : '❌'} |`,
     `| não trả lời ở 2 s: câu nối | 0 | **${demCau(ds, CAU_NOI, evText2?.t ?? tGo2, tNao2 + 500)}** | ✅ |`,
-    `| não trả lời ở 2 s: não nói sau lệnh | ngay | **${evNao2 ? evNao2.t - tNao2 : '—'} ms** | ${evNao2 && evNao2.t - tNao2 <= 1500 ? '✅' : '❌'} |`,
+    `| não trả lời ở 2 s: nói sau khi sân khấu hết tiếng | ngay | **${evNao2 ? evNao2.t - goc5 : '—'} ms** | ${evNao2 && evNao2.t - goc5 <= 1500 ? '✅' : '❌'} |`,
     `| đang việc của não: \`lookAt\` | ≤300 ms | **${lk3 && evText3 ? lk3.t - evText3.t : '—'} ms** | ${lk3 && evText3 && lk3.t - evText3.t <= 300 ? '✅' : '❌'} |`,
     `| đang việc của não: hàng đợi | không mất | **queued ${banSau.queued}**, 0 \`cmd.interrupted\` cho Nhi | ${banSau.queued === 1 && catNhi === null ? '✅' : '❌'} |`,
     `| trần tầng 2: câu kết sau 30 s | đúng 1 | **${soKet}** | ${soKet === 1 ? '✅' : '❌'} |`,
