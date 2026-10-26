@@ -127,6 +127,14 @@ function ghi(nhan, ok, chiTiet, so) {
 /* ----------------------------------------------------------- bridge + web */
 
 let bridge = null;
+/**
+ * Trình duyệt đang mở, để `dongHet` đóng được trên MỌI đường thoát.
+ *
+ * `process.exit` KHÔNG giết Firefox của Playwright: lượt chạy đầu thoát qua
+ * `unhandledRejection` và để lại hai tiến trình `firefox` sống nhăn, ăn GPU
+ * của các worktree khác. `browser.close()` phải nằm trong chính hàm dọn.
+ */
+let trinhDuyet = null;
 async function khoeStt() {
   try {
     const r = await fetch(`http://127.0.0.1:${CONG_STT}/stt/khoe`);
@@ -185,6 +193,13 @@ async function moWeb() {
  * giữ 8787-8790/5173 và một tmux não thật.
  */
 function dongHet(ma) {
+  // `kill` của Playwright là đồng bộ và không cần `await` — đúng cái cần ở
+  // đây, vì `dongHet` chạy cả trong handler `uncaughtException`.
+  try {
+    trinhDuyet?.process()?.kill('SIGKILL');
+  } catch {
+    /* trình duyệt đã chết, hoặc chạy qua đường khác */
+  }
   for (const p of [web, bridge]) {
     if (!p?.pid) continue;
     try {
@@ -365,6 +380,7 @@ async function moTrang(wavB64) {
     },
     env: MOI_TRUONG_FF,
   });
+  trinhDuyet = browser;
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await ctx.newPage();
   const loiConsole = [];
