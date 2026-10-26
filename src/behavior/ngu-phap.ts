@@ -378,7 +378,6 @@ export const BANG_MAU_CAU: MauCau[] = [
     id: 'dungModule',
     nhom: 'Lab',
     mau: [
-      'dung <ten>',
       'ket tinh <ten>',
       'dung module <ten>',
       'tao module <ten>',
@@ -448,7 +447,7 @@ export const BANG_MAU_CAU: MauCau[] = [
   {
     id: 'nhacLoi',
     nhom: 'Nói',
-    mau: ['noi <loi>', 'noi la <loi>', 'nhac lai <loi>', 'doc <loi>'],
+    mau: ['noi <loi>', 'noi la <loi>', 'nhac lai <loi>'],
     moTa: 'Nhân vật nói lại đúng câu Sếp đọc',
     viDu: 'Gen, nói "chào cả nhà"',
     canActor: true,

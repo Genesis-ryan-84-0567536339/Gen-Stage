@@ -225,7 +225,7 @@ while (dem < soLuot && Date.now() < hetGio) {
     continue;
   }
   since = sk.doc.latest ?? since;
-  const cauBoss = (sk.doc.events ?? []).filter((e) => e.event === 'user.text');
+  const cauBoss = (sk.doc.events ?? []).filter((e) => e.event === 'user.text' && !(e.data && e.data.handled));
   if (cauBoss.length === 0) continue;
 
   for (const e of cauBoss) {
