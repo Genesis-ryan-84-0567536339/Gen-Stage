@@ -999,5 +999,5 @@ và cách tái hiện: **`docs/f2/GOC-DIEU-KHIEN-LOAN.md`**.
 
 ## Quy tắc đo trên Firefox thật (Boss 27/10: "bị gì mà cứ mở tắt trình duyệt hoài vậy")
 - Mỗi lượt đo mở Firefox **đúng một lần** (một browser/context/page), tải lại bằng `reload/goto`, đóng khi xong hẳn. Không chạy lặp script "cho chắc".
-- **Một lúc chỉ một agent** dùng Firefox thật: trước khi mở, `pgrep -f 'firefox-1543/firefox/firefox'` (đường dẫn BINARY — `pgrep -f firefox-1543` tự khớp chính vòng chờ `bash -c` của mình và của agent khác → 4 agent chờ nhau mãi, đã xảy ra 27/10) phải trống; phần không cần trình duyệt (đọc code, test, build, merge-tree, viết script) làm trước trong lúc chờ.
+- **Một lúc chỉ một agent** dùng Firefox thật: trước khi mở, `pgrep -f '^[^ ]*firefox-1543/firefox/firefox'` (NEO ĐẦU DÒNG vào argv[0] — mọi mẫu không neo như `pgrep -f firefox-1543` hay `pgrep -f 'firefox-1543/firefox/firefox'` đều tự khớp chính vòng chờ `bash -c` của mình và của agent khác → cả đội chờ nhau mãi, đã xảy ra 2 lần 27/10) phải trống; phần không cần trình duyệt (đọc code, test, build, merge-tree, viết script) làm trước trong lúc chờ.
 - Lý do: cửa sổ nhấp nháy làm phiền Boss, và nouveau gãy (`kernel rejected pushbuf`) khi ≥3 phiên Firefox GPU cùng lúc.
