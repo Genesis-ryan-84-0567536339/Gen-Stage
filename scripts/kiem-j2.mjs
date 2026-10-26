@@ -82,12 +82,17 @@ const in_ = (...x) => console.log(...x);
  * error", cạm bẫy F2 #56), mà lượt gãy giữa đường thì số đo vô nghĩa — và bộ
  * này mở trình duyệt **đúng một lần** cho cả lượt nên không có đường cứu.
  *
- * Khớp theo **đường binary** `firefox-1543/firefox/firefox`, không phải
- * `firefox-1543` trần: chuỗi trần khớp luôn vòng `bash -c` của chính mình và
- * của agent khác đang chờ, thành ra mấy phiên chờ nhau vĩnh viễn.
+ * **Mẫu khớp phải NEO ĐẦU dòng lệnh**, không chỉ "đường binary cho cụ thể
+ * hơn": đo thật 27/10 trên máy Boss, `pgrep -f firefox-1543/firefox/firefox`
+ * đếm được **10 tiến trình** trong khi KHÔNG có Firefox nào chạy — cả 10 là
+ * vòng `bash -c` chờ của chính mình và của các worktree khác, vì chuỗi mẫu
+ * nằm ngay trong dòng lệnh của chúng. Mấy phiên thành ra chờ nhau vĩnh viễn.
+ * `^[^ ]*firefox-1543/firefox/firefox` thì chỉ khớp tiến trình mà **argv[0]**
+ * là chính cái binary — `[^ ]*` (không phải `.*`) là phần quan trọng: `.*`
+ * vẫn nhảy qua cả `/bin/bash -c …` để tới chuỗi mẫu nằm giữa dòng lệnh.
  */
 function kiemFirefoxTrong() {
-  const r = spawnSync('pgrep', ['-f', 'firefox-1543/firefox/firefox'], { encoding: 'utf8' });
+  const r = spawnSync('pgrep', ['-f', '^[^ ]*firefox-1543/firefox/firefox'], { encoding: 'utf8' });
   const pid = String(r.stdout ?? '').trim().split(/\s+/).filter(Boolean);
   if (pid.length === 0) return;
   console.error(
