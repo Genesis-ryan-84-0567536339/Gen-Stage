@@ -8,16 +8,17 @@ LOG=".cache/log"; mkdir -p "$LOG"
 if [ "${1:-}" = "tat" ]; then
   pkill -f "scripts/nao-agy.mjs" 2>/dev/null     # driver não (chạy nền, không có cổng nên fuser không thấy)
   tmux kill-session -t gen-stage-nao 2>/dev/null  # agy đang ấm trong tmux
-  for p in 8787 8788 8789 5173; do fuser -k ${p}/tcp >/dev/null 2>&1; done
+  for p in 8787 8788 8789 8790 5173; do fuser -k ${p}/tcp >/dev/null 2>&1; done
   echo "Đã tắt Gen-Stage."; exit 0
 fi
 [ -d node_modules ] || pnpm install --silent
 [ -f public/models/avatar.vrm ] || bash scripts/fetch-assets.sh >/dev/null 2>&1
 [ -d public/kenney-sci-fi ] || bash scripts/fetch-lab-assets.sh >/dev/null 2>&1
 [ -d public/anim ] && [ "$(ls public/anim | wc -l)" -gt 0 ] || bash scripts/fetch-anim.sh >/dev/null 2>&1
+bash scripts/fetch-stt.sh >/dev/null 2>&1   # C1 (#31): nhận dạng giọng Việt, tải 1 lần
 # bridge: nếu cổng đã có tiến trình cũ (kể cả bản chạy ngoài script) thì giải phóng rồi bật lại cho sạch
 if ! curl -s -o /dev/null "http://127.0.0.1:8788/tts?text=a&voice=nu"; then
-  for p in 8787 8788 8789; do fuser -k ${p}/tcp >/dev/null 2>&1; done; sleep 1
+  for p in 8787 8788 8789 8790; do fuser -k ${p}/tcp >/dev/null 2>&1; done; sleep 1
   (nohup pnpm bridge > "$LOG/bridge.log" 2>&1 &)
 fi
 pgrep -f "vite --host --port 5173" >/dev/null || (nohup pnpm exec vite --host --port 5173 > "$LOG/dev.log" 2>&1 &)

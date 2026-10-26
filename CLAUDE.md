@@ -19,7 +19,7 @@ pnpm dev                  # chạy dev, mở http://localhost:5173
 pnpm dev --host           # cho điện thoại cùng wifi vào xem
 pnpm build                # tsc + vite build, phải không lỗi trước khi mở PR
 pnpm test                 # vitest: dispatcher, hàng đợi, kịch bản, stage.describe, A3 screen/module/fx
-pnpm bridge               # bridge: ws lệnh (8787) + giọng tiếng Việt (8788) + MCP HTTP (8789)
+pnpm bridge               # bridge: ws lệnh (8787) + giọng Việt (8788) + MCP HTTP (8789) + nhận giọng (8790)
 pnpm mcp                  # MCP qua stdio cho agy CLI (`agy mcp add gen-stage …`)
 pnpm nao                  # DRIVER não: nghe user.text qua ws → nuôi agy đang ấm trong tmux
 pnpm nao-demo             # não mẫu rule-based (không LLM) nối MCP stdio — vòng kín khi không có agy
@@ -36,7 +36,9 @@ node scripts/kiem-b1.mjs      # bằng chứng B1: bố cục 3 vùng + steer m�
 node scripts/kiem-b3.mjs      # bằng chứng B3: Owner gõ → MCP → Gen diễn + nói, vào docs/b3/ (CHẠY MỘT LẦN)
 node scripts/kiem-nao.mjs     # bằng chứng DRIVER: Sếp gõ → driver → agy thật → Gen nói, đo độ trễ, vào docs/nao/ (CHẠY MỘT LẦN)
 node scripts/kiem-c0.mjs      # bằng chứng C0: phản xạ xã hội + nhân vật nam anime, vào docs/c0/ (CHẠY MỘT LẦN)
+node scripts/kiem-c1.mjs      # bằng chứng C1: giữ V nói → bridge nhận chữ → user.speech → Gen phản ứng, vào docs/c1/ (CHẠY MỘT LẦN)
 bash scripts/fetch-anim.sh    # tải bộ chuyển động CC0 (Quaternius) về public/anim/ — chạy 1 lần sau khi clone
+bash scripts/fetch-stt.sh     # C1: venv + model PhoWhisper-small ct2 vào .cache/stt/ — chạy 1 lần (chay.sh gọi sẵn)
 ```
 
 ## Quy ước
@@ -127,6 +129,13 @@ biết registry, **giao diện** không gọi thẳng vào sân khấu.
 | `src/audio/tts-client.ts` | **B2** — tải + giải mã mp3, đo `durationMs` thật, phát bằng Web Audio, đẩy biên độ RMS mỗi 50 ms sang nhân vật |
 | `src/audio/so-tieng.ts` | **B2** — sổ nối sân khấu ↔ lớp tiếng (không phụ thuộc gì): sổ miệng, thời lượng thật, cờ chặn Web Speech |
 | `src/audio/nut-tieng.ts` | **B2** — nút "🔊 Bật tiếng" mở khoá autoplay, nhớ bằng `localStorage` |
+| `bridge/stt.ts` | **C1** — nhận dạng giọng Việt: `POST /stt` (cổng 8790) → ffmpeg 16 kHz mono → thợ python (PhoWhisper-small ct2 int8) → `{ text, confidence, durationMs, goiGen }`, cache `.cache/stt/cache/<sha1>.json` |
+| `bridge/stt-worker.py` | **C1** — thợ nhận dạng chạy mãi: nạp model + hâm máy một lần lúc bật bridge, mỗi dòng stdin là một wav |
+| `bridge/so-tu.ts` | **C1** — SỔ TỪ NHÀ: sửa tên riêng (`Gen`, `connector`, `Baserow`, `module`, `Kho Ryan`) sau nhận dạng. Hạ WER 47 % → 5 %; khớp mờ cho tên dài, đồng âm khai tay cho tên ngắn |
+| `src/audio/mic.ts` | **C1** — giữ phím **V** (hoặc giữ nút 🎤) để nói: `MediaRecorder` + đo RMS → `POST /stt` → chữ vào ô chat 1,5 s cho Boss sửa |
+| `src/audio/vad.ts` | **C1** — cắt im lặng đầu/cuối theo RMS (ngưỡng tương đối theo đỉnh, chừa 120 ms mỗi đầu). Không phụ thuộc DOM |
+| `src/audio/so-giong.ts` | **C1** — sổ nối mic ↔ `commands/actor.ts`: phiếu dùng một lần để `actor.say` biết câu này Boss NÓI chứ không gõ |
+| `scripts/do-stt.mjs` | **C1** — bàn đo: sinh 20 wav bằng TTS của bridge, chấm WER/độ trễ từng engine (`docs/c1/so-sanh.md`) |
 | `src/api/__tests__/` | `san-khau-gia.ts` (sân khấu giả, không WebGL) + test dispatcher/describe/script/A3 |
 
 ### Thêm một lệnh mới
@@ -433,3 +442,37 @@ lệnh mới cho các đợt sau — `stage.bootstrap` vẫn liệt kê đủ b�
 - **Máy kiểm chạy ~1 fps (swiftshader)**, nên: đo độ trễ phản xạ bằng **nhật ký
   lệnh** chứ không bằng `facing` trên khung hình; và `actor.steer` 300 ms hết
   hạn trước cả khung hình kế tiếp — script bằng chứng phải dùng nhịp 2,5 s.
+## Quyết định C1 — nhận dạng giọng Việt (26/10, Issue #31)
+
+Số đo đầy đủ và lý do loại từng lựa chọn: **`docs/c1/so-sanh.md`**.
+
+- **Nhận dạng ở bridge, không ở trình duyệt.** Boss dùng Firefox trên Fedora →
+  không có Web Speech API. Máy không có CUDA dùng được → CPU.
+- **Engine: PhoWhisper-small (VinAI) bản CTranslate2 int8** qua `faster-whisper`.
+  Đo thật trên máy Boss: whisper.cpp `small` mất **14,6 s** một câu và
+  `large-v3-turbo` mất **77,6 s** (loại vì trễ); Vosk nhanh 0,24 s nhưng sai
+  **động từ lệnh** ("dừng lại" → "nhìn lại"); whisper gốc đa ngôn ngữ cùng cỡ
+  kém PhoWhisper 3 lần về WER tiếng Việt.
+- **Sai là do VỐN TỪ, không do âm học.** Mọi engine nghe đúng câu lệnh tiếng
+  Việt thường nhưng **không engine nào** nghe ra `Gen`, `connector`, `Baserow`,
+  `module`, `Kho Ryan`. Nâng cỡ model không chữa được (`large-v3-turbo` vẫn
+  sai y thế, chỉ chậm hơn 24 lần), `initial_prompt` và `hotwords` làm **tệ
+  hơn** (model sinh câu không có thật). Chỗ chữa là `bridge/so-tu.ts` — sổ từ
+  nhà, WER **47,4 % → 5,3 %**. Sổ chỉ chứa **tên riêng**: khai từ Việt thường
+  vào là nó sửa bừa câu Boss nói đúng ("cất module" → "kết tinh module").
+- **Thợ python chạy mãi + hâm máy.** Nạp model mất 3–6 s và 6 câu đầu mất
+  10–24 s (ct2 mmap model 465 MB, nạp trang lười; VAD Silero nạp lười). Thợ
+  đọc trước cả `model.bin` vào page cache rồi chạy 4 lượt hâm trước khi báo
+  "sẵn sàng" — Boss không chịu khoản đó.
+- **Chữ nhận được KHÔNG tự gửi ngay**: đổ vào ô chat 1,5 s để Boss sửa (Enter
+  gửi ngay, Esc bỏ, gõ một ký tự là huỷ hẹn tự gửi). Tin cậy < 0,6 thì **không**
+  tự gửi — thà Boss bấm thêm Enter hơn là Gen dựng sai connector.
+- **Mic đi đúng cửa ô chat** (`oChat.gui`), không gọi thẳng dispatcher: Boss nói
+  hay gõ đều ra một `actor.say` lên nhân vật `owner` → cùng `user.text`.
+  `user.speech` thêm vào nhờ **phiếu dùng một lần** trong `src/audio/so-giong.ts`,
+  nên không phải thêm tham số lạ vào `actor.say` mà mọi agent phải học.
+- **Cắt im lặng phải chừa lề.** Đo thật: cắt 200 ms đầu làm mất phụ âm đầu —
+  "dừng lại" → "đừng lại", "mở màn hình" → "ở màn hình". VAD chừa 120 ms mỗi đầu.
+- **Cạm bẫy Chrome**: `--use-file-for-fake-audio-capture` với đường có **khoảng
+  trắng** làm Chrome tự tắt sau 4 s, không một dòng lỗi. Thư mục dự án của Boss
+  có khoảng trắng, nên `scripts/kiem-c1.mjs` chép wav sang `/tmp` trước.

@@ -628,6 +628,40 @@ input[type="checkbox"] { width: 17px; height: 17px; min-height: 0; accent-color:
 }
 #o-chat button:hover { filter: brightness(1.08); }
 
+/* --------------------------------------- C1 (#31): nút giữ-để-nói + chờ sửa */
+
+/* Nút 🎤 cạnh ô chat — cùng cửa với phím V, cho điện thoại không có bàn phím. */
+#o-chat #nut-mic {
+  padding: 0 11px;
+  font-size: 16px;
+  color: var(--muc);
+  background: rgba(64, 55, 46, 0.06);
+  border: 1px solid var(--vien);
+  /* đẩy-để-nói: giữ ngón tay trên nút, không cho trình duyệt hiểu là kéo trang */
+  touch-action: none;
+  user-select: none;
+}
+#o-chat #nut-mic.dang-ghi {
+  color: #fff;
+  background: var(--do, #c0392b);
+  border-color: transparent;
+  animation: mic-dap 1s ease-in-out infinite;
+}
+/* Bridge chưa cài STT → nút mờ, bấm vẫn không sao (mic.dung() = false) */
+#o-chat #nut-mic.tat { opacity: 0.4; cursor: default; }
+@keyframes mic-dap {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.5); }
+  50% { box-shadow: 0 0 0 7px rgba(192, 57, 43, 0); }
+}
+/* 1,5 s Boss sửa chữ mic nhận được: viền xanh chạy cho thấy "sắp gửi" */
+#o-chat.cho-sua input {
+  border-color: var(--xanh);
+  background: rgba(47, 125, 98, 0.1);
+}
+@media (prefers-reduced-motion: reduce) {
+  #o-chat #nut-mic.dang-ghi { animation: none; }
+}
+
 /* Điện thoại: bảng lệnh chiếm cả bề rộng khi mở, nên ô chat bám full width */
 @media (max-width: 760px) {
   #o-chat { right: 0; width: calc(100% - 20px); }

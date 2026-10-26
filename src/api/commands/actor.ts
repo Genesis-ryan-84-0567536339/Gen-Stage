@@ -13,6 +13,8 @@ import { P_ACTOR, ngay, pEnum, pSo, tuHanhDong } from './tien-ich';
 // trình duyệt (test Node), nên mọi chỗ gọi đều có `?.`.
 import { giongTheoActor, lopTieng } from '../../audio/tts-client';
 import { boMiengNhep } from '../../audio/so-tieng';
+// C1 (#31) — phiếu mic để biết câu này Boss NÓI chứ không gõ (không phụ thuộc DOM).
+import { layPhieuGiong } from '../../audio/so-giong';
 
 const s = (v: unknown) => String(v);
 
@@ -422,10 +424,11 @@ export const LENH_ACTOR: CommandSpec[] = [
   {
     cmd: 'actor.say',
     group: 'actor',
-    events: ['actor.sayStart', 'actor.sayDone', 'user.text', 'cmd.queued'],
+    events: ['actor.sayStart', 'actor.sayDone', 'user.text', 'user.speech', 'cmd.queued'],
     desc:
       'Nói: bong bóng chữ + nhép miệng + giọng trình duyệt nếu có. Bắn actor.sayDone; ' +
-      'nếu actor là người Boss lái (controlledBy "owner") thì bắn thêm user.text để não nghe',
+      'nếu actor là người Boss lái (controlledBy "owner") thì bắn thêm user.text để não nghe, ' +
+      'và user.speech khi câu đó đến từ mic (C1)',
     chiemActor: 'actor',
     params: [
       P_ACTOR,
@@ -479,6 +482,14 @@ export const LENH_ACTOR: CommandSpec[] = [
       const nguoiNoi = ctx.world.describe().actors.find((x) => x.id === id);
       if (nguoiNoi?.controlledBy === 'owner') {
         ctx.bus.emit('user.text', { actor: id, text: chu, to: nghe });
+        /**
+         * C1 (#31) — câu này Boss **nói** chứ không gõ thì bắn thêm
+         * `user.speech { text, confidence, durationMs }` (spec mục 3.5). Mic
+         * để phiếu trong `src/audio/so-giong.ts` ngay trước khi gửi; phiếu
+         * dùng một lần nên gõ tay lại đúng câu đó không bị tính là nói.
+         */
+        const phieu = layPhieuGiong(chu);
+        if (phieu) ctx.bus.emit('user.speech', { actor: id, ...phieu });
       }
 
       /**

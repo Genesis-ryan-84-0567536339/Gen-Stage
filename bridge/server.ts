@@ -20,12 +20,16 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { batTts } from './tts';
 // B3 (#21) — MCP 1:1 với Actor API: `pnpm bridge` bật luôn bản HTTP streamable.
 import { batMcpHttp, CONG_MCP_MAC_DINH, noiBridgeWs } from './mcp';
+// C1 (#31) — nhận dạng giọng Việt: `pnpm bridge` bật luôn POST /stt.
+import { batStt, CONG_STT_MAC_DINH } from './stt';
 
 const CONG = Number(process.env.GEN_STAGE_PORT ?? 8787);
 /** Cổng HTTP cho TTS (B2) — khác cổng ws để không đụng `WebSocketServer`. */
 const CONG_TTS = Number(process.env.GEN_STAGE_TTS_PORT ?? 8788);
 /** Cổng HTTP cho MCP (B3) — bind cùng chính sách với ws, mặc định 127.0.0.1. */
 const CONG_MCP = Number(process.env.GEN_STAGE_MCP_PORT ?? CONG_MCP_MAC_DINH);
+/** Cổng HTTP cho STT (C1) — cùng chính sách bind, mặc định 127.0.0.1. */
+const CONG_STT = Number(process.env.GEN_STAGE_STT_PORT ?? CONG_STT_MAC_DINH);
 /** Hạn chờ trình duyệt trả lời một lệnh. */
 const HAN_MS = Number(process.env.GEN_STAGE_TIMEOUT ?? 30000);
 
@@ -340,11 +344,15 @@ const svMcp = batMcpHttp({
   khiNaoGoi: naoHttpVuaGoi,
 });
 
+// C1 — mic trong trình duyệt gửi audio về đây. Cùng `pnpm bridge`, cổng riêng.
+const svStt = batStt(HOST, CONG_STT);
+
 for (const tin of ['SIGINT', 'SIGTERM'] as const) {
   process.on(tin, () => {
     ghi('đóng bridge…');
     svTts.close();
     svMcp.close();
+    svStt.close();
     noiMcp.dong();
     wss.close(() => process.exit(0));
   });

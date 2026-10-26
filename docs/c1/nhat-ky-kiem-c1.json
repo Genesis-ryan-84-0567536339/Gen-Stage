@@ -1,0 +1,547 @@
+{
+  "chay": "2026-10-26T00:24:04.019Z",
+  "cong": {
+    "ws": 8793,
+    "tts": 8794,
+    "mcp": 8795,
+    "stt": 8796
+  },
+  "buoc": [
+    {
+      "nhan": "bridge bật cả ws + tts + mcp + stt",
+      "ok": true,
+      "chiTiet": "/stt/khoe: {\"ok\":true,\"daCai\":true,\"model\":\".cache/stt/models/PhoWhisper-small-ct2\"}"
+    },
+    {
+      "nhan": "WER ≤ 10 % trên 20 câu lệnh tiếng Việt",
+      "ok": true,
+      "chiTiet": "WER 7.9% · 6/76 từ sai",
+      "so": {
+        "wer": 0.07894736842105263
+      }
+    },
+    {
+      "nhan": "độ trễ trung vị ≤ 4 s (qua đúng POST /stt, thợ đã hâm máy)",
+      "ok": false,
+      "chiTiet": "trung vị 7.69 s · TB 7.25 s · p95 18.57 s · load 13.9/10.8/10.5 trên 8 luồng",
+      "so": {
+        "treTrungViMs": 7688,
+        "treTrungBinhMs": 7248,
+        "treP95Ms": 18573
+      }
+    },
+    {
+      "nhan": "nút 🎤 hiện cạnh ô chat và không bị mờ (bridge có STT)",
+      "ok": true,
+      "chiTiet": "{\"rong\":44,\"cao\":34,\"tat\":false}",
+      "so": {
+        "rong": 44,
+        "cao": 34,
+        "tat": false
+      }
+    },
+    {
+      "nhan": "giữ V → mic mở, nút đổi sang \"đang ghi\"",
+      "ok": true,
+      "chiTiet": "class dang-ghi: true"
+    },
+    {
+      "nhan": "mic đo được tiếng thật (RMS > 0, có dải nói)",
+      "ok": true,
+      "chiTiet": "269 mẫu RMS · đỉnh 0.5173 · coTieng true · gửi 188769 byte",
+      "so": {
+        "soMauRms": 269,
+        "dinhRms": 0.5173212859709168,
+        "coTieng": true,
+        "byteGui": 188769,
+        "text": "Gen ơi dựng connector Baserow",
+        "confidence": 0.864,
+        "treMs": 7797,
+        "loi": "",
+        "dung": true
+      }
+    },
+    {
+      "nhan": "ô chat hiện ĐÚNG chữ \"Gen ơi, dựng connector Baserow\"",
+      "ok": true,
+      "chiTiet": "nhận: \"Gen ơi dựng connector Baserow\" · tin cậy 0.864 · trễ 7797 ms",
+      "so": {
+        "oChatChu": "Gen ơi dựng connector Baserow",
+        "confidence": 0.864,
+        "treMs": 7797
+      }
+    },
+    {
+      "nhan": "tự gửi sau 1,5 s → sự kiện user.text (owner)",
+      "ok": true,
+      "chiTiet": "{\"actor\":\"owner\",\"text\":\"Gen ơi dựng connector Baserow\"}"
+    },
+    {
+      "nhan": "bắn user.speech { text, confidence, durationMs, goiGen } (spec 3.5)",
+      "ok": true,
+      "chiTiet": "{\"actor\":\"owner\",\"text\":\"Gen ơi dựng connector Baserow\",\"confidence\":0.864,\"durationMs\":7797,\"goiGen\":true}",
+      "so": {
+        "actor": "owner",
+        "text": "Gen ơi dựng connector Baserow",
+        "confidence": 0.864,
+        "durationMs": 7797,
+        "goiGen": true
+      }
+    },
+    {
+      "nhan": "não nối MCP stdio và nghe stage_events",
+      "ok": true,
+      "chiTiet": null
+    },
+    {
+      "nhan": "lượt nói thứ hai cũng ra user.speech",
+      "ok": true,
+      "chiTiet": "{\"actor\":\"owner\",\"text\":\"danh ơi dựng connector Baserow\",\"confidence\":0.897,\"durationMs\":8894,\"goiGen\":false}"
+    },
+    {
+      "nhan": "Gen phản ứng với câu Boss NÓI (say + emote, và dựng module nếu não chọn)",
+      "ok": true,
+      "chiTiet": "say=\"Xong rồi Sếp, connector Baserow đã kết tinh thành module. Em\" · emote=ra-lenh · module=-"
+    },
+    {
+      "nhan": "nút 🎤 vẫn bấm được trên màn 390 px",
+      "ok": true,
+      "chiTiet": "{\"rong\":44,\"cao\":34,\"trongMan\":true}",
+      "so": {
+        "rong": 44,
+        "cao": 34,
+        "trongMan": true
+      }
+    },
+    {
+      "nhan": "0 lỗi console",
+      "ok": true,
+      "chiTiet": ""
+    }
+  ],
+  "doLuong": {
+    "wer": 0.07894736842105263,
+    "treTrungBinhMs": 7248,
+    "treTrungViMs": 7688,
+    "treP95Ms": 18573,
+    "soCau": 20,
+    "tai": {
+      "loadavg": [
+        13.9,
+        10.8,
+        10.5
+      ],
+      "soLuong": 8
+    },
+    "chiTiet": [
+      {
+        "wav": ".cache/stt/mau/nu-00.wav",
+        "text": "Gen ơi, dựng connector Baserow",
+        "giong": "nu",
+        "nhan": "Gen ơi dựng connector Baserow",
+        "tho": "gên ơi dựng con nét to ba xu rao.",
+        "confidence": 0.864,
+        "treMs": 18573,
+        "sua": 0,
+        "tu": 5
+      },
+      {
+        "wav": ".cache/stt/mau/nu-01.wav",
+        "text": "đi tới bàn điều khiển",
+        "giong": "nu",
+        "nhan": "đi tới bàn điều khiển",
+        "tho": "đi tới bàn điều khiển.",
+        "confidence": 1,
+        "treMs": 3382,
+        "sua": 0,
+        "tu": 5
+      },
+      {
+        "wav": ".cache/stt/mau/nu-02.wav",
+        "text": "cất module lên kệ",
+        "giong": "nu",
+        "nhan": "tức module lên kệ",
+        "tho": "tức mua đun lên kệ.",
+        "confidence": 0.993,
+        "treMs": 4710,
+        "sua": 1,
+        "tu": 4
+      },
+      {
+        "wav": ".cache/stt/mau/nu-03.wav",
+        "text": "chào Gen",
+        "giong": "nu",
+        "nhan": "chào Gen",
+        "tho": "chào gen.",
+        "confidence": 0.902,
+        "treMs": 5621,
+        "sua": 0,
+        "tu": 2
+      },
+      {
+        "wav": ".cache/stt/mau/nu-04.wav",
+        "text": "mở màn hình chính",
+        "giong": "nu",
+        "nhan": "mở màn hình chính",
+        "tho": "mở màn hình chính.",
+        "confidence": 1,
+        "treMs": 5141,
+        "sua": 0,
+        "tu": 4
+      },
+      {
+        "wav": ".cache/stt/mau/nu-05.wav",
+        "text": "Gen, vui lên",
+        "giong": "nu",
+        "nhan": "Gen vui lên",
+        "tho": "ghen vui lên.",
+        "confidence": 0.94,
+        "treMs": 3846,
+        "sua": 0,
+        "tu": 3
+      },
+      {
+        "wav": ".cache/stt/mau/nu-06.wav",
+        "text": "kết tinh module tên Kho Ryan",
+        "giong": "nu",
+        "nhan": "kết tinh module tên Kho Ryan",
+        "tho": "kết tinh mua đùng tên kho raion.",
+        "confidence": 0.893,
+        "treMs": 3934,
+        "sua": 0,
+        "tu": 6
+      },
+      {
+        "wav": ".cache/stt/mau/nu-07.wav",
+        "text": "quay lại đây",
+        "giong": "nu",
+        "nhan": "quay lại đây",
+        "tho": "quay lại đây.",
+        "confidence": 1,
+        "treMs": 3748,
+        "sua": 0,
+        "tu": 3
+      },
+      {
+        "wav": ".cache/stt/mau/nu-08.wav",
+        "text": "nói lại lần nữa",
+        "giong": "nu",
+        "nhan": "nói lại lần nữa",
+        "tho": "nói lại lần nữa.",
+        "confidence": 1,
+        "treMs": 5958,
+        "sua": 0,
+        "tu": 4
+      },
+      {
+        "wav": ".cache/stt/mau/nu-09.wav",
+        "text": "dừng lại",
+        "giong": "nu",
+        "nhan": "dừng lại",
+        "tho": "dừng lại.",
+        "confidence": 0.999,
+        "treMs": 6307,
+        "sua": 0,
+        "tu": 2
+      },
+      {
+        "wav": ".cache/stt/mau/nam-00.wav",
+        "text": "Gen ơi, dựng connector Baserow",
+        "giong": "nam",
+        "nhan": "Gen ơi dựng connector thóp Baserow",
+        "tho": "gan ơi dựng con nét thóp ba xu đâu.",
+        "confidence": 0.869,
+        "treMs": 9713,
+        "sua": 1,
+        "tu": 5
+      },
+      {
+        "wav": ".cache/stt/mau/nam-01.wav",
+        "text": "đi tới bàn điều khiển",
+        "giong": "nam",
+        "nhan": "đi tới bàn điều khiển",
+        "tho": "đi tới bàn điều khiển.",
+        "confidence": 0.998,
+        "treMs": 10203,
+        "sua": 0,
+        "tu": 5
+      },
+      {
+        "wav": ".cache/stt/mau/nam-02.wav",
+        "text": "cất module lên kệ",
+        "giong": "nam",
+        "nhan": "các module lên kệ",
+        "tho": "các model lên kệ.",
+        "confidence": 0.883,
+        "treMs": 8162,
+        "sua": 1,
+        "tu": 4
+      },
+      {
+        "wav": ".cache/stt/mau/nam-03.wav",
+        "text": "chào Gen",
+        "giong": "nam",
+        "nhan": "chào gang",
+        "tho": "chào gang.",
+        "confidence": 0.853,
+        "treMs": 7688,
+        "sua": 1,
+        "tu": 2
+      },
+      {
+        "wav": ".cache/stt/mau/nam-04.wav",
+        "text": "mở màn hình chính",
+        "giong": "nam",
+        "nhan": "mở màn hình chính",
+        "tho": "mở màn hình chính.",
+        "confidence": 1,
+        "treMs": 7703,
+        "sua": 0,
+        "tu": 4
+      },
+      {
+        "wav": ".cache/stt/mau/nam-05.wav",
+        "text": "Gen, vui lên",
+        "giong": "nam",
+        "nhan": "Gen vui lên",
+        "tho": "ghen vui lên.",
+        "confidence": 0.998,
+        "treMs": 8734,
+        "sua": 0,
+        "tu": 3
+      },
+      {
+        "wav": ".cache/stt/mau/nam-06.wav",
+        "text": "kết tinh module tên Kho Ryan",
+        "giong": "nam",
+        "nhan": "kết tinh mua đồn tên Kho Ryan",
+        "tho": "kết tình mua đồn tên khoai rai ầng.",
+        "confidence": 0.858,
+        "treMs": 8311,
+        "sua": 2,
+        "tu": 6
+      },
+      {
+        "wav": ".cache/stt/mau/nam-07.wav",
+        "text": "quay lại đây",
+        "giong": "nam",
+        "nhan": "quay lại đây",
+        "tho": "quay lại đây.",
+        "confidence": 1,
+        "treMs": 7729,
+        "sua": 0,
+        "tu": 3
+      },
+      {
+        "wav": ".cache/stt/mau/nam-08.wav",
+        "text": "nói lại lần nữa",
+        "giong": "nam",
+        "nhan": "nói lại lần nữa",
+        "tho": "nói lại lần nữa.",
+        "confidence": 1,
+        "treMs": 8211,
+        "sua": 0,
+        "tu": 4
+      },
+      {
+        "wav": ".cache/stt/mau/nam-09.wav",
+        "text": "dừng lại",
+        "giong": "nam",
+        "nhan": "dừng lại",
+        "tho": "dừng lại.",
+        "confidence": 1,
+        "treMs": 7276,
+        "sua": 0,
+        "tu": 2
+      }
+    ]
+  },
+  "mic": {
+    "soMauRms": 269,
+    "dinhRms": 0.5173212859709168,
+    "coTieng": true,
+    "byteGui": 188769,
+    "text": "Gen ơi dựng connector Baserow",
+    "confidence": 0.864,
+    "treMs": 7797,
+    "loi": "",
+    "dung": true,
+    "oChatChu": "Gen ơi dựng connector Baserow"
+  },
+  "userSpeech": {
+    "actor": "owner",
+    "text": "Gen ơi dựng connector Baserow",
+    "confidence": 0.864,
+    "durationMs": 7797,
+    "goiGen": true
+  },
+  "gen": {
+    "say": {
+      "actor": "gen",
+      "text": "Xong rồi Sếp, connector Baserow đã kết tinh thành module. Em cất lên kệ nhé?"
+    },
+    "emote": {
+      "actor": "gen",
+      "emote": "ra-lenh"
+    },
+    "module": {
+      "module": "connector-baserow-1",
+      "shape": "book",
+      "label": "connector Baserow"
+    }
+  },
+  "loiConsole": [],
+  "suKien": [
+    {
+      "t": 1792974420435,
+      "event": "bridge.connected",
+      "data": {
+        "url": "ws://localhost:8793/?role=stage"
+      }
+    },
+    {
+      "t": 1792974425064,
+      "event": "user.click",
+      "data": {
+        "x": 500,
+        "y": 300
+      }
+    },
+    {
+      "t": 1792974448275,
+      "event": "user.text",
+      "data": {
+        "actor": "owner",
+        "text": "Gen ơi dựng connector Baserow"
+      }
+    },
+    {
+      "t": 1792974448276,
+      "event": "user.speech",
+      "data": {
+        "actor": "owner",
+        "text": "Gen ơi dựng connector Baserow",
+        "confidence": 0.864,
+        "durationMs": 7797,
+        "goiGen": true
+      }
+    },
+    {
+      "t": 1792974451171,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "owner",
+        "text": "Gen ơi dựng connector Baserow"
+      }
+    },
+    {
+      "t": 1792974455829,
+      "event": "user.click",
+      "data": {
+        "x": 500,
+        "y": 300
+      }
+    },
+    {
+      "t": 1792974470110,
+      "event": "user.text",
+      "data": {
+        "actor": "owner",
+        "text": "danh ơi dựng connector Baserow"
+      }
+    },
+    {
+      "t": 1792974470111,
+      "event": "user.speech",
+      "data": {
+        "actor": "owner",
+        "text": "danh ơi dựng connector Baserow",
+        "confidence": 0.897,
+        "durationMs": 8894,
+        "goiGen": false
+      }
+    },
+    {
+      "t": 1792974471755,
+      "event": "actor.emoteDone",
+      "data": {
+        "actor": "gen",
+        "emote": "ra-lenh"
+      }
+    },
+    {
+      "t": 1792974473036,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "owner",
+        "text": "danh ơi dựng connector Baserow"
+      }
+    },
+    {
+      "t": 1792974475693,
+      "event": "screen.streamDone",
+      "data": {
+        "screen": "main",
+        "cancelled": false
+      }
+    },
+    {
+      "t": 1792974482819,
+      "event": "cmd.queued",
+      "data": {
+        "cmd": "actor.say",
+        "actor": "gen",
+        "position": 1,
+        "dangChay": "actor.emote"
+      }
+    },
+    {
+      "t": 1792974485431,
+      "event": "actor.held",
+      "data": {
+        "actor": "gen",
+        "prop": "connector-baserow-1",
+        "hand": "right"
+      }
+    },
+    {
+      "t": 1792974485432,
+      "event": "module.built",
+      "data": {
+        "module": "connector-baserow-1",
+        "shape": "book",
+        "label": "connector Baserow"
+      }
+    },
+    {
+      "t": 1792974485433,
+      "event": "actor.emoteDone",
+      "data": {
+        "actor": "gen",
+        "emote": "thanh-cong"
+      }
+    },
+    {
+      "t": 1792974491651,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "gen",
+        "text": "Xong rồi Sếp, connector Baserow đã kết tinh thành module. Em cất lên kệ nhé?"
+      }
+    },
+    {
+      "t": 1792974497356,
+      "event": "camera.moved",
+      "data": {
+        "preset": "toan-canh"
+      }
+    }
+  ],
+  "tongKet": {
+    "soBuoc": 14,
+    "soOk": 13,
+    "thatBai": [
+      "độ trễ trung vị ≤ 4 s (qua đúng POST /stt, thợ đã hâm máy): trung vị 7.69 s · TB 7.25 s · p95 18.57 s · load 13.9/10.8/10.5 trên 8 luồng"
+    ]
+  }
+}
