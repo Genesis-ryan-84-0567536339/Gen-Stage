@@ -497,12 +497,22 @@ export const LENH_ACTOR: CommandSpec[] = [
        * mắt (`lookAt`) và thân (`faceTo`, không chiếm thân nên không xếp hàng
        * sau chính câu nói này). Phản xạ sẽ GIỮ hướng đó suốt câu.
        */
+      const ngheLaActor = nghe !== 'camera' && nghe !== 'cursor' && ctx.world.coActor(nghe);
       try {
         ctx.world.actorLookAt(id, nghe);
         ctx.world.actorFaceTo(id, nghe);
-        // người nghe (nếu là một actor có mặt) chuyển sang dáng lắng nghe
-        if (nghe !== 'camera' && nghe !== 'cursor' && ctx.world.coActor(nghe)) {
+        /**
+         * E2 (#48 mục 7) — **hai nhân vật nhìn nhau**.
+         *
+         * Bản cũ chỉ quay MẮT người nghe (`actorLookAt`) nên thân vẫn hướng
+         * về máy quay: "Javis nói với Gen" mà Gen vẫn đứng xoay lưng lại
+         * (reviewer đo `facing` của Gen không đổi). Người nghe phải quay cả
+         * THÂN (`actorFaceTo`, không chiếm thân nên không xếp hàng) + mắt +
+         * dáng nghe ngóng (gật nhẹ, nghiêng đầu nếu là câu hỏi).
+         */
+        if (ngheLaActor) {
           ctx.world.actorLookAt(nghe, id);
+          ctx.world.actorFaceTo(nghe, id);
           ctx.world.actorNgheNgong(nghe, true, laCauHoi(chu));
         }
       } catch {
@@ -514,12 +524,24 @@ export const LENH_ACTOR: CommandSpec[] = [
       // `actor.sayStart` bắn đúng lúc bong bóng chữ hiện ra (sau khi tải tiếng,
       // trước khi chờ nói xong). Driver não (`scripts/nao-agy.mjs`) đo độ trễ
       // "Sếp gõ → Gen bắt đầu nói" bằng mốc này, và tắt hẹn "xin Sếp chờ".
-      ctx.bus.emit('actor.sayStart', { actor: id, text: chu });
+      // `to` đi kèm để phản xạ xã hội (`phan-xa.ts`) biết lượt này ai nói với
+      // ai — nguồn sự thật duy nhất về cặp hội thoại, không phải đoán lại.
+      ctx.bus.emit('actor.sayStart', { actor: id, text: chu, to: nghe });
       tieng?.phat();
       void hd.done.then(() => {
         if (tieng) lopTieng()?.huy(id);
-        if (nghe !== 'camera' && nghe !== 'cursor' && ctx.world.coActor(nghe)) {
+        if (ngheLaActor && ctx.world.coActor(nghe)) {
           ctx.world.actorNgheNgong(nghe, false);
+          /**
+           * E2 (#48 mục 7) — nói xong, **người nghe liếc máy quay**: Sếp vẫn
+           * là người đang xem, hai nhân vật không được quay lưng vào nhau rồi
+           * bỏ quên Sếp. Chỉ đổi MẮT, giữ thân — `phan-xa.ts` lo nhịp sau.
+           */
+          try {
+            ctx.world.actorLookAt(nghe, 'camera');
+          } catch {
+            // không có máy quay (sân khấu giả trong test) — bỏ qua
+          }
         }
         ctx.bus.emit('actor.sayDone', { actor: id, text: chu, to: nghe });
       });

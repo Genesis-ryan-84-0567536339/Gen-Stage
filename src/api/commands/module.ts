@@ -15,6 +15,12 @@ import { HINH_PROP } from './prop';
 import { ngay, pEnum, pSo, tuHanhDong } from './tien-ich';
 
 const s = (v: unknown) => String(v);
+const ngu = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+/** Thử `actor.hold` tối đa bao nhiêu lần sau khi module kết tinh xong. */
+const LAN_THU_HOLD = 6;
+/** Nghỉ bao lâu giữa hai lần thử (ms) — đủ để nhân vật nói xong một câu ngắn. */
+const CHO_HOLD_MS = 450;
 
 const P_MODULE = pEnum('module', 'Module (prop đã kết tinh)', {
   required: true,
@@ -75,15 +81,45 @@ export const LENH_MODULE: CommandSpec[] = [
         const dsActor = ctx.world.describe().actors;
         const actorId =
           dsActor.find((x) => x.controlledBy === 'agent')?.id ?? ctx.world.actorIds()[0];
+        /**
+         * E2 (#48 mục 3) — **module PHẢI vào tay**, không "thử một lần rồi
+         * thôi".
+         *
+         * Bản cũ gọi `actor.hold` đúng một lần và nuốt mọi lỗi, nên hễ nhân
+         * vật còn đang nói/đi (rất hay xảy ra: não vừa cho Gen nói xong câu
+         * "em dựng xong rồi" thì module mới kết tinh tới) là `holding` ở lại
+         * `null` vĩnh viễn trong khi màn hình vẫn báo "built" — đúng cái
+         * reviewer đo được. Giờ thử lại tới `LAN_THU_HOLD` lần, cách nhau
+         * `CHO_HOLD_MS`, và báo lý do thật lên sự kiện `module.built` để Boss
+         * đọc nhật ký biết ngay module nằm ở đâu.
+         */
+        let heldBy: string | null = null;
+        let loiHold: string | null = null;
         if (actorId) {
-          try {
-            await ctx.run('actor.hold', { actor: actorId, prop: id, hand: 'right' });
-          } catch {
-            // actor có thể đang bận/không tồn tại — module vẫn kết tinh xong,
-            // không chặn sự kiện module.built vì đây là phụ, không phải lõi.
+          for (let lan = 0; lan < LAN_THU_HOLD; lan += 1) {
+            if (!ctx.world.coProp(id)) break; // bị xoá giữa đường
+            if (ctx.world.describe().actors.find((x) => x.id === actorId)?.holding === id) break;
+            try {
+              const kq = await ctx.run('actor.hold', { actor: actorId, prop: id, hand: 'right' });
+              if (kq.ok) {
+                heldBy = actorId;
+                loiHold = null;
+                break;
+              }
+              loiHold = kq.error;
+            } catch (e) {
+              loiHold = e instanceof Error ? e.message : String(e);
+            }
+            await ngu(CHO_HOLD_MS);
+          }
+          if (heldBy === null) {
+            heldBy =
+              ctx.world.describe().props.find((p) => p.id === id)?.state.heldBy as string | null ??
+              null;
+            if (heldBy !== null) loiHold = null;
           }
         }
-        ctx.bus.emit('module.built', { module: id, shape, label });
+        ctx.bus.emit('module.built', { module: id, shape, label, heldBy, error: loiHold });
       });
 
       return tuHanhDong(hd, { module: id });

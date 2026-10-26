@@ -1,0 +1,508 @@
+{
+  "khi": "2026-10-26T08:49:05.841Z",
+  "anh": {
+    "manHinhTruocStream": "docs/e2/man-hinh-truoc.png",
+    "manHinhSauStream": "docs/e2/man-hinh-sau.png",
+    "moduleTrenTay": "docs/e2/module-tren-tay.png",
+    "haiNguoiNhinNhau": "docs/e2/nhin-nhau.png"
+  },
+  "so": {
+    "manHinhLucDung": [
+      {
+        "id": "may-tinh",
+        "pos": [
+          4,
+          0.81,
+          -4.25
+        ],
+        "showing": null,
+        "streaming": false,
+        "lines": 0,
+        "chars": 0,
+        "bottomY": 0.53,
+        "restsOn": {
+          "block": "ban-dieu-khien",
+          "surfaceY": 0.53
+        }
+      },
+      {
+        "id": "tivi",
+        "pos": [
+          -6.15,
+          1,
+          -0.5
+        ],
+        "showing": null,
+        "streaming": false,
+        "lines": 0,
+        "chars": 0,
+        "bottomY": 0.543,
+        "restsOn": {
+          "block": "ke-tivi",
+          "surfaceY": 0.543
+        }
+      }
+    ],
+    "lechMatBan_m": 0,
+    "streamKetQua": {
+      "ok": true,
+      "result": {
+        "screen": "may-tinh",
+        "chunks": 6,
+        "durationMs": 3672
+      }
+    },
+    "manHinhSauStream": {
+      "id": "may-tinh",
+      "pos": [
+        4,
+        0.81,
+        -4.25
+      ],
+      "showing": "code",
+      "streaming": false,
+      "lines": 7,
+      "chars": 174,
+      "bottomY": 0.53,
+      "restsOn": {
+        "block": "ban-dieu-khien",
+        "surfaceY": 0.53
+      }
+    },
+    "pixelDoiVungManHinh": {
+      "soDiemDoi": 4053,
+      "phanTram": 0.4,
+      "lechTrungBinh": 49.4,
+      "hopBao": {
+        "x": 515,
+        "y": 322,
+        "w": 373,
+        "h": 478
+      },
+      "coAnh": {
+        "w": 1280,
+        "h": 800
+      }
+    },
+    "manHinhSau6s": {
+      "id": "may-tinh",
+      "pos": [
+        4,
+        0.81,
+        -4.25
+      ],
+      "showing": "code",
+      "streaming": false,
+      "lines": 7,
+      "chars": 174,
+      "bottomY": 0.53,
+      "restsOn": {
+        "block": "ban-dieu-khien",
+        "surfaceY": 0.53
+      }
+    },
+    "moduleKetQua": {
+      "ok": true,
+      "result": {
+        "module": "connector-baserow",
+        "started": true,
+        "durationMs": 2000
+      }
+    },
+    "choModuleVaoTayMs": 8046,
+    "holding": [
+      {
+        "id": "owner",
+        "holding": null
+      },
+      {
+        "id": "gen",
+        "holding": "connector-baserow"
+      }
+    ],
+    "props": [
+      {
+        "id": "connector-baserow",
+        "heldBy": "gen",
+        "pos": [
+          4.18,
+          0.82,
+          -2.58
+        ]
+      }
+    ],
+    "spawnLan": {
+      "ok": true,
+      "result": {
+        "actor": {
+          "id": "lan",
+          "name": "Lan",
+          "pos": [
+            3.5,
+            0,
+            1.1
+          ],
+          "facing": 0,
+          "at": "ban-an",
+          "nearest": {
+            "place": "ban-an",
+            "distance": 0
+          },
+          "state": "idle",
+          "busy": false,
+          "mood": "binh-thuong",
+          "expression": "neutral",
+          "holding": null,
+          "lookingAt": "camera",
+          "distances": {
+            "ban-dieu-khien": 5.62,
+            "ban-1": 5.46,
+            "ban-2": 4.71,
+            "ghe-1": 0.4,
+            "ghe-2": 4.63,
+            "buc-trung-tam": 8.14,
+            "cua": 7.03,
+            "ke-module": 5.92,
+            "sofa": 8.01,
+            "ban-an": 1.4,
+            "bep": 3.13,
+            "cua-so": 5.95,
+            "connector-baserow": 3.72
+          },
+          "queued": 0,
+          "controlledBy": "agent",
+          "facingTarget": null
+        }
+      }
+    },
+    "cauKhiNoiVoiLan": [
+      {
+        "actor": "owner",
+        "text": "Lan ơi, chiều nay rảnh không",
+        "to": "lan"
+      }
+    ],
+    "viTriTruocKhiNoi": [
+      {
+        "id": "owner",
+        "pos": [
+          2.5,
+          0,
+          -1.6
+        ],
+        "facing": 120
+      },
+      {
+        "id": "gen",
+        "pos": [
+          4,
+          0,
+          -2.6
+        ],
+        "facing": 350
+      }
+    ],
+    "gocGiuaCau": {
+      "javisLechVeGen": 0.3,
+      "genLechVeJavis": 0.3,
+      "genLookingAt": "owner",
+      "javisLookingAt": "gen",
+      "genState": "speaking",
+      "cameraPreset": "toan-canh"
+    },
+    "gocNgaySauCau": {
+      "javisLechVeGen": 0.3,
+      "genLechVeJavis": 0.3,
+      "genLookingAt": "owner"
+    },
+    "cauKhiNoiVoiGen": [
+      {
+        "actor": "owner",
+        "text": "Gen ơi, phần giao diện em lo nhé",
+        "to": "gen"
+      },
+      {
+        "actor": "gen",
+        "text": "Dạ em đây",
+        "to": "owner"
+      },
+      {
+        "actor": "gen",
+        "text": "Em chưa có não, Sếp bật agy nhé.",
+        "to": "owner"
+      }
+    ],
+    "liecMayQuay": {
+      "mocJavisNoiXong": 1793004620420,
+      "soMauSauDo": 186,
+      "treMs": 30,
+      "mau": [
+        {
+          "t": 1793004620270,
+          "genLookingAt": "owner",
+          "genState": "speaking",
+          "ownerState": "speaking"
+        },
+        {
+          "t": 1793004620329,
+          "genLookingAt": "owner",
+          "genState": "speaking",
+          "ownerState": "speaking"
+        },
+        {
+          "t": 1793004620391,
+          "genLookingAt": "owner",
+          "genState": "speaking",
+          "ownerState": "speaking"
+        },
+        {
+          "t": 1793004620450,
+          "genLookingAt": "camera",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004620509,
+          "genLookingAt": "owner",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004620569,
+          "genLookingAt": "owner",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004620630,
+          "genLookingAt": "owner",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004620690,
+          "genLookingAt": "owner",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004620749,
+          "genLookingAt": "owner",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004620812,
+          "genLookingAt": "owner",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004620869,
+          "genLookingAt": "owner",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004620929,
+          "genLookingAt": "owner",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004620989,
+          "genLookingAt": "owner",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004621049,
+          "genLookingAt": "owner",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004621110,
+          "genLookingAt": "owner",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004621169,
+          "genLookingAt": "owner",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004621229,
+          "genLookingAt": "camera",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004621291,
+          "genLookingAt": "camera",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004621349,
+          "genLookingAt": "camera",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004621409,
+          "genLookingAt": "camera",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004621470,
+          "genLookingAt": "camera",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004621529,
+          "genLookingAt": "camera",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004621589,
+          "genLookingAt": "camera",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004621651,
+          "genLookingAt": "camera",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004621709,
+          "genLookingAt": "camera",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004621770,
+          "genLookingAt": "camera",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004621829,
+          "genLookingAt": "camera",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004621889,
+          "genLookingAt": "camera",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004621949,
+          "genLookingAt": "camera",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004622009,
+          "genLookingAt": "camera",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004622070,
+          "genLookingAt": "camera",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004622134,
+          "genLookingAt": "camera",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004622191,
+          "genLookingAt": "camera",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004622249,
+          "genLookingAt": "camera",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004622311,
+          "genLookingAt": "camera",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004622371,
+          "genLookingAt": "camera",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004622429,
+          "genLookingAt": "camera",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004622491,
+          "genLookingAt": "camera",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004622549,
+          "genLookingAt": "camera",
+          "genState": "speaking",
+          "ownerState": "idle"
+        },
+        {
+          "t": 1793004622609,
+          "genLookingAt": "camera",
+          "genState": "speaking",
+          "ownerState": "idle"
+        }
+      ]
+    },
+    "loiConsole": []
+  },
+  "dat": {
+    "manHinhDungTrenBan": true,
+    "manHinhGiuNoiDung": true,
+    "manHinhCon6s": true,
+    "moduleVaoTay": true,
+    "khongChenCauDem": true,
+    "nhinNhauDuoi15Do": true,
+    "nguoiNgheLiecMayQuay": true,
+    "consoleSach": true
+  },
+  "buoc": [],
+  "tongKet": {
+    "dat": [
+      "manHinhDungTrenBan",
+      "manHinhGiuNoiDung",
+      "manHinhCon6s",
+      "moduleVaoTay",
+      "khongChenCauDem",
+      "nhinNhauDuoi15Do",
+      "nguoiNgheLiecMayQuay",
+      "consoleSach"
+    ],
+    "khong": []
+  }
+}
