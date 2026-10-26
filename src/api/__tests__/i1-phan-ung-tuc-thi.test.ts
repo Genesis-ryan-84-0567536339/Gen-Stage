@@ -813,3 +813,86 @@ describe('I1 vòng 2 — người đang NGỒI chỉ quay đầu/mắt', () => {
     t.may.dung();
   });
 });
+
+/* ===== VÒNG 2b — cửa sổ user.text → sayStart (gốc thật của chồng giọng) ===== */
+
+describe('I1 vòng 2b — cờ sePhat bịt cửa sổ user.text → actor.sayStart', () => {
+  beforeEach(() => xoaSoNao());
+
+  /**
+   * Gốc THẬT của "đỉnh 2 giọng" mà review PR #75 đo được, và vòng sửa đầu
+   * **không** bịt được: `actor.say` bắn `user.text` ở đầu câu nhưng
+   * `actor.sayStart` chỉ bắn sau `await chuanBiGiong` (300–900 ms thật trên
+   * trình duyệt). Trong khoảng đó sổ "ai đang nói" còn TRỐNG, nên Nhi chêm
+   * câu đệm vào rồi Nam mở miệng chồng lên. `sePhat` là lời cam kết "người
+   * này sắp có tiếng", chặn ngay từ mốc `user.text`.
+   */
+  it('user.text { sePhat: true } → Nhi im suốt cửa sổ tải giọng của Nam', async () => {
+    const t = await dung();
+    datSoNao(1);
+    t.bus.emit('user.text', { actor: 'owner', text: 'Nhi ơi', to: 'camera', sePhat: true });
+    await nhipMicro();
+    expect(t.may.trangThai().aiDangNoi).toContain('owner');
+    t.world.lichSu.length = 0;
+
+    // cửa sổ tải giọng: CHƯA có `actor.sayStart` nào, nhưng Nhi vẫn phải im
+    await t.tien(MAC_DINH.choNaoMs + MAC_DINH.nhipMs * 5);
+    expect(cacCau(t.world)).toEqual([]);
+    // gật thì vẫn tức thì
+    expect(t.world.lichSu.some((x) => x.startsWith('ngheNgong:gen:true'))).toBe(false);
+
+    // Nam mở miệng rồi dứt lời → câu đệm phát
+    t.bus.emit('actor.sayStart', { actor: 'owner', text: 'Nhi ơi', to: 'camera' });
+    await t.tien(MAC_DINH.nhipMs * 2);
+    expect(cacCau(t.world)).toEqual([]);
+    t.bus.emit('actor.sayDone', { actor: 'owner', text: 'Nhi ơi', to: 'camera' });
+    await nhipMicro();
+    await t.tien(MAC_DINH.nhipMs);
+    expect(cacCau(t.world)).toEqual([CAU_DEM[0]]);
+    t.may.dung();
+  });
+
+  it('sePhat có TRẦN: câu bị huỷ giữa lúc tải giọng không làm Nhi im vĩnh viễn', async () => {
+    const t = await dung();
+    datSoNao(1);
+    t.bus.emit('user.text', { actor: 'owner', text: 'Nhi ơi', to: 'camera', sePhat: true });
+    await nhipMicro();
+    // KHÔNG bao giờ có sayStart/sayDone (câu bị `daHuy` trong cửa sổ tải giọng)
+    await t.tien(MAC_DINH.tranSePhatMs + MAC_DINH.nhipMs * 3);
+    expect(t.may.trangThai().aiDangNoi).not.toContain('owner');
+    // hết trần thì Nhi nói lại được (câu nối, vì câu đệm đã hết nghĩa)
+    expect(cacCau(t.world)).toContain(CAU_NOI);
+    t.may.dung();
+  });
+
+  it('user.text KHÔNG có sePhat (không ai đọc to) → câu đệm vẫn đúng mốc 200 ms', async () => {
+    const t = await dung();
+    datSoNao(1);
+    t.bus.emit('user.text', { actor: 'owner', text: 'Nhi ơi' });
+    await nhipMicro();
+    await t.tien(MAC_DINH.choNaoMs + MAC_DINH.nhipMs * 2);
+    expect(cacCau(t.world)).toEqual([CAU_DEM[0]]);
+    t.may.dung();
+  });
+
+  it('TRẦN tầng 2 thoát VÔ ĐIỀU KIỆN dù không nói được câu kết', async () => {
+    const t = await dung();
+    datSoNao(1);
+    // Nhi làm một việc dài của não suốt cả lượt → `noiChem` luôn trả false
+    void t.dispatcher.run('actor.play', { actor: 'gen', clip: 'type', loop: true }, 'bridge');
+    await nhipMicro();
+    t.bus.emit('user.text', { actor: 'owner', text: 'Nhi ơi' });
+    await nhipMicro();
+    expect(t.may.trangThai().tangHai).toBe(true);
+
+    // chỉ đẩy ĐỒNG HỒ GIẢ (sân khấu giả không chạy clip thật), không chờ thật
+    for (let i = 0; i < 340; i++) {
+      t.bus.emit('actor.sayStart', { actor: 'owner', text: 'giữ Nhi im', to: 'camera' });
+      await t.tien(MAC_DINH.nhipMs);
+    }
+    // qua trần 30 s + grace 3 s: phải thoát, dù chưa nói được câu nào
+    expect(t.may.trangThai().tangHai).toBe(false);
+    expect(cacCau(t.world)).not.toContain(CAU_HET_CHO);
+    t.may.dung();
+  });
+});

@@ -1122,3 +1122,26 @@ lệnh để tăng trải nghiệm chân thực trong quá trình nó suy nghĩ"
   không nói được gì về mượt — Cửa 1); `scripts/kiem-i1.mjs` **từ chối chạy** khi
   `pgrep -f firefox-1543` còn tiến trình nào (nouveau gãy khi nhiều phiên tranh
   GPU, mà lượt gãy giữa đường thì số đo vô nghĩa).
+
+#### Vòng 2b — sau khi tự đo lại (cùng Issue #74)
+
+- **Gốc THẬT của "đỉnh 2 giọng" là cửa sổ `user.text` → `actor.sayStart`.** Bịt
+  bằng sổ "ai đang nói" lấy từ `sayStart` là **chưa đủ**: `actor.say` bắn
+  `user.text` ở đầu câu nhưng `sayStart` chỉ bắn sau `await chuanBiGiong`
+  (300–900 ms thật). Trong khoảng đó sổ còn trống nên Nhi vẫn chêm câu đệm rồi
+  Nam mở miệng chồng lên — tự đo lại sau vòng sửa đầu vẫn ra **đỉnh 2 giọng**.
+  `actor.say` nay gắn cờ **`sePhat: true`** vào `user.text` ("người này sắp có
+  tiếng"), phản xạ chặn từ chính mốc đó, kèm trần `tranSePhatMs` = 12 s làm dây
+  an toàn cho ca câu bị `daHuy` giữa lúc tải giọng (không có `sayDone` nào tới).
+- **Thoát tầng 2 phải VÔ ĐIỀU KIỆN; câu kết chỉ là cố gắng hết sức.** Bản đầu
+  chỉ thoát khi nói được `CAU_HET_CHO`, mà ở mốc 30 s Nhi có thể đang chạy việc
+  dài của não ⇒ `noiChem` trả `false` ⇒ tầng 2 sống tiếp vĩnh viễn, đúng họ lỗi
+  mà cái trần sinh ra để diệt. Nay cố nói trong 3 s rồi thoát bất chấp.
+- **Thước đo phải dọn sạch sau mình.** Bước "Nhi đang bận" dùng clip **lặp** và
+  không có cách dừng nào không xoá hàng đợi (`actor.stop` → `catNgang` → một
+  lệnh trả `ok: false`, hỏng cổng "r.ok mọi lệnh"), nên Nhi còn bận suốt **cả
+  bước đo trần** → đo được 0 emote, 0 câu kết và chấm oan. Đổi sang việc dài
+  **có hạn** (`speed: 0.1`) + chờ `busy === false && queued === 0` trước bước sau.
+- **Đổi lời hứa thì phải đổi cả cửa sổ lấy mẫu.** Câu đệm giờ hoãn tới khi Nam
+  dứt lời (2–3 s), mà script còn lấy mẫu ở 1,2 s → "thiếu mốc" và chấm sai
+  chính cái vừa sửa.

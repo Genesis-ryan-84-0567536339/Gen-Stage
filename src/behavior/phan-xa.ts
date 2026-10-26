@@ -109,6 +109,16 @@ export interface SoPhanXa {
   /** Nam gật nhẹ bao lâu sau khi Nhi nói xong (ms). */
   gatNamMs: number;
   /**
+   * I1 vòng 2 — **trần của "người này sắp có tiếng"** (ms).
+   *
+   * `user.text` bắn ở đầu câu, `actor.sayStart` chỉ bắn sau `await
+   * chuanBiGiong` (300–900 ms). Phản xạ phải coi người nói là "đang nói" ngay
+   * từ `user.text` (cờ `sePhat`), không thì nó chêm câu đệm vào đúng cửa sổ
+   * đó. Trần này là dây an toàn: câu bị huỷ giữa lúc tải giọng thì không có
+   * `sayDone` nào tới, và nếu không có trần thì Nhi im vĩnh viễn.
+   */
+  tranSePhatMs: number;
+  /**
    * **Trần của tầng 2** (ms). Hết trần mà não vẫn im: nói một câu kết rồi
    * thoát hẳn vòng "đang nghĩ" và trả lại nhịp thường (chào khi Boss lại gần,
    * thả mắt về chỗ cũ). Phải > `cauNoiLauMs` để câu "hơi lâu" còn chỗ.
@@ -163,6 +173,7 @@ export const MAC_DINH: SoPhanXa = {
   liecNghiMs: 1300,
   gatNamMs: 1200,
   tranTangHaiMs: 30000,
+  tranSePhatMs: 12000,
 };
 
 /** Câu đệm — ngắn, không hứa gì, nói trong lúc não còn đang nghĩ. */
@@ -180,6 +191,13 @@ export const CAU_DEM = [
  * câu đệm = *"nó có nghe mình không"*, câu nối = *"nó còn sống không"*.
  */
 export const CAU_NOI = 'Em đang nghĩ ạ…';
+
+/**
+ * Hết trần tầng 2 mà chưa nói được câu kết (Nhi còn đang làm việc của não, hay
+ * Nam đang nói) thì cố thêm ngần này rồi **thoát dù không nói được** — thoát
+ * tầng 2 là vô điều kiện, câu kết chỉ là cố gắng hết sức.
+ */
+const GRACE_KET_MS = 3000;
 
 /** Chờ quá lâu (20 s) — nói thẳng là lâu, đừng im. */
 export const CAU_NOI_LAU = 'Hơi lâu, Sếp chờ em chút.';
@@ -356,7 +374,7 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
    * lớp tiếng (xem `uocThoiLuongNoi`), nên mốc này khớp với lúc giọng tắt —
    * không phải lúc lệnh trả lời.
    */
-  const aiDangNoi = new Set<string>();
+  const dangNoiDen = new Map<string, number>();
   /** Mốc hết trần tầng 2 (0 = không trong tầng 2). */
   let tranDen = 0;
   /** Mốc tắt dáng nghe của Nam sau khi Nhi nói xong (0 = không có). */
@@ -440,7 +458,12 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
    * PR #75 đo được bằng móc `AudioBufferSourceNode` (đỉnh 2 giọng).
    */
   function aiKhacDangNoi(minh: string): boolean {
-    for (const x of aiDangNoi) if (x !== minh) return true;
+    const now = bayGio();
+    for (const [x, den] of dangNoiDen) {
+      if (x === minh) continue;
+      if (den > now) return true;
+      dangNoiDen.delete(x); // hết trần: câu bị huỷ giữa lúc tải giọng
+    }
     return false;
   }
 
@@ -593,9 +616,18 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
 
   /* -------------------------------------------------- Owner vừa nói gì đó */
 
-  function ownerNoi(chu: string, toi: string): void {
+  function ownerNoi(chu: string, toi: string, sePhat = false): void {
     const { st, owner, gen } = doc();
     if (!owner || !gen) return;
+    /**
+     * I1 vòng 2 — **Nam SẮP có tiếng** (cờ `sePhat` của `actor.say`).
+     *
+     * Đây là chỗ bịt cửa sổ `user.text` → `actor.sayStart`: vòng sửa đầu chỉ
+     * nghe `sayStart` nên vẫn để Nhi chêm câu đệm vào giữa 300–900 ms tải
+     * giọng của Nam, và móc audio vẫn đo **đỉnh 2 giọng**. `sayStart` tới sau
+     * sẽ ghi lại mốc này thành vô hạn, `sayDone` xoá nó.
+     */
+    if (sePhat) dangNoiDen.set(owner, bayGio() + so.tranSePhatMs);
     const now = bayGio();
     tOwnerNoi = now;
     choNao = true;
@@ -747,12 +779,18 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
          nhịp (chào khi Boss lại gần, thả mắt về chỗ cũ) sống lại. Nếu chưa nói
          được (ai đó đang nói) thì hoãn — nhưng vẫn không đổi tư thế nữa. */
       if (tranDen !== 0 && now >= tranDen) {
-        if (soCauNoi >= 3 || noiChem(gen, CAU_HET_CHO, g)) {
-          soCauNoi = 3;
-          ketTangHai();
-        } else {
-          tTuThe = 0;
-        }
+        /**
+         * **Thoát tầng 2 là VÔ ĐIỀU KIỆN; câu kết chỉ là cố gắng hết sức.**
+         *
+         * Vòng sửa đầu chỉ thoát khi nói được câu kết — đo thật thì Nhi đang
+         * chạy một việc dài của não ở mốc 30 s, `noiChem` trả `false`, và
+         * tầng 2 sống tiếp **vĩnh viễn** (mục 4 của nhịp vẫn bị khoá, mắt vẫn
+         * dán vào máy quay). Đó đúng là họ lỗi mà trần này sinh ra để diệt.
+         * Nay: thử nói trong `graceKetMs`, hết thì thoát dù không nói được.
+         */
+        if (soCauNoi < 3 && noiChem(gen, CAU_HET_CHO, g)) soCauNoi = 3;
+        if (soCauNoi >= 3 || now >= tranDen + GRACE_KET_MS) ketTangHai();
+        else tTuThe = 0; // chờ nói được: nhưng KHÔNG đổi tư thế nữa
       } else if (troi >= so.cauNoiLauMs && soCauNoi < 2) {
         // `noiChem` trả `false` khi Nhi đang nói / đang làm việc của não →
         // HOÃN sang nhịp sau, không bỏ và không chen.
@@ -894,7 +932,11 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
       // C2 (#32) đã hiểu và thực thi lệnh cố định → chỉ phản xạ quay/nhìn,
       // KHÔNG đệm câu, KHÔNG để não rule-based nói "chưa có não".
       if (e.data.handled) return;
-      ownerNoi(String(e.data.text ?? ''), String(e.data.to ?? 'camera'));
+      ownerNoi(
+        String(e.data.text ?? ''),
+        String(e.data.to ?? 'camera'),
+        e.data.sePhat === true,
+      );
     }),
   );
 
@@ -912,8 +954,12 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
     bus.on('actor.sayStart', (e) => {
       const ai = String(e.data.actor ?? '');
       const toi = String(e.data.to ?? 'camera');
-      // I1 vòng 2 — sổ "ai đang mở miệng". Cập nhật TRƯỚC mọi quyết định khác.
-      if (ai) aiDangNoi.add(ai);
+      /*
+       * I1 vòng 2 — sổ "ai đang mở miệng". Cập nhật TRƯỚC mọi quyết định khác.
+       * Bong bóng đã hiện ⇒ chắc chắn có tiếng ⇒ giữ tới `actor.sayDone`
+       * (luôn bắn, vì nó treo trên `hd.done`), không cần trần thời gian.
+       */
+      if (ai) dangNoiDen.set(ai, Number.POSITIVE_INFINITY);
       const { st, owner, gen } = doc();
       if (!owner || !gen) return;
       if (ai === gen) {
@@ -991,7 +1037,7 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
   boNghe.push(
     bus.on('actor.sayDone', (e) => {
       const ai = e.data.actor;
-      if (typeof ai === 'string') aiDangNoi.delete(ai);
+      if (typeof ai === 'string') dangNoiDen.delete(ai);
       if (ai === ownerId) {
         // Sếp nói xong → Gen thôi dáng lắng nghe (đang chờ não thì vòng "đang
         // nghĩ" của tầng 2 lo tiếp, dáng NGHE phải tắt mới đúng cái đang xảy ra)
@@ -1049,7 +1095,7 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
       daChao,
       giuNhinDen,
       nguoiNghe: nguoiNgheCuaGen,
-      aiDangNoi: [...aiDangNoi],
+      aiDangNoi: [...dangNoiDen.keys()].filter((x) => (dangNoiDen.get(x) ?? 0) > bayGio()),
       ngheMic,
       nhanDang,
       tangHai,

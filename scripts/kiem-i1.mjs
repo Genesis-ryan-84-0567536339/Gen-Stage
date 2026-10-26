@@ -673,7 +673,12 @@ try {
   const tGo = Date.now();
   const guiOk = await page.evaluate(() => window.stage.guiChat('Nhi ơi, hôm nay mình làm gì nhỉ'));
   ghi('ô chat nhận câu gõ (cùng cửa mic dùng)', guiOk === true, `guiChat → ${guiOk}`);
-  await nghi(1200);
+  /*
+   * Chờ 5 s, KHÔNG phải 1,2 s: từ vòng 2 câu đệm **hoãn tới khi Nam dứt lời**
+   * (Nam đọc câu của Boss mất 2–3 s giọng thật). Lấy mẫu ở 1,2 s thì chưa có
+   * `actor.sayDone` của Nam lẫn câu đệm nào — thước đo bắt oan chính cái sửa.
+   */
+  await nghi(5000);
   ds = await ev(page);
   dsL = await lenh(page);
   const evText = sauEv(ds, 'user.text', tGo, (e) => e.data?.actor === 'owner');
@@ -817,10 +822,21 @@ try {
    * dài bao lâu thì phụ thuộc Nhi đang đứng đâu, mà lúc đo thì nó có thể đã
    * xong từ lâu — thước đo "đang bận" phải bận THẬT suốt cả bước này.
    */
+  /*
+   * `speed: 0.1` thay cho `loop: true`: việc dài **nhưng có hạn**.
+   * Lượt trước dùng clip lặp và không có cách dừng nào không xoá hàng đợi
+   * (`actor.stop` → `catNgang` → lệnh đang chờ trả `ok: false`, hỏng cổng
+   * "r.ok mọi lệnh"), nên Nhi còn bận suốt **cả bước 7** → tầng 2 không chạy
+   * và mốc trần đo được 0 emote, 0 câu kết. Thước đo phải dọn sạch sau mình.
+   */
   const r1 = await page.evaluate(() =>
-    window.stage.run('actor.play', { actor: 'gen', clip: 'type', loop: true }),
+    window.stage.run('actor.play', { actor: 'gen', clip: 'type', speed: 0.1 }),
   );
-  ghi('não giao việc dài: actor.play type loop', r1.ok === true, JSON.stringify(r1).slice(0, 120));
+  ghi(
+    'não giao việc dài có hạn: actor.play type speed 0.1',
+    r1.ok === true,
+    JSON.stringify(r1).slice(0, 140),
+  );
   await nghi(250);
   /*
    * KHÔNG `await`: lệnh này nằm trong hàng đợi tới hết bước — đó là cái cần
@@ -904,9 +920,31 @@ try {
 
   /* ======================================= mốc 7 (vòng 2): TRẦN của tầng 2 */
   in_('\n--- mốc 7: não im 60 s → sau 30 s có câu kết, vòng "đang nghĩ" DỪNG ---');
-  // dọn việc dài của bước trước để Nhi rảnh, nhưng KHÔNG xoá hàng đợi bằng
-  // `actor.stop` lên Nhi giữa lúc còn việc chờ — cứ chờ nó chạy hết
-  await nghi(4000);
+  // CHỜ Nhi rảnh hẳn (việc dài + việc xếp hàng của bước 6 chạy hết) — không
+  // `actor.stop` vì nó xoá hàng đợi và làm một lệnh trả `ok: false`
+  for (let i = 0; i < 60; i++) {
+    const b = await page.evaluate(() =>
+      window.stage.run('stage.describe').then((r) => {
+        const g = r.result.actors.find((a) => a.id === 'gen');
+        return g.busy || g.queued > 0;
+      }),
+    );
+    if (!b) break;
+    await nghi(1000);
+  }
+  const ranhTruoc7 = await page.evaluate(() =>
+    window.stage.run('stage.describe').then((r) => {
+      const g = r.result.actors.find((a) => a.id === 'gen');
+      return { busy: g.busy, queued: g.queued };
+    }),
+  );
+  ghi(
+    'Nhi rảnh hẳn trước khi đo trần tầng 2',
+    ranhTruoc7.busy === false && ranhTruoc7.queued === 0,
+    JSON.stringify(ranhTruoc7),
+    ranhTruoc7,
+  );
+  await nghi(2000);
   treNao = 3_600_000; // não "nhận câu rồi chết giữa đường"
   await amDatLai(page);
   const tGo4 = Date.now();
