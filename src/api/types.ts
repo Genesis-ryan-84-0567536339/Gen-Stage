@@ -136,6 +136,19 @@ export interface CommandCtx {
   hangDoi: () => Record<string, { busy: boolean; queued: number }>;
   /** Cắt hành động đang chạy + xoá hàng đợi của actor (`actor.stop` dùng). */
   catNgang: (actor: string) => number;
+  /**
+   * I1 vòng 2 (#74, review PR #75 mục mong manh 1) — **lượt chạy này đã bị
+   * huỷ chưa?**
+   *
+   * Dispatcher chiếm chỗ actor **trước** khi gọi handler, nhưng `actor.say`
+   * lại `await chuanBiGiong` (fetch `/tts` + `decodeAudioData`) rồi mới tạo
+   * hành động. Trong cửa sổ đó `world.actorInterrupt` **không có gì để huỷ**
+   * — câu vẫn phát trọn dù đã bị cắt. Handler nào có `await` trước khi chạm
+   * sân khấu thì phải đọc cửa này sau `await` và tự thôi.
+   *
+   * Tuỳ chọn: bối cảnh do test dựng tay có thể không có.
+   */
+  daHuy?: () => boolean;
 }
 
 /* ------------------------------------------------------- trạng thái sân khấu */

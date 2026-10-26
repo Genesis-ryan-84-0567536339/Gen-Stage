@@ -26,6 +26,7 @@ import { SanKhauGia, NHIP_MS } from './san-khau-gia';
 import {
   batPhanXa,
   CAU_DEM,
+  CAU_HET_CHO,
   CAU_NOI,
   CAU_NOI_LAU,
   MAC_DINH,
@@ -79,7 +80,7 @@ function naoGia(opts: {
   };
 }
 
-async function dung(opts: { treNaoMs?: number } = {}) {
+async function dung(opts: { treNaoMs?: number; ganNhau?: boolean } = {}) {
   const world = new SanKhauGia(['owner', 'gen']);
   const bus = new EventBus();
   const dispatcher = new Dispatcher({ registry: taoRegistry(), world, bus });
@@ -497,6 +498,318 @@ describe('I1 — Nam: không tự phản ứng với mình, gật khi Nhi nói x
     void t.dispatcher.run('actor.say', { actor: 'gen', text: 'Dạ em đây ạ' }, 'bridge');
     await nhipMicro();
     expect(co(t.world, 'faceTo:owner')).toBe(false);
+    t.may.dung();
+  });
+});
+
+/* ============== VÒNG 2 (review PR #75) — CHẶN 1: chồng giọng xuyên nhân vật */
+
+describe('I1 vòng 2 — một giọng duy nhất XUYÊN NHÂN VẬT (Nam + Nhi)', () => {
+  beforeEach(() => xoaSoNao());
+
+  /**
+   * Ca thật review đo được bằng móc `AudioBufferSourceNode`: `actor.say` của
+   * Nam bắn `user.text` ngay **đầu câu**, Nam còn đọc 2–3 s nữa, mà mốc câu
+   * đệm chỉ 200 ms → hai giọng cùng phát. Mốc 1,5 s của C0 che chuyện đó một
+   * cách tình cờ; 200 ms thì không.
+   */
+  /**
+   * **Vì sao bắn tay `user.text` + `actor.sayStart` thay vì gọi `actor.say`.**
+   *
+   * Một câu của Nam trên sân khấu giả dài **20 ms THẬT** (`NHIP_MS`), nên đẩy
+   * đồng hồ giả 6 giây (65 nhịp ≈ 65 ms thật) là Nam đã nói xong từ lâu — đúng
+   * cái cảnh KHÔNG cần đo. Hai sự kiện này là **nguyên văn** cặp mà `actor.say`
+   * bắn ra (xem `src/api/commands/actor.ts`: `user.text` ở đầu câu, rồi
+   * `actor.sayStart` sau khi tải giọng), và chúng là nguồn duy nhất phản xạ
+   * đọc. Ca đi qua `actor.say` thật nằm ở ca "sổ ai đang nói" bên dưới.
+   */
+  function namBatDauNoi(t: Awaited<ReturnType<typeof dung>>, chu: string) {
+    t.bus.emit('user.text', { actor: 'owner', text: chu, to: 'camera' });
+    t.bus.emit('actor.sayStart', { actor: 'owner', text: chu, to: 'camera' });
+  }
+  const namNoiXong = (t: Awaited<ReturnType<typeof dung>>, chu: string) =>
+    t.bus.emit('actor.sayDone', { actor: 'owner', text: chu, to: 'camera' });
+
+  it('Nam còn đang đọc câu của Boss → Nhi KHÔNG chen câu đệm, nhưng VẪN gật ngay', async () => {
+    const t = await dung();
+    datSoNao(1);
+    const chu = 'Nhi ơi, xong chưa';
+    namBatDauNoi(t, chu);
+    await nhipMicro();
+    expect(t.may.trangThai().aiDangNoi).toContain('owner');
+    // gật + nhìn (không tiếng) là tức thì, không chờ Nam nói xong
+    expect(t.world.lichSu).toContain('ngheNgong:gen:true:hoi');
+    t.world.lichSu.length = 0;
+
+    // qua mốc câu đệm (200 ms) mà Nam vẫn đang nói → im
+    await t.tien(MAC_DINH.choNaoMs + MAC_DINH.nhipMs * 3);
+    expect(cacCau(t.world)).toEqual([]);
+    expect(t.may.trangThai().tangHai).toBe(true);
+
+    // Nam nói xong → câu đệm phát NGAY nhịp sau, KHÔNG bị bỏ lặng lẽ
+    namNoiXong(t, chu);
+    await nhipMicro();
+    await t.tien(MAC_DINH.nhipMs);
+    expect(cacCau(t.world)).toEqual([CAU_DEM[0]]);
+    t.may.dung();
+  });
+
+  it('Nam nói DÀI quá mốc câu nối → bỏ câu đệm, câu nối tiếp quản (không nói cả hai)', async () => {
+    const t = await dung();
+    datSoNao(1);
+    const chu = 'Nhi ơi, anh kể dài lắm';
+    namBatDauNoi(t, chu);
+    await nhipMicro();
+    await t.tien(MAC_DINH.cauNoiMs + 500);
+    expect(cacCau(t.world)).toEqual([]);
+
+    namNoiXong(t, chu);
+    await nhipMicro();
+    await t.tien(MAC_DINH.nhipMs);
+    // "Dạ, Sếp?" lúc này đã hết nghĩa — chỉ câu nối là đúng cái đang xảy ra
+    expect(cacCau(t.world)).toEqual([CAU_NOI]);
+    t.may.dung();
+  });
+
+  it('đổi tư thế cũng không chen tiếng vào câu của Nam', async () => {
+    const t = await dung();
+    datSoNao(1);
+    namBatDauNoi(t, 'Nhi ơi');
+    await nhipMicro();
+    t.world.lichSu.length = 0;
+    await t.tien(MAC_DINH.tuTheDauMs + MAC_DINH.nhipMs * 2);
+    // `suy-nghi` có một nốt ngắn 260 ms → phải hoãn như câu nói
+    expect(co(t.world, 'emote.suy-nghi')).toBe(false);
+    expect(t.may.trangThai().soTuThe).toBe(0);
+    t.may.dung();
+  });
+
+  it('sổ "ai đang nói" theo ĐÚNG sayStart/sayDone của mọi actor', async () => {
+    const t = await dung();
+    datSoNao(1);
+    expect(t.may.trangThai().aiDangNoi).toEqual([]);
+    void t.dispatcher.run('actor.say', { actor: 'gen', text: 'Dạ em đây ạ' }, 'bridge');
+    await nhipMicro();
+    expect(t.may.trangThai().aiDangNoi).toEqual(['gen']);
+    await choHanhDong();
+    await nhipMicro();
+    expect(t.may.trangThai().aiDangNoi).toEqual([]);
+    t.may.dung();
+  });
+});
+
+/* ===================== VÒNG 2 — CHẶN 2: tầng 2 phải có trần */
+
+describe('I1 vòng 2 — trần của tầng 2 (não nhận câu rồi im hẳn)', () => {
+  beforeEach(() => xoaSoNao());
+
+  it('hết 30 s → nói câu kết rồi THOÁT tầng 2, soTuThe ngừng tăng', async () => {
+    const t = await dung(); // không có não giả → não im vĩnh viễn
+    datSoNao(1); // nhưng `brainConnected` true: không có não rule-based chen vào
+    t.bus.emit('user.text', { actor: 'owner', text: 'Nhi ơi, dựng giúp anh connector' });
+    await nhipMicro();
+
+    await t.tien(MAC_DINH.tranTangHaiMs + MAC_DINH.nhipMs * 2);
+    const cau = cacCau(t.world);
+    expect(cau).toContain(CAU_NOI);
+    expect(cau).toContain(CAU_NOI_LAU);
+    expect(cau.filter((c) => c === CAU_HET_CHO)).toHaveLength(1);
+    expect(t.may.trangThai().tangHai).toBe(false);
+
+    // từ đây là nhịp thường: không đổi tư thế, không nói thêm câu nào
+    const soTuTheLucDo = t.may.trangThai().soTuThe;
+    t.world.lichSu.length = 0;
+    await t.tien(30000);
+    expect(cacCau(t.world)).toEqual([]);
+    expect(t.may.trangThai().soTuThe).toBe(soTuTheLucDo);
+    t.may.dung();
+  });
+
+  it('thoát tầng 2 rồi thì nhánh "Boss lại gần → chào nhẹ" sống lại', async () => {
+    const t = await dung({ ganNhau: true });
+    datSoNao(1);
+    t.bus.emit('user.text', { actor: 'owner', text: 'Nhi ơi' });
+    await nhipMicro();
+    await t.tien(MAC_DINH.tranTangHaiMs + MAC_DINH.nhipMs * 2);
+    expect(t.may.trangThai().tangHai).toBe(false);
+    await choHanhDong();
+    await choHanhDong();
+    t.world.lichSu.length = 0;
+
+    // Boss đứng sát Nhi > choChaoMs → phải chào nhẹ (mục 4 của nhịp)
+    await t.tien(MAC_DINH.choChaoMs + MAC_DINH.nhipMs * 2);
+    await choHanhDong();
+    await choHanhDong();
+    expect(co(t.world, 'emote.chao')).toBe(true);
+    t.may.dung();
+  });
+
+  it('bridge.disconnected → tắt tầng 2 NGAY, không chờ hết trần', async () => {
+    const t = await dung();
+    datSoNao(1);
+    t.bus.emit('user.text', { actor: 'owner', text: 'Nhi ơi' });
+    await nhipMicro();
+    await t.tien(1000);
+    expect(t.may.trangThai().tangHai).toBe(true);
+    // để câu đệm nói xong hẳn: câu kết không được cắt lời chính mình
+    await choHanhDong();
+    await choHanhDong();
+    t.world.lichSu.length = 0;
+
+    t.bus.emit('bridge.disconnected', { url: 'ws://x' });
+    await nhipMicro();
+    expect(t.may.trangThai().tangHai).toBe(false);
+    expect(cacCau(t.world)).toContain(CAU_HET_CHO);
+    t.may.dung();
+  });
+
+  it('bridge.brain { count: 0 } → cũng tắt tầng 2 ngay', async () => {
+    const t = await dung();
+    datSoNao(1);
+    t.bus.emit('user.text', { actor: 'owner', text: 'Nhi ơi' });
+    await nhipMicro();
+    await t.tien(1000);
+    await choHanhDong();
+    await choHanhDong();
+    t.world.lichSu.length = 0;
+
+    t.bus.emit('bridge.brain', { count: 0, connected: false });
+    await nhipMicro();
+    expect(t.may.trangThai().tangHai).toBe(false);
+    expect(cacCau(t.world)).toContain(CAU_HET_CHO);
+
+    // còn não thì KHÔNG tắt
+    const t2 = await dung();
+    datSoNao(1);
+    t2.bus.emit('user.text', { actor: 'owner', text: 'Nhi ơi' });
+    await nhipMicro();
+    await t2.tien(1000);
+    t2.bus.emit('bridge.brain', { count: 2, connected: true });
+    await nhipMicro();
+    expect(t2.may.trangThai().tangHai).toBe(true);
+    t.may.dung();
+    t2.may.dung();
+  });
+
+  it('não trả lời trước trần → KHÔNG có câu kết', async () => {
+    const t = await dung({ treNaoMs: 8000 });
+    datSoNao(1);
+    t.bus.emit('user.text', { actor: 'owner', text: 'Nhi ơi' });
+    await nhipMicro();
+    await t.tien(MAC_DINH.tranTangHaiMs + 5000);
+    expect(cacCau(t.world)).not.toContain(CAU_HET_CHO);
+    t.may.dung();
+  });
+});
+
+/* ============ VÒNG 2 — mong manh 1 & 2: cắt được câu còn đang tải giọng */
+
+describe('I1 vòng 2 — cắt câu đang trong cửa sổ chuanBiGiong', () => {
+  beforeEach(() => xoaSoNao());
+
+  it('catNhe đánh dấu daHuy và GIỮ hàng đợi (khác catNgang)', async () => {
+    const t = await dung();
+    datSoNao(1);
+    void t.dispatcher.run('actor.play', { actor: 'gen', clip: 'type', loop: true }, 'bridge');
+    await nhipMicro();
+    const xepHang = t.dispatcher.run('actor.play', { actor: 'gen', clip: 'nod' }, 'bridge');
+    await nhipMicro();
+    expect(t.dispatcher.soCho('gen')).toBe(1);
+
+    t.dispatcher.catNhe('gen');
+    await nhipMicro();
+    // hàng đợi KHÔNG bị xoá: việc chờ vẫn chạy (catNgang thì nó `ok: false`)
+    expect((await xepHang).ok).toBe(true);
+    t.may.dung();
+  });
+
+  it('nguonDangChay nói đúng ai đang chiếm Nhi (thay cờ dangDienCho cũ)', async () => {
+    const t = await dung();
+    datSoNao(1);
+    expect(t.dispatcher.nguonDangChay('gen')).toBe(null);
+
+    void t.dispatcher.run('actor.play', { actor: 'gen', clip: 'type', loop: true }, 'bridge');
+    await nhipMicro();
+    expect(t.dispatcher.nguonDangChay('gen')).toBe('bridge');
+    expect(t.may.trangThai().dangDienCho).toBe(false);
+
+    /*
+     * Boss gõ lúc Nhi đang làm việc của não → tuyệt đối không cắt.
+     * Chỉ đẩy 500 ms: hành động của sân khấu giả dài 20 ms THẬT nên đẩy xa là
+     * Nhi rảnh lại và câu nối ra là ĐÚNG, không phải lỗi.
+     */
+    t.world.lichSu.length = 0;
+    t.bus.emit('user.text', { actor: 'owner', text: 'Nhi ơi' });
+    await t.tien(500);
+    expect(co(t.world, 'interrupt:gen')).toBe(false);
+    expect(cacCau(t.world)).toEqual([]);
+    expect(t.dispatcher.nguonDangChay('gen')).toBe('bridge');
+    t.may.dung();
+  });
+
+  it('ctx.daHuy() bật sau khi lượt chạy bị cắt — handler await xong thì tự thôi', async () => {
+    const world = new SanKhauGia(['owner', 'gen']);
+    const bus = new EventBus();
+    const d = new Dispatcher({ registry: taoRegistry(), world, bus });
+    /** Đọc `daHuy` ở hai thời điểm: trước và sau một `await` nhân tạo. */
+    const doc: boolean[] = [];
+    d.registry.dangKy({
+      cmd: 'test.cham',
+      group: 'actor',
+      desc: 'lệnh có await trước khi chạm sân khấu (giống actor.say tải giọng)',
+      chiemActor: 'actor',
+      params: [{ name: 'actor', type: 'string', desc: 'ai', required: true, goiY: 'actors' as const }],
+      example: { cmd: 'test.cham', args: { actor: 'gen' } },
+      async handler(a, ctx) {
+        doc.push(ctx.daHuy?.() === true);
+        await new Promise((r) => setTimeout(r, 30));
+        doc.push(ctx.daHuy?.() === true);
+        return { result: { actor: String(a.actor) } };
+      },
+    });
+
+    const chay = d.run('test.cham', { actor: 'gen' }, 'phan-xa');
+    await new Promise((r) => setTimeout(r, 5));
+    d.catNhe('gen');
+    await chay;
+    expect(doc).toEqual([false, true]);
+  });
+});
+
+/* ===================== VÒNG 2 — mong manh 3: ngồi thì không xoay thân */
+
+describe('I1 vòng 2 — người đang NGỒI chỉ quay đầu/mắt', () => {
+  beforeEach(() => xoaSoNao());
+
+  it('Nhi ngồi → phản xạ KHÔNG gọi actor.faceTo, vẫn lookAt + gật', async () => {
+    const t = await dung();
+    datSoNao(1);
+    await t.dispatcher.run('actor.sit', { actor: 'gen', seat: 'ghe-1' }, 'bridge');
+    await choHanhDong();
+    await nhipMicro();
+    expect(
+      t.world.describe().actors.find((a) => a.id === 'gen')!.state,
+    ).toBe('sitting');
+    t.world.actorLookAt('gen', 'ban-dieu-khien');
+    t.world.lichSu.length = 0;
+
+    t.bus.emit('user.listening', { on: true });
+    await nhipMicro();
+    expect(co(t.world, 'lookAt:gen')).toBe(true);
+    expect(t.world.lichSu).toContain('ngheNgong:gen:true');
+    expect(co(t.world, 'faceTo:gen')).toBe(false);
+    t.may.dung();
+  });
+
+  it('actor.say cũng không xoay thân người đang ngồi', async () => {
+    const t = await dung();
+    datSoNao(1);
+    await t.dispatcher.run('actor.sit', { actor: 'gen', seat: 'ghe-1' }, 'bridge');
+    await choHanhDong();
+    await nhipMicro();
+    t.world.lichSu.length = 0;
+    await t.dispatcher.run('actor.say', { actor: 'gen', text: 'Dạ em đây ạ' }, 'bridge');
+    expect(co(t.world, 'faceTo:gen')).toBe(false);
     t.may.dung();
   });
 });

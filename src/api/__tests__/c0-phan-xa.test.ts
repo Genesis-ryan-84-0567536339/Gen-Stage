@@ -210,7 +210,7 @@ describe('phản xạ: Owner nói → Gen quay lại ngay, không chờ não', (
 describe('phản xạ: câu đệm khi não im quá mốc choNaoMs (I1 #74: 200 ms)', () => {
   beforeEach(() => xoaSoNao());
 
-  it('não im 1,5 s → Gen nói câu đệm bằng chính actor.say', async () => {
+  it('não im hết mốc choNaoMs (I1: 200 ms) → Gen nói câu đệm bằng chính actor.say', async () => {
     const t = await dung();
     datSoNao(1);
     t.bus.emit('user.text', { actor: 'owner', text: 'Gen ơi' });

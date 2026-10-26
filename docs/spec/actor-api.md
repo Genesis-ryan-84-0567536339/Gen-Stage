@@ -347,9 +347,17 @@ não phải học** (chỉ `actor.listen` ở bảng trên, và một sự kiệ
 
 Bốn giao kèo bắt buộc của tầng 2 (chỗ dễ sai nhất):
 
-1. **Một giọng duy nhất.** Mọi câu/tư thế chêm chỉ gửi khi Nhi **đang rảnh**.
-   Không phải để lịch sự: hàng đợi là FIFO, nên một câu nối *xếp hàng* sẽ chạy
-   **trước** câu trả lời thật của não.
+1. **Một giọng duy nhất, XUYÊN NHÂN VẬT** (sửa 27/10 sau review PR #75). Mọi
+   câu/tư thế-có-tiếng của Nhi chỉ phát khi **không còn ai** trên sân khấu
+   đang nói — phản xạ giữ sổ `aiDangNoi` từ `actor.sayStart`/`sayDone` của mọi
+   actor. `actor.say` bắn `user.text` ở **đầu câu** của Nam, nên không có cửa
+   này là Nhi chen vào giữa câu Nam (đo ở tầng audio: đỉnh 2 giọng). Gật/nhìn
+   (không tiếng) vẫn tức thì, và câu đệm được **hoãn** tới khi Nam dứt lời chứ
+   không bị bỏ. Thêm một lý do nữa phải chờ Nhi rảnh: hàng đợi là FIFO, nên
+   một câu nối *xếp hàng* sẽ chạy **trước** câu trả lời thật của não.
+1b. **Tầng 2 có trần**: 30 s (`tranTangHaiMs`) thì nói một câu kết rồi về nhịp
+   thường; `bridge.disconnected` và `bridge.brain { count: 0 }` là hai cửa sập
+   tắt ngay. Không có trần thì não chết giữa đường là Nhi quay tư thế mãi mãi.
 2. **Khi bận chỉ cho lệnh nhìn.** Nhi đang chạy việc của não (`moveTo`,
    `play`…) thì phản xạ chỉ `actor.lookAt` + `actor.listen` — không `faceTo`,
    không emote, không nói, **không chạm hàng đợi**.

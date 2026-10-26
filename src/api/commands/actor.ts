@@ -556,9 +556,21 @@ export const LENH_ACTOR: CommandSpec[] = [
        * sau chính câu nói này). Phản xạ sẽ GIỮ hướng đó suốt câu.
        */
       const ngheLaActor = nghe !== 'camera' && nghe !== 'cursor' && ctx.world.coActor(nghe);
+      /**
+       * I1 vòng 2 (review PR #75 mục mong manh 3) — **người ĐANG NGỒI chỉ
+       * quay đầu/mắt.**
+       *
+       * `actor.faceTo` ghi `goc.rotation.y`, tức xoay cả thân: đo thật thấy
+       * Nhi ngồi `ghe-1` (ghế `facing: 0`) mà `facing: 318` — lệch ghế 42°,
+       * ngồi xoay ngang ra khỏi ghế. Lỗi có từ C0; I1 mở thêm cửa cho nó (tầng
+       * 0 gọi mỗi lần Boss bấm mic) nên phải bịt ở ĐÂY, chỗ duy nhất biết ai
+       * đang ngồi.
+       */
+      const dungYen = (ai: string) =>
+        ctx.world.describe().actors.find((x) => x.id === ai)?.state !== 'sitting';
       try {
         ctx.world.actorLookAt(id, nghe);
-        ctx.world.actorFaceTo(id, nghe);
+        if (dungYen(id)) ctx.world.actorFaceTo(id, nghe);
         /**
          * E2 (#48 mục 7) — **hai nhân vật nhìn nhau**.
          *
@@ -570,7 +582,7 @@ export const LENH_ACTOR: CommandSpec[] = [
          */
         if (ngheLaActor) {
           ctx.world.actorLookAt(nghe, id);
-          ctx.world.actorFaceTo(nghe, id);
+          if (dungYen(nghe)) ctx.world.actorFaceTo(nghe, id);
           ctx.world.actorNgheNgong(nghe, true, laCauHoi(chu));
         }
       } catch {
@@ -578,6 +590,23 @@ export const LENH_ACTOR: CommandSpec[] = [
       }
 
       const tieng = await chuanBiGiong(id, chu, giong, camXuc);
+      /**
+       * I1 vòng 2 (review PR #75 mục mong manh 1) — **đã bị cắt trong lúc tải
+       * giọng thì THÔI, không mở miệng.**
+       *
+       * `chuanBiGiong` mất 300–900 ms thật (fetch `/tts` + `decodeAudioData`).
+       * Dispatcher chiếm chỗ actor từ trước khi gọi handler, nhưng hành động
+       * sân khấu chưa tồn tại, nên `world.actorInterrupt` trong cửa sổ đó
+       * **không có gì để huỷ**: câu đệm bị cắt vẫn phát trọn và câu của não
+       * phải xếp hàng sau nó — đo thật là não nói muộn 616–854 ms thay vì
+       * "ngay". `ctx.daHuy()` là cửa duy nhất biết chuyện đó.
+       *
+       * Trả `ok: true` kèm `huy: true`: lệnh không lỗi, nó bị nhường chỗ —
+       * nhật ký phải phân biệt được hai thứ đó.
+       */
+      if (ctx.daHuy?.() === true) {
+        return ngay({ actor: id, text: chu, to: nghe, huy: true });
+      }
       const hd = ctx.world.actorSay(id, chu, camXuc, giong);
       // `actor.sayStart` bắn đúng lúc bong bóng chữ hiện ra (sau khi tải tiếng,
       // trước khi chờ nói xong). Driver não (`scripts/nao-agy.mjs`) đo độ trễ
