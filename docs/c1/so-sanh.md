@@ -161,6 +161,6 @@ tới". Vì thế VAD chừa lại `chuaMs = 120` ms mỗi đầu.
 - **Đường đi**: `src/audio/mic.ts` → `POST /stt` (`bridge/stt.ts`, cổng 8790) →
   ffmpeg 16 kHz mono → thợ python → `bridge/so-tu.ts` → ô chat → `actor.say`
   owner → `user.text` + `user.speech`.
-- **Giấy phép**: PhoWhisper (VinAI) Apache-2.0 · faster-whisper MIT ·
+- **Giấy phép**: PhoWhisper (VinAI) BSD-3-Clause · faster-whisper MIT ·
   CTranslate2 MIT · whisper.cpp MIT · Vosk Apache-2.0. Không thư viện copyleft
   nào vào bridge (cùng nguyên tắc với `bridge/tts.ts`).

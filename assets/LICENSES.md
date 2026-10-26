@@ -170,8 +170,8 @@ Không commit, tải bằng `bash scripts/fetch-stt.sh` vào `.cache/stt/`.
 
 | Thứ | Nguồn | Giấy phép |
 | --- | --- | --- |
-| PhoWhisper-small (model) | VinAI Research — `vinai/PhoWhisper-small` | Apache-2.0 |
-| Bản CTranslate2 của model trên | `quocphu/PhoWhisper-ct2-FasterWhisper` (HuggingFace, tải không cần đăng nhập) | Apache-2.0 (theo model gốc) |
+| PhoWhisper-small (model) | VinAI Research — `vinai/PhoWhisper-small` | BSD-3-Clause (theo thẻ model trên HuggingFace) |
+| Bản CTranslate2 của model trên | `quocphu/PhoWhisper-ct2-FasterWhisper` (HuggingFace, tải không cần đăng nhập) | BSD-3-Clause (theo model gốc) |
 | `faster-whisper` (thư viện python) | SYSTRAN/faster-whisper | MIT |
 | `ctranslate2` | OpenNMT | MIT |
 
