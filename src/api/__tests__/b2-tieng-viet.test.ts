@@ -212,7 +212,7 @@ describe('LopTieng — tải, phát, nhép miệng', () => {
       String((f as unknown as { mock: { calls: string[][] } }).mock.calls[0]![0]),
     ).searchParams;
     expect(Number(q.get('rate'))).toBeGreaterThan(0);
-    expect(Number(q.get('pitch'))).toBeGreaterThan(0);
+    expect(Number(q.get('pitch'))).toBe(0); // Boss 26/10: không đổi cao độ, giọng méo
     t.huyHet();
   });
 

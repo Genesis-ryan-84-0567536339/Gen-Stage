@@ -67,21 +67,19 @@ export function giongTheoActor(actorId: string, voice?: string): string {
 
 /** Cảm xúc → tốc độ/cao độ (nhẹ tay: giọng Việt sai nhịp là nghe rất giả). */
 function theoCamXuc(emotion?: string): { rate: number; pitch: number } {
+  // Boss 26/10: "giọng TTS sao kỳ" — đổi cao độ theo cảm xúc làm giọng neural
+  // nghe méo/robot. Giữ cao độ gốc (pitch 0), chỉ đổi tốc độ rất nhẹ.
   switch (emotion) {
     case 'vui':
     case 'rat-vui':
     case 'thanh-cong':
-      return { rate: 8, pitch: 6 };
+      return { rate: 4, pitch: 0 };
     case 'buon':
     case 'that-bai':
     case 'met':
-      return { rate: -12, pitch: -6 };
-    case 'gian':
-      return { rate: 6, pitch: -4 };
+      return { rate: -6, pitch: 0 };
     case 'ngac-nhien':
-      return { rate: 4, pitch: 10 };
-    case 'suy-nghi':
-      return { rate: -8, pitch: 0 };
+      return { rate: 3, pitch: 0 };
     default:
       return { rate: 0, pitch: 0 };
   }
