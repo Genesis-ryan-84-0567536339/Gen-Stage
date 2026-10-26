@@ -167,8 +167,8 @@ export const LENH_ACTOR: CommandSpec[] = [
     group: 'actor',
     events: ['actor.steerDone'],
     desc:
-      'Lái bằng vận tốc: đi theo (vx, vz) m/s trong ms rồi tự hết. Gọi lại để ' +
-      'kéo dài; lệnh mới THAY lệnh cũ, không xếp hàng',
+      'Lái bằng vận tốc: đi theo (vx, vz) m/s trong ms rồi tự dừng êm. Gọi lại ' +
+      'CÙNG (vx, vz) để gia hạn; đổi (vx, vz) thì lệnh mới THAY lệnh cũ, không xếp hàng',
     /**
      * CỐ TÌNH KHÔNG khai `chiemActor` — và đây là một quyết định thiết kế, không
      * phải sơ sót (ghi trong spec mục 3.2c):
@@ -182,6 +182,14 @@ export const LENH_ACTOR: CommandSpec[] = [
      * (nguồn sự thật duy nhất của `state` theo CLAUDE.md) nên `state` là
      * `walking` khi đang đi, `at` trả `null`, và mỗi lần lái có token riêng —
      * steer mới huỷ steer cũ bằng token, không bằng tên lệnh.
+     *
+     * F2 (#56 mục 2) — **GỌI LẠI CÙNG VECTOR LÀ GIA HẠN, không phải lệnh mới.**
+     * `NhanVat.lai()` so (vx, vz) với lần lái đang chạy: khớp thì chỉ đẩy hạn
+     * và trả lại đúng `Action` cũ. Người điều khiển (bàn phím, agent, bridge)
+     * vì vậy nên **giữ nguyên vector và gia hạn thưa** (vd `ms` 700, gọi lại
+     * mỗi 200 ms) thay vì gối lệnh dày như bản B1 — gối lệnh dày làm `state`
+     * nháy `walking → idle → walking` và vận tốc mục tiêu tụt về 0 giữa hai
+     * lệnh, chỉ thấy được ở FPS cao (xem `docs/f2/`).
      */
     params: [
       P_ACTOR,
@@ -198,10 +206,12 @@ export const LENH_ACTOR: CommandSpec[] = [
       pSo('ms', 'Giữ vận tốc này bao lâu (ms) rồi tự dừng êm', {
         min: 0,
         max: 5000,
-        default: 150,
+        // F2 — mặc định 700 ms: đủ để người gọi gia hạn thưa (xem ghi chú trên)
+        // mà vẫn là dây an toàn nếu bên gọi im lặng (tab treo, mất kết nối).
+        default: 700,
       }),
     ],
-    example: { cmd: 'actor.steer', args: { actor: 'gen', vx: 0, vz: -1.6, ms: 150 } },
+    example: { cmd: 'actor.steer', args: { actor: 'gen', vx: 0, vz: -1.6, ms: 700 } },
     handler(a, ctx) {
       const id = s(a.actor);
       if (!ctx.world.coActor(id)) {
@@ -211,7 +221,7 @@ export const LENH_ACTOR: CommandSpec[] = [
       }
       const vx = Number(a.vx);
       const vz = Number(a.vz);
-      const ms = a.ms === undefined ? 150 : Number(a.ms);
+      const ms = a.ms === undefined ? 700 : Number(a.ms);
       const hd = ctx.world.actorSteer(id, vx, vz, ms);
       void hd.done.then(() =>
         ctx.bus.emit('actor.steerDone', { actor: id, vx, vz, ms }),

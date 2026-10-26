@@ -43,6 +43,7 @@ node scripts/kiem-c1.mjs      # bằng chứng C1: giữ V nói → bridge nhậ
 node scripts/kiem-d1b.mjs     # bằng chứng D1b: mỹ thuật + hiệu năng (calls/tam giác/FPS) vào docs/d1b/ (CHẠY MỘT LẦN)
 bash scripts/fetch-anim.sh    # tải bộ chuyển động CC0 (Quaternius) về public/anim/ — chạy 1 lần sau khi clone
 bash scripts/fetch-stt.sh     # C1: venv + model PhoWhisper-small ct2 vào .cache/stt/ — chạy 1 lần (cai-dat.sh gọi sẵn)
+node scripts/kiem-f2.mjs      # bằng chứng F2: điều khiển mượt trên FIREFOX + GPU THẬT, vào docs/f2/ (CHẠY MỘT LẦN)
 node scripts/kiem-e1.mjs      # bằng chứng E1: UI 390 px, não diễn thật, /tts retry, hiểu "Javis", cài 1 lệnh, vào docs/e1/ (CHẠY MỘT LẦN)
 ```
 
@@ -121,7 +122,7 @@ biết registry, **giao diện** không gọi thẳng vào sân khấu.
 | `src/ui/panel.ts` | Bảng lệnh **tự sinh** từ `stage.bootstrap` — không viết tay nút nào |
 | `src/ui/script-box.ts` | Ô kịch bản: JSON hoặc dạng ngắn `gen moveTo ban-2` |
 | `src/ui/log-view.ts` | Nhật ký cuộn + Sao chép / Xuất JSON |
-| `src/ui/phim.ts` | Điều khiển bằng phím (WASD/1–0/Space/C/E/R/?) — **mọi phím gọi `dispatcher.run`**, tắt khi con trỏ đang ở ô nhập. B1: WASD gửi `actor.steer` mỗi 100 ms cho actor `controlledBy: "owner"` |
+| `src/ui/phim.ts` | Điều khiển bằng phím (WASD/1–0/Space/C/E/R/?) — **mọi phím gọi `dispatcher.run`**, tắt khi con trỏ đang ở ô nhập. **F2 (#56)**: WASD gửi MỘT `actor.steer` (`ms` 700) rồi **gia hạn** mỗi 200 ms cho actor `controlledBy: "owner"`; nhả phím / `blur` / `visibilitychange` là dừng NGAY |
 | `src/events.ts` · `src/log.ts` | Bus sự kiện · nhật ký JSON mọi lệnh và sự kiện |
 | `src/bridge-client.ts` | Nối trình duyệt với bridge (mặc định bật, tắt bằng `?bridge=0`) |
 | `bridge/server.ts` | Bridge WebSocket Node — mặc định chỉ nghe `127.0.0.1`; mở ra ngoài phải có `--host` + `GEN_STAGE_TOKEN`. Bật luôn TTS (8788) và MCP HTTP (8789) |
@@ -843,3 +844,74 @@ bằng ánh sáng + màu + chất liệu + bố cục, KHÔNG bằng hậu kỳ*
   ảnh bằng chứng được nén về ≤ 1280 px (docs/d1b: 4,5 MB → 1,6 MB).
 - `bloom-layer.ts` + mọi `batSang()` đã xoá hẳn (bloom bỏ từ vòng 1, chỉ còn là
   bit layer không ai đọc).
+
+## Quyết định F2 — điều khiển mượt trên GPU thật (26/10, Issue #56 mục 2)
+
+Boss: "điều khiển loạn tùm lum" khi mở **Firefox + GPU thật**, trong khi mọi
+bằng chứng B1/D1b (Chromium + **swiftshader, ~1 FPS**) đều sạch. Gốc, số đo
+và cách tái hiện: **`docs/f2/GOC-DIEU-KHIEN-LOAN.md`**.
+
+- **~1 FPS CHE LỖI, không phải phát hiện lỗi.** Gần như mọi chỗ làm mượt trong
+  repo viết dạng `x += (muc − x) * min(1, dt * k)`. Ở `dt ≈ 1 s` thì `dt*k`
+  vượt 1 rồi **bị kẹp về 1** → bám **tức thì**: không trễ, không vọt, không
+  giật, và **không kiểm được gì**. Lên 60 FPS mới thực sự nội suy. Từ nay mọi
+  giao kèo về độ mượt phải có test chạy ở **nhiều FPS** (1/10/60/144), và
+  bằng chứng về cảm giác điều khiển phải đo trên **Firefox GPU thật**
+  (`scripts/kiem-f2.mjs`), không đo trên swiftshader.
+- **Nội suy theo thời gian dùng `heSoBam(dt, τ) = 1 − e^(−dt/τ)`**
+  (`src/stage/nhanvat.ts`, xuất ra để test). `min(1, dt/τ)` lệch 7 % ở 60 FPS
+  và **47 % ở 10 FPS** — tức tốc độ hội tụ phụ thuộc FPS.
+- **Gọi lại `actor.steer` CÙNG vector là GIA HẠN, không phải lệnh mới.**
+  `NhanVat.lai()` so (vx, vz) với lần lái đang chạy; khớp thì đẩy `han` và trả
+  lại đúng `Action` cũ. Bản B1 gửi lệnh mới mỗi 100 ms, mỗi lệnh chạy trọn
+  `huyViec()` + `clip = null` + `batDauViec()` → `state` nháy
+  `walking → idle → walking` 10 lần/giây, và hiệu lực 180 ms chỉ hơn nhịp
+  100 ms có 80 ms nên một lượt GC là vận tốc tụt về 0 rồi vọt lại (đo được:
+  1,60 → 0,32 → 1,15 m/s trong 3 khung liền). Mặc định `ms` của `actor.steer`
+  đổi 150 → **700**; bên gọi nên gia hạn **thưa** (200 ms), đừng gối dày.
+- **Đụng vật cản thì XOÁ HẲN vận tốc trục bị chặn (0), không nhân 0,2.**
+  Nhân 0,2 tạo một **điểm cân bằng khác 0**: ga kéo lên, va chạm kéo xuống,
+  gặp nhau ở 0,23 m/s trong khi toạ độ không nhích → "chạy bộ tại chỗ",
+  `state` mắc ở `walking` vĩnh viễn (đo thật trước sofa). Và ngưỡng "bị chặn"
+  so theo `1e-6`, không theo "nửa bước": ở 60 FPS một bước chỉ 0,027 m nên
+  ngưỡng nửa bước **báo chặn oan** — tự sinh giật ở đúng FPS cao.
+- **Quay người có trần tốc độ góc** (`TOC_XOAY_LAI` = 2π rad/s) ngoài nội suy
+  theo thời gian, và quay theo vận tốc **mục tiêu** chứ không theo vận tốc
+  hiện tại (đổi A→D thì vận tốc đi qua 0, lấy hướng của nó là quay loạn).
+  `lechGoc()` chốt mốc ±π về `+π` cho **xác định** — để nhiễu số học không làm
+  hai khung liền nhau chọn hai chiều ngược nhau.
+- **Camera `theo-owner` dùng lò xo giảm chấn TỚI HẠN** (`buocLoXo` trong
+  `world.ts`, semi-implicit nên ổn định ở mọi `dt`; tới hạn nên không vọt quá
+  → không dội → không rung). ω = 9 rad/s: trễ xác lập `2v/ω` = 0,36 m khi đi
+  1,6 m/s, so với `v/k` = 0,62 m của lerp bậc một cũ.
+- **Dừng là việc của handler, không phải của nhịp.** `keyup` / `blur` /
+  `visibilitychange` / `pagehide` gửi lệnh vận tốc 0 **ngay trong cùng tick**.
+  Bản B1 chờ nhịp 100 ms, mà tab bị ẩn thì trình duyệt hạ `setInterval` xuống
+  ~1 lần/giây → lệnh dừng tới muộn cả giây. `HIEU_LUC_STEER` 0,7 s là dây an
+  toàn cuối nếu cả lệnh đó cũng không đi được.
+- **Phanh có hằng số riêng** (`LERP_PHANH` 0,08 s, ga 0,12 s): một τ chung thì
+  hoặc vào trễ, hoặc ra cụt. Nhả phím → dừng trong **0,21 s** (lời hứa ≤ 0,3 s).
+- **`dangGoChu()` soi cả `shadowRoot`, và `keydown` bỏ qua `isComposing`** —
+  bộ gõ telex dùng `w`, `s`, `d` làm nguyên liệu chữ. Đang giữ phím mà nhảy
+  vào ô nhập thì **dừng nhân vật**: `keyup` sau đó rơi vào ô nhập, không về
+  tới sân khấu.
+- **Thước FPS `?fps=1` từng bịa số.** `trungBinh([])` trả `1000/60` → in
+  "FPS trung bình 60.0" khi không có mẫu nào, và phân vị trên mảng rỗng → NaN;
+  khung đầu mất > 10 s trên renderer phần mềm là rơi đúng vào đó. Nay phần
+  tính tách ra `chotFps()` (test được), cắt warmup theo **thời gian** (0,5 s)
+  và chỉ khi còn ≥ 8 mẫu, phân vị nearest-rank, đo tới khi **đủ cả thời gian
+  lẫn đủ khung** (trần 40 s), và **thiếu mẫu thì nói thiếu mẫu**. Thẻ hiện
+  thêm số khung đếm được + thời gian khung đỉnh (ms).
+- **Sân khấu TỰ GHI SỔ từng khung** (`NhanVat.soLai`, `World.soMay`), script
+  bằng chứng đọc một lần ở cuối. Vòng dò đầu tiên lấy mẫu bằng
+  `stage.describe()` + `doXuong()` mỗi khung và **tự kéo FPS 60 → 8,5** —
+  dụng cụ đo làm hỏng đúng cái cần đo. Cũng vì thế `vanToc()` trả `x`/`z`
+  **4 chữ số**: `describe().pos` làm tròn 2 chữ số, mà 0,027 m/khung ở 60 FPS
+  lọt hết vào chữ số bị cắt nên "đi rất chậm" trông y hệt "đứng im".
+- **Cạm bẫy môi trường đã đo**: (1) Playwright **Firefox + Wayland + nouveau**
+  làm tiến trình GPU gãy ("Exiting due to channel error") — chạy qua X11
+  (`MOZ_ENABLE_WAYLAND=0`), WebGL vẫn là GPU thật; (2) `recordVideo` của
+  Playwright với Firefox ra file **1,0 giây** cho cả 25 giây thao tác — quay
+  bằng `ffmpeg -f x11grab` thay vào; (3) ngưỡng "nhả phím → dừng ≤ 0,3 s" khi
+  chấm trên máy thật phải **cộng 2 khung hình đo từ chính sổ**, không thì đang
+  đo tốc độ GPU của máy kiểm chứ không đo đường cong phanh.

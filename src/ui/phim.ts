@@ -38,15 +38,35 @@ import type { ActorSnapshot, StageState } from '../api/types';
  * tránh bàn đều nằm trong sân khấu (`NhanVat.lai` + `bo-cuc.ts`) — nơi duy
  * nhất biết đồng hồ khung hình.
  */
-/** Nhịp gửi `actor.steer` khi đang giữ phím (ms) — Issue #18 chốt 100 ms. */
-const NHIP_STEER = 100;
 /**
- * Mỗi lệnh steer có hiệu lực 180 ms > nhịp 100 ms: hai lệnh gối nhau nên
- * không có khe nào nhân vật bị "hết lệnh" mà Boss vẫn đang giữ phím. Nhưng
- * cũng chỉ 180 ms, nên tab bị treo / mất focus giữa lúc giữ phím là nhân vật
- * tự dừng êm sau chưa đến 0,2 s, không đi mãi.
+ * F2 (#56 mục 2) — **GIA HẠN, không gối lệnh.**
+ *
+ * Bản B1 gửi một `actor.steer` mới mỗi 100 ms với hiệu lực 180 ms, cố ý cho
+ * hai lệnh gối nhau. Đo trên Firefox GPU thật (60 FPS) thì cách đó là gốc của
+ * "điều khiển loạn tùm lum":
+ *   · mỗi lệnh mới **xé rồi dựng lại** hành động trong `NhanVat.lai` (nhả
+ *     `viec`, xoá lớp clip, `state` nháy `walking → idle → walking`) — ở 60
+ *     FPS là cứ 6 khung một lần, ở ~1 FPS của máy kiểm thì cả chục lệnh rơi
+ *     vào cùng một khung nên **không để lại dấu nào trong bằng chứng cũ**;
+ *   · 180 ms chỉ hơn nhịp 100 ms có 80 ms: một lượt GC hoặc một khung nặng là
+ *     hạn cũ hết trước khi lệnh sau tới → vận tốc mục tiêu tụt về 0 rồi vọt
+ *     lại 1,6 m/s. Đo được: 1,60 → 0,32 → 1,15 m/s trong 3 khung liền.
+ *
+ * Giờ: hiệu lực `HIEU_LUC_STEER` = 700 ms, gia hạn mỗi `NHIP_GIA_HAN` = 200 ms
+ * (dư 3,5 lần biên an toàn) và `NhanVat.lai` **gia hạn tại chỗ** khi vector
+ * không đổi — không tạo hành động mới. Đổi vector hoặc nhả phím thì gửi NGAY,
+ * không chờ hết nhịp.
  */
-const HIEU_LUC_STEER = 180;
+const NHIP_GIA_HAN = 200;
+/**
+ * Hiệu lực một lệnh steer (ms). Đủ dài để không bao giờ hết hạn oan giữa hai
+ * lượt gia hạn, nhưng vẫn là **dây an toàn**: nếu cả tab bị treo hoặc trang bị
+ * bỏ (`pagehide`) mà không kịp gửi lệnh dừng, nhân vật tự dừng êm sau 0,7 s
+ * chứ không đi mãi.
+ */
+const HIEU_LUC_STEER = 700;
+/** Hiệu lực lệnh "dừng" lúc nhả phím (ms) — chỉ cần đủ cho `LERP_PHANH`. */
+const HIEU_LUC_DUNG = 400;
 /** Tốc độ lái tối đa (m/s) — khớp `TOC_DO_STEER` trong `nhanvat.ts`. */
 const TOC_DO = 1.6;
 /** 10 emote đầu gắn vào phím 1…9, 0. */
@@ -70,19 +90,34 @@ export interface BanPhim {
   thao(): void;
   /** Actor đang được phím điều khiển. */
   actor(): string;
+  /** F2 — vector steer đã gửi lần cuối + có đang giữ phím nào không (test). */
+  doPhim(): { vx: number; vz: number; giu: number; nhip: boolean };
 }
 
-/** Đang gõ chữ ở đâu đó thì phím KHÔNG được coi là lệnh sân khấu. */
+/**
+ * Đang gõ chữ ở đâu đó thì phím KHÔNG được coi là lệnh sân khấu.
+ *
+ * F2 — soi cả `shadowRoot`: ô chat/ô kịch bản của các đợt sau có thể nằm trong
+ * web component, lúc đó `document.activeElement` chỉ trả về **thẻ bọc** chứ
+ * không phải ô nhập bên trong, và WASD lại rơi vào sân khấu khi Boss đang gõ.
+ */
 function dangGoChu(): boolean {
-  const el = document.activeElement as HTMLElement | null;
-  if (!el) return false;
-  const ten = el.tagName;
-  return (
-    ten === 'INPUT' ||
-    ten === 'TEXTAREA' ||
-    ten === 'SELECT' ||
-    el.isContentEditable === true
-  );
+  let el = document.activeElement as (HTMLElement & { shadowRoot?: ShadowRoot }) | null;
+  for (let sau = 0; el && sau < 8; sau += 1) {
+    const ten = el.tagName;
+    if (
+      ten === 'INPUT' ||
+      ten === 'TEXTAREA' ||
+      ten === 'SELECT' ||
+      el.isContentEditable === true
+    ) {
+      return true;
+    }
+    const trong = el.shadowRoot?.activeElement as HTMLElement | null;
+    if (!trong || trong === el) return false;
+    el = trong as HTMLElement & { shadowRoot?: ShadowRoot };
+  }
+  return false;
 }
 
 export function batPhim(
@@ -93,9 +128,13 @@ export function batPhim(
   let actorId = 'owner';
   /** Mã phím hướng đang được giữ. */
   const dangGiu = new Set<string>();
-  /** Hẹn giờ gửi steer theo nhịp (0 = không chạy). */
+  /** Hẹn giờ GIA HẠN lệnh steer đang chạy (0 = không chạy). */
   let henSteer = 0;
-  /** Vector đã gửi lần cuối — chỉ gửi lại khi đổi hoặc tới nhịp. */
+  /** Vector đã gửi lần cuối — để biết lúc nào phải gửi lệnh mới. */
+  let daGuiVx = 0;
+  let daGuiVz = 0;
+  /** Đã gửi lệnh "dừng" rồi chưa (tránh bắn lặp khi blur + keyup cùng lúc). */
+  let daGuiDung = true;
   let viPreset = 0;
   let soModule = 0;
 
@@ -146,43 +185,76 @@ export function batPhim(
     return [(dx / dai) * TOC_DO, (dz / dai) * TOC_DO];
   }
 
-  /** Gửi một lệnh steer theo vector hiện tại. */
+  /**
+   * Gửi (hoặc gia hạn) một lệnh steer theo vector hiện tại.
+   *
+   * `NhanVat.lai` nhận ra vector không đổi thì chỉ **đẩy hạn** của lần lái
+   * đang chạy — nên gọi hàm này mỗi `NHIP_GIA_HAN` ms là rẻ, không xé lại
+   * hành động, không làm `state` nháy.
+   */
   function guiSteer(): void {
     const [vx, vz] = vectorPhim();
+    daGuiVx = vx;
+    daGuiVz = vz;
+    daGuiDung = vx === 0 && vz === 0;
     void chay('actor.steer', { actor: actorId, vx, vz, ms: HIEU_LUC_STEER });
   }
 
   /**
-   * Một hẹn giờ DUY NHẤT cho cả bàn phím: bật khi phím hướng đầu tiên được
-   * nhấn, tắt khi nhả hết. Không tạo hẹn giờ theo từng phím (bản cũ dễ chồng
-   * nhiều interval khi bấm nhiều phím liền tay).
+   * Nhịp GIA HẠN: bật khi phím hướng đầu tiên được nhấn, tắt ngay khi nhả hết.
+   *
+   * F2 — khác bản B1 ở chỗ việc **dừng** không còn chờ nhịp: `dungNgay()` được
+   * gọi thẳng từ `keyup` / `blur` / `visibilitychange`, nên nhả phím là lệnh
+   * dừng bay đi trong cùng một tick, không trễ tới 100 ms.
    */
   function batNhipSteer(): void {
     if (henSteer) return;
-    guiSteer();
     henSteer = window.setInterval(() => {
       if (dangGiu.size === 0) {
-        clearInterval(henSteer);
-        henSteer = 0;
-        // nhả hết phím: một lệnh vận tốc 0 để nhân vật giảm tốc về 0 ngay
-        void chay('actor.steer', { actor: actorId, vx: 0, vz: 0, ms: 120 });
+        dungNgay();
         return;
       }
       guiSteer();
-    }, NHIP_STEER);
+    }, NHIP_GIA_HAN);
+  }
+
+  /** Tắt nhịp gia hạn và gửi NGAY một lệnh vận tốc 0 (nhân vật phanh êm). */
+  function dungNgay(): void {
+    if (henSteer) {
+      clearInterval(henSteer);
+      henSteer = 0;
+    }
+    dangGiu.clear();
+    if (daGuiDung) return;
+    daGuiVx = 0;
+    daGuiVz = 0;
+    daGuiDung = true;
+    void chay('actor.steer', { actor: actorId, vx: 0, vz: 0, ms: HIEU_LUC_DUNG });
   }
 
   function onKeyDown(e: KeyboardEvent): void {
-    if (dangGoChu()) return;
+    /**
+     * F2 — đang gõ chữ (kể cả ô chat, ô kịch bản, ô nói nhanh) thì phím thuộc
+     * về ô nhập. Và nếu Boss đang GIỮ phím hướng rồi mới nhảy vào ô nhập thì
+     * phải **dừng ngay** — không để nhân vật đi mãi vì `keyup` sau đó rơi vào
+     * ô nhập chứ không về đây.
+     */
+    if (dangGoChu()) {
+      if (dangGiu.size > 0) dungNgay();
+      return;
+    }
+    // Bộ gõ tiếng Việt (telex/VNI) đang dựng chữ: `w`, `s`, `d`… là nguyên liệu
+    // của chữ, không phải lệnh lái.
+    if (e.isComposing || e.keyCode === 229) return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
 
     if (HUONG[e.code]) {
       e.preventDefault();
       if (!dangGiu.has(e.code)) {
         dangGiu.add(e.code);
-        // đổi vector là gửi NGAY (không đợi hết nhịp 100 ms) → bấm là đi liền
-        if (henSteer) guiSteer();
-        else batNhipSteer();
+        // đổi vector là gửi NGAY (không đợi hết nhịp) → bấm là đi liền
+        guiSteer();
+        batNhipSteer();
       }
       return;
     }
@@ -221,7 +293,7 @@ export function batPhim(
       }
       case 'KeyR':
         e.preventDefault();
-        dangGiu.clear();
+        dungNgay();
         void chay('stage.reset', {}).then(() => capNhatChu());
         break;
       case 'Slash':
@@ -235,18 +307,33 @@ export function batPhim(
 
   function onKeyUp(e: KeyboardEvent): void {
     if (!dangGiu.delete(e.code)) return;
-    // nhả một phím trong tổ hợp (W+D → chỉ còn D): vector mới gửi ngay
-    if (dangGiu.size > 0) guiSteer();
+    // F2 — nhả hết là DỪNG NGAY trong cùng tick, không chờ nhịp gia hạn.
+    // Nhả một phím trong tổ hợp (W+D → chỉ còn D): vector mới cũng gửi ngay.
+    if (dangGiu.size === 0) dungNgay();
+    else guiSteer();
   }
 
-  /** Mất focus cửa sổ giữa lúc đang giữ phím → nhả hết, đừng đi mãi. */
+  /**
+   * Mất focus cửa sổ / đổi tab / rời trang giữa lúc đang giữ phím → DỪNG.
+   *
+   * F2 — bản B1 chỉ `dangGiu.clear()` rồi chờ nhịp 100 ms gửi lệnh 0. Nhưng
+   * tab bị ẩn thì `setInterval` bị trình duyệt hạ xuống ~1 lần/giây, nên lệnh
+   * dừng tới muộn cả giây; `requestAnimationFrame` cũng ngừng nên nhân vật
+   * không hề phanh trong lúc đó. Giờ gửi lệnh dừng **ngay tại handler**, và
+   * `HIEU_LUC_STEER` 0,7 s là dây an toàn cuối nếu cả lệnh đó cũng không đi.
+   */
   function onBlur(): void {
-    dangGiu.clear();
+    dungNgay();
+  }
+  function onAnTab(): void {
+    if (document.visibilityState === 'hidden') dungNgay();
   }
 
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup', onKeyUp);
   window.addEventListener('blur', onBlur);
+  document.addEventListener('visibilitychange', onAnTab);
+  window.addEventListener('pagehide', onBlur);
   void capNhatChu();
 
   return {
@@ -254,11 +341,19 @@ export function batPhim(
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('blur', onBlur);
+      document.removeEventListener('visibilitychange', onAnTab);
+      window.removeEventListener('pagehide', onBlur);
       if (henSteer) clearInterval(henSteer);
       goiY.remove();
       if (dangNhap()) moONhap(null);
     },
     actor: () => actorId,
+    doPhim: () => ({
+      vx: daGuiVx,
+      vz: daGuiVz,
+      giu: dangGiu.size,
+      nhip: henSteer !== 0,
+    }),
   };
 }
 
