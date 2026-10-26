@@ -163,7 +163,7 @@ const DT_MAY_TOI_DA = 1 / 15;
  *
  * Công thức semi-implicit (ổn định vô điều kiện):
  *   `vel ← (vel + ω²·dt·(muc − v)) / (1 + 2ω·dt + ω²·dt²)`, rồi `v ← v + vel·dt`.
- * Xuất ra ngoài để test đo được (`src/api/__tests__/f2-steer-muot.test.ts`).
+ * Xuất ra ngoài để test đo được (`src/api/__tests__/f2-dieu-khien-muot.test.ts`).
  */
 export function buocLoXo(
   v: THREE.Vector3,
@@ -492,7 +492,8 @@ export class World implements StageWorld {
         const dtMay = Math.min(dt, DT_MAY_TOI_DA);
         buocLoXo(this.camera.position, this.mayVel, this.mayDich, OMEGA_MAY, dtMay);
         buocLoXo(this.controls.target, this.mayTamVel, this.mayTam, OMEGA_MAY, dtMay);
-        if (this.soMay.length >= 900) this.soMay.shift();
+        // Đầy thì NGỪNG ghi (xem ghi chú cùng loại ở `NhanVat.soLai`).
+        if (this.soMay.length < 900)
         this.soMay.push([
           +performance.now().toFixed(1),
           +dtMay.toFixed(4),
@@ -501,10 +502,13 @@ export class World implements StageWorld {
           +this.mayVel.length().toFixed(4),
         ]);
       }
-    } else if (this.mayVel.lengthSq() > 0 || this.mayTamVel.lengthSq() > 0) {
+    } else if (this.mayVel.lengthSq() > 0 || this.mayTamVel.lengthSq() > 0 || this.soMay.length) {
       // rời preset `theo-owner` → bỏ quán tính, đừng để lò xo kéo thêm
       this.mayVel.set(0, 0, 0);
       this.mayTamVel.set(0, 0, 0);
+      // …và **xoá sổ**: `doHieuNang()` luôn trả `soMay`, để sổ cũ lại thì
+      // người đọc sau có thể chấm điểm camera trên một lượt bám khác hẳn.
+      this.soMay = [];
     }
 
     if (this.tamTuBay) {

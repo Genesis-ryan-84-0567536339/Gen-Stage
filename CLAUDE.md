@@ -869,12 +869,31 @@ và cách tái hiện: **`docs/f2/GOC-DIEU-KHIEN-LOAN.md`**.
   100 ms có 80 ms nên một lượt GC là vận tốc tụt về 0 rồi vọt lại (đo được:
   1,60 → 0,32 → 1,15 m/s trong 3 khung liền). Mặc định `ms` của `actor.steer`
   đổi 150 → **700**; bên gọi nên gia hạn **thưa** (200 ms), đừng gối dày.
-- **Đụng vật cản thì XOÁ HẲN vận tốc trục bị chặn (0), không nhân 0,2.**
-  Nhân 0,2 tạo một **điểm cân bằng khác 0**: ga kéo lên, va chạm kéo xuống,
-  gặp nhau ở 0,23 m/s trong khi toạ độ không nhích → "chạy bộ tại chỗ",
-  `state` mắc ở `walking` vĩnh viễn (đo thật trước sofa). Và ngưỡng "bị chặn"
-  so theo `1e-6`, không theo "nửa bước": ở 60 FPS một bước chỉ 0,027 m nên
-  ngưỡng nửa bước **báo chặn oan** — tự sinh giật ở đúng FPS cao.
+- **Đụng vật cản: vận tốc trục = QUÃNG THẬT ĐÃ ĐI của trục đó chia `dt`.**
+  Bản B1 nhân 0,2 → **điểm cân bằng khác 0** (0,23 m/s mà toạ độ không nhích
+  = "chạy bộ tại chỗ"). Bản F2 vòng 1 xoá hẳn về 0 → mất cả vận tốc khi chỉ bị
+  kẹp 1 % của bước, trượt dọc mép bàn giật theo chu kỳ. Một quy tắc lo cả hai:
+  chặn hoàn toàn ⇒ quãng 0 ⇒ vận tốc 0; kẹp một phần ⇒ giữ đúng phần đi được.
+  So "bị chặn" theo **tỉ lệ** (`1 − 1e-9`), không theo hằng số tuyệt đối: ở 60
+  FPS một bước chỉ 0,027 m nên ngưỡng tuyệt đối hoặc báo chặn oan ("nửa bước"
+  của B1) hoặc không bao giờ báo (trừ `1e-6` làm vế phải âm).
+- **"Đang đi" tính SAU va chạm, từ quãng thật của khung — không từ `|v|`.**
+  Vòng F2 đầu đọc `|v|` *trước* va chạm nên ép vào sofa thì `|v|` = 0, toạ độ
+  đứng im, mà `state` vẫn `walking` vĩnh viễn ⇒ clip đi vẫn chạy, thân vẫn
+  nhún: **sửa nửa gốc, mắt Boss vẫn thấy chạy tại chỗ**. Ba chỗ cùng sai một
+  kiểu — `dangDi`, nhánh nhả thân bị `hetHan` chặn (giữ phím thì `hetHan` luôn
+  `false`), và sàn 0,35 của `phaBuoc`. Bị chặn cứng thì báo `idle` **ngay**,
+  nhưng cố ý **không** huỷ `dangLai`: lệnh lái vẫn giữ thân nên xoay sang
+  hướng thoáng là đi tiếp; huỷ thì `state` nháy `walking ↔ idle` theo nhịp gia
+  hạn.
+- **Một hằng số đừng làm hai việc.** `NGUONG_PHANH` (0,12 m/s, chỉ lúc phanh)
+  tách khỏi `NGUONG_DI` (0,04 m/s: clip đi, nhún thân, hướng mặt). Gộp làm một
+  thì khung đầu tăng tốc từ 0 bị coi là đứng im ⇒ `state` nháy ở FPS cao.
+- **Vật lý một khung lái nằm trong hàm THUẦN `buocLai()`** (`nhanvat.ts`),
+  `capNhat` chỉ gọi. Lý do rất thực dụng: dựng `NhanVat` cần model VRM, nên
+  trước đó **không test nào chạm được vào gốc va chạm** — và đó đúng là gốc bị
+  sửa nửa vời. Giao kèo nào không có test thì sớm muộn cũng chỉ còn là lời văn
+  trong PR.
 - **Quay người có trần tốc độ góc** (`TOC_XOAY_LAI` = 2π rad/s) ngoài nội suy
   theo thời gian, và quay theo vận tốc **mục tiêu** chứ không theo vận tốc
   hiện tại (đổi A→D thì vận tốc đi qua 0, lấy hướng của nó là quay loạn).
@@ -908,6 +927,14 @@ và cách tái hiện: **`docs/f2/GOC-DIEU-KHIEN-LOAN.md`**.
   dụng cụ đo làm hỏng đúng cái cần đo. Cũng vì thế `vanToc()` trả `x`/`z`
   **4 chữ số**: `describe().pos` làm tròn 2 chữ số, mà 0,027 m/khung ở 60 FPS
   lọt hết vào chữ số bị cắt nên "đi rất chậm" trông y hệt "đứng im".
+- **Bằng chứng phải chạy ĐÚNG CHỖ TẬT XẢY RA.** Mục
+  `2-khong-chay-bo-tai-cho` vòng đầu chấm trên hai lượt đã được lái ra **chỗ
+  trống** nên đạt một cách tầm thường, trong khi tật chỉ hiện khi **ép vào vật
+  cản mà vẫn giữ phím**. Mục `7-ep-vat-can-*` giờ ép vào **tường phòng** (luôn
+  có, không phụ thuộc F1 dọn đồ) và **đòi cờ `chặn ≠ 0`** để không thể đạt vì
+  đi trong chỗ trống; va chạm với từng món đồ do test đơn vị lo, tự dò hộp từ
+  `hopChan()` thay vì ghi cứng toạ độ sofa (ghi cứng là rebase qua F1 #57 đỏ
+  ngay, dù giao kèo chẳng liên quan sofa nằm đâu).
 - **Cạm bẫy môi trường đã đo**: (1) Playwright **Firefox + Wayland + nouveau**
   làm tiến trình GPU gãy ("Exiting due to channel error") — chạy qua X11
   (`MOZ_ENABLE_WAYLAND=0`), WebGL vẫn là GPU thật; (2) `recordVideo` của

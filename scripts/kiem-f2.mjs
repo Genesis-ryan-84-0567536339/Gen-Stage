@@ -220,6 +220,42 @@ await pg.keyboard.up('w');
 const anTab = await soLai();
 nhatKy.luot.anTab = anTab;
 
+/* --------------------- lượt 5: ép vào VẬT CẢN trong khi VẪN giữ phím (gốc 2) */
+/**
+ * Review #58 chỉ đúng một chỗ đau: mục `2-khong-chay-bo-tai-cho` của vòng đầu
+ * chấm trên hai lượt **không có vật cản** (script đã lái owner ra chỗ trống
+ * trước khi đo) nên đạt một cách tầm thường, trong khi tật thật chỉ hiện ra
+ * khi **ép vào vật cản mà vẫn giữ phím**.
+ *
+ * Dùng **tường phòng** (`kepTrongPhong`, |z| ≤ 4,5) chứ không dùng một món đồ
+ * cụ thể: F1 (#57) vừa dọn lại toàn bộ bố cục, ghi cứng toạ độ sofa là lượt
+ * sau lại sai. Tường luôn ở đó, và đi qua **đúng một đường mã** với bàn ghế
+ * (`buocLai` → `truotVaCham`). Va chạm với từng hộp đồ đạc có test đơn vị
+ * riêng (`f2-dieu-khien-muot.test.ts` mục 5, tự dò hộp từ `hopChan()`).
+ */
+await pg.evaluate(() => window.stage.run('actor.moveTo', { actor: 'owner', to: [0, 0, 0] }));
+await pg.waitForTimeout(5000); // `moveTo` đi 0,95 m/s — chờ ngắn là chưa tới nơi
+await pg.mouse.click(640, 740);
+await pg.keyboard.down('s'); // +Z, về phía tường nam (z = +4,5)
+// 4,5 m ở 1,6 m/s mất ~2,9 s; giữ 4,5 s để chắc chắn ĐÃ áp vào tường rồi mới đo
+await pg.waitForTimeout(4500);
+// VẪN ĐANG GIỮ PHÍM: đọc trạng thái + độ cao hông 3 lần để bắt cú "nhún tại chỗ"
+const epTuong = { hongY: [] };
+for (let i = 0; i < 3; i += 1) {
+  epTuong.hongY.push(await pg.evaluate(() => window.stage.doXuong('owner').hips[1]));
+  epTuong.state = await pg.evaluate(
+    async () =>
+      (await window.stage.describe()).result.actors.find((a) => a.controlledBy === 'owner').state,
+  );
+  await pg.waitForTimeout(200);
+}
+// đọc sổ SAU cùng, để mẫu cuối đúng là lúc đang ép vào tường
+epTuong.so = (await soLai()).so;
+await anh('05-ep-vat-can');
+await pg.keyboard.up('s');
+await pg.waitForTimeout(600);
+nhatKy.luot.epTuong = epTuong;
+
 await new Promise((ok) => (phim.exitCode !== null ? ok() : phim.on('exit', ok)));
 
 nhatKy.camera = await soMay();
@@ -338,6 +374,31 @@ const T = 0, DT = 1, X = 2, Z = 3, V = 4, F = 5, CHAN = 6;
     vCuoi,
     diThem: diThem === null ? null : +diThem.toFixed(4),
     soKhung: so.length,
+  });
+}
+
+/* --- 7. ép vào vật cản mà VẪN giữ phím: dừng thật, không "chạy bộ tại chỗ" --- */
+{
+  const so = epTuong.so;
+  const duoi = so.slice(-10);
+  const vCuoi = so.at(-1)?.[V] ?? null;
+  const nhich = Math.max(...duoi.map((r) => Math.abs(r[Z] - duoi[0][Z])));
+  // độ cao hông: nhún thân là `position.y = |sin(phaBuoc)|·0,022` → dao động
+  // tới 2,2 cm. Đứng im thật thì ba mẫu cách nhau 200 ms phải TRÙNG nhau.
+  const bienHong = Math.max(...epTuong.hongY) - Math.min(...epTuong.hongY);
+  // phải THẬT SỰ có chạm (cờ `chặn` ≠ 0) — nếu không thì mục này đang đo một
+  // lượt đi trong chỗ trống và "đạt" một cách vô nghĩa, đúng lỗi của vòng đầu
+  const daCham = so.some((r) => r[CHAN] !== 0);
+  chot('7-ep-vat-can-dung-that', daCham && vCuoi === 0 && nhich < 1e-3, {
+    daCham,
+    vCuoi,
+    nhich: +nhich.toFixed(5),
+    soKhung: so.length,
+  });
+  chot('7-ep-vat-can-state-idle', epTuong.state === 'idle', { state: epTuong.state });
+  chot('7-ep-vat-can-khong-nhun', bienHong < 1e-3, {
+    bienHong: +bienHong.toFixed(5),
+    hongY: epTuong.hongY,
   });
 }
 

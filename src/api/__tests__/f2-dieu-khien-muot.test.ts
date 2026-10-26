@@ -15,10 +15,15 @@
  *  3. Bàn phím — giữ phím là MỘT lệnh được gia hạn (không gối lệnh 100 ms);
  *     nhả phím / blur / ẩn tab là dừng NGAY trong cùng tick.
  *  4. `chotFps` — thước FPS không bao giờ bịa số (gốc của "60.0 / NaN").
+ *  5. `buocLai` — lái thẳng vào vật cản thì **dừng thật**: không vận tốc ảo,
+ *     không "đang đi", pha bước đứng im. Đây là gốc 2 của #56; vòng F2 đầu chỉ
+ *     sửa được nửa (hết vận tốc ảo nhưng `state` vẫn `walking` vĩnh viễn) đúng
+ *     vì **không có test nào chạm tới nó** — giao kèo chỉ nằm trong lời văn.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
-import { LERP_PHANH, LERP_VAN_TOC, heSoBam, lechGoc } from '../../stage/nhanvat';
+import { LERP_PHANH, LERP_VAN_TOC, buocLai, heSoBam, lechGoc } from '../../stage/nhanvat';
+import { biChan, hopChan, kepTrongPhong } from '../../stage/bo-cuc';
 import { OMEGA_MAY, buocLoXo } from '../../stage/world';
 import { chotFps } from '../../ui/do-fps';
 
@@ -420,5 +425,167 @@ describe('F2 mục 3 — bàn phím: gia hạn, không gối lệnh; nhả là d
     ban(winNghe, 'keydown', { code: 'KeyW', isComposing: true });
     await vi.advanceTimersByTimeAsync(300);
     expect(steer()).toHaveLength(0);
+  });
+});
+
+/* --------------------------------------- 5. lái vào vật cản (gốc 2 của #56) */
+
+/** Bán kính thân khi kiểm va chạm — khớp `BAN_KINH_THAN` của `nhanvat.ts`. */
+const BAN_KINH = 0.34;
+
+/**
+ * Tự TÌM một chỗ đâm vào tường trong bảng bố cục hiện hành, thay vì ghi cứng
+ * toạ độ sofa.
+ *
+ * Lần đầu viết các test này tôi ghi cứng `(−4,5; 2,6) → sofa`. Rebase lên main
+ * sau khi **F1 (#57) dọn lại bố cục** là cả ba test đỏ — mà giao kèo đang
+ * kiểm ("đụng vật cản thì dừng thật") thì chẳng liên quan gì tới việc sofa
+ * nằm ở đâu. Hàm này quét lưới để lấy một điểm **thoáng** mà đi thẳng `+X`
+ * 1,5 m là **đụng**, và còn ≥ `thoangZ` m thoáng hai bên theo `Z` để test
+ * trượt dọc mép chạy được. F1 có dời đồ lần nữa thì test vẫn đúng.
+ */
+function timChoDamTuong(thoangZ = 0.8): { x: number; z: number } {
+  for (let z = -4; z <= 4; z += 0.1) {
+    for (let x = -6; x <= 6; x += 0.1) {
+      if (biChan(x, z, BAN_KINH)) continue;
+      if (!biChan(x + 1.5, z, BAN_KINH)) continue;
+      let tot = true;
+      // thoáng suốt 1,1 m phía trước (để có đoạn tăng tốc trước khi đụng)…
+      for (let d = 0; d <= 1.1; d += 0.1) if (biChan(x + d, z, BAN_KINH)) tot = false;
+      // …thoáng dọc −Z ở cột xuất phát (đường trượt), kể cả TƯỜNG PHÒNG:
+      // `biChan` chỉ biết đồ đạc, mép phòng nằm ở `kepTrongPhong`. Bỏ sót nó
+      // thì "trượt dọc mép bàn" lại hoá ra "đâm vào tường nhà".
+      for (let d = 0; d <= thoangZ + 0.3; d += 0.1) {
+        if (biChan(x, z - d, BAN_KINH)) tot = false;
+        if (kepTrongPhong(x, z - d)[1] !== z - d) tot = false;
+      }
+      // …MẶT CẢN phải kéo dài suốt đoạn trượt đó, nếu không thì test trượt
+      // dọc mép chỉ đang đo nhân vật đi vòng qua mép hộp…
+      for (let d = 0; d <= thoangZ; d += 0.1) if (!biChan(x + 1.5, z - d, BAN_KINH)) tot = false;
+      // …và **rãnh ngay sát mặt cản** cũng phải thoáng. Nhân vật trượt ở cột
+      // `x + 1,1` (áp vào tường) chứ không ở cột xuất phát — lần trước quên
+      // chỗ này nên chọn trúng một góc bếp: ép vào tủ xong là kẹt luôn góc.
+      for (let d = 0; d <= thoangZ; d += 0.1) {
+        if (biChan(x + 1.1, z - d, BAN_KINH)) tot = false;
+        if (kepTrongPhong(x + 1.1, z - d)[1] !== z - d) tot = false;
+      }
+      if (tot) return { x: +x.toFixed(2), z: +z.toFixed(2) };
+    }
+  }
+  throw new Error('bảng bố cục không còn chỗ nào đi thẳng vào tường — xem bo-cuc.ts');
+}
+
+describe('F2 mục 5 — lái thẳng vào vật cản: dừng THẬT, không chạy bộ tại chỗ', () => {
+  /**
+   * Chạy `giay` giây lái với vận tốc mục tiêu không đổi, bắt đầu từ (x, z).
+   * Dùng ĐÚNG `buocLai` của sân khấu và ĐÚNG bảng vật cản của `bo-cuc.ts`.
+   */
+  function lai(
+    x: number,
+    z: number,
+    chang: Array<[number, number, number]>,
+    fps = 60,
+  ) {
+    const dt = 1 / fps;
+    let st = { x, z, vx: 0, vz: 0, dangDi: false, tocThat: 0, chanX: false, chanZ: false };
+    const so: Array<typeof st & { t: number; pha: number; chang: number }> = [];
+    let pha = 0;
+    let t = 0;
+    chang.forEach(([mx, mz, giay], i) => {
+      for (let u = 0; u < giay - 1e-9; u += dt) {
+        st = buocLai(st.x, st.z, st.vx, st.vz, mx, mz, dt);
+        pha = st.dangDi ? pha + dt * 7.5 : 0;
+        t += dt;
+        so.push({ ...st, t: +t.toFixed(4), pha, chang: i });
+      }
+    });
+    return { cuoi: st, so, pha };
+  }
+
+  const cho = timChoDamTuong();
+
+  it('bảng bố cục thật vẫn có chỗ đi thẳng vào vật cản (nếu không, test dưới vô nghĩa)', () => {
+    expect(hopChan().length).toBeGreaterThan(0);
+    expect(biChan(cho.x, cho.z, BAN_KINH)).toBeNull(); // chỗ xuất phát: thoáng
+    expect(biChan(cho.x + 1.5, cho.z, BAN_KINH)).not.toBeNull(); // 1,5 m nữa: đụng
+  });
+
+  it('đi thẳng vào vật cản 2 s: |v| = 0, toạ độ đứng im, KHÔNG "đang đi"', () => {
+    const { cuoi, so } = lai(cho.x, cho.z, [[1.6, 0, 2]]);
+    expect(cuoi.vx).toBe(0);
+    expect(Math.hypot(cuoi.vx, cuoi.vz)).toBe(0);
+    expect(cuoi.chanX).toBe(true);
+    expect(cuoi.dangDi).toBe(false);
+    // Từ 0,3 s SAU khi chạm (hạn phanh) tới hết: không khung nào nhúc nhích,
+    // cũng không khung nào "đang đi". Mốc theo lúc chạm chứ không phải "nửa
+    // sau của lượt chạy" — quãng tăng tốc dài ngắn tuỳ chỗ tìm được.
+    const cham = so.find((r) => r.chanX)!;
+    const duoi = so.filter((r) => r.t >= cham.t + 0.3);
+    expect(duoi.length).toBeGreaterThan(10);
+    for (const r of duoi) {
+      expect(r.dangDi).toBe(false);
+      expect(r.tocThat).toBe(0);
+      expect(r.pha).toBe(0); // pha bước đứng im → thân KHÔNG nhún
+    }
+    const nhich = Math.max(...duoi.map((r) => Math.abs(r.x - duoi[0]!.x)));
+    expect(nhich).toBe(0);
+  });
+
+  it('dừng thật trong ≤ 0,3 s kể từ lúc chạm vật cản, ở mọi FPS', () => {
+    for (const fps of [10, 30, 60, 144]) {
+      const { so } = lai(cho.x, cho.z, [[1.6, 0, 2]], fps);
+      const chamTai = so.findIndex((r) => r.chanX);
+      const dungTai = so.findIndex((r, i) => i >= chamTai && !r.dangDi);
+      expect(chamTai).toBeGreaterThan(0);
+      expect(dungTai).toBeGreaterThanOrEqual(chamTai);
+      expect(so[dungTai]!.t - so[chamTai]!.t).toBeLessThanOrEqual(0.3);
+    }
+  });
+
+  it('tật cũ tái dựng: nhân 0,2 cho ra điểm cân bằng |v| ≠ 0 mà toạ độ đứng im', () => {
+    // Bản B1: `if (bị chặn) v *= 0.2`. Chạy lại đúng công thức đó để thấy vì
+    // sao Boss thấy "chạy bộ tại chỗ" — và để test này hỏng nếu ai đem nó về.
+    const dt = 1 / 60;
+    let x = cho.x;
+    let vx = 0;
+    const buoc = () => {
+      vx += (1.6 - vx) * Math.min(1, dt / 0.15);
+      const moi = biChan(x + vx * dt, cho.z, BAN_KINH) ? x : x + vx * dt;
+      if (Math.abs(moi - x) < Math.abs(vx * dt) * 0.5) vx *= 0.2;
+      x = moi;
+    };
+    for (let i = 0; i < 180; i += 1) buoc();
+    // Điểm cân bằng bẩn này tỉ lệ với `dt`: ~0,04 m/s ở 60 FPS, và 0,23 m/s
+    // như đo thật trên Firefox lúc máy chạy ~10 FPS. Khác 0 là đã sai.
+    expect(Math.abs(vx)).toBeGreaterThan(0.02); // vận tốc ảo KHÁC 0…
+    const truoc = x;
+    for (let i = 0; i < 60; i += 1) buoc();
+    expect(x).toBe(truoc); // …mà toạ độ KHÔNG nhích: đúng tật cũ
+  });
+
+  it('đụng một trục vẫn TRƯỢT mượt theo trục kia, không mất hết vận tốc', () => {
+    // Hai chặng: ép thẳng vào tường trước (1 s) rồi mới lách chéo — phải áp
+    // được vào mặt cản thì "trượt dọc mép" mới có nghĩa. Đi chéo ngay từ chỗ
+    // xuất phát thì thành phần X chỉ 1,13 m/s, 0,7 s không đủ chạm tường.
+    const { so } = lai(cho.x, cho.z, [
+      [1.6, 0, 1],
+      [1.13, -1.13, 0.7],
+    ]);
+    const duoi = so.filter((r) => r.chang === 1).slice(-12);
+    for (const r of duoi) {
+      expect(r.chanX).toBe(true);
+      expect(Math.abs(r.vz)).toBeGreaterThan(1.0); // vẫn men theo mép
+      expect(r.dangDi).toBe(true);
+    }
+    // và trượt ĐỀU: không giật theo chu kỳ (bản "xoá hẳn" tụt về 0 rồi dựng lại)
+    const vz = duoi.map((r) => Math.abs(r.vz));
+    expect(Math.max(...vz) - Math.min(...vz)).toBeLessThan(0.05);
+  });
+
+  it('chỗ trống thì không báo chặn oan ở bất kỳ FPS nào (bước nhỏ 0,027 m)', () => {
+    for (const fps of [30, 60, 144]) {
+      const { so } = lai(cho.x, cho.z, [[-1.6, 0, 0.6]], fps); // quay lưng lại, đi ra chỗ trống
+      expect(so.some((r) => r.chanX || r.chanZ)).toBe(false);
+    }
   });
 });

@@ -67,11 +67,52 @@ z: 2.600 → 2.573 → 2.420 → 2.420 → 2.420 → … (đứng im vĩnh viễ
 Chân guồng, người đứng im, `state` mắc ở `walking`. Đây gần như chắc chắn là
 cái Boss thấy đầu tiên khi bấm W.
 
-**Sửa:** chặn trục nào thì **xoá hẳn** thành phần vận tốc trục đó (0, không
-phải ×0,2) — vẫn trượt tự do theo trục còn lại, và chặn cả hai trục thì `|v|`
-về 0 thật → `idle`. Ngưỡng so sánh đổi từ "nửa bước" sang `1e-6`: ở 60 FPS một
-bước chỉ 0,027 m nên ngưỡng nửa bước **báo chặn oan**, tức tự sinh giật ở đúng
-cái FPS cao mà Boss dùng.
+**Sửa (vòng 1, CHƯA ĐỦ):** chặn trục nào thì **xoá hẳn** thành phần vận tốc
+trục đó. Hết vận tốc ảo — nhưng review PR #58 lái thử lại và bắt được phần còn
+thiếu:
+
+```
+t      dt     x     z       |v|  facing  chặn
+13732  0.122  -4.5  2.3515  0    3.1416  2
+15467  0.116  -4.5  2.3402  0    3.1416  2      state = "walking" suốt
+```
+
+`|v|` = 0 và toạ độ đứng im, **nhưng `state` vẫn `walking` vĩnh viễn** nên clip
+đi vẫn chạy và thân vẫn nhún (`goc.position.y = |sin(phaBuoc)|·0,022`) — **mắt
+Boss vẫn thấy đúng cái "chạy bộ tại chỗ"**. Ba chỗ cùng sai một kiểu: đọc vận
+tốc *trước* va chạm thay vì quãng đi *sau* va chạm.
+
+- `dangDi = |v| > ngưỡng` tính **TRƯỚC** khi giải va chạm — mỗi khung ga kéo
+  `|v|` lên rồi mới bị xoá, nên `dangDi` luôn `true`;
+- nhánh nhả thân `if (|v| === 0 && hetHan)` bị `hetHan` chặn, mà **giữ phím thì
+  `hetHan` luôn `false`**;
+- `phaBuoc` cộng theo `max(0,35; toc/TOC_DO_DI)` — sàn 0,35 vẫn quay chân.
+
+**Sửa (vòng 2, đang dùng):**
+
+1. **Vận tốc trục = quãng THẬT đã đi / `dt`.** Một quy tắc thay cho cả "chặn
+   hẳn" lẫn "kẹp một phần": chặn hoàn toàn ⇒ quãng 0 ⇒ vận tốc 0; kẹp một phần
+   ⇒ giữ đúng phần đi được (trượt mượt dọc mép). Bản vòng 1 xoá hẳn cả trục chỉ
+   vì kẹp mất 1 % của bước, nên trượt chéo dọc mép bàn giật theo chu kỳ.
+2. **`dangDi` tính SAU va chạm**, từ `tocThat = |Δvị trí| / dt`.
+3. **Chặn cứng thì báo `idle` ngay, không chờ `hetHan`** — cố ý *không* huỷ
+   `dangLai`: lệnh lái vẫn giữ thân nên Boss xoay sang hướng thoáng là đi tiếp
+   trong khung sau. Huỷ thì mỗi lượt gia hạn 200 ms lại dựng hành động mới và
+   `state` nháy `walking ↔ idle` 5 lần/giây — đúng tật gối lệnh vừa bỏ.
+4. **`phaBuoc` theo tốc thật**, đứng im thì về 0.
+
+So sánh "bị chặn" theo **tỉ lệ** `1 − 1e-9`, không theo hằng số tuyệt đối: ở
+60 FPS một bước chỉ 0,027 m nên ngưỡng tuyệt đối hoặc báo chặn oan (bản B1:
+"nửa bước") hoặc không bao giờ báo (bản F2 vòng 1: trừ `1e-6` làm vế phải âm
+với bước nhỏ).
+
+**Bài học quy trình.** Vòng 1 sửa được nửa gốc 2 vì **không có test nào chạm
+tới nó** — giao kèo chỉ nằm trong lời văn của PR, còn mục bằng chứng
+`2-khong-chay-bo-tai-cho` thì chấm trên hai lượt đã được lái ra **chỗ trống**,
+nên đạt một cách tầm thường. Nay: phần vật lý tách thành hàm thuần
+`buocLai()` (không cần VRM nên test đơn vị lái thẳng vào hộp chắn thật của
+`bo-cuc.ts`), và mục bằng chứng trên trình duyệt ép vào tường **trong khi vẫn
+giữ phím**, đòi cờ `chặn ≠ 0` để không thể đạt vì đi trong chỗ trống.
 
 ### 3. Xoay người `dt * 9` → lật 600 °/s
 
@@ -130,10 +171,23 @@ gian** (0,5 s) và chỉ khi còn ≥ 8 mẫu, phân vị theo nearest-rank
 Đo trên máy này (Firefox, GTX 780M / nouveau, 1280×800, cửa sổ Playwright):
 
 ```
-khung đếm được  158 trong 10.03s
-FPS trung bình  17.8
-FPS 1% xấu nhất 7.5  (khung 134 ms)
+khung đếm được  169 trong 10.04s
+…đã bỏ          0.5s khởi động → 161 khung
+FPS trung bình  16.3
+FPS 1% xấu nhất 8.5  (khung 118 ms)
 ```
+
+Thẻ ghi rõ "đã bỏ 0,5 s khởi động" vì hai số trên cùng thẻ tính trên hai tập
+khác nhau (tổng ở trên, đã-cắt ở dưới) — không ghi thì dễ tưởng thước lại sai.
+
+## Ngưỡng: một hằng số đừng làm hai việc
+
+`NGUONG_DUNG` vòng 1 vừa là "phanh tới đây thì cắt về 0" vừa là "có đang đi
+hay không". Hai việc ngược nhau: cái đầu muốn cao (0,12 m/s) để dừng dứt
+khoát, cái sau muốn thấp để khung đầu tăng tốc từ 0 **không** bị coi là đứng
+im (ở FPS cao, khung đầu có `|v|` < 0,12 ⇒ `state` nháy một khung). Nay tách:
+`NGUONG_PHANH` = 0,12 m/s (chỉ dùng lúc phanh) và `NGUONG_DI` = 0,04 m/s (clip
+đi, nhún thân, hướng mặt).
 
 ## Đo lại
 

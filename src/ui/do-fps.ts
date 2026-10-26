@@ -47,7 +47,7 @@ const WARMUP = 0.5;
 
 /**
  * Chốt số từ danh sách `dt` (ms) của các khung đã đo. Tách khỏi DOM để test
- * được (`src/api/__tests__/f2-steer-muot.test.ts`).
+ * được (`src/api/__tests__/f2-dieu-khien-muot.test.ts`).
  *
  * `fps` = **số khung chia cho thời gian thật** của chính bộ mẫu đã dùng. (Về
  * đại số nó bằng `1000 / trung bình dt` — viết theo định nghĩa gốc để không
@@ -59,6 +59,8 @@ const WARMUP = 0.5;
  */
 export function chotFps(dt: number[]): {
   soKhung: number;
+  /** Số khung THẬT SỰ dùng để tính (sau khi bỏ warmup). */
+  soDung: number;
   giay: number;
   fps: number | null;
   fpsXau: number | null;
@@ -77,6 +79,7 @@ export function chotFps(dt: number[]): {
   if (bo.length < KHUNG_TOI_THIEU) {
     return {
       soKhung: dt.length,
+      soDung: bo.length,
       giay: +(tong / 1000).toFixed(2),
       fps: null,
       fpsXau: null,
@@ -95,6 +98,7 @@ export function chotFps(dt: number[]): {
   const dtDinh = xep[vt]!;
   return {
     soKhung: dt.length,
+    soDung: bo.length,
     giay: +(tong / 1000).toFixed(2),
     fps: +((bo.length / (tongBo / 1000)) || 0).toFixed(1),
     fpsXau: +(1000 / dtDinh).toFixed(1),
@@ -164,6 +168,9 @@ export function batDoFps(nguon: NguonSo): void {
     const dong = (nhan: string, v: unknown) => `${nhan.padEnd(16)}${v}\n`;
     the.textContent =
       dong('khung đếm được', `${so.soKhung} trong ${so.giay}s`) +
+      // Ghi rõ bộ mẫu: hai số trên cùng một thẻ tính trên hai tập khác nhau
+      // (tổng ở trên, đã-bỏ-khởi-động ở dưới) nên dễ tưởng thước lại sai.
+      (so.fps === null ? '' : dong('…đã bỏ', `${WARMUP}s khởi động → ${so.soDung} khung`)) +
       (so.fps === null
         ? `⚠ chưa đủ khung để chốt FPS\n  (cần ≥ ${KHUNG_TOI_THIEU} khung sau ${WARMUP}s khởi động)\n`
         : dong('FPS trung bình', so.fps.toFixed(1)) +
