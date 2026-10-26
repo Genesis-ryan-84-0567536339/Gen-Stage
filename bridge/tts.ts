@@ -45,6 +45,41 @@ export const GIONG = {
 /** Thư mục cache (trong `.gitignore`). */
 const THU_MUC_CACHE = process.env.GEN_STAGE_TTS_CACHE ?? '.cache/tts';
 
+/* ------------------------------------------------- E1 (#48) — thử lại + hâm */
+
+/**
+ * **Thử lại khi Edge hắt hơi** (E1, Issue #48 việc 5).
+ *
+ * Kiểm độc lập 26/10: gọi `/tts` 10 lần liên tiếp thì **2 lần trả 502**, và
+ * đúng lượt trả lời đầu tiên của não dính 502 → Gen câm, Boss nghe thấy im
+ * lặng. Nguyên nhân không phải lỗi của ta: điểm cuối công khai của Edge thỉnh
+ * thoảng đóng ws giữa khung hoặc trả 0 byte. Đó là lỗi **tạm thời**, nên lời
+ * hứa mới là: endpoint không bao giờ trả 502 cho lỗi tạm nếu thử lại được.
+ *
+ * Backoff 300 / 800 ms (tổng xấu nhất ≈ 1,1 s cộng thêm) — đủ để Edge đổi
+ * node, mà vẫn dưới ngưỡng Boss cảm nhận được so với 3–6 s não nghĩ.
+ */
+export const CHO_THU_LAI_MS = [300, 800] as const;
+
+/**
+ * Tám câu **đệm/đáp cố định** sân khấu nói nhiều nhất: 4 câu đệm của phản xạ
+ * (`CAU_DEM` trong `src/behavior/phan-xa.ts`), 3 câu của não rule-based
+ * (`naoToiThieu`), và câu Gen hay đáp khi nhận việc.
+ *
+ * Hâm sẵn lúc bridge bật ⇒ mấy câu này **không bao giờ** phải chờ Edge, nên
+ * cú 502 tệ nhất (đúng lượt phản xạ) không còn đường xảy ra.
+ */
+export const CAU_DEM_SAN = [
+  'Dạ, Sếp?',
+  'Em nghe ạ',
+  'Sếp cần gì ạ?',
+  'Dạ em đây',
+  'Dạ, em chào Sếp!',
+  'Em là Gen, trợ lý của Sếp ạ.',
+  'Em chưa có não, Sếp bật agy nhé.',
+  'Dạ em làm ngay ạ.',
+] as const;
+
 export interface ThamSoNoi {
   /** Tên giọng đầy đủ, hoặc `nu` / `nam`. */
   voice?: string;
@@ -221,6 +256,42 @@ async function goiEdge(text: string, voice: string, rate: string, pitch: string)
   });
 }
 
+/**
+ * Gọi Edge, thử lại tối đa `CHO_THU_LAI_MS.length` lần nữa khi lỗi.
+ *
+ * `goiEdge` đã tự dọn ws trong mọi nhánh (timeout / error / close), nên thử
+ * lại chỉ là gọi lại — không rò kết nối. Lỗi lần cuối mới được ném ra.
+ */
+export async function goiEdgeThuLai(
+  text: string,
+  voice: string,
+  rate: string,
+  pitch: string,
+  {
+    goi = goiEdge,
+    nghi = (ms: number) => new Promise<void>((r) => setTimeout(r, ms)),
+    cho = CHO_THU_LAI_MS,
+  }: {
+    goi?: (t: string, v: string, r: string, p: string) => Promise<Buffer>;
+    nghi?: (ms: number) => Promise<void>;
+    cho?: readonly number[];
+  } = {},
+): Promise<Buffer> {
+  let cuoi: Error | null = null;
+  for (let lan = 0; lan <= cho.length; lan++) {
+    try {
+      return await goi(text, voice, rate, pitch);
+    } catch (e) {
+      cuoi = e as Error;
+      const doi = cho[lan];
+      if (doi === undefined) break;
+      console.warn(`[tts ] Edge lỗi (${cuoi.message}) — thử lại sau ${doi} ms`);
+      await nghi(doi);
+    }
+  }
+  throw cuoi ?? new Error('Edge TTS lỗi không rõ');
+}
+
 /* ------------------------------------------------------------ cổng chính */
 
 /** Tổng hợp một câu (đọc cache trước, chưa có thì gọi Edge rồi ghi cache). */
@@ -238,7 +309,7 @@ export async function tongHop(text: string, ts: ThamSoNoi = {}): Promise<Buffer>
     /* chưa có cache — tổng hợp mới */
   }
 
-  const mp3 = await goiEdge(cau, tenGiong(ts.voice), phanTram(ts.rate), hecZ(ts.pitch));
+  const mp3 = await goiEdgeThuLai(cau, tenGiong(ts.voice), phanTram(ts.rate), hecZ(ts.pitch));
   try {
     await mkdir(THU_MUC_CACHE, { recursive: true });
     await writeFile(duong, mp3);
@@ -256,6 +327,31 @@ export async function tongHop(text: string, ts: ThamSoNoi = {}): Promise<Buffer>
  * - `GET /tts/giong` → `{ nu, nam }`
  * - `GET /khoe` → `{ ok: true }`
  */
+/**
+ * Hâm sẵn cache cho `CAU_DEM_SAN`. Chạy **tuần tự** (không `Promise.all`):
+ * tám ws song song tới Edge là cách nhanh nhất để bị nó cắt, mà đây là việc
+ * nền — không ai chờ.
+ *
+ * Trả về số câu đã có trong cache sau khi chạy (bằng chứng cho `kiem-e1`).
+ */
+export async function hamCauDem(
+  ds: readonly string[] = CAU_DEM_SAN,
+  ts: ThamSoNoi = { voice: 'nu' },
+): Promise<{ xong: number; loi: number }> {
+  let xong = 0;
+  let loi = 0;
+  for (const cau of ds) {
+    try {
+      await tongHop(cau, ts);
+      xong++;
+    } catch (e) {
+      loi++;
+      console.warn(`[tts ] không hâm được «${cau.slice(0, 40)}»:`, (e as Error).message);
+    }
+  }
+  return { xong, loi };
+}
+
 export function batTts(host: string, cong: number): Server {
   const sv = createServer((req, res) => {
     // Vite chạy ở cổng khác (5173) nên đây là yêu cầu khác nguồn: phải có CORS.
@@ -307,6 +403,12 @@ export function batTts(host: string, cong: number): Server {
   sv.listen(cong, host, () => {
     console.log(`[tts ] đang nghe http://${host}:${cong}/tts?text=Xin%20ch%C3%A0o&voice=nu`);
     console.log(`[tts ] giọng: nữ ${GIONG.nu} · nam ${GIONG.nam} · cache ${THU_MUC_CACHE}/`);
+    // E1 (#48): hâm 8 câu đệm NGAY lúc bật, nền, không chặn cổng.
+    if (process.env.GEN_STAGE_TTS_HAM !== '0') {
+      void hamCauDem().then(({ xong, loi }) =>
+        console.log(`[tts ] hâm câu đệm: ${xong} sẵn${loi ? `, ${loi} lỗi` : ''}`),
+      );
+    }
   });
   return sv;
 }

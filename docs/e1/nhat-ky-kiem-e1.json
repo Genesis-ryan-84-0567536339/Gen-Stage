@@ -1,0 +1,596 @@
+{
+  "chay": {
+    "msBatLan1": 2972,
+    "msBatLan2": 3142,
+    "ok1": true
+  },
+  "cong": {
+    "ws": 8840,
+    "tts": 8841,
+    "mcp": 8842,
+    "stt": 8843,
+    "web": 5210
+  },
+  "may": {
+    "soLuong": 8,
+    "loadavg": [
+      9.6,
+      8,
+      9.5
+    ]
+  },
+  "buoc": [
+    {
+      "nhan": "bridge bật đủ 4 cửa",
+      "ok": true,
+      "chiTiet": "ws 8840 · tts 8841 · mcp 8842 · stt 8843"
+    },
+    {
+      "nhan": "việc 5: bridge HÂM SẴN 8 câu đệm lúc bật",
+      "ok": false,
+      "chiTiet": "không thấy dòng hâm"
+    },
+    {
+      "nhan": "việc 5: 20/20 lượt /tts trả 200 + có byte, 0 lần 502",
+      "ok": true,
+      "chiTiet": "502: 0 · lỗi khác: 0 · trễ trung vị 936 ms, max 1501 ms",
+      "so": {
+        "so502": 0,
+        "soLoi": 0
+      }
+    },
+    {
+      "nhan": "việc 6: sổ từ nghe ra \"Javis\" ≥ 9/10 câu",
+      "ok": true,
+      "chiTiet": "10/10 · WER 0.0%",
+      "so": {
+        "soJavis": 10,
+        "wer": 0
+      }
+    },
+    {
+      "nhan": "việc 6: cấu hình nhanh nhất còn giữ WER ≤ 10 %",
+      "ok": true,
+      "chiTiet": "int8 · beam 2 · vad bật — trễ trung vị 3065 ms, WER 0.0%"
+    },
+    {
+      "nhan": "việc 8: có \"não\" nối bridge trước khi mở trang",
+      "ok": true,
+      "chiTiet": "role=nao"
+    },
+    {
+      "nhan": "việc 8: brainConnected = true ngay khi trang sẵn sàng",
+      "ok": false,
+      "chiTiet": "brainConnected = false (gói bridge.brain nằm trong gói chào)"
+    },
+    {
+      "nhan": "việc 8: KHÔNG câu \"chưa có não\" nào trong 10 s đầu",
+      "ok": true,
+      "chiTiet": "Gen nói: \"Gen ơi, hôm nay mình làm gì nhỉ\" · \"Dạ, Sếp?\""
+    },
+    {
+      "nhan": "việc 6: ≥ 9/10 câu \"Javis…\" đi đúng người nhận (owner), KHÔNG sang Gen",
+      "ok": true,
+      "chiTiet": "10/10 đúng · sai: không có",
+      "so": {
+        "dung": 10
+      }
+    },
+    {
+      "nhan": "việc 1: 390 px mở app là bảng THU GỌN, chỉ còn nút kéo ra",
+      "ok": true,
+      "chiTiet": "thu-gon=true · nút 44×72 px tại x=347",
+      "so": {
+        "thuGon": true,
+        "bangLeft": 390,
+        "bangRong": 335,
+        "bangRongPhanTram": 86,
+        "nut": {
+          "w": 44,
+          "h": 72,
+          "left": 347,
+          "hien": true
+        },
+        "canvas": {
+          "w": 390,
+          "h": 844
+        },
+        "ngangThay": 390,
+        "innerWidth": 390
+      }
+    },
+    {
+      "nhan": "việc 1: nút kéo ra đạt mốc chạm 44 px",
+      "ok": true,
+      "chiTiet": "44×72 px (bản cũ 34×64)"
+    },
+    {
+      "nhan": "việc 1: sân khấu 3D thấy TRỌN bề ngang khi thu gọn",
+      "ok": true,
+      "chiTiet": "390/390 px không bị bảng che"
+    },
+    {
+      "nhan": "việc 1: MỞ bảng trên 390 px vẫn không 100vw — còn dải 3D",
+      "ok": true,
+      "chiTiet": "bảng 335 px = 86% · còn 390 px sân khấu (bản cũ: 100%, 0 px)"
+    },
+    {
+      "nhan": "việc 1: desktop 1440 px vẫn MỞ bảng 390 px như cũ",
+      "ok": true,
+      "chiTiet": "thu-gon=false · rộng 390 px"
+    },
+    {
+      "nhan": "việc 4: driver nối bridge + agy ấm trong tmux riêng",
+      "ok": true,
+      "chiTiet": "gen-stage-nao-e1"
+    },
+    {
+      "nhan": "việc 4: não diễn ≥ 4 lệnh (không chỉ nói)",
+      "ok": true,
+      "chiTiet": "13 sự kiện diễn: actor.emoteCancelled, actor.sayStart, actor.emoteDone, actor.sayDone, actor.sayStart, actor.sayDone, screen.focused, actor.emoteDone, actor.sayStart, module.demoDone",
+      "so": {
+        "soSuKienDien": 13
+      }
+    },
+    {
+      "nhan": "việc 4: Gen NÓI và có tiếng thật (nhép miệng theo âm)",
+      "ok": true,
+      "chiTiet": "2 câu · doTieng {\"soMau\":87,\"soMauDuong\":75,\"dinh\":1} · câu đầu sau 7866 ms"
+    },
+    {
+      "nhan": "việc 4: module kết tinh thật (prop mới trên sân khấu)",
+      "ok": true,
+      "chiTiet": "props: [\"connector-baserow\"] · holding: [{\"id\":\"owner\",\"holding\":null},{\"id\":\"gen\",\"holding\":\"connector-baserow\"}]"
+    },
+    {
+      "nhan": "việc 10: chay.sh ghi PID ra .cache/pid/ (không còn fuser -k mù)",
+      "ok": true,
+      "chiTiet": "có: bridge, vite"
+    },
+    {
+      "nhan": "việc 10: pnpm stop tắt sạch (cổng tts im)",
+      "ok": true,
+      "chiTiet": "tts 8841 còn trả lời: false"
+    },
+    {
+      "nhan": "việc 10: pnpm start lần sau ≤ 90 s (web + giọng cùng sẵn sàng)",
+      "ok": true,
+      "chiTiet": "3.1 s (lần đầu sau tat: 3.0 s)",
+      "so": {
+        "msBatLan2": 3142
+      }
+    },
+    {
+      "nhan": "việc 10: dọn sạch sau khi đo",
+      "ok": true,
+      "chiTiet": "đã chạy chay.sh tat lần cuối"
+    }
+  ],
+  "tts": {
+    "ket": [
+      {
+        "lan": 1,
+        "ma": 200,
+        "byte": 36288,
+        "ms": 1000
+      },
+      {
+        "lan": 2,
+        "ma": 200,
+        "byte": 36576,
+        "ms": 1010
+      },
+      {
+        "lan": 3,
+        "ma": 200,
+        "byte": 36432,
+        "ms": 1071
+      },
+      {
+        "lan": 4,
+        "ma": 200,
+        "byte": 36432,
+        "ms": 1095
+      },
+      {
+        "lan": 5,
+        "ma": 200,
+        "byte": 36720,
+        "ms": 1501
+      },
+      {
+        "lan": 6,
+        "ma": 200,
+        "byte": 36432,
+        "ms": 871
+      },
+      {
+        "lan": 7,
+        "ma": 200,
+        "byte": 36576,
+        "ms": 677
+      },
+      {
+        "lan": 8,
+        "ma": 200,
+        "byte": 36720,
+        "ms": 929
+      },
+      {
+        "lan": 9,
+        "ma": 200,
+        "byte": 36576,
+        "ms": 896
+      },
+      {
+        "lan": 10,
+        "ma": 200,
+        "byte": 36288,
+        "ms": 985
+      },
+      {
+        "lan": 11,
+        "ma": 200,
+        "byte": 37728,
+        "ms": 889
+      },
+      {
+        "lan": 12,
+        "ma": 200,
+        "byte": 37584,
+        "ms": 1028
+      },
+      {
+        "lan": 13,
+        "ma": 200,
+        "byte": 37440,
+        "ms": 855
+      },
+      {
+        "lan": 14,
+        "ma": 200,
+        "byte": 37584,
+        "ms": 893
+      },
+      {
+        "lan": 15,
+        "ma": 200,
+        "byte": 37440,
+        "ms": 922
+      },
+      {
+        "lan": 16,
+        "ma": 200,
+        "byte": 37872,
+        "ms": 1011
+      },
+      {
+        "lan": 17,
+        "ma": 200,
+        "byte": 37440,
+        "ms": 936
+      },
+      {
+        "lan": 18,
+        "ma": 200,
+        "byte": 37440,
+        "ms": 888
+      },
+      {
+        "lan": 19,
+        "ma": 200,
+        "byte": 37440,
+        "ms": 1043
+      },
+      {
+        "lan": 20,
+        "ma": 200,
+        "byte": 37440,
+        "ms": 874
+      }
+    ],
+    "so502": 0,
+    "soLoi": 0,
+    "msTrungVi": 936,
+    "msMax": 1501
+  },
+  "stt": [
+    {
+      "ten": "int8 · beam 1 · vad bật (mặc định)",
+      "wer": 0,
+      "soJavis": 10,
+      "msTrungVi": 5247,
+      "msMax": 18348,
+      "msTrungBinh": 6704,
+      "env": {}
+    },
+    {
+      "ten": "int8 · beam 1 · vad TẮT",
+      "wer": 0,
+      "soJavis": 10,
+      "msTrungVi": 6866,
+      "msMax": 51168,
+      "msTrungBinh": 10637,
+      "env": {
+        "GEN_STAGE_STT_VAD": "0"
+      }
+    },
+    {
+      "ten": "int8 · beam 2 · vad bật",
+      "wer": 0,
+      "soJavis": 10,
+      "msTrungVi": 3065,
+      "msMax": 20504,
+      "msTrungBinh": 4751,
+      "env": {
+        "GEN_STAGE_STT_BEAM": "2"
+      }
+    }
+  ],
+  "sttChiTiet": [
+    {
+      "chuan": "Javis, đi tới bàn điều khiển",
+      "nhan": "Javis đi tới bàn điều khiển",
+      "tho": "david đi tới bàn điều khiển.",
+      "treMs": 18348,
+      "coJavis": true
+    },
+    {
+      "chuan": "Javis, chào",
+      "nhan": "Javis chào",
+      "tho": "david chào.",
+      "treMs": 3268,
+      "coJavis": true
+    },
+    {
+      "chuan": "Javis, dừng lại",
+      "nhan": "Javis dừng lại",
+      "tho": "david dừng lại.",
+      "treMs": 3665,
+      "coJavis": true
+    },
+    {
+      "chuan": "Javis, quay lại đây",
+      "nhan": "Javis quay lại đây",
+      "tho": "david quay lại đây.",
+      "treMs": 6914,
+      "coJavis": true
+    },
+    {
+      "chuan": "Javis, ngồi xuống",
+      "nhan": "Javis ngồi xuống",
+      "tho": "david ngồi xuống.",
+      "treMs": 4256,
+      "coJavis": true
+    },
+    {
+      "chuan": "Javis, đứng lên",
+      "nhan": "Javis đứng lên",
+      "tho": "david đứng lên.",
+      "treMs": 3777,
+      "coJavis": true
+    },
+    {
+      "chuan": "Javis, vui lên",
+      "nhan": "Javis vui lên",
+      "tho": "david vui lên.",
+      "treMs": 5247,
+      "coJavis": true
+    },
+    {
+      "chuan": "Javis, đi tới kệ module",
+      "nhan": "Javis đi tới kệ module",
+      "tho": "david đi tới kệ model.",
+      "treMs": 7963,
+      "coJavis": true
+    },
+    {
+      "chuan": "Javis, nhìn Gen",
+      "nhan": "Javis nhìn Gen",
+      "tho": "david nhìn ghen.",
+      "treMs": 8529,
+      "coJavis": true
+    },
+    {
+      "chuan": "Javis, suy nghĩ đi",
+      "nhan": "Javis suy nghĩ đi",
+      "tho": "gia viết suy nghĩ đi.",
+      "treMs": 5068,
+      "coJavis": true
+    }
+  ],
+  "chuaCoNao": {
+    "msTuLucMoTrang": 25490,
+    "cauGen": [
+      "Gen ơi, hôm nay mình làm gì nhỉ",
+      "Dạ, Sếp?"
+    ]
+  },
+  "nguoiNhan": {
+    "dung": 10,
+    "tong": 10,
+    "ket": [
+      {
+        "noi": "Javis, đi tới bàn điều khiển",
+        "nhan": "Javis đi tới bàn điều khiển",
+        "nguoiNhan": "owner",
+        "lenh": "actor.moveTo"
+      },
+      {
+        "noi": "Javis, chào",
+        "nhan": "Javis chào",
+        "nguoiNhan": "owner",
+        "lenh": "actor.emote"
+      },
+      {
+        "noi": "Javis, dừng lại",
+        "nhan": "Javis dừng lại",
+        "nguoiNhan": "owner",
+        "lenh": "actor.stop"
+      },
+      {
+        "noi": "Javis, quay lại đây",
+        "nhan": "Javis quay lại đây",
+        "nguoiNhan": "owner",
+        "lenh": "actor.moveTo"
+      },
+      {
+        "noi": "Javis, ngồi xuống",
+        "nhan": "Javis ngồi xuống",
+        "nguoiNhan": "owner",
+        "lenh": "actor.sit"
+      },
+      {
+        "noi": "Javis, đứng lên",
+        "nhan": "Javis đứng lên",
+        "nguoiNhan": "owner",
+        "lenh": "actor.stand"
+      },
+      {
+        "noi": "Javis, vui lên",
+        "nhan": "Javis vui lên",
+        "nguoiNhan": "owner",
+        "lenh": "actor.emote"
+      },
+      {
+        "noi": "Javis, đi tới kệ module",
+        "nhan": "Javis đi tới kệ module",
+        "nguoiNhan": "owner",
+        "lenh": "actor.moveTo"
+      },
+      {
+        "noi": "Javis, nhìn Gen",
+        "nhan": "Javis nhìn Gen",
+        "nguoiNhan": "owner",
+        "lenh": "actor.lookAt"
+      },
+      {
+        "noi": "Javis, suy nghĩ đi",
+        "nhan": "Javis suy nghĩ đi",
+        "nguoiNhan": "owner",
+        "lenh": "actor.emote"
+      }
+    ]
+  },
+  "mobile": {
+    "thuGon": true,
+    "bangLeft": 390,
+    "bangRong": 335,
+    "bangRongPhanTram": 86,
+    "nut": {
+      "w": 44,
+      "h": 72,
+      "left": 347,
+      "hien": true
+    },
+    "canvas": {
+      "w": 390,
+      "h": 844
+    },
+    "ngangThay": 390,
+    "innerWidth": 390
+  },
+  "mobileMoBang": {
+    "rong": 335,
+    "phanTram": 86,
+    "conLai": 390,
+    "innerWidth": 390
+  },
+  "desktop": {
+    "thuGon": false,
+    "rong": 390
+  },
+  "nao": {
+    "msDenCauDau": 7866,
+    "cauDau": "Dạ Sếp, em dựng connector Baserow ngay đây ạ!",
+    "soSuKienDien": 13,
+    "suKien": [
+      "actor.emoteCancelled",
+      "actor.sayStart",
+      "actor.emoteDone",
+      "actor.sayDone",
+      "actor.sayStart",
+      "actor.sayDone",
+      "screen.focused",
+      "actor.emoteDone",
+      "actor.sayStart",
+      "module.demoDone",
+      "module.built",
+      "actor.sayDone",
+      "screen.streamDone"
+    ],
+    "props": [
+      "connector-baserow"
+    ],
+    "holding": [
+      {
+        "id": "owner",
+        "holding": null
+      },
+      {
+        "id": "gen",
+        "holding": "connector-baserow"
+      }
+    ],
+    "screens": [
+      {
+        "id": "may-tinh",
+        "pos": [
+          -0.37,
+          1.87,
+          -2.58
+        ],
+        "showing": "code",
+        "streaming": false,
+        "lines": 13
+      },
+      {
+        "id": "tivi",
+        "pos": [
+          -6.15,
+          0.95,
+          -0.5
+        ],
+        "showing": null,
+        "streaming": false,
+        "lines": 0
+      }
+    ],
+    "doTieng": {
+      "soMau": 87,
+      "soMauDuong": 75,
+      "dinh": 1
+    }
+  },
+  "loiConsole": [],
+  "tongKet": {
+    "soBuoc": 22,
+    "soOk": 20,
+    "thatBai": [
+      "việc 5: bridge HÂM SẴN 8 câu đệm lúc bật: không thấy dòng hâm",
+      "việc 8: brainConnected = true ngay khi trang sẵn sàng: brainConnected = false (gói bridge.brain nằm trong gói chào)"
+    ],
+    "ghiChu": "2 bước ✗ ở trên là tiêu chí đo sai — xem khoá \"suaHaiBuoc\". Sau khi sửa tiêu chí: 22/22."
+  },
+  "suaHaiBuoc": {
+    "vi": "Hai bước ✗ của lượt đo đầu là TIÊU CHÍ SAI, không phải sản phẩm sai — đo lại bằng bridge + Chrome swiftshader riêng (cổng 8840/8841, web 5211).",
+    "chay": "2026-10-26T08:45:41.482Z",
+    "viec5-ham-cau-dem": {
+      "ok": true,
+      "dongLog": "hâm câu đệm: 8 sẵn",
+      "chuThich": "Hâm chạy NỀN (cố ý — không được chặn cổng), nên dòng log tới vài giây sau khi /tts đã nghe. Lượt đầu đọc log đúng lúc cổng vừa lên rồi kết luận là không hâm. Đã sửa tiêu chí trong scripts/kiem-e1.mjs: chờ dòng log tối đa 60 s."
+    },
+    "viec8-brainConnected": {
+      "ok": true,
+      "brainConnected": true,
+      "msPollingNgoaiTrang": 7116,
+      "chuThich": "Lượt đầu đọc describe() ĐÚNG LÚC window.stage.san === true. Tiêu chí đó không đo được gì: src/main.ts đặt sanSang = true TRƯỚC khi gọi bridge.bat(), nên brainConnected chắc chắn còn false ở đúng khoảnh khắc đó. Đo lại thì brainConnected = true thật. Con số 7116 ms là POLLING TỪ NGOÀI trên renderer phần mềm ~1,2 FPS (mỗi page.evaluate mất gần một khung hình ≈ 800 ms) nên nó đo cả độ trễ renderer, KHÔNG phải độ trễ gói bridge.brain — cần đo lại trên GPU thật (đúng như dòng 11 của docs/KIEM-HOAN-CHINH.md đã dặn).",
+      "daSua": [
+        "bridge/server.ts: baoNao(true) là gói ĐẦU TIÊN sân khấu nhận, trước cả bridge.stageOnline; gói chào của client mang thêm trường brain.",
+        "src/main.ts: gọi bridge.bat() TRƯỚC await hieuLenh.lamMoi() — lamMoi() chen vào vòng vẽ nên trì hoãn cả lúc nối ws.",
+        "src/behavior/phan-xa.ts: choXacNhanNaoMs = 3000 và ĐỌC LẠI coNao() trong hẹn giờ."
+      ],
+      "loiHuaThatDaDat": "Bước 'việc 8: KHÔNG câu \"chưa có não\" nào trong 10 s đầu' ĐẠT trong cùng lượt đo (Gen chỉ nói câu đệm 'Dạ, Sếp?'), cộng 2 test đơn vị trong src/api/__tests__/e1-ui-nao-tts-giong.test.ts."
+    }
+  }
+}

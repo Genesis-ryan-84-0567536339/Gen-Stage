@@ -5,6 +5,7 @@
  * Không có agy thật, không có bridge, không có trình duyệt: `nghi` và `san` là
  * hàng giả, nên bộ test này chạy trong vài trăm ms và không tốn quota.
  */
+import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import {
   CAU_DA_NOI_LAI,
@@ -17,6 +18,7 @@ import {
   MS_BACKOFF_MIN,
   noiSanKhau,
   phanXa,
+  MAN_HINH_THAT,
   promptDau,
   rutGonSkill,
   taoGop,
@@ -554,5 +556,59 @@ describe('noiSanKhau — heartbeat 2 chiều + backoff + báo nối lại 1 lầ
     const san = await p;
     san.dong();
     vi.useRealTimers();
+  });
+});
+
+
+/* ===================== E1 (#48) việc 4 — nhắc đầu phiên ===================== */
+
+/**
+ * Hai cái sai đã khoanh được bằng đo thật (kiểm độc lập 26/10):
+ *  - nhắc ép *"diễn tối đa 2 lệnh"* mà chuỗi dựng connector cần 5 → não gọi
+ *    `actor_say + actor_emote + screen_focus` rồi dừng, `props: []`;
+ *  - nhắc dạy `screen: "main"` mà id thật là `may-tinh`/`tivi` → mọi lệnh màn
+ *    hình trả lỗi, màn hình ghi "— trống —".
+ * Hai test dưới là cái chốt để không ai vô tình đặt lại hai cái bẫy đó.
+ */
+describe('E1 — nhắc đầu phiên: bỏ trần lệnh, bỏ id "main"', () => {
+  const skill = readFileSync(
+    new URL('../../skills/gen-stage-nao/SKILL.md', import.meta.url),
+    'utf8',
+  );
+  const nhac = promptDau({ skill });
+
+  it('KHÔNG còn câu ép "diễn tối đa 2 lệnh"', () => {
+    expect(nhac).not.toMatch(/tối đa 2 lệnh/i);
+    expect(nhac).toMatch(/[Kk]hông có trần 2 lệnh/);
+  });
+
+  it('dạy đúng id màn hình thật, và nói thẳng là không có "main"', () => {
+    for (const [id] of MAN_HINH_THAT) expect(nhac).toContain(id);
+    expect(nhac).toMatch(/KHÔNG có màn hình nào tên "main"/);
+  });
+
+  it('dặn chuỗi dựng connector đủ 5 bước + lệnh gói module_demo', () => {
+    for (const b of [
+      'screen_focus',
+      'screen_stream',
+      'module_build',
+      'actor_emote',
+      'actor_say',
+    ]) {
+      expect(nhac).toContain(b);
+    }
+    expect(nhac).toContain('module_demo');
+    // `chunks` chứ không `source:"agent"` — não không đẩy mẩu nào được
+    expect(nhac).toMatch(/đừng dùng source:"agent"/);
+  });
+
+  it('SKILL.md trong repo không còn dạy screen "main"', () => {
+    const dong = skill.split('\n').filter((l) => l.includes('"main"'));
+    expect(dong).toHaveLength(1);
+    expect(dong[0]).toMatch(/id CHẾT/);
+  });
+
+  it('nhắc vẫn gọn (rutGonSkill ≤ 40 dòng) — nhắc dài là lượt chậm', () => {
+    expect(rutGonSkill(skill).split('\n').length).toBeLessThanOrEqual(40);
   });
 });

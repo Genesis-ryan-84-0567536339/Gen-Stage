@@ -31,3 +31,6 @@ docs/b1/.da-chay
 docs/c2/.da-chay
 # C0 — cờ khoá "đã chạy kiem-c0.mjs" (xoá bằng --lai)
 docs/c0/.da-chay
+# E1 (#48) — cờ "đã cài xong phần nặng" (scripts/cai-dat.sh ghi, chay.sh đọc).
+# Nằm trong `.cache/` nên đã bị bỏ qua sẵn; ghi ra đây cho người đọc biết là
+# CÓ Ý, không phải quên. Sổ PID của chay.sh cũng ở `.cache/pid/`.

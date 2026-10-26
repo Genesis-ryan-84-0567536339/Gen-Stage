@@ -24,8 +24,13 @@
 
     <div id="toast"></div>
 
-    <!-- Bảng lệnh tự sinh từ stage.bootstrap, dựng trong src/ui/index.ts -->
-    <aside id="bang"></aside>
+    <!--
+      Bảng lệnh tự sinh từ stage.bootstrap, dựng trong src/ui/index.ts.
+      `thu-gon` khai SẴN trong HTML (E1 #48): trên điện thoại bảng không
+      được loé ra che sân khấu trong lúc chờ JS chạy; `src/ui/index.ts`
+      mở nó ra khi màn đủ rộng.
+    -->
+    <aside id="bang" class="thu-gon"></aside>
 
     <script type="module" src="/src/main.ts"></script>
   </body>

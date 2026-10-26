@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Name=Gen-Stage
+GenericName=Sân khấu 3D
+Comment=Bật cầu nối, sân khấu 3D và não của Gen, rồi mở trình duyệt
+# `Exec` được `scripts/cai-dat.sh` thay bằng đường dẫn thật lúc cài (chỗ này
+# chỉ là mẫu trong repo — file cài nằm ở ~/.local/share/applications/).
+Exec=bash -lc 'cd "@GOC@" && bash scripts/chay.sh'
+Path=@GOC@
+# Chưa có ảnh biểu tượng riêng trong repo → dùng icon theme của hệ thống,
+# chắc chắn hiện được trên GNOME/KDE thay vì ô vuông trắng.
+Icon=applications-graphics
+Terminal=false
+Categories=Development;Graphics;
+Keywords=gen;stage;3d;sân khấu;
+StartupNotify=true

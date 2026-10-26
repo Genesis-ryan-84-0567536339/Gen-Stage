@@ -13,6 +13,8 @@ import { LENH_SCRIPT } from './script';
 import { LENH_STUB } from './stubs';
 import { LENH_SCREEN } from './screen';
 import { LENH_MODULE } from './module';
+// E1 (#48) — lệnh gói `module.demo`: cả màn dựng module trong MỘT lệnh.
+import { LENH_DEMO } from './demo';
 import { LENH_FX } from './fx';
 
 export function taoRegistry(): Registry {
@@ -25,6 +27,7 @@ export function taoRegistry(): Registry {
     ...LENH_SCRIPT,
     ...LENH_SCREEN,
     ...LENH_MODULE,
+    ...LENH_DEMO,
     ...LENH_FX,
     ...LENH_STUB,
   );

@@ -457,17 +457,22 @@ input[type="checkbox"] { width: 17px; height: 17px; min-height: 0; accent-color:
 /* --------------------------------------------------------------- điện thoại */
 
 @media (max-width: 760px) {
-  :root { --bang-rong: 100vw; }
+  /*
+   * E1 (#48) — bảng lệnh KHÔNG BAO GIỜ rộng 100vw.
+   *
+   * Bản cũ đặt `--bang-rong: 100vw`: mở bảng ra là sân khấu 3D biến mất hoàn
+   * toàn, Boss chỉ còn thấy danh sách `stage.bootstrap/describe/reset…`
+   * (kiểm độc lập 26/10, dòng 13). Giờ kẹp 86vw / 340px nên dù mở hết vẫn
+   * chừa một dải 3D bên trái — và mặc định thì bảng vẫn THU GỌN (xem
+   * `src/ui/index.ts` + class `thu-gon` khai sẵn trong `index.html`).
+   */
+  :root { --bang-rong: min(86vw, 340px); }
   #bang { padding-left: 14px; padding-right: 14px; }
-  #bang.thu-gon { transform: translateX(calc(100% - 0px)); }
-  #bang-dong-mo {
-    left: auto;
-    right: calc(100% + 0px);
-    margin-right: 6px;
-  }
   #hud p { display: none; }
   .luoi-tham-so { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
-  .nut-chay, .kb-chan button, .nk-chan button { min-height: 40px; }
+  .nut-chay, .kb-chan button, .nk-chan button { min-height: 44px; }
+  /* mốc chạm 44 px (WCAG 2.5.5) — nút kéo bảng ra là thứ duy nhất thấy khi thu gọn */
+  #bang-dong-mo { left: -44px; width: 44px; height: 72px; font-size: 20px; }
 }
 
 /* ------------------------------------------- bảng gợi ý phím (Issue #14) */
@@ -662,10 +667,16 @@ input[type="checkbox"] { width: 17px; height: 17px; min-height: 0; accent-color:
   #o-chat #nut-mic.dang-ghi { animation: none; }
 }
 
-/* Điện thoại: bảng lệnh chiếm cả bề rộng khi mở, nên ô chat bám full width */
+/*
+ * Điện thoại: bảng lệnh mặc định THU GỌN (E1 #48) nên ô chat dùng trọn bề
+ * ngang; `right: 0` thay cho `var(--bang-rong)` để nút mic không bị đẩy lệch
+ * khi Boss mở bảng ra xem lệnh.
+ */
 @media (max-width: 760px) {
   #o-chat { right: 0; width: calc(100% - 20px); }
   #o-chat label { display: none; }
+  /* mốc chạm 44 px — bản cũ 44×34 (kiểm độc lập dòng 13) */
+  #o-chat #nut-mic { min-width: 44px; min-height: 44px; }
 }
 
 /* ------------------------------------------------- C2 (#32) — tab "Giọng" */
