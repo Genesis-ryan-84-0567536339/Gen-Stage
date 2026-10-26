@@ -1,0 +1,28 @@
+G2 — Đổi tên hiển thị Gen→Nhi, Javis→Nam (id gen/owner giữ nguyên) — bằng chứng đã chạy một lần.
+
+1) Test (vitest run, toàn repo): 17 file, 367/367 PASS — gồm bộ 20 câu mới trong
+   src/behavior/__tests__/c2-hieu-lenh.test.ts (describe "G2 — đổi tên hiển thị Gen→Nhi,
+   Javis→Nam"): 10 câu gọi tên mới đúng người nhận, 5 câu "nam"/"nhi" là từ thường KHÔNG
+   bị hiểu nhầm (phía nam, nam châm, nhí nhảnh, nhị phân, năm nay), 5 câu tên cũ
+   (Javis/Gen/david/ghen/jarvis) vẫn chạy đúng.
+
+2) Build: `pnpm build` (tsc + vite build) — sạch, 0 lỗi TypeScript.
+
+3) UI thật (vite --port 5371, assets đã fetch, trình duyệt headless Chrome qua
+   Claude Browser pane): ô chat dưới màn hình hiện đúng placeholder
+   "Nhi, dựng connector Baserow… (Enter gửi)", nhãn "Nam nói" (đọc động theo actor
+   controlledBy=owner), nút "Gửi cho Nhi". Cảnh 3D không render được trong môi trường
+   headless này (THREE.WebGLProgram Shader Error 1282 — renderer phần mềm/Swiftshader
+   của sandbox, lỗi môi trường có từ trước, không liên quan thay đổi G2; xem
+   docs/KIEM-HOAN-CHINH.md mục renderer). Tên hiển thị xác nhận qua DOM/ô chat, không
+   xác nhận được qua ảnh chụp bong bóng 3D vì lý do trên.
+
+4) STT (bridge/so-tu.ts): CHƯA đo thật qua /stt. Quyết định: KHÔNG thêm "Nhi"/"Nam" vào
+   sổ từ vì cả hai là từ tiếng Việt thường (khác "Gen"/"Javis" là tên riêng ngoài vốn
+   từ) — PhoWhisper nhiều khả năng đã nghe đúng, và so-tu.ts so khớp không theo vị trí
+   nên khai đồng âm bừa cho từ thường rủi ro cao hơn lợi ích. Lý do đầy đủ: xem comment
+   đầu SO_TU trong bridge/so-tu.ts. Đo thật cần tải PhoWhisper (~930 MB) + dựng 10 câu
+   TTS, ngoài phạm vi thời gian hợp lý của đợt G2 — để lại cho đợt đo sau nếu cần.
+
+5) Bảng 20 câu hiểu lệnh: xem trực tiếp trong
+   src/behavior/__tests__/c2-hieu-lenh.test.ts (CAU_TEN_MOI, CAU_TU_THUONG, CAU_TEN_CU).

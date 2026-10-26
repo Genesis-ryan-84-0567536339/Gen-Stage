@@ -43,6 +43,31 @@ export interface TuNha {
  * Vốn từ riêng. Thứ tự không quan trọng (chọn theo điểm khớp, không theo thứ
  * tự khai), nhưng giữ nhóm cho dễ đọc.
  */
+/**
+ * G2 (28/10) — Boss đổi tên hiển thị **Gen → "Nhi"**, **Javis → "Nam"**.
+ *
+ * CỐ Ý KHÔNG thêm "Nhi"/"Nam" vào sổ này. Khác với "Gen"/"Javis" (tên riêng
+ * NGOÀI vốn từ model, nên PhoWhisper nghe sai sang thứ khác hẳn — `david`,
+ * `gia viết`…), "Nam" và "Nhi" là **từ tiếng Việt thường model đã biết rất
+ * rõ** (phương hướng "phía nam", vật "nam châm", từ "nhí nhảnh", số đếm — xem
+ * `SO_CHU` trong `src/behavior/ngu-phap.ts`: `nhi` = 2, `nam` = 5). Nghĩa là
+ * cái lỗi "model không biết tên riêng" mà sổ này sinh ra để chữa **không tồn
+ * tại** với hai tên mới — model nghe đúng "nam"/"nhi" ngay từ đầu, không cần
+ * sửa chữ. Khai bừa đồng âm (`nghi`, `ni`, `năm`, `nằm`…) cho hai từ thường
+ * này còn tệ hơn: `suaTheoSoTu` so khớp CHÍNH XÁC không theo vị trí trong
+ * câu (xem `khopCuaSo`), nên bất kỳ câu nào tình cờ chứa "nghi"/"ni"/"năm"/
+ * "nằm" sẽ bị viết đè thành "Nam"/"Nhi" — rủi ro y như bài học "không khai
+ * `ghê` cho Gen" ở dưới, nhưng ở quy mô lớn hơn vì đây là từ cực thường gặp.
+ * Việc tách "ai đang được gọi tên" khỏi câu đã có lớp riêng, có ràng buộc vị
+ * trí/ngữ cảnh: `BI_DANH_NHAN_VAT` + bước 1b trong
+ * `src/behavior/hieu-lenh.ts#tachNguoiNhan`.
+ *
+ * Chưa đo thật bằng audio qua `/stt`: cần tải model PhoWhisper (~930 MB,
+ * `scripts/fetch-stt.sh`) + dựng 10 câu TTS rồi gọi `/stt` — ngoài phạm vi
+ * thời gian hợp lý của đợt G2 này. Nếu đo sau mà thấy PhoWhisper nghe sai
+ * "Nam"/"Nhi" ra dạng **khác hẳn từ thường khác** (kiểu "david" của Javis),
+ * mới nên thêm một dòng ở đây — không thêm trước khi có số đo thật.
+ */
 export const SO_TU: TuNha[] = [
   // tên Gen — 3 ký tự, phải khai đồng âm
   {

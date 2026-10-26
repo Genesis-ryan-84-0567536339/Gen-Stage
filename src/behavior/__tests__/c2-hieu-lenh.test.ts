@@ -18,6 +18,7 @@ import {
   type BoiCanh,
 } from '../hieu-lenh';
 import { BANG_MAU_CAU, boDau, gan, khoangCach, tach } from '../ngu-phap';
+import { TEN_HIEN_THI } from '../../stage/noi-dung';
 
 /** Bối cảnh y như sân khấu lab thật lúc mở app (lấy từ `noi-dung.ts`/A3). */
 const BC: BoiCanh = {
@@ -281,5 +282,85 @@ describe('C2 — hiểu lệnh giọng', () => {
   it('không có sân khấu (bối cảnh rỗng) thì không nổ', () => {
     const kq = phanTich('Javis, đi tới bàn điều khiển', BOI_CANH_TRONG);
     expect(kq.lenh).toEqual([]);
+  });
+});
+
+/**
+ * G2 (28/10) — BẰNG CHỨNG cho đổi tên hiển thị **Gen → "Nhi"**, **Javis →
+ * "Nam"** (id kỹ thuật `gen`/`owner` giữ nguyên).
+ *
+ * 20 câu: 10 câu gọi bằng tên MỚI (phải ra đúng người nhận + `coGoiTen:
+ * true`), 5 câu chứa "nam"/"nhi" như TỪ THƯỜNG — không có dấu hiệu gọi tên —
+ * phải KHÔNG bị hiểu nhầm (`coGoiTen: false`, rơi về người nhận mặc định
+ * Nhi/`gen`), và 5 câu dùng TÊN CŨ (Javis/Gen/david/ghen/jarvis) vẫn phải
+ * chạy đúng như trước khi đổi tên.
+ */
+interface CauNhanDang {
+  cau: string;
+  nguoiNhan: string[];
+  coGoiTen: boolean;
+}
+
+const CAU_TEN_MOI: CauNhanDang[] = [
+  { cau: 'Nam, mở đèn phòng khách giúp anh', nguoiNhan: ['owner'], coGoiTen: true },
+  { cau: 'Nhi, dọn bàn ăn giúp em', nguoiNhan: ['gen'], coGoiTen: true },
+  { cau: 'Nam ơi, đi ra cửa', nguoiNhan: ['owner'], coGoiTen: true },
+  { cau: 'Nhi ơi, mở nhạc lên', nguoiNhan: ['gen'], coGoiTen: true },
+  { cau: 'nam à, anh đang ở đâu đấy', nguoiNhan: ['owner'], coGoiTen: true },
+  { cau: 'nhi à, em đang làm gì vậy', nguoiNhan: ['gen'], coGoiTen: true },
+  { cau: 'anh Nam, đi tới bàn làm việc', nguoiNhan: ['owner'], coGoiTen: true },
+  { cau: 'em Nhi, ngồi xuống nghỉ', nguoiNhan: ['gen'], coGoiTen: true },
+  { cau: 'a Nam ơi, lại đây', nguoiNhan: ['owner'], coGoiTen: true },
+  { cau: 'bé Nhi ơi, lại đây', nguoiNhan: ['gen'], coGoiTen: true },
+];
+
+/** "nam"/"nhi" làm từ thường — KHÔNG được hiểu nhầm là gọi tên. */
+const CAU_TU_THUONG: CauNhanDang[] = [
+  { cau: 'nhà ở phía nam của thành phố', nguoiNhan: ['gen'], coGoiTen: false },
+  { cau: 'cục nam châm hút được sắt', nguoiNhan: ['gen'], coGoiTen: false },
+  { cau: 'em bé rất nhí nhảnh và vui', nguoiNhan: ['gen'], coGoiTen: false },
+  { cau: 'con số nhị phân khó hiểu quá', nguoiNhan: ['gen'], coGoiTen: false },
+  { cau: 'năm nay nhà mình đi du lịch nhiều', nguoiNhan: ['gen'], coGoiTen: false },
+];
+
+/** Tên cũ (Javis/Gen và các bí danh) vẫn phải chạy đúng như trước. */
+const CAU_TEN_CU: CauNhanDang[] = [
+  { cau: 'Javis, đi tới bàn điều khiển', nguoiNhan: ['owner'], coGoiTen: true },
+  { cau: 'Gen, ngồi xuống', nguoiNhan: ['gen'], coGoiTen: true },
+  { cau: 'david, đi tới bàn điều khiển', nguoiNhan: ['owner'], coGoiTen: true },
+  { cau: 'Ghen, vui lên', nguoiNhan: ['gen'], coGoiTen: true },
+  { cau: 'Jarvis ơi, đi ra cửa', nguoiNhan: ['owner'], coGoiTen: true },
+];
+
+describe('G2 — đổi tên hiển thị Gen→Nhi, Javis→Nam (hiểu lệnh không nhầm từ thường)', () => {
+  it('10 câu gọi tên mới: đúng người nhận, coGoiTen = true', () => {
+    for (const c of CAU_TEN_MOI) {
+      const kq = phanTich(c.cau, BC);
+      expect(kq.nguoiNhan, `"${c.cau}" → ${JSON.stringify(kq.nguoiNhan)}`).toEqual(c.nguoiNhan);
+      expect(kq.coGoiTen, `"${c.cau}" → coGoiTen=${kq.coGoiTen}`).toBe(c.coGoiTen);
+    }
+  });
+
+  it('5 câu "nam"/"nhi" là từ thường: KHÔNG bị hiểu nhầm là gọi tên', () => {
+    for (const c of CAU_TU_THUONG) {
+      const kq = phanTich(c.cau, BC);
+      expect(kq.coGoiTen, `"${c.cau}" → coGoiTen=${kq.coGoiTen} (ai=${JSON.stringify(kq.nguoiNhan)})`).toBe(
+        c.coGoiTen,
+      );
+      expect(kq.nguoiNhan, `"${c.cau}" → ${JSON.stringify(kq.nguoiNhan)}`).toEqual(c.nguoiNhan);
+    }
+  });
+
+  it('5 câu tên cũ (Javis/Gen/david/ghen/jarvis) vẫn chạy đúng', () => {
+    for (const c of CAU_TEN_CU) {
+      const kq = phanTich(c.cau, BC);
+      expect(kq.nguoiNhan, `"${c.cau}" → ${JSON.stringify(kq.nguoiNhan)}`).toEqual(c.nguoiNhan);
+      expect(kq.coGoiTen, `"${c.cau}" → coGoiTen=${kq.coGoiTen}`).toBe(c.coGoiTen);
+    }
+  });
+
+  it('bong bóng/ô chat hiển thị đúng tên mới, id kỹ thuật giữ nguyên', () => {
+    expect(TEN_HIEN_THI.owner).toBe('Nam');
+    expect(TEN_HIEN_THI.gen).toBe('Nhi');
   });
 });

@@ -1,6 +1,9 @@
 # Gen-Stage cho agent — đọc 1 câu là đủ
 
 > **Gọi `stage_bootstrap` trước, làm theo nó.**
+>
+> G2 (28/10): tên hiển thị Gen → **Nhi**, Javis → **Nam** (id kỹ thuật vẫn
+> `gen`/`owner`).
 
 Hết. Mọi thứ khác dưới đây chỉ là cách nối dây.
 
