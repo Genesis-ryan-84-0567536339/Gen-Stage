@@ -17,5 +17,6 @@ Boss: "mọi thứ sơ sài quá, xem lại những thứ tôi yêu cầu". Mỗ
 | 11 | Biểu cảm phải đi cùng cơ thể + giọng (không chỉ mặt) | 5 emote tiêu biểu: mặt + thân + âm cùng lúc, khác nhau rõ | |
 | 12 | Màn hình hologram chạy code, kết tinh module cầm tay (giờ theo phong cách ấm) | "Gen, dựng X" → màn hình chạy chữ → hạt tụ → vật vào tay → cất lên kệ được | |
 | 13 | Chạy được trên điện thoại | 390×844: bảng lệnh thu gọn, nút mic, FPS ≥25 (GPU thật) | |
+| 14 | Nhẹ GPU, không đòi card mạnh (Boss 27/10) | Không SSAO/DOF/bloom; shadow 1024; pixel ratio ≤1,5; draw calls ≤150; tam giác ≤300k; FPS trên GPU tích hợp ≥30; trên swiftshader không thấp hơn bản D1 | |
 
 Quy tắc: dòng nào không đạt → sửa trong cùng đợt E, không để "nợ sau" trừ dòng 3 (chờ Boss).
