@@ -397,7 +397,19 @@ try {
     window.stage.run('actor.emote', { actor: 'gen', emote: 'dong-y' }),
   );
   ghi('lệnh gửi ngay sau cú cắt vẫn `ok`', rSau.ok === true, JSON.stringify(rSau).slice(0, 160));
-  await nghi(4000);
+
+  /*
+   * Chờ cho **vòng chờ não của I1 tắt hẳn** trước khi đo mốc 3.
+   *
+   * Bộ này chạy `?bridge=0` nên không có não: câu vừa gõ đưa phản xạ vào tầng
+   * 2, và tầng 2 có **trần 30 s** (`tranTangHaiMs`, I1b/#75) — tới hạn Nhi nói
+   * `CAU_HET_CHO`. Câu đó nổ giữa phút đo "để yên 65 s" thì đồng hồ rảnh của
+   * máy tự sinh hoạt reset đúng lúc, và lượt thứ hai rơi ra ngoài phút đo:
+   * **lỗi của dụng cụ đo, không phải của app**. Chờ cho hết trần rồi mới bấm
+   * đồng hồ.
+   */
+  in_('   … chờ 36 s cho vòng "đang nghĩ" của I1 hết trần 30 s rồi mới bấm đồng hồ');
+  await nghi(36000);
 
   /* ================================ MỐC 3: rảnh 65 s → ≥2 hoạt động tự sinh */
   in_('\n--- MỐC 3: để yên 65 s → Nhi tự sinh ≥2 hoạt động khác nhau ---');
