@@ -109,7 +109,7 @@ export function batOChat(
       nut.type = 'button';
       nut.id = 'o-chat-sua';
       nut.textContent = '✎ Sửa';
-      nut.title = 'Nghe sai? Sửa lại chữ đúng để Gen học giọng Sếp';
+      nut.title = 'Nghe sai? Sửa lại chữ đúng để Nhi học giọng Sếp';
       nut.addEventListener('click', () => {
         // Sửa là **không** để câu tự bay đi: Boss đang gõ lại chữ đúng.
         huyHen();

@@ -713,7 +713,7 @@ export function batMic(ch: CauHinhMic): Mic {
       const g = (await r.json()) as { ok?: boolean; error?: string };
       if (g.ok) {
         ghiBuoc(`đã ghi mẫu giọng thật cho lượt ${ts}`);
-        ch.toast('✓ Đã lưu mẫu — Gen sẽ đo lại trên đúng giọng Sếp');
+        ch.toast('✓ Đã lưu mẫu — sẽ đo lại trên đúng giọng Sếp');
         ch.oChat.trangThai(null);
       } else {
         ghiBuoc(`ghi mẫu lỗi — ${g.error ?? '?'}`);
