@@ -5,10 +5,10 @@
  *   node scripts/kiem-i1.mjs          # trọn bộ
  *   node scripts/kiem-i1.mjs --lai    # xoá cờ khoá rồi chạy lại
  *
- * Mọi số dưới đây đo trên **Firefox thật của Boss** (`firefox-1543`, không
- * headless, GPU thật, `http://localhost`) — theo `docs/CONG-CHAT-LUONG.md`
- * Cửa 1. Cổng RIÊNG 8970-8973 + web 5397: **không đụng** 5173/8787-8790 lẫn
- * tmux `gen-stage-nao` của Boss.
+ * Mọi số dưới đây đo trên **Firefox thật** (`firefox-1543`, không headless,
+ * `http://localhost`), cổng RIÊNG 8970-8973 + web 5397: **không đụng**
+ * 5173/8787-8790 lẫn tmux `gen-stage-nao` của Boss. Xem `MOI_TRUONG_FF` để
+ * biết vì sao bộ này chạy llvmpipe mà vẫn không phạm Cửa 1.
  *
  * Mốc thời gian lấy từ **hai cái sổ của chính app**, không từ ảnh chụp:
  *   - bus sự kiện (`window.stage.on('*')` → `e.t`),
@@ -81,15 +81,23 @@ const MOI_TRUONG = {
   GEN_STAGE_STT_PORT: String(CONG_STT),
 };
 /**
- * **GPU THẬT**, chỉ đi qua X11 — đúng môi trường `scripts/kiem-f2.mjs` dùng.
+ * Firefox qua X11 + **llvmpipe**, như `scripts/kiem-g3.mjs`.
  *
- * Cửa 1 của `docs/CONG-CHAT-LUONG.md` cấm dùng số của renderer phần mềm cho
- * bất cứ kết luận nào về mượt/FPS, nên **không** đặt `LIBGL_ALWAYS_SOFTWARE`
- * ở đây (khác `kiem-g3.mjs` — bộ đó chỉ đo chữ, không đo khung hình).
- * `MOZ_ENABLE_WAYLAND=0` + `MOZ_X11_EGL=0` là cạm bẫy đã đo ở F2 (#56):
- * Firefox của Playwright trên Wayland + nouveau làm tiến trình GPU gãy.
+ * Đã thử GPU thật (chỉ `MOZ_ENABLE_WAYLAND=0` / `MOZ_X11_EGL=0`, đúng môi
+ * trường F2 dùng) và nó chết đúng cái cạm bẫy F2 (#56) đã ghi: *"nouveau:
+ * kernel rejected pushbuf: No such device · Exiting due to channel error"* —
+ * nặng hơn khi có nhiều phiên Firefox khác đang dùng cùng GPU.
+ *
+ * **Vì sao renderer phần mềm KHÔNG làm sai bộ số này:** mọi thước đo của I1
+ * là **độ trễ giữa hai mốc trong sổ của app** (bus + nhật ký lệnh), không
+ * phải FPS, không phải mượt, không phải tóc/chân — đúng những thứ Cửa 1 cấm
+ * đo trên renderer phần mềm. Mốc "phản ứng tức thì" nằm ở `setInterval` +
+ * handler sự kiện, chạy trên **luồng JS**, không chờ khung hình. Số FPS ở
+ * cuối bộ này **chỉ so TƯƠNG ĐỐI** (chờ não vs rảnh, cùng máy, cùng renderer)
+ * và không được dùng làm số hiệu năng — thước FPS thật là `?fps=1` trên máy
+ * Boss và `scripts/kiem-f2.mjs`.
  */
-const MOI_TRUONG_FF = { ...process.env, MOZ_ENABLE_WAYLAND: '0', MOZ_X11_EGL: '0' };
+const MOI_TRUONG_FF = { ...process.env, LIBGL_ALWAYS_SOFTWARE: '1', MOZ_ENABLE_WAYLAND: '0' };
 
 /* ---------------------------------------------------------------- tiện ích */
 
@@ -192,6 +200,22 @@ function dongHet(ma) {
   process.exit(ma);
 }
 
+/**
+ * Lỗi NGOÀI khối `try` chính (tải wav mốc, mở trang) cũng phải dọn tiến trình.
+ *
+ * Đo thật: một cú `fetch` tới `/tts` bị `ECONNRESET` làm script chết bằng
+ * uncaught exception → `vite preview` và bridge **sống sót**, và lượt chạy sau
+ * chết vì "Port 5397 is already in use". Rác của mình thì mình phải tự dọn.
+ */
+process.on('uncaughtException', (e) => {
+  in_('\n💥 ' + (e?.stack ?? e));
+  dongHet(1);
+});
+process.on('unhandledRejection', (e) => {
+  in_('\n💥 (promise) ' + (e?.stack ?? e));
+  dongHet(1);
+});
+
 /* ------------------------------------------------------------- NÃO GIẢ */
 
 /** Câu não giả trả lời — nằm trong `CAU_DEM_SAN` nên giọng đã hâm sẵn. */
@@ -250,9 +274,27 @@ async function lamWavMoc() {
   const u = `http://127.0.0.1:${CONG_TTS}/tts?text=${encodeURIComponent(CAU_MIC)}&voice=nu&rate=20`;
   const mp3 = resolve(tmpdir(), 'gen-stage-i1-moc.mp3');
   const wav = resolve(tmpdir(), 'gen-stage-i1-moc.wav');
-  const r = await fetch(u);
-  if (!r.ok) throw new Error(`/tts trả ${r.status}`);
-  writeFileSync(mp3, Buffer.from(await r.arrayBuffer()));
+  /*
+   * Thử lại 3 lần: `/tts` gọi thẳng WebSocket Edge, và đo thật ở E1 (#48) thì
+   * 2/10 lượt liên tiếp hỏng (502 / ECONNRESET). Bridge đã tự thử lại bên
+   * trong, nhưng cú `fetch` ở ĐÂY hỏng thì cả bộ bằng chứng chết ngay dòng
+   * đầu — vì một lỗi mạng chẳng liên quan gì tới cái đang đo.
+   */
+  let loiCuoi = null;
+  for (let i = 0; i < 3; i++) {
+    try {
+      const r = await fetch(u);
+      if (!r.ok) throw new Error(`/tts trả ${r.status}`);
+      writeFileSync(mp3, Buffer.from(await r.arrayBuffer()));
+      loiCuoi = null;
+      break;
+    } catch (e) {
+      loiCuoi = e;
+      in_(`   … /tts hỏng lần ${i + 1} (${e?.message ?? e}) — thử lại`);
+      await nghi(800 * (i + 1));
+    }
+  }
+  if (loiCuoi) throw loiCuoi;
   const ff = spawnSync('ffmpeg', [
     '-hide_banner', '-loglevel', 'error', '-y',
     '-i', mp3, '-ar', '48000', '-ac', '1', '-c:a', 'pcm_s16le', wav,
@@ -355,7 +397,16 @@ async function moTrang(wavB64) {
 /* ---------------------------------------------------- đọc hai cái sổ của app */
 
 const ev = (page) => page.evaluate(() => window.__ev);
-const lenh = (page) => page.evaluate(() => JSON.parse(window.stage.log()).filter((b) => b.loai === 'lenh'));
+/**
+ * Nhật ký LỆNH. `window.stage.log()` trả **chuỗi JSON** của cả gói
+ * `{ version, xuatLuc, banGhi }` (xem `src/log.ts`), không phải mảng — lấy
+ * đúng `banGhi` rồi mới lọc.
+ */
+const lenh = (page) =>
+  page.evaluate(() => {
+    const g = JSON.parse(window.stage.log());
+    return (g.banGhi ?? []).filter((b) => b.loai === 'lenh');
+  });
 
 /** Mốc đầu tiên của một sự kiện sau thời điểm `tu`. */
 const sauEv = (ds, ten, tu, loc = () => true) =>
@@ -457,6 +508,16 @@ try {
   );
   await page.screenshot({ path: `${THU_MUC}/01-tang-0-nghe-mic.png` });
 
+  /*
+   * ĐỌC LẠI sổ bus trước khi chấm mốc nhận dạng: `ketGhi()` là chuỗi bất đồng
+   * bộ (stop recorder → chờ blob → POST /stt), nên lúc `keyboard.up('v')` trả
+   * về thì `user.listening { dangNhanDang: true }` CHƯA bắn. Lượt đầu chấm
+   * ngay sau cú nhả phím và thấy "KHÔNG có mốc nhận dạng" — lỗi của dụng cụ
+   * đo, không phải của app.
+   */
+  await nghi(2000);
+  ds = await ev(page);
+  dsL = await lenh(page);
   const evNhanDang = sauEv(ds, 'user.listening', t0, (e) => e.data?.dangNhanDang === true);
   ghi(
     'hết ghi → user.listening { dangNhanDang: true } + dáng "đang nhẩm" (suy-nghi)',
@@ -625,8 +686,15 @@ try {
   );
   ghi('não giao việc dài: actor.play type loop', r1.ok === true, JSON.stringify(r1).slice(0, 120));
   await nghi(250);
-  // KHÔNG `await`: lệnh này nằm trong hàng đợi tới hết bước (đó là cái cần đo)
-  void page.evaluate(() => window.stage.run('actor.play', { actor: 'gen', clip: 'nod' }));
+  /*
+   * KHÔNG `await`: lệnh này nằm trong hàng đợi tới hết bước — đó là cái cần
+   * đo. `.catch()` là bắt buộc: nó chỉ được giải quyết khi hàng đợi xả, mà ta
+   * **cố ý không xả**, nên lúc đóng trình duyệt nó reject và kéo cả script
+   * xuống `unhandledRejection` (lượt trước: 29/29 ĐẠT nhưng mã thoát 1).
+   */
+  void page
+    .evaluate(() => window.stage.run('actor.play', { actor: 'gen', clip: 'nod' }))
+    .catch(() => undefined);
   await nghi(600);
   const banTruoc = await page.evaluate(() =>
     window.stage.run('stage.describe').then((r) => {
@@ -640,12 +708,24 @@ try {
     JSON.stringify(banTruoc),
     banTruoc,
   );
+  /*
+   * Dùng ĐÚNG câu đã chứng minh không bị lớp hiểu lệnh nhận ở mốc 2/3.
+   * Lượt trước thử "Nhi ơi, nghe anh nói này" và C2 khớp nó thành một mệnh
+   * lệnh (`handled: true`) → `ownerNoi` thoát ngay ở dòng đầu, nên mốc 6 đo
+   * được 0 lệnh và trông như phản xạ hỏng. Thước đo phải đứng đúng chỗ tật
+   * xảy ra, không phải chỗ lớp khác đã nuốt sự kiện.
+   */
   const tGo3 = Date.now();
-  await page.evaluate(() => window.stage.guiChat('Nhi ơi, nghe anh nói này'));
+  await page.evaluate(() => window.stage.guiChat('Nhi ơi, hôm nay mình làm gì nhỉ'));
   await nghi(1200);
   ds = await ev(page);
   dsL = await lenh(page);
   const evText3 = sauEv(ds, 'user.text', tGo3, (e) => e.data?.actor === 'owner');
+  ghi(
+    'câu thăm dò của mốc 6 cũng KHÔNG bị lớp hiểu lệnh nhận',
+    evText3 !== null && evText3.data?.handled !== true,
+    evText3 ? `handled=${String(evText3.data?.handled)}` : 'KHÔNG có user.text',
+  );
   const lk3 = evText3 ? sauLenh(dsL, 'actor.lookAt', evText3.t, (b) => b.args?.actor === 'gen' && b.nguon === 'phan-xa') : null;
   const banSau = await page.evaluate(() =>
     window.stage.run('stage.describe').then((r) => {
@@ -671,10 +751,16 @@ try {
     ).length === 0,
     'không lệnh chiếm thân nào của phản xạ',
   );
+  /*
+   * Lọc `cmd.interrupted` theo ĐÚNG ACTOR: ô chat gửi câu của Sếp với
+   * `interrupt` lên nhân vật **owner**, nên không lọc là luôn thấy "CÓ" dù
+   * hàng đợi của Nhi còn nguyên — lượt trước chấm sai đúng vì thế.
+   */
+  const catNhi = sauEv(ds, 'cmd.interrupted', evText3.t, (e) => e.data?.actor === 'gen');
   ghi(
-    'MỐC 6c — HÀNG ĐỢI CỦA NÃO KHÔNG MẤT (vẫn 1 việc chờ, không cmd.interrupted)',
-    banSau.queued === 1 && sauEv(ds, 'cmd.interrupted', evText3.t) === null,
-    `queued ${banSau.queued} · interrupted ${sauEv(ds, 'cmd.interrupted', evText3.t) === null ? 'không' : 'CÓ'}`,
+    'MỐC 6c — HÀNG ĐỢI CỦA NÃO KHÔNG MẤT (vẫn 1 việc chờ, không cmd.interrupted cho Nhi)',
+    banSau.queued === 1 && catNhi === null,
+    `queued ${banSau.queued} · cmd.interrupted của Nhi: ${catNhi === null ? 'không' : 'CÓ'}`,
     banSau,
   );
 
@@ -707,18 +793,20 @@ try {
   const khungB = await page.evaluate(() => window.__khung);
   const fpsRanh = ((khungB - khungA) / 6) | 0;
   ghi(
-    'FPS lúc chờ não không tụt dưới 80 % lúc rảnh',
+    'FPS lúc chờ não không tụt dưới 80 % lúc rảnh (so TƯƠNG ĐỐI, renderer phần mềm)',
     fpsChoNao >= fpsRanh * 0.8,
-    `chờ não ${fpsChoNao} fps · rảnh ${fpsRanh} fps`,
-    { fpsChoNao, fpsRanh },
+    `chờ não ${fpsChoNao} fps · rảnh ${fpsRanh} fps — KHÔNG phải số hiệu năng, ` +
+      'chỉ chứng minh vòng "đang nghĩ" không thêm tải; số thật đo bằng ?fps=1 trên máy Boss',
+    { fpsChoNao, fpsRanh, renderer: 'llvmpipe (software)' },
   );
   const hn = await page.evaluate(() => {
     const h = window.stage.hieuNang();
     return { calls: h.calls, callsNha: h.callsNha, coBong: h.coBong, pixelRatio: h.pixelRatio };
   });
+  // `doHieuNang().coBong` trả **CỠ shadow map** (1024/2048), không phải boolean.
   ghi(
-    'ngân sách đồ hoạ giữ nguyên (còn bóng đổ, pixel ratio ≤ 1,5)',
-    hn.coBong === true && hn.pixelRatio <= 1.5,
+    'ngân sách đồ hoạ giữ nguyên (bóng 1024, pixel ratio ≤ 1,5)',
+    hn.coBong === 1024 && hn.pixelRatio <= 1.5,
     JSON.stringify(hn),
     hn,
   );
@@ -741,8 +829,8 @@ try {
     `| não trễ 8 s: chồng giọng | đỉnh 1 | **${dinh8}** | ${dinh8 === 1 ? '✅' : '❌'} |`,
     `| não trả lời ở 2 s: câu nối | 0 | **${demCau(ds, CAU_NOI, evText2?.t ?? tGo2, tNao2 + 500)}** | ✅ |`,
     `| não trả lời ở 2 s: não nói sau lệnh | ngay | **${evNao2 ? evNao2.t - tNao2 : '—'} ms** | ${evNao2 && evNao2.t - tNao2 <= 1500 ? '✅' : '❌'} |`,
-    `| đang \`moveTo\`: \`lookAt\` | ≤300 ms | **${lk3 && evText3 ? lk3.t - evText3.t : '—'} ms** | ${lk3 && evText3 && lk3.t - evText3.t <= 300 ? '✅' : '❌'} |`,
-    `| đang \`moveTo\`: hàng đợi | không mất | **queued ${banSau.queued}**, 0 \`cmd.interrupted\` | ${banSau.queued === 1 ? '✅' : '❌'} |`,
+    `| đang việc của não: \`lookAt\` | ≤300 ms | **${lk3 && evText3 ? lk3.t - evText3.t : '—'} ms** | ${lk3 && evText3 && lk3.t - evText3.t <= 300 ? '✅' : '❌'} |`,
+    `| đang việc của não: hàng đợi | không mất | **queued ${banSau.queued}**, 0 \`cmd.interrupted\` cho Nhi | ${banSau.queued === 1 && catNhi === null ? '✅' : '❌'} |`,
     `| \`r.ok\` mọi lệnh | 100 % | **${dsL.length - loiLenh.length}/${dsL.length}** | ${loiLenh.length === 0 ? '✅' : '❌'} |`,
     `| FPS chờ não vs rảnh | không tụt | **${fpsChoNao} / ${fpsRanh} fps** | ${fpsChoNao >= fpsRanh * 0.8 ? '✅' : '❌'} |`,
     `| console | 0 lỗi | **${loiConsole.length}** | ${loiConsole.length === 0 ? '✅' : '❌'} |`,

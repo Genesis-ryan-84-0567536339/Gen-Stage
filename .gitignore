@@ -44,3 +44,8 @@ docs/f3/.da-chay
 # G3 (#62) — cờ "đã chạy bằng chứng", của máy chạy, không vào repo
 docs/g3/.da-chay
 docs/i1/.da-chay
+# Worktree của agent: `public/` (asset) và `.cache/stt/{models,venv}` là
+# SYMLINK trỏ về bản cài trong repo chính — tiện cho script bằng chứng, không
+# bao giờ được commit (asset đã có luật riêng ở trên, đây là cái symlink gốc).
+/public
+/.cache
