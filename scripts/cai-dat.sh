@@ -44,6 +44,15 @@ if [ -f gen-stage.desktop ]; then
   chmod +x "$DICH/gen-stage.desktop"
   command -v update-desktop-database >/dev/null && update-desktop-database "$DICH" 2>/dev/null
   echo "Đã tạo $DICH/gen-stage.desktop → tìm \"Gen-Stage\" trong danh sách ứng dụng."
+  # Boss (27/10): muốn có icon ngay trên màn hình Desktop để bấm là chạy.
+  BAN="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
+  if [ -d "$BAN" ]; then
+    cp "$DICH/gen-stage.desktop" "$BAN/gen-stage.desktop"
+    chmod +x "$BAN/gen-stage.desktop"
+    # GNOME chỉ cho bấm chạy file .desktop đã được đánh dấu tin cậy.
+    command -v gio >/dev/null && gio set "$BAN/gen-stage.desktop" metadata::trusted true 2>/dev/null
+    echo "Đã đặt biểu tượng Gen-Stage lên $BAN."
+  fi
 else
   echo "Không thấy gen-stage.desktop trong repo — bỏ qua biểu tượng."
 fi
