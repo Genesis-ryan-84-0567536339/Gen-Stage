@@ -12,6 +12,7 @@ A2 bộ hành vi → A3 lab viễn tưởng.
 ## Lệnh
 
 ```bash
+bash scripts/cai-dat.sh   # CÀI MỘT LẦN cho máy sạch: deps + asset + model giọng + biểu tượng
 pnpm install              # cài phụ thuộc
 pnpm assets                # tải asset (VRM + Kenney Furniture Kit CC0) — 1 lần sau khi clone
 pnpm assets:lab             # tải Kenney Space Kit CC0 cho lab A3 (public/kenney-sci-fi/)
@@ -40,7 +41,8 @@ node scripts/kiem-reconnect.mjs        # bằng chứng heartbeat + backoff + wa
 node scripts/kiem-c0.mjs      # bằng chứng C0: phản xạ xã hội + nhân vật nam anime, vào docs/c0/ (CHẠY MỘT LẦN)
 node scripts/kiem-c1.mjs      # bằng chứng C1: giữ V nói → bridge nhận chữ → user.speech → Gen phản ứng, vào docs/c1/ (CHẠY MỘT LẦN)
 bash scripts/fetch-anim.sh    # tải bộ chuyển động CC0 (Quaternius) về public/anim/ — chạy 1 lần sau khi clone
-bash scripts/fetch-stt.sh     # C1: venv + model PhoWhisper-small ct2 vào .cache/stt/ — chạy 1 lần (chay.sh gọi sẵn)
+bash scripts/fetch-stt.sh     # C1: venv + model PhoWhisper-small ct2 vào .cache/stt/ — chạy 1 lần (cai-dat.sh gọi sẵn)
+node scripts/kiem-e1.mjs      # bằng chứng E1: UI 390 px, não diễn thật, /tts retry, hiểu "Javis", cài 1 lệnh, vào docs/e1/ (CHẠY MỘT LẦN)
 ```
 
 ## Quy ước
@@ -126,6 +128,8 @@ biết registry, **giao diện** không gọi thẳng vào sân khấu.
 | `src/ui/o-chat.ts` | **B3** — ô chat dưới màn hình: Enter = `actor.say` lên nhân vật `owner`, y như `Space` |
 | `skills/gen-stage-nao/SKILL.md` | **B3** — skill cho agy CLI: vòng `stage_events` → `stage_describe` → 1–3 lệnh → `actor_say` |
 | `scripts/nao-agy.mjs` | **DRIVER NÃO** — vòng lặp nằm ở đây, không ở agy: nghe `user.text` qua ws, phản xạ ≤300 ms, gộp câu 800 ms, hàng đợi 1 lượt, bơm một dòng vào agy đang ấm trong tmux |
+| `src/api/commands/demo.ts` | **E1 (#48)** — lệnh gói **`module.demo`**: một lời gọi chạy trọn chuỗi `screen.focus` → `screen.stream` → `module.build` → `actor.emote` → `actor.say`, qua `ctx.run` nên không thêm phương thức `StageWorld` nào |
+| `scripts/cai-dat.sh` · `gen-stage.desktop` | **E1 (#48)** — cài một lần (asset + model giọng 930 MB) và tạo biểu tượng `~/.local/share/applications/gen-stage.desktop`. `chay.sh` chỉ BẬT |
 | `scripts/nao-demo.mjs` | **B3** — não mẫu rule-based (không LLM) chạy qua MCP stdio thật, làm bằng chứng vòng kín khi không có agy |
 | `bridge/tts.ts` | **B2** — giọng tiếng Việt: `GET /tts` (cổng 8788) gọi thẳng WebSocket Edge, trả mp3, cache `.cache/tts/<sha1>.mp3` |
 | `src/audio/tts-client.ts` | **B2** — tải + giải mã mp3, đo `durationMs` thật, phát bằng Web Audio, đẩy biên độ RMS mỗi 50 ms sang nhân vật |
@@ -639,3 +643,55 @@ cổng riêng vite 5220 + stub TTS 8851, **không đụng** 5173/8787-8790 của
 - **`choSauBridge` là CỬA ĐỂ SẴN cho E1** (`ThamSoPhanXa`): trả `true` trong
   khoảng chờ sau `bridge.connected` thì phản xạ không nói "Em chưa có não".
   Mặc định `() => false` — hành vi E2 không đổi, E1 chỉ nối dây ở `main.ts`.
+## Quyết định E1 — UI điện thoại, não diễn thật, TTS bền, hiểu "Javis" (26/10, Issue #48)
+
+Năm cái dưới đây đều **đã đo thấy sai** trên bản chạy thật (bảng kiểm độc lập
+trong comment cuối của #48), nên mỗi cái có một test giữ trong
+`src/api/__tests__/e1-ui-nao-tts-giong.test.ts` (và `scripts/__tests__/nao-agy.test.mjs`).
+
+- **Bảng lệnh không bao giờ rộng 100vw.** Bản cũ đặt `--bang-rong: 100vw` trong
+  khối ≤760 px: mở bảng là sân khấu 3D biến mất sạch. Lời hứa mới được giữ ở
+  **ba chỗ cùng lúc**, cố ý không dồn một chỗ: `index.html` khai sẵn
+  `class="thu-gon"` (không loé bảng trong lúc chờ JS), `style.css` kẹp
+  `--bang-rong: min(86vw, 340px)` (mở hết vẫn còn dải 3D), và `src/ui/index.ts`
+  theo `matchMedia('(max-width: 899px)')` — **thu lại khi màn hẹp đi**, không
+  chỉ lúc nạp trang. Nút kéo bảng và nút 🎤 lên 44 px (mốc chạm WCAG 2.5.5).
+- **Trần "diễn tối đa 2 lệnh" là nguyên nhân gốc của "não chỉ nói".** Chuỗi
+  dựng connector cần 5 lệnh, nên cái trần trong `promptDau` làm não không bao
+  giờ diễn xong (`props: []`, `holding: null`, `lines: 0`). Bỏ trần, **và**
+  thêm lệnh gói `module.demo` để đường ngắn nhất cũng là đường đúng: não gọi
+  `actor_say` rồi `module_demo` — hai lệnh, vẫn trong tầm một lượt agy.
+- **`screen: "main"` là id chết.** Id thật đọc từ `MAC_DINH_MAN_HINH`:
+  `may-tinh`, `tivi`. `MAN_HINH_THAT` trong `scripts/nao-agy.mjs` là nguồn duy
+  nhất cho nhắc đầu phiên **và** `AGENTS.md` (cùng một `promptDau`), nên sửa
+  một chỗ là cả hai đúng. Ví dụ của `module.demo` **cố ý bỏ trống `screen`** —
+  viết cứng một id vào ví dụ là dựng lại đúng cái bẫy đó.
+- **Lỗi tạm của Edge TTS không được thành 502 của ta.** Đo thật: 2/10 lượt
+  `/tts` liên tiếp trả 502, và đúng lượt trả lời đầu của não dính 502 → Gen
+  câm. `goiEdgeThuLai` thử lại 2 lần (backoff 300/800 ms), và `hamCauDem` hâm
+  **8 câu đệm/đáp cố định** ngay lúc bridge bật — mấy câu hay dùng nhất không
+  bao giờ phải chờ Edge nữa. Hàm thử lại nhận `goi`/`nghi` tiêm được nên test
+  không cần mạng.
+- **Hai lớp tên riêng phải khớp nhau.** PhoWhisper không bao giờ nghe ra
+  "Javis" (nó ra `david`/`gia viết`), nên cần CẢ `bridge/so-tu.ts` (sửa chữ)
+  LẪN `BI_DANH_NHAN_VAT.owner` (tách người nhận). Thiếu một bên là câu vẫn
+  chạy sang Gen — đúng lỗi đo được. Khai `david` là an toàn (tiếng Việt không
+  có từ nào đọc thành thế), khác hẳn chuyện khai `ghê` cho `Gen`.
+- **"Chưa có não" phải đợi mới được nói.** Hai lớp: bridge gửi `bridge.brain`
+  là **gói đầu tiên** sân khấu nhận (trước `bridge.stageOnline`), và phản xạ
+  chờ `choXacNhanNaoMs = 3000` kể từ `bridge.connected` rồi **đọc lại**
+  `coNao()` trong hẹn giờ — não tới trong lúc chờ thì câu đó bị bỏ, không phát
+  ra tiếng nào.
+- **Giết theo PID, không `fuser -k` cổng mù.** Bản cũ giết bất cứ tiến trình
+  nào giữ 8787-8790/5173, kể cả thứ không phải của Gen-Stage. Giờ mỗi tiến
+  trình `chay.sh` bật đều ghi PID vào `.cache/pid/<tên>.pid`, và `tat` **đối
+  chiếu `/proc/<pid>/cmdline`** trước khi giết (PID có thể đã bị hệ điều hành
+  cấp lại cho người khác), rồi giết cả cây (watchdog là bash, node là con).
+  Cổng đổi được bằng biến môi trường (`GEN_STAGE_PORT`, `GEN_STAGE_WEB_PORT`…)
+  nên bằng chứng chạy bộ riêng 8840-8843/5210 mà không chạm bộ của Boss.
+- **`pnpm start` ≤90 s chỉ đúng khi đã cài.** Trên máy sạch phải tải 46 MB
+  asset + ~930 MB bộ nhận giọng — không có cách nào ≤90 s. Nên tách
+  `scripts/cai-dat.sh` (một lần, lâu bao nhiêu cũng được, tạo luôn biểu tượng
+  từ `gen-stage.desktop` trong repo) khỏi `scripts/chay.sh` (mỗi ngày, không
+  tải gì nữa). `chay.sh` nhận ra đã cài bằng cờ `.cache/da-cai-dat`; chưa cài
+  thì vẫn chạy được, chỉ chậm lần đầu.

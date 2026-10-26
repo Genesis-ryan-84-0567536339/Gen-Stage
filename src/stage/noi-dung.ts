@@ -221,6 +221,35 @@ export const TEN_HIEN_THI: Record<string, string> = {
  * thêm fuzzy ≤2 ký tự nên bảng này chỉ cần những biến thể **khác hẳn** chữ gốc.
  */
 export const BI_DANH_NHAN_VAT: Record<string, string[]> = {
-  owner: ['javis', 'ja vit', 'javit', 'gia vis', 'gia vit', 'giavis', 'jarvis', 'da vit'],
+  /**
+   * E1 (#48) việc 6 — **cùng bộ đồng âm với `bridge/so-tu.ts`**.
+   *
+   * Hai lớp phải khớp nhau: `so-tu.ts` sửa chữ engine nghe được thành "Javis",
+   * còn bảng này tách người nhận ra khỏi câu. Engine nghe `david` mà bảng này
+   * không biết `david` thì câu vẫn chạy sang Gen — đúng lỗi đo được 26/10
+   * (*"Javis, chào"* → Gen chào). Thêm cách nghe mới thì sửa **cả hai chỗ**.
+   *
+   * `hieu-lenh.ts` chạy `boDau()` trước khi so, nên khai có dấu hay không đều
+   * khớp; giữ cả hai dạng cho người đọc dễ soi.
+   */
+  owner: [
+    'javis',
+    'ja vit',
+    'ja vít',
+    'javit',
+    'gia vis',
+    'gia vit',
+    'gia vít',
+    'gia viet',
+    'gia viết',
+    'gia việt',
+    'giavis',
+    'jarvis',
+    'ja vis',
+    'da vit',
+    'đa vít',
+    'david',
+    'davids',
+  ],
   gen: ['gen', 'ghen', 'gien', 'jen', 'gel'],
 };

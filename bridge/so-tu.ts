@@ -53,6 +53,38 @@ export const SO_TU: TuNha[] = [
     // cách nghe sai hơn là sửa bừa câu Boss nói đúng.
     dongAm: ['ghen', 'gen', 'gân', 'gane', 'gene', 'gem', 'gêm', 'giàng', 'ghèn'],
   },
+  /**
+   * **Javis** — tên nhân vật nam (avatar của Sếp), E1 (#48) việc 6.
+   *
+   * Kiểm độc lập 26/10: PhoWhisper **không bao giờ** nghe ra "Javis"; nó ra
+   * `david` / `davids` / `gia viết` / `gia vít`. Hậu quả đo thật: *"Javis, đi
+   * tới bàn điều khiển"* → **Gen** đi, vì không tách được người nhận. Ba trong
+   * mười câu đúng người.
+   *
+   * `Javis` dài 5 ký tự nên khớp mờ cũng chạy (≤ 1 phép sửa), nhưng mấy cách
+   * nghe thật đều xa hơn thế → phải khai tay. Khai `david` là **an toàn**:
+   * tiếng Việt không có từ nào đọc thành "david", khác hẳn chuyện khai `ghê`
+   * cho `Gen` (xem ghi chú ở trên).
+   */
+  {
+    chuan: 'Javis',
+    dongAm: [
+      'david',
+      'davids',
+      'đa vít',
+      'da vit',
+      'gia viết',
+      'gia vít',
+      'gia việt',
+      'gia vis',
+      'giavis',
+      'javit',
+      'ja vít',
+      'ja vit',
+      'jarvis',
+      'ja vis',
+    ],
+  },
   // từ nghiệp vụ
   { chuan: 'connector', dongAm: ['cong nghe', 'can net', 'con net to'] },
   // Tên nước ngoài do TTS/giọng Việt đọc ra âm khá xa dạng viết, vượt ngưỡng

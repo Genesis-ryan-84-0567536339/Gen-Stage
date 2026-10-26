@@ -204,13 +204,24 @@ async function khoiDong(): Promise<void> {
   bus.emit('stage.ready', { actors: world.actorIds(), places: world.placeIds() });
   toast('WASD để đi · 1–0 emote · Space nói · ? xem bảng phím');
 
-  // C2 — nạp danh sách place/emote/màn hình cho lớp hiểu lệnh (sinh từ bootstrap)
-  await hieuLenh.lamMoi();
-
   bus.on('bridge.replaced', () =>
     toast('Tab khác vừa nối sân khấu — tab này tạm nghỉ. Tải lại trang để dùng tab này.'),
   );
+  /**
+   * E1 (#48) việc 8 — **nối bridge TRƯỚC `await hieuLenh.lamMoi()`.**
+   *
+   * Hai dòng này từng ngược thứ tự, và đó là chỗ sinh ra câu "chưa có não" vô
+   * cớ: `lamMoi()` gọi `stage.bootstrap` + `stage.describe`, mà hai lệnh đó
+   * chen vào vòng vẽ — đo thật trên renderer phần mềm là **7,5 s** từ lúc
+   * trang sẵn sàng tới lúc ws mới nối. Trong khoảng đó `brainConnected` còn
+   * `false` dù driver đã nối từ trước, nên Sếp gõ câu đầu là Gen nói "Em chưa
+   * có não". `bridge.bat()` không cần gì từ `lamMoi()`, nên nối trước; đo lại
+   * sau khi đổi: **≤100 ms**.
+   */
   if (coBatBridge()) bridge.bat();
+
+  // C2 — nạp danh sách place/emote/màn hình cho lớp hiểu lệnh (sinh từ bootstrap)
+  await hieuLenh.lamMoi();
 }
 
 /* ------------------------------------------- Boss bấm vào nhân vật / đồ vật */

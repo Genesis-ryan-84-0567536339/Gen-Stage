@@ -15,6 +15,12 @@ Biến môi trường:
   GEN_STAGE_STT_MODEL   thư mục model ct2 (mặc định PhoWhisper-small)
   GEN_STAGE_STT_THREADS  số luồng CPU (mặc định: số lõi thật)
   GEN_STAGE_STT_COMPUTE  int8 | int8_float32 | float32 (mặc định int8)
+  GEN_STAGE_STT_BEAM     beam_size (mặc định 1 — nhanh nhất, E1 #48 đo lại rồi giữ)
+  GEN_STAGE_STT_VAD      1 | 0 — bật/tắt vad_filter (mặc định 1)
+
+E1 (#48) việc 6 — hai biến BEAM/VAD thêm vào để **đo được** chứ không phải để
+Boss chỉnh: `scripts/kiem-e1.mjs` chạy cùng 10 câu qua từng cấu hình rồi chọn
+cái nhanh nhất còn giữ WER ≤ 10 %. Bảng số nằm trong `docs/e1/`.
 """
 import json
 import math
@@ -31,6 +37,8 @@ MODEL = os.environ.get(
 )
 LUONG = int(os.environ.get("GEN_STAGE_STT_THREADS") or (os.cpu_count() or 4) // 2 or 1)
 TINH = os.environ.get("GEN_STAGE_STT_COMPUTE", "int8")
+BEAM = max(1, int(os.environ.get("GEN_STAGE_STT_BEAM") or 1))
+VAD = os.environ.get("GEN_STAGE_STT_VAD", "1") != "0"
 
 
 def doc_wav(duong: str) -> np.ndarray:
@@ -84,8 +92,8 @@ def main() -> None:
                 m.transcribe(
                     gia,
                     language="vi",
-                    beam_size=1,
-                    vad_filter=True,
+                    beam_size=BEAM,
+                    vad_filter=VAD,
                     without_timestamps=True,
                     condition_on_previous_text=False,
                 )[0]
@@ -94,7 +102,12 @@ def main() -> None:
         pass
 
     # Dòng này là cờ "sẵn sàng" cho bridge/stt.ts chờ.
-    print(json.dumps({"san": True, "model": MODEL, "luong": LUONG}), flush=True)
+    print(
+        json.dumps(
+            {"san": True, "model": MODEL, "luong": LUONG, "tinh": TINH, "beam": BEAM, "vad": VAD}
+        ),
+        flush=True,
+    )
 
     for dong in sys.stdin:
         duong = dong.strip()
@@ -106,8 +119,8 @@ def main() -> None:
             segs, _info = m.transcribe(
                 am,
                 language="vi",
-                beam_size=1,
-                vad_filter=True,
+                beam_size=BEAM,
+                vad_filter=VAD,
                 without_timestamps=True,
                 condition_on_previous_text=False,
             )

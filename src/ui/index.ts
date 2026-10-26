@@ -80,10 +80,25 @@ export async function dungGiaoDien(
     nutDongMo.setAttribute('aria-label', dangThuGon ? 'Mở bảng lệnh' : 'Thu gọn bảng');
   };
   nutDongMo.addEventListener('click', () => dongMo());
-  // Điện thoại / màn hẹp: mở app là THU GỌN để thấy trọn sân khấu, bấm nút
-  // góc phải để mở bảng. Boss 25/10: ngưỡng nâng từ 760 lên 900 px vì ở
-  // 760–900 px tấm kính 390 px vẫn che gần nửa khung hình.
-  if (window.innerWidth < 900) dongMo(false);
+
+  /**
+   * Màn hẹp = **mặc định thu gọn**, chỉ còn nút kéo ra (E1 #48, dòng 13).
+   *
+   * Ba chỗ cùng giữ lời hứa này, cố ý không dồn vào một:
+   *  - `index.html` khai sẵn `class="thu-gon"` → không loé bảng lúc chờ JS;
+   *  - `src/style.css` kẹp `--bang-rong` ≤ 86vw/340px → mở hết vẫn thấy 3D;
+   *  - hàm này mở bảng ra khi màn đủ rộng, và **thu lại khi màn hẹp đi**
+   *    (quay ngang → dọc, hoặc Boss kéo nhỏ cửa sổ trên desktop).
+   *
+   * Ngưỡng 900 px chứ không 760: ở 760–900 px tấm kính 390 px vẫn che gần nửa
+   * khung hình (Boss 25/10).
+   */
+  const HEP = window.matchMedia('(max-width: 899px)');
+  const theoManHinh = () => dongMo(!HEP.matches);
+  theoManHinh();
+  // `change` của matchMedia chỉ bắn khi VƯỢT ngưỡng, nên không rung mỗi pixel
+  // và không bao giờ ghi đè cú bấm của Boss trong cùng một cỡ màn.
+  HEP.addEventListener('change', theoManHinh);
 
   return { bangLenh, oKichBan, nhatKyView, moThe, dongMo };
 }

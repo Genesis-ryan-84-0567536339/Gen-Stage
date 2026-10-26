@@ -55,6 +55,8 @@ export interface SoPhanXa {
   liecMs: number;
   /** Lệch quá ngần này độ thì quay lại cho thẳng người nghe. */
   lechToiDa: number;
+  /** E1 (#48) — ân hạn sau `bridge.connected` trước khi dám nói "chưa có não" (ms). */
+  choXacNhanNaoMs: number;
 }
 
 /** Số đo mặc định — spec mục 3.2d. */
@@ -73,6 +75,18 @@ export const MAC_DINH: SoPhanXa = {
   giuNhinMs: 2000,
   /** Não không nối: trả lời rule-based sau câu đệm bao lâu (ms). */
   choNaoNoiBoMs: 1900,
+  /**
+   * E1 (#48) việc 8 — **ân hạn sau khi nối bridge**.
+   *
+   * Lúc mới mở trang, `bridge.brain` của bridge và câu hỏi đầu của Sếp đua
+   * nhau: kiểm độc lập 26/10 đo được `brainConnected=false` trong ~8 s đầu dù
+   * driver đã nối từ trước, nên Gen nói "Em chưa có não, Sếp bật agy nhé."
+   * ngay khi Boss vừa mở trang — câu sai và làm Boss tưởng hỏng.
+   *
+   * Trong 3 s đầu sau `bridge.connected`, phản xạ **hoãn** câu rule-based rồi
+   * ĐỌC LẠI `coNaoNoi()`: não tới kịp thì không nói gì cả.
+   */
+  choXacNhanNaoMs: 3000,
   banKinhLiec: 3,
   liecMs: 700,
   lechToiDa: 12,
@@ -192,6 +206,12 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
   let nguoiNgheCuaGen = 'camera';
   /** Hạn của cú **liếc** tạm (0 = không liếc). */
   let nhinTamDen = 0;
+  /**
+   * E1 (#48) — mốc `bridge.connected` gần nhất. `-Infinity` = chưa nối bridge
+   * lần nào trong phiên này, tức là thật sự không có đường tới não → không ân
+   * hạn, cứ nói thẳng.
+   */
+  let tBridgeNoi = Number.NEGATIVE_INFINITY;
 
   /**
    * Gửi một lệnh phản xạ.
@@ -318,11 +338,19 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
     henNoiBo = null;
     if (!coNaoNoi() && !choSauBridge()) {
       const cau = naoToiThieu(chu);
+      /**
+       * E1 (#48) việc 8 — đợi hết ân hạn `bridge.connected` rồi mới nói, và
+       * **đọc lại** `coNaoNoi()` trong hẹn giờ: gói `bridge.brain` tới trong
+       * lúc chờ thì câu "chưa có não" bị bỏ, không phát ra tiếng nào.
+       */
+      const anHanConLai = tBridgeNoi + so.choXacNhanNaoMs - now;
+      const cho = Math.max(so.choNaoNoiBoMs, anHanConLai);
       henNoiBo = setTimeout(() => {
         henNoiBo = null;
         if (!genId) return;
+        if (coNaoNoi()) return;
         void gui('actor.say', { actor: genId, text: cau, to: nguoiNgheCuaGen });
-      }, so.choNaoNoiBoMs);
+      }, cho);
     }
   }
 
@@ -410,6 +438,16 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
   /* -------------------------------------------------------- người nghe bus */
 
   const boNghe: Array<() => void> = [];
+
+  /**
+   * E1 (#48) — ghi mốc nối bridge. Nối lại (bridge khởi động lại, mạng chớp)
+   * cũng tính là mốc mới: `bridge.brain` sẽ tới sau đó vài chục ms.
+   */
+  boNghe.push(
+    bus.on('bridge.connected', () => {
+      tBridgeNoi = bayGio();
+    }),
+  );
 
   boNghe.push(
     bus.on('user.text', (e) => {

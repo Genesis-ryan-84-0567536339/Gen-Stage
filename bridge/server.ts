@@ -148,9 +148,21 @@ wss.on('connection', (ws, req) => {
     }
     sanKhau = ws;
     ghi('sân khấu đã nối. Client đang chờ:', clients.size);
-    phatChoClient({ event: 'bridge.stageOnline', data: {} });
-    // sân khấu mới nối thì chưa biết gì — gửi lại tình trạng não ngay
+    /**
+     * E1 (#48) việc 8 — **`bridge.brain` là gói ĐẦU TIÊN** sân khấu nhận.
+     *
+     * Bản cũ báo não *sau* `bridge.stageOnline`; đo thật 26/10 thì gói
+     * `bridge.brain {count:2}` tới muộn (≈2,2 s của lượt hỏi đầu) nên
+     * `brainConnected` còn `false` lúc Sếp vừa gõ câu đầu → Gen nói "chưa có
+     * não" vô cớ. Giờ gửi trước mọi thứ khác, và `buocPhai = true` để không
+     * bị cái chốt "số không đổi thì khỏi gửi" chặn lại.
+     *
+     * Lớp thứ hai của lời hứa nằm ở `src/behavior/phan-xa.ts`
+     * (`choXacNhanNaoMs`): kể cả gói này tới muộn, Gen vẫn chờ 3 s mới dám
+     * kết luận là chưa có não.
+     */
     baoNao(true);
+    phatChoClient({ event: 'bridge.stageOnline', data: {} });
 
     ws.on('message', (tho) => tuSanKhau(String(tho)));
     ws.on('close', () => {
@@ -224,6 +236,9 @@ function chaoClient(ws: WebSocket): void {
       event: 'bridge.hello',
       data: {
         stageOnline: sanKhau?.readyState === WebSocket.OPEN,
+        // E1 (#48) — tình trạng não nằm luôn trong gói chào, client (và chính
+        // não) không phải chờ gói `bridge.brain` riêng.
+        brain: soNao(),
         huongDan:
           'Gửi {"id":"1","cmd":"stage.bootstrap"} để lấy danh sách lệnh. ' +
           'Mở trình duyệt với ?bridge=1 nếu stageOnline=false.',

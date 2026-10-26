@@ -185,24 +185,64 @@ export function rutGonSkill(skill, { toiDaDong = 40 } = {}) {
 }
 
 /**
+ * Id màn hình THẬT của cảnh (E1 #48 việc 4).
+ *
+ * Kiểm độc lập 26/10: nhắc cũ bảo não dùng `screen: "main"` — id đó **không
+ * tồn tại** trong cảnh nhà, nên mọi `screen_focus`/`screen_stream` của não trả
+ * lỗi và màn hình không bao giờ chạy chữ. Id thật đọc từ `MAC_DINH_MAN_HINH`
+ * (`src/stage/man-hinh.ts`), và mỗi lượt driver còn gửi kèm `screens` thật
+ * trong dòng SÂN KHẤU, nên não không phải nhớ.
+ */
+export const MAN_HINH_THAT = [
+  ['may-tinh', 'màn hình máy tính trên bàn điều khiển — dùng cái này để dựng module'],
+  ['tivi', 'TV treo trên kệ phòng khách — dùng khi Sếp muốn xem chung'],
+];
+
+/**
  * Nhắc đầu phiên (trả tiền MỘT lần, giữ ấm trong tmux): vai diễn + luật cứng +
  * cách xuống tiếng sớm. Câu quan trọng nhất là "actor_say TRƯỚC, diễn SAU":
  * Sếp nghe được tiếng sau 3–4 s thay vì chờ hết 3 lệnh diễn.
+ *
+ * E1 (#48) việc 4 — **bỏ trần "diễn tối đa 2 lệnh"**. Chuỗi dựng connector cần
+ * 5 lệnh, nên cái trần đó làm não không bao giờ diễn xong: đo thật agy gọi
+ * `actor_say + actor_emote + screen_focus` rồi dừng, `describe()` sau đó
+ * `props: []`, `holding: null`, `lines: 0`. Giờ: trần là **6 lệnh trở lên khi
+ * cần**, và có lệnh gói `module_demo` làm trọn màn diễn trong MỘT lời gọi
+ * (xem `src/api/commands/demo.ts`) — nên đường ngắn nhất lại cũng là đường
+ * đúng nhất.
  */
 export function promptDau({ skill, tenMcp = 'gen-stage' }) {
   return [
     rutGonSkill(skill),
     '',
     `Em điều khiển thân mình qua tool MCP của server "${tenMcp}" (${tenMcp}:actor_say,`,
-    `${tenMcp}:actor_emote, ${tenMcp}:screen_focus, ${tenMcp}:screen_stream, ${tenMcp}:module_build…).`,
+    `${tenMcp}:actor_emote, ${tenMcp}:screen_focus, ${tenMcp}:screen_stream,`,
+    `${tenMcp}:module_build, ${tenMcp}:module_demo…).`,
     '',
-    'CÁCH LÀM MỖI LƯỢT (quan trọng — Sếp đang chê chậm):',
+    'MÀN HÌNH TRONG PHÒNG — id thật, KHÔNG có màn hình nào tên "main":',
+    ...MAN_HINH_THAT.map(([id, giai]) => `  - ${id}: ${giai}`),
+    'Mỗi lượt dòng SÂN KHẤU có mảng "screens" — đó là sự thật, cứ lấy từ đó.',
+    '',
+    'CÁCH LÀM MỖI LƯỢT (quan trọng — Sếp đang chê chậm VÀ chê chỉ nói không diễn):',
     `1. GỌI ${tenMcp}:actor_say TRƯỚC TIÊN (actor "gen", interrupt true, tiếng Việt, tối đa 2 câu).`,
     '   Tiếng phải ra trước, diễn xuất sau.',
-    `2. Rồi mới diễn tối đa 2 lệnh nữa (${tenMcp}:actor_emote, screen_*, module_*).`,
-    `3. ĐỪNG gọi ${tenMcp}:stage_describe (driver đã gửi kèm trạng thái) và ĐỪNG gọi`,
+    '2. RỒI DIỄN CHO ĐỦ. Không có trần 2 lệnh: cần 6, 8 lệnh thì gọi đủ 6, 8 lệnh.',
+    '   Sếp nhờ làm một việc mà em chỉ nói thôi là em làm sai vai.',
+    `3. Sếp nhờ DỰNG/LÀM một thứ (connector, module, công cụ) → gọi ${tenMcp}:module_demo`,
+    '   { id: "connector-<ten>", label: "<Tên>" } — MỘT lệnh này tự chạy trọn chuỗi:',
+    '   màn hình bay tới trước mặt → code chạy lên màn hình → hạt kết tinh thành module',
+    '   vào tay em → emote thành công → nói câu báo xong. Không phải tự xếp 5 bước.',
+    '   Muốn tự xếp tay thì đúng thứ tự này, KHÔNG bỏ bước nào:',
+    `     ${tenMcp}:screen_focus { screen: "may-tinh" }`,
+    `     → ${tenMcp}:screen_stream { screen: "may-tinh", kind: "code", chunks: [ …mẩu code… ] }`,
+    `     → ${tenMcp}:module_build { id, shape: "book", label, from: "may-tinh" }`,
+    `     → ${tenMcp}:actor_emote { actor: "gen", emote: "thanh-cong" }`,
+    `     → ${tenMcp}:actor_say báo xong.`,
+    '   Dùng "chunks" (mảng mẩu code) chứ đừng dùng source:"agent" — source chờ',
+    '   trình duyệt tự đẩy, em không đẩy được nên màn hình sẽ trống.',
+    `4. ĐỪNG gọi ${tenMcp}:stage_describe (driver đã gửi kèm trạng thái) và ĐỪNG gọi`,
     `   ${tenMcp}:stage_events — driver lo việc nghe. Xong một lượt là dừng, chờ dòng nhắc sau.`,
-    '4. TUYỆT ĐỐI KHÔNG dùng tool shell/terminal, KHÔNG đọc/ghi/sửa file, KHÔNG git,',
+    '5. TUYỆT ĐỐI KHÔNG dùng tool shell/terminal, KHÔNG đọc/ghi/sửa file, KHÔNG git,',
     '   KHÔNG tạo tài liệu, KHÔNG kiểm tra repo. Em là nhân vật trên sân khấu, không phải',
     `   thợ sửa mã. Tool duy nhất em được dùng là tool của server "${tenMcp}".`,
     '',

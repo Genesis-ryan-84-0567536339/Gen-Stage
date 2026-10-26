@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "cai-dat": "bash scripts/cai-dat.sh",
     "start": "bash scripts/chay.sh",
     "stop": "bash scripts/chay.sh tat",
     "build": "tsc && vite build",
