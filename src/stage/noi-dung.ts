@@ -297,6 +297,5 @@ export const BI_DANH_NHAN_VAT: Record<string, string[]> = {
     'nhi a',
     'nhi à',
     'em nhi',
-    'be nhi',
   ],
 };
