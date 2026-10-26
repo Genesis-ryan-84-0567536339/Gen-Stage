@@ -34,7 +34,7 @@
  * bước đang chạy, và dispatcher thấy `done` của bước đó thì tự xả hàng đợi →
  * lệnh của não chạy ngay sau đúng một microtask.
  */
-import type { CommandCtx, CommandSpec } from '../types';
+import type { CommandCtx, CommandSpec, Result } from '../types';
 import {
   BANG_HOAT_DONG,
   TEN_HOAT_DONG,
@@ -215,7 +215,7 @@ export const LENH_HOAT_DONG: CommandSpec[] = [
            * phân biệt được "bước của hoạt động xếp hàng" với "não xen vào".
            */
           batGuiBuoc(ai);
-          let p: Promise<import('../types').Result>;
+          let p: Promise<Result>;
           try {
             p = ctx.run(cmd, args);
           } finally {
