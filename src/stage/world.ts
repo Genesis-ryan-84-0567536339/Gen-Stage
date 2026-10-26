@@ -1423,6 +1423,17 @@ export class World implements StageWorld {
     };
   }
 
+  /**
+   * G1 vòng 3 (#56) — CHỈ số đo tóc, RẺ. `doXuongActor` gọi `doTuThe(chính
+   * xác)` nên mỗi lượt là một `Box3.setFromObject(…, true)` (quét toàn bộ đỉnh
+   * có biến dạng xương): lấy mẫu "mỗi 100 ms" bằng nó thì thực ra 240 ms một
+   * mẫu, mà chính dụng cụ đo lại kéo FPS xuống — đúng cái bẫy F2. Hàm này chỉ
+   * đi qua các khớp spring, dùng cho bảng lệch tóc dày mẫu.
+   */
+  doTocActor(id: string): Record<string, unknown> {
+    return this.nv(id).doToc();
+  }
+
   actorIdleStyle(id: string, style: string): void {
     this.nv(id).datIdleStyle(style);
   }

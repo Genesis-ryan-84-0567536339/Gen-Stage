@@ -357,7 +357,7 @@ chot('5-console-sach', loiThat.length === 0, { loi: loiThat.slice(0, 5) });
       '\n\n"đáyTRƯỚC" = đáy hộp bao chính xác của bản cũ; "đếSAU" = mặt ĐẾ GIÀY đo\n' +
       'bằng đỉnh quanh bàn chân (model tóc dài có đuôi tóc thấp hơn gót, hộp bao\n' +
       'không dùng làm thước đế được — xem `chotDeChan()`).\n' +
-      'Đạt = |đáySAU| ≤ 0,01 m ở mọi trạng thái không ngồi; lệchTóc ≤ 0,05 m.\n',
+      `Đạt = |đáySAU| ≤ ${MOC.leSan} m ở mọi trạng thái không ngồi; lệchTóc ≤ ${MOC.lechToc} m.\n`,
   );
 }
 

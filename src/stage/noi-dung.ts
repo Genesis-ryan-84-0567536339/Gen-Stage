@@ -84,7 +84,8 @@ export const PLACES: readonly DinhNghiaPlace[] = [
   { id: 'ban-2', pos: [-1, 0, 2.5], kind: 'desk', standAt: [-1, 0, 3.5], facing: 0 },
   // `ghe-1` = ghế ăn phía bắc bàn ăn, `ghe-2` = ghế làm việc. `seatY` ở đây
   // chỉ là FALLBACK: `phong.ts` đo mặt ghế thật trên model rồi ghi đè `datSeatY()`.
-  // G1 (#56): nội thất hạ về cỡ chibi (ghế cao 0,55 m) nên FALLBACK cũng phải
+  // G1 (#56): nội thất hạ về cỡ chibi (`cao: 0.47` trong `bo-cuc.ts`, ra mặt
+  // ngồi 0,2585 m) nên FALLBACK cũng phải
   // là mặt ngồi chibi ~0,30 m, không còn 0,46 m của ghế người lớn.
   { id: 'ghe-1', pos: [4, 0, 1], kind: 'seat', facing: 0, seatY: 0.3 },
   { id: 'ghe-2', pos: [3, 0, -3.5], kind: 'seat', facing: 180, seatY: 0.3 },
