@@ -47,7 +47,12 @@ function springGia(goiTrongUpdate = false): QuanLySpringGia {
 }
 
 /** Dựng một VRM giả: cây xương người + một mesh bọc ngoài để có hộp bao thật. */
-function vrmGia(spring?: QuanLySpringGia): { vrm: never; chanT: THREE.Object3D; than: THREE.Mesh } {
+function vrmGia(spring?: QuanLySpringGia): {
+  vrm: never;
+  chanT: THREE.Object3D;
+  than: THREE.Mesh;
+  scene: THREE.Group;
+} {
   const scene = new THREE.Group();
   const xuong = new Map<string, THREE.Object3D>();
   const them = (ten: string, cha: THREE.Object3D, y: number, x = 0): THREE.Object3D => {
@@ -117,6 +122,7 @@ function vrmGia(spring?: QuanLySpringGia): { vrm: never; chanT: THREE.Object3D; 
     vrm: vrm as never,
     chanT: xuong.get('leftFoot') as THREE.Object3D,
     than,
+    scene,
   };
 }
 
@@ -297,6 +303,52 @@ describe('G1 vòng 3 (#56) — spring bone: nhịp cố định, không ăn bớ
     await khungDai(nv, 700);
     expect(sp.buoc.length).toBeLessThanOrEqual(24);
     expect(sp.buoc.reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(0.4 + 1e-9);
+  });
+
+  /**
+   * Trần tốc độ hiển thị của tóc/vải (`DICH_TOC_MOI_KHUNG`). Vòng 3 đo được
+   * một gai MỘT KHUNG 0,112 m ở `ngac-nhien`: collider bàn tay đẩy chuỗi tóc
+   * ra khỏi hình cầu trong đúng một bước. Test dựng một quản lý spring giả
+   * **cố tình** xoay xương tóc 1 rad mỗi lượt và khẳng định dáng VẼ RA mỗi
+   * khung chỉ rời dáng khung trước trong trần cho phép.
+   */
+  it('cú đẩy khổng lồ của collider bị trần tốc độ cắt lại', () => {
+    const sp = springGia();
+    const { vrm, scene } = vrmGia(sp);
+    // một "xương tóc" dài 0,1 m ⇒ trần 0,03 m/khung ≈ 0,3 rad/khung
+    const toc = new THREE.Object3D();
+    toc.position.set(0, 1.2, 0);
+    scene.add(toc);
+    const duoi = new THREE.Object3D();
+    duoi.position.set(0, -0.1, 0);
+    toc.add(duoi);
+    sp.joints = [
+      {
+        bone: toc,
+        child: duoi,
+        settings: { stiffness: 1, gravityPower: 1, hitRadius: 0.02, dragForce: 0.4 },
+      },
+    ] as never;
+    // mỗi lượt mô phỏng: ném xương đi 1 rad (cú đẩy của collider)
+    sp.update = () => toc.rotateX(1);
+
+    const nv = new NhanVat('h1', 'H1', vrm, true);
+    chay(nv, 4);
+    /*
+     * Trần = 0,03 m / độ-dài-đoạn-THẬT, mà đoạn 0,1 m còn bị `goc.scale` của
+     * chibi nhân vào, nên không ghi cứng con số: chỉ đòi mỗi khung đi được
+     * **ít hơn nửa** cú đẩy 1 rad, và vẫn phải nhích (không đóng băng tóc).
+     */
+    for (let i = 0; i < 6; i += 1) {
+      const truoc = toc.quaternion.clone();
+      nv.capNhat(1 / 60);
+      const di = truoc.angleTo(toc.quaternion);
+      expect(di).toBeLessThan(0.5);
+      expect(di).toBeGreaterThan(0);
+    }
+    const d = nv.doToc();
+    expect(d.soKhopHam).toBe(1);
+    expect(d.soHamCat).toBe(1);
   });
 
   it('thư viện chạy spring TRONG vrm.update → hỏng TO, không im lặng', () => {
