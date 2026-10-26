@@ -176,6 +176,11 @@ export class LopTieng {
     this.taoCtxFn = cfg.taoCtx ?? taoCtxMacDinh;
     // Báo thời lượng thật cho sân khấu (`uocThoiLuongNoi` trong nhanvat.ts).
     datDoThoiLuongThat((chu) => this.daiTheoCau.get(chu) ?? null);
+    // Boss 26/10: "hai giọng chồng nhau" — cờ chặn là TOÀN CỤC, bị hạ bởi một câu
+    // lỗi trong lúc câu khác đang phát mp3 → Web Speech (espeak của Firefox) đọc
+    // chồng lên. Có lớp tiếng là KHÔNG BAO GIỜ dùng Web Speech nữa: thiếu giọng
+    // thì nhép theo độ dài chữ, không đọc máy.
+    datChanWebSpeech(true);
   }
 
   /** Nhận cấu hình muộn (main.ts biết `toast` sau khi dựng giao diện). */
@@ -284,7 +289,6 @@ export class LopTieng {
   }
 
   private khongCoGiong(): null {
-    datChanWebSpeech(false);
     if (!this.daNhac && this.bridgeHong) {
       this.daNhac = true;
       this.toast?.('Chưa có giọng: bật `pnpm bridge`');

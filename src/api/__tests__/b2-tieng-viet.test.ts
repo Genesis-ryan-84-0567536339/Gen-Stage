@@ -296,7 +296,7 @@ describe('LopTieng — bridge tắt thì nhường chỗ, không ném lỗi', ()
 
     datChanWebSpeech(true); // giả như câu trước có giọng thật
     expect(await t.chuanBi('gen', 'Bridge đang tắt.', {})).toBeNull();
-    expect(dangChanWebSpeech()).toBe(false); // → NhanVat.noi lại dùng Web Speech
+    expect(dangChanWebSpeech()).toBe(true); // Boss 26/10: có lớp tiếng thì không bao giờ Web Speech (chồng giọng)
     expect(t.coGiong()).toBe(false);
     expect(toast).toHaveBeenCalledTimes(1);
     expect(String(toast.mock.calls[0]![0])).toContain('pnpm bridge');
