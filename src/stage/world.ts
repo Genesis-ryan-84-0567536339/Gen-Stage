@@ -110,20 +110,24 @@ interface DoVat {
 type GocMay = { vt: THREE.Vector3; tam: THREE.Vector3; fov: number };
 
 /**
- * Góc máy "toàn cảnh" cho CĂN NHÀ 14 × 10 m, trần 2,8 m (D1, Issue #43).
- * Máy đứng ngay trong hành lang trung tâm (x ≈ 0, luôn trống — xem
- * `bo-cuc.ts` `NUA_HANH_LANG`), sát trần để không chạm nội thất, nhìn dọc
- * theo hành lang vào phòng khách — thấy cả 3 khu trong một khung hình mà
- * không phải lùi ra ngoài tường.
+ * Góc máy "toàn cảnh" cho CĂN NHÀ 14 × 10 m, trần 2,8 m (D1 #43 → **F1 #56**).
+ *
+ * F1 đổi chỗ đứng: máy ở góc ĐÔNG-NAM trong nhà, nhìn chéo về tây-bắc. Bản
+ * D1b đứng ở góc TÂY-nam nhìn về đông-bắc → cả cụm phòng khách (và kệ TV sát
+ * tường tây) nằm **sau lưng camera**, Boss chỉ thấy sàn trống với mấy cái tủ
+ * bếp. Góc mới thấy **cả 3 cụm trong một khung**: bàn ăn + bếp chữ L bên phải,
+ * góc làm việc chính giữa phía xa, cụm sofa–thảm–kệ TV bên trái.
  */
 const MAY_NGANG: GocMay = {
-  vt: new THREE.Vector3(-6.0, 1.82, 4.2),
-  tam: new THREE.Vector3(2.5, 1.0, -1.6),
-  fov: 66,
+  vt: new THREE.Vector3(1.0, 1.92, 4.3),
+  tam: new THREE.Vector3(-0.5, 0.82, -3.9),
+  fov: 74,
 };
 /**
- * Khung dọc 390 × 844: hfov hẹp hơn — đứng gần hơn một chút, nhắm thẳng vào
- * khu trung tâm (hành lang + mép phòng khách) để nhân vật không còn vài pixel.
+ * Khung DỌC 390 × 844 (điện thoại): khung đứng thì hfov rất hẹp — ôm 3 cụm là
+ * bất khả. F1 đổi hẳn mục tiêu: nhắm vào **một cụm phòng khách** (sofa ↔ bàn
+ * trà ↔ kệ TV) để màn hình hẹp vẫn thấy một căn phòng có hồn, thay vì khung
+ * ngang bị cắt còn một dải sàn trống như bản D1b.
  */
 /**
  * Lệch camera so với chủ khi bám (`theo-owner`): chéo 3/4 sau-phải, cao 2 m
@@ -132,9 +136,9 @@ const MAY_NGANG: GocMay = {
 const LECH_THEO_OWNER = /* @__PURE__ */ new THREE.Vector3(1.8, 2.0, 2.6);
 
 const MAY_DOC: GocMay = {
-  vt: new THREE.Vector3(-5.9, 1.78, 4.15),
-  tam: new THREE.Vector3(2.1, 1.0, -1.35),
-  fov: 82,
+  vt: new THREE.Vector3(-1.3, 1.62, 4.3),
+  tam: new THREE.Vector3(-4.9, 0.85, 0.9),
+  fov: 76,
 };
 
 export class World implements StageWorld {
@@ -319,8 +323,12 @@ export class World implements StageWorld {
      * chói. Hai point light không bóng gần như miễn phí trên GPU yếu.
      */
     this.denAm = [
-      denDiem(MAU_DEN_AM, 6.5, 4.2, -1.5, 1.45, 1.0),
-      denDiem(MAU_DEN_AM, 5.0, 3.6, 3.5, 1.15, -4.4),
+      // F1 (#56): hai chụp đèn CÓ THẬT trong cảnh đã dời theo bố cục mới —
+      // đèn sàn cạnh ghế đơn phòng khách (−5,5; −1,0) và đèn bàn làm việc
+      // (3,0; −4,5). Bản D1b vẫn chiếu vào chỗ cũ (−1,5; 1,0) tức giữa hành
+      // lang trống, nên phòng khách tối mà hành lang lại sáng vô cớ.
+      denDiem(MAU_DEN_AM, 6.5, 4.2, -5.5, 1.45, -1.0),
+      denDiem(MAU_DEN_AM, 5.0, 3.6, 3.0, 1.15, -4.3),
     ];
     for (const d of this.denAm) this.scene.add(d);
 
@@ -1169,27 +1177,36 @@ export class World implements StageWorld {
      * camera xuyên ra ngoài tường. Toạ độ chọn tay, đứng trong nhà, nhìn
      * đúng hướng nội thất của khu đó.
      */
+    /*
+     * F1 (#56): 3 khung khu đóng lại cho ĐÚNG cụm mới (`docs/f1/so-do.md`).
+     * Bản D1b nhắm vào toạ độ D1: khung `bep` ngắm (4,5; 2,6) — nay là giữa
+     * cụm bàn ăn, bếp đã sang góc đông-bắc; khung `ban-lam-viec` ngắm x 4,3
+     * trong khi bàn đã dời về x 3.
+     */
     if (name === 'phong-khach') {
+      // đứng phía nam cụm, nhìn chéo tây-bắc: thấy trọn sofa ↔ bàn trà ↔ kệ TV
       this.bossDaXoay = true;
       this.tamTuBay = {
-        vt: new THREE.Vector3(-1.8, 1.7, 3.2),
-        tam: new THREE.Vector3(-4.5, 1.0, 1.6),
+        vt: new THREE.Vector3(-1.5, 1.9, 4.2),
+        tam: new THREE.Vector3(-4.9, 0.9, 0.9),
       };
       return;
     }
     if (name === 'ban-lam-viec') {
+      // kệ sách + bàn + ghế + bảng ghim trong một khung
       this.bossDaXoay = true;
       this.tamTuBay = {
-        vt: new THREE.Vector3(1.2, 1.8, -1.0),
-        tam: new THREE.Vector3(4.3, 1.1, -3.5),
+        vt: new THREE.Vector3(0.5, 1.7, -1.7),
+        tam: new THREE.Vector3(2.3, 1.0, -4.5),
       };
       return;
     }
     if (name === 'bep') {
+      // đứng trong lòng chữ L, nhìn chéo đông-bắc: thấy CẢ HAI nhánh + tủ lạnh
       this.bossDaXoay = true;
       this.tamTuBay = {
-        vt: new THREE.Vector3(1.4, 1.9, 1.7),
-        tam: new THREE.Vector3(4.5, 1.0, 2.6),
+        vt: new THREE.Vector3(4.0, 2.0, 1.1),
+        tam: new THREE.Vector3(6.3, 0.95, -3.3),
       };
       return;
     }

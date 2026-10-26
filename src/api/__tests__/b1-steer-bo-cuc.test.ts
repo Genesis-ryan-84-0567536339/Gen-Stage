@@ -16,15 +16,21 @@ import { EventBus } from '../../events';
 import { SanKhauGia, NHIP_MS } from './san-khau-gia';
 import type { StageEvent, StageState } from '../types';
 import {
+  DAY_BEP,
   HANH_LANG,
   KHOI_CANH,
+  LOI_DI,
   NUA_HANH_LANG,
   NUA_RONG,
   NUA_SAU,
+  SAT_TUONG,
   biChan,
+  cumCua,
   hopChan,
   kepTrongPhong,
+  kiemCum,
   kiemHanhLang,
+  kiemLoiDi,
   kiemLuoi,
   truotVaCham,
 } from '../../stage/bo-cuc';
@@ -314,5 +320,154 @@ describe('controlledBy (Issue #18 mục 3)', () => {
     const kq = await d.run('camera.preset', { name: 'theo-owner' });
     expect(kq.ok).toBe(true);
     expect(world.may).toBe('theo-owner');
+  });
+});
+
+/* ===================================================================== F1 */
+
+/**
+ * F1 (Issue #56 mục 1) — Boss xem bản D1b trên Firefox: *"nội thất đồ đạc tùm
+ * lum, thiết kế kỳ"*. Bản vẽ 2D + chẩn đoán ở `docs/f1/so-do.md`. Những điều
+ * dưới đây là ba nguyên tắc của bản vẽ đó, kiểm bằng SỐ chứ không bằng mắt —
+ * để lần sau ai thêm một món đồ vào bảng mà đặt lẻ giữa sàn là test đỏ ngay.
+ */
+describe('F1 (#56) — bố cục nhà như nhà thật', () => {
+  it('nguyên tắc 1: KHÔNG món nào đứng lẻ giữa sàn (sát tường hoặc thuộc cụm)', () => {
+    expect(kiemCum()).toEqual([]);
+  });
+
+  it(`nguyên tắc 2: lối đi giữa hai cụm ≥ ${LOI_DI} m`, () => {
+    expect(kiemLoiDi()).toEqual([]);
+  });
+
+  it('nguyên tắc 2b: hành lang trung tâm vẫn tròn 2 m sau khi dời kệ sách về x = 1,5', () => {
+    expect(kiemHanhLang()).toEqual([]);
+    const ke = hopChan().find((h) => h.id === 'ke-module')!;
+    expect(ke.x0).toBeGreaterThanOrEqual(NUA_HANH_LANG);
+    const giay = hopChan().find((h) => h.id === 'ke-giay')!;
+    expect(giay.x1).toBeLessThanOrEqual(-NUA_HANH_LANG);
+  });
+
+  it('sofa và kệ TV NHÌN NHAU (lỗi số 1 của D1b: hai món vuông góc)', () => {
+    const tv = KHOI_CANH.find((k) => k.id === 'ke-tivi')!;
+    const sofa = KHOI_CANH.find((k) => k.id === 'sofa')!;
+    // cùng một trục z → đối diện nhau, không lệch chéo
+    expect(sofa.tai[1]).toBe(tv.tai[1]);
+    // hai mặt quay ngược nhau đúng 180°
+    expect(Math.abs(((sofa.quay - tv.quay) % 360) - 180)).toBeLessThan(1);
+    // khoảng nhìn TV thật: 2,5…4 m
+    const xa = Math.abs(sofa.tai[0] - tv.tai[0]);
+    expect(xa).toBeGreaterThanOrEqual(2.5);
+    expect(xa).toBeLessThanOrEqual(4);
+    // kệ TV SÁT tường tây
+    expect(hopChan().find((h) => h.id === 'ke-tivi')!.x0 + NUA_RONG).toBeLessThanOrEqual(SAT_TUONG);
+  });
+
+  it('THẢM phủ cả cụm phòng khách: chân sofa, bàn trà và 2 ghế đơn đều trên thảm', () => {
+    const tham = KHOI_CANH.find((k) => k.id === 'tham')!;
+    const canh = tham.rong!;
+    const t = {
+      x0: tham.tai[0] - canh / 2,
+      x1: tham.tai[0] + canh / 2,
+      z0: tham.tai[1] - (canh * 0.72) / 2,
+      z1: tham.tai[1] + (canh * 0.72) / 2,
+    };
+    for (const id of ['sofa', 'ban-tra', 'ghe-don-1', 'ghe-don-2']) {
+      const h = hopChan().find((x) => x.id === id)!;
+      expect(h.x0 < t.x1 && h.x1 > t.x0 && h.z0 < t.z1 && h.z1 > t.z0, `${id} trên thảm`).toBe(
+        true,
+      );
+    }
+  });
+
+  it('BẾP CHỮ L: hai nhánh, khe giữa các cục ≤ 0,12 m, tủ lạnh ở ĐẦU nhánh đông', () => {
+    const bep = ['tu-bep', 'tu-bep-goc', 'tu-duoi-1', 'bep-nau', 'tu-duoi-2', 'tu-lanh'];
+    const hs = hopChan().filter((h) => bep.includes(h.id));
+    expect(hs.length).toBe(bep.length);
+    // mỗi cục phải có một cục anh em cách ≤ 0,12 m → dãy liền mạch
+    for (const a of hs) {
+      const gan = hs
+        .filter((b) => b.id !== a.id)
+        .reduce((m, b) => {
+          const dx = Math.max(0, Math.max(a.x0 - b.x1, b.x0 - a.x1));
+          const dz = Math.max(0, Math.max(a.z0 - b.z1, b.z0 - a.z1));
+          return Math.min(m, Math.hypot(dx, dz));
+        }, Infinity);
+      expect(gan, `${a.id} liền dãy`).toBeLessThanOrEqual(0.12);
+    }
+    // hai nhánh thật: có cục áp tường bắc VÀ cục áp tường đông
+    expect(hs.some((h) => h.z0 + NUA_SAU <= SAT_TUONG)).toBe(true);
+    expect(hs.some((h) => NUA_RONG - h.x1 <= SAT_TUONG)).toBe(true);
+    // tủ lạnh ở đầu nhánh đông = cục có z lớn nhất trong dãy
+    const lanh = hs.find((h) => h.id === 'tu-lanh')!;
+    expect(Math.max(...hs.map((h) => h.z1))).toBe(lanh.z1);
+    // DAY_BEP (mặt bếp + backsplash liền) phủ đúng hai nhánh
+    expect(DAY_BEP.nhanh.map((n) => n.tuong).sort()).toEqual(['bac', 'dong']);
+  });
+
+  it('bàn ăn là CỤM RIÊNG và cách dãy bếp ≥ 1,2 m', () => {
+    expect(cumCua(KHOI_CANH.find((k) => k.id === 'ban-an')!)).toBe('ban-an');
+    expect(cumCua(KHOI_CANH.find((k) => k.id === 'bep-nau')!)).toBe('bep');
+    const an = hopChan().find((h) => h.id === 'ban-an')!;
+    const lanh = hopChan().find((h) => h.id === 'tu-lanh')!;
+    expect(an.z0 - lanh.z1).toBeGreaterThanOrEqual(LOI_DI);
+    // 4 ghế quanh bàn, không ghế nào có hộp chắn (phải kéo ra được)
+    const ghe = ['ghe-1', 'ban-an-ghe-2', 'ban-an-ghe-3', 'ban-an-ghe-4'];
+    for (const id of ghe) {
+      const k = KHOI_CANH.find((x) => x.id === id)!;
+      expect(k.chan, id).toBeUndefined();
+      expect(Math.hypot(k.tai[0] - 4, k.tai[1] - 2)).toBeCloseTo(1, 5);
+    }
+  });
+
+  it('MỘT TÔNG: không `mauVai` nào là xanh dương, không dùng model `pillowBlue`', () => {
+    for (const k of KHOI_CANH) {
+      if (k.mauVai === undefined) continue;
+      const r = (k.mauVai >> 16) & 255;
+      const g = (k.mauVai >> 8) & 255;
+      const b = k.mauVai & 255;
+      // tông ấm: thành phần ĐỎ luôn ≥ XANH DƯƠNG (lạnh thì ngược lại)
+      expect(r, `mauVai của ${k.id}`).toBeGreaterThanOrEqual(b);
+      expect(g, `mauVai của ${k.id}`).toBeGreaterThanOrEqual(b - 8);
+    }
+    const ten = KHOI_CANH.flatMap((k) => [k.kenney, k.kenneyPhu]).filter(Boolean) as string[];
+    expect(ten.filter((t) => /Blue/i.test(t))).toEqual([]);
+  });
+
+  it('CỤM VÀO NHÀ: kệ giày + móc áo + thảm chùi chân sát tường bắc, cạnh cửa', () => {
+    const cua = KHOI_CANH.find((k) => k.id === 'cua')!;
+    for (const id of ['ke-giay', 'moc-ao', 'tham-cua']) {
+      const k = KHOI_CANH.find((x) => x.id === id)!;
+      expect(Math.abs(k.tai[1] - cua.tai[1]), id).toBeLessThanOrEqual(1.2);
+      expect(Math.abs(k.tai[0] - cua.tai[0]), id).toBeLessThanOrEqual(3.2);
+    }
+    // cửa vẫn đi qua được
+    expect(cua.chan).toBeUndefined();
+    expect(biChan(0, -4.6)).toBeNull();
+  });
+
+  it('place giữ ĐỦ id cũ (hợp đồng agent/MCP không đổi)', () => {
+    const can = [
+      'ban-dieu-khien',
+      'ban-1',
+      'ban-2',
+      'ghe-1',
+      'ghe-2',
+      'buc-trung-tam',
+      'cua',
+      'ke-module',
+      'sofa',
+      'ban-an',
+      'bep',
+      'cua-so',
+    ];
+    const co = new Set(PLACES.map((p) => p.id));
+    for (const id of can) expect(co.has(id), id).toBe(true);
+    // và vẫn khớp bảng bố cục ở những place gắn vào nội thất
+    for (const id of ['ban-dieu-khien', 'ke-module', 'sofa', 'ban-an']) {
+      const p = timPlace(id)!;
+      const k = KHOI_CANH.find((x) => x.id === id)!;
+      expect([p.pos[0], p.pos[2]], id).toEqual([k.tai[0], k.tai[1]]);
+    }
   });
 });

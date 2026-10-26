@@ -1,0 +1,41 @@
+{
+  "trinhDuyet": "firefox (playwright, headless:false)",
+  "anh": {
+    "toan-canh-giao-dien": "docs/f1/toan-canh-giao-dien.png",
+    "toan-canh": "docs/f1/toan-canh-1440.png",
+    "phong-khach": "docs/f1/phong-khach-1440.png",
+    "ban-lam-viec": "docs/f1/ban-lam-viec-1440.png",
+    "bep": "docs/f1/bep-1440.png",
+    "cua-so": "docs/f1/cua-so-1440.png",
+    "cum-sofa-can": "docs/f1/cum-sofa-can.png",
+    "toan-canh-390": "docs/f1/toan-canh-390.png"
+  },
+  "hieuNang": {
+    "calls": 374,
+    "triangles": 227187,
+    "callsNha": 36,
+    "callsVrm": 338,
+    "trianglesNha": 15075,
+    "trianglesVrm": 212112,
+    "coBong": 1024,
+    "pixelRatio": 1,
+    "mesh": 188,
+    "vatLieu": 91,
+    "theoGoc": {
+      "CanNhaAm": 35,
+      "actor:owner": 131,
+      "actor:gen": 18,
+      "(không tên)": 4
+    }
+  },
+  "maySau": {
+    "preset": "cua-so",
+    "pos": [
+      -2.4,
+      1.35,
+      4
+    ]
+  },
+  "bangThuGonMobile": true,
+  "loiConsole": []
+}

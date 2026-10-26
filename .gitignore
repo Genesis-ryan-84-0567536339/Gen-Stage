@@ -36,3 +36,4 @@ docs/c0/.da-chay
 # CÓ Ý, không phải quên. Sổ PID của chay.sh cũng ở `.cache/pid/`.
 # D1b (#48) — cờ khoá "đã chạy kiem-d1b.mjs" (xoá bằng --lai)
 docs/d1b/.da-chay
+docs/f1/.da-chay
