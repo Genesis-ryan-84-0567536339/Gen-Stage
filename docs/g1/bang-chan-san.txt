@@ -1,0 +1,35 @@
+G1 (#56) — Y BÀN CHÂN TRƯỚC → SAU, Firefox + GPU thật, mặt sàn y = 0
+FPS trong app: khung đếm được  133 trong 10.02s
+…đã bỏ          0.5s khởi động → 132 khung
+FPS trung bình  16.8
+FPS 1% xấu nhất 3.2  (khung 309 ms)
+lượt vẽ nhà     34
+lượt vẽ VRM     338
+tam giác        226627
+shadow map      1024
+pixel ratio     1
+(bấm để đo lại)
+
+trạng thái    ai     xươngTRƯỚC đáyTRƯỚC xươngSAU   đếSAU  lệchTóc
+------------- ------ -------- -------- -------- -------- --------
+idle          owner    0.3805   0.3469   0.0333   0.0000   0.0006
+idle          gen      0.4200   0.3709   0.0489   0.0000   0.0170
+idle-5s       owner    0.3805   0.3469   0.0333   0.0000   0.0006
+idle-5s       gen      0.4200   0.3709   0.0489   0.0000   0.0370
+di-1s         owner    0.3847   0.3513   0.0333   0.0000   0.0008
+di-1s         gen      0.4200   0.3710   0.0489   0.0000   0.0326
+di-2s         owner    0.3805   0.3469   0.0333   0.0000   0.0008
+di-2s         gen      0.4200   0.3709   0.0489   0.0000   0.0276
+vua-dung      owner    0.3805   0.3469   0.0333   0.0000   0.0005
+vua-dung      gen      0.4200   0.3709   0.0489   0.0000   0.0165
+emote         owner    0.3811   0.3475   0.0333   0.0000   0.0053
+emote         gen      0.4179   0.3688   0.0489   0.0000   0.0594
+ngoi          owner    0.3805   0.3469   0.2724   0.2391   0.0003
+ngoi          gen      0.4200   0.3709   0.0489   0.0000   0.0378
+sau-dung-len  owner    0.3805   0.3469   0.0333   0.0000   0.0006
+sau-dung-len  gen      0.4200   0.3709   0.0489   0.0000   0.0223
+
+"đáyTRƯỚC" = đáy hộp bao chính xác của bản cũ; "đếSAU" = mặt ĐẾ GIÀY đo
+bằng đỉnh quanh bàn chân (model tóc dài có đuôi tóc thấp hơn gót, hộp bao
+không dùng làm thước đế được — xem `chotDeChan()`).
+Đạt = |đáySAU| ≤ 0,01 m ở mọi trạng thái không ngồi; lệchTóc ≤ 0,05 m.

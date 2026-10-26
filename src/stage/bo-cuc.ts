@@ -201,9 +201,12 @@ export const KHOI_CANH: readonly KhoiCanh[] = [
   { id: 'cay-1', vung: 'phong-khach', tai: [-6.5, 4], quay: 0, kenney: 'pottedPlant', kenneyPhu: 'plantSmall3', cao: 1.35, cay: true },
   { id: 'cay-2', vung: 'phong-khach', tai: [-6.5, -3.5], quay: 0, kenney: 'plantSmall1', kenneyPhu: 'plantSmall2', cao: 1.1, cay: true },
   { id: 'tranh-3', vung: 'phong-khach', tai: [-5, -5], datY: 1.5, quay: 0 },
-  // đèn trần giữa cụm (treo `datY` 2,4 m, trần 2,8 m) — nhà thật có đèn trần,
-  // và nó lấp khoảng TRẦN trống hẳn ở khung `toan-canh`.
-  { id: 'den-tran-khach', vung: 'phong-khach', tai: [-4.5, 1], datY: 2.4, quay: 0, kenney: 'lampSquareCeiling', cao: 0.34, chat: 'kim-loai' },
+  /*
+   * G1 (#56): **BỎ đèn trần** (`den-tran-khach`). Boss 26/10: "không cần làm
+   * trần nhà vì nhìn rất vướng" — trần đi thì đèn âm trần treo lơ lửng giữa
+   * trời. Ánh sáng khu này đã có đèn sàn cạnh ghế đơn (`denAm` trong
+   * `world.ts`), không mất chỗ nào tối thêm.
+   */
 
   /* ======================= GÓC LÀM VIỆC — SÁT TƯỜNG BẮC =======================
    * Kệ sách (x 1,5) liền bàn (x 3,0) thành một dãy sát tường bắc, mép tây của
@@ -260,7 +263,7 @@ export const KHOI_CANH: readonly KhoiCanh[] = [
   { id: 'trai-cay', vung: 'bep', tai: [4, 2], lech: [-0.24, -0.12], tren: 'ban-an', quay: 0, rong: 0.26, chat: 'nham' },
   { id: 'tu-bat-dia', vung: 'bep', tai: [5, 4.5], quay: 180, kenney: 'kitchenCabinetDrawer', kenneyPhu: 'kitchenCabinet', cao: 0.95, rongToiDa: 1.3, chan: [0.65, 0.3] },
   { id: 'binh-hoa-tu', vung: 'bep', tai: [5, 4.5], lech: [0.32, 0], tren: 'tu-bat-dia', quay: 0, kenney: 'plantSmall2', kenneyPhu: 'plantSmall3', cao: 0.32, cay: true },
-  { id: 'den-tran-an', vung: 'bep', tai: [4, 2], datY: 2.4, quay: 0, kenney: 'lampSquareCeiling', cao: 0.34, chat: 'kim-loai' },
+  // G1 (#56): bỏ `den-tran-an` cùng lý do với `den-tran-khach` — không còn trần.
   { id: 'cay-4', vung: 'bep', tai: [6.5, 4.5], quay: 0, kenney: 'pottedPlant', kenneyPhu: 'plantSmall3', cao: 1.4, cay: true },
   { id: 'tranh-4', vung: 'bep', tai: [6, 5], datY: 1.5, quay: 180 },
 

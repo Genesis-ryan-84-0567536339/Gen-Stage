@@ -1,0 +1,716 @@
+{
+ "khi": "2026-10-26T14:09:46.599Z",
+ "trinhDuyet": "firefox (playwright) — GPU thật, headless:false",
+ "moc": {
+  "leSan": 0.01,
+  "leSanNgoi": 0.01,
+  "lechToc": 0.08,
+  "lumaP95": 235,
+  "lumaP50": 100,
+  "dauVetTran": 0.02
+ },
+ "truoc": {
+  "owner": {
+   "idle": {
+    "chanY": 0.3805,
+    "dayY": 0.3469
+   },
+   "di": {
+    "chanY": 0.3847,
+    "dayY": 0.3513
+   },
+   "emote": {
+    "chanY": 0.3811,
+    "dayY": 0.3475
+   },
+   "lechToc": 0.0149
+  },
+  "gen": {
+   "idle": {
+    "chanY": 0.42,
+    "dayY": 0.3709
+   },
+   "di": {
+    "chanY": 0.42,
+    "dayY": 0.371
+   },
+   "emote": {
+    "chanY": 0.4179,
+    "dayY": 0.3688
+   },
+   "lechToc": 0.2637
+  }
+ },
+ "sau": {
+  "idle": {
+   "owner": {
+    "gocY": -0.3467,
+    "chanY": 0.0333,
+    "deGiayY": 0,
+    "deChan": 0.0333,
+    "dayY": -0.0002,
+    "hipsY": 0.5918,
+    "seatY": 0.45,
+    "dayDui": 0.0848,
+    "ngoi": false,
+    "state": "idle",
+    "lechToc": 0.0006,
+    "lechVay": 0.0006,
+    "soKhop": 22,
+    "tyLeGoc": 0.9307
+   },
+   "gen": {
+    "gocY": -0.3685,
+    "chanY": 0.0489,
+    "deGiayY": 0,
+    "deChan": 0.0489,
+    "dayY": -0.0002,
+    "hipsY": 0.6136,
+    "seatY": 0.45,
+    "dayDui": 0.0684,
+    "ngoi": false,
+    "state": "idle",
+    "lechToc": 0.017,
+    "lechVay": 0.0057,
+    "soKhop": 58,
+    "tyLeGoc": 1.1167
+   }
+  },
+  "idle-5s": {
+   "owner": {
+    "gocY": -0.3472,
+    "chanY": 0.0333,
+    "deGiayY": 0,
+    "deChan": 0.0333,
+    "dayY": -0.0002,
+    "hipsY": 0.5912,
+    "seatY": 0.45,
+    "dayDui": 0.0848,
+    "ngoi": false,
+    "state": "idle",
+    "lechToc": 0.0006,
+    "lechVay": 0.0003,
+    "soKhop": 22,
+    "tyLeGoc": 0.9307
+   },
+   "gen": {
+    "gocY": -0.3674,
+    "chanY": 0.0489,
+    "deGiayY": 0,
+    "deChan": 0.0489,
+    "dayY": -0.0002,
+    "hipsY": 0.6146,
+    "seatY": 0.45,
+    "dayDui": 0.0684,
+    "ngoi": false,
+    "state": "idle",
+    "lechToc": 0.037,
+    "lechVay": 0.0092,
+    "soKhop": 58,
+    "tyLeGoc": 1.1167
+   }
+  },
+  "di-1s": {
+   "owner": {
+    "gocY": -0.3515,
+    "chanY": 0.0333,
+    "deGiayY": 0,
+    "deChan": 0.0333,
+    "dayY": -0.0001,
+    "hipsY": 0.587,
+    "seatY": 0.45,
+    "dayDui": 0.0848,
+    "ngoi": false,
+    "state": "idle",
+    "lechToc": 0.0008,
+    "lechVay": 0.0013,
+    "soKhop": 22,
+    "tyLeGoc": 0.9307
+   },
+   "gen": {
+    "gocY": -0.3665,
+    "chanY": 0.0489,
+    "deGiayY": 0,
+    "deChan": 0.0489,
+    "dayY": -0.0002,
+    "hipsY": 0.6156,
+    "seatY": 0.45,
+    "dayDui": 0.0684,
+    "ngoi": false,
+    "state": "idle",
+    "lechToc": 0.0326,
+    "lechVay": 0.0135,
+    "soKhop": 58,
+    "tyLeGoc": 1.1167
+   }
+  },
+  "di-2s": {
+   "owner": {
+    "gocY": -0.3525,
+    "chanY": 0.0333,
+    "deGiayY": 0,
+    "deChan": 0.0333,
+    "dayY": 0,
+    "hipsY": 0.5859,
+    "seatY": 0.45,
+    "dayDui": 0.0848,
+    "ngoi": false,
+    "state": "idle",
+    "lechToc": 0.0008,
+    "lechVay": 0.0007,
+    "soKhop": 22,
+    "tyLeGoc": 0.9307
+   },
+   "gen": {
+    "gocY": -0.3666,
+    "chanY": 0.0489,
+    "deGiayY": 0,
+    "deChan": 0.0489,
+    "dayY": -0.0002,
+    "hipsY": 0.6155,
+    "seatY": 0.45,
+    "dayDui": 0.0684,
+    "ngoi": false,
+    "state": "idle",
+    "lechToc": 0.0276,
+    "lechVay": 0.0149,
+    "soKhop": 58,
+    "tyLeGoc": 1.1167
+   }
+  },
+  "vua-dung": {
+   "owner": {
+    "gocY": -0.3485,
+    "chanY": 0.0333,
+    "deGiayY": 0,
+    "deChan": 0.0333,
+    "dayY": -0.0001,
+    "hipsY": 0.5899,
+    "seatY": 0.45,
+    "dayDui": 0.0848,
+    "ngoi": false,
+    "state": "idle",
+    "lechToc": 0.0005,
+    "lechVay": 0.0013,
+    "soKhop": 22,
+    "tyLeGoc": 0.9307
+   },
+   "gen": {
+    "gocY": -0.3709,
+    "chanY": 0.0489,
+    "deGiayY": 0,
+    "deChan": 0.0489,
+    "dayY": -0.0001,
+    "hipsY": 0.6112,
+    "seatY": 0.45,
+    "dayDui": 0.0684,
+    "ngoi": false,
+    "state": "idle",
+    "lechToc": 0.0165,
+    "lechVay": 0.0031,
+    "soKhop": 58,
+    "tyLeGoc": 1.1167
+   }
+  },
+  "emote": {
+   "owner": {
+    "gocY": -0.3712,
+    "chanY": 0.0333,
+    "deGiayY": 0,
+    "deChan": 0.0333,
+    "dayY": 0.0006,
+    "hipsY": 0.5672,
+    "seatY": 0.45,
+    "dayDui": 0.0848,
+    "ngoi": false,
+    "state": "emoting",
+    "lechToc": 0.0053,
+    "lechVay": 0.0059,
+    "soKhop": 22,
+    "tyLeGoc": 0.9307
+   },
+   "gen": {
+    "gocY": -0.3636,
+    "chanY": 0.0489,
+    "deGiayY": 0,
+    "deChan": 0.0489,
+    "dayY": -0.0053,
+    "hipsY": 0.6185,
+    "seatY": 0.45,
+    "dayDui": 0.0684,
+    "ngoi": false,
+    "state": "emoting",
+    "lechToc": 0.0594,
+    "lechVay": 0.0422,
+    "soKhop": 58,
+    "tyLeGoc": 1.1167
+   }
+  },
+  "ngoi": {
+   "owner": {
+    "gocY": -0.3586,
+    "chanY": 0.2724,
+    "deGiayY": 0.2391,
+    "deChan": 0.0333,
+    "dayY": 0.1795,
+    "hipsY": 0.5798,
+    "seatY": 0.495,
+    "dayDui": 0.0848,
+    "ngoi": true,
+    "state": "sitting",
+    "lechToc": 0.0003,
+    "lechVay": 0.0015,
+    "soKhop": 22,
+    "tyLeGoc": 0.9307
+   },
+   "gen": {
+    "gocY": -0.3681,
+    "chanY": 0.0489,
+    "deGiayY": 0,
+    "deChan": 0.0489,
+    "dayY": -0.0002,
+    "hipsY": 0.614,
+    "seatY": 0.45,
+    "dayDui": 0.0684,
+    "ngoi": false,
+    "state": "emoting",
+    "lechToc": 0.0378,
+    "lechVay": 0.0116,
+    "soKhop": 58,
+    "tyLeGoc": 1.1167
+   }
+  },
+  "sau-dung-len": {
+   "owner": {
+    "gocY": -0.3471,
+    "chanY": 0.0333,
+    "deGiayY": 0,
+    "deChan": 0.0333,
+    "dayY": -0.0002,
+    "hipsY": 0.5913,
+    "seatY": 0.495,
+    "dayDui": 0.0848,
+    "ngoi": false,
+    "state": "idle",
+    "lechToc": 0.0006,
+    "lechVay": 0.0011,
+    "soKhop": 22,
+    "tyLeGoc": 0.9307
+   },
+   "gen": {
+    "gocY": -0.3668,
+    "chanY": 0.0489,
+    "deGiayY": 0,
+    "deChan": 0.0489,
+    "dayY": -0.0002,
+    "hipsY": 0.6153,
+    "seatY": 0.45,
+    "dayDui": 0.0684,
+    "ngoi": false,
+    "state": "idle",
+    "lechToc": 0.0223,
+    "lechVay": 0.0076,
+    "soKhop": 58,
+    "tyLeGoc": 1.1167
+   }
+  }
+ },
+ "luma": {
+  "nhin-len": {
+   "n": 1296000,
+   "p5": 65.6,
+   "p50": 190.7,
+   "p95": 221,
+   "p99": 222.9,
+   "max": 225.3
+  },
+  "toan-canh": {
+   "n": 1296000,
+   "p5": 105.5,
+   "p50": 189.9,
+   "p95": 204.3,
+   "p99": 216,
+   "max": 254.9
+  },
+  "phong-khach": {
+   "n": 1296000,
+   "p5": 106.7,
+   "p50": 158.4,
+   "p95": 204,
+   "p99": 204.3,
+   "max": 242.1
+  },
+  "ban-lam-viec": {
+   "n": 1296000,
+   "p5": 59.7,
+   "p50": 191.6,
+   "p95": 213,
+   "p99": 231.7,
+   "max": 255
+  },
+  "bep": {
+   "n": 1296000,
+   "p5": 64.4,
+   "p50": 164,
+   "p95": 213,
+   "p99": 227.8,
+   "max": 255
+  },
+  "cua-so": {
+   "n": 1296000,
+   "p5": 50.7,
+   "p50": 137.6,
+   "p95": 198.6,
+   "p99": 211.5,
+   "max": 231.6
+  }
+ },
+ "loiConsole": [],
+ "dat": {
+  "1-chan-cham-san/idle/owner": {
+   "dat": true,
+   "deGiayY": 0,
+   "deChan": 0.0333,
+   "dayY": -0.0002,
+   "chanY": 0.0333,
+   "gocY": -0.3467,
+   "state": "idle"
+  },
+  "1-chan-cham-san/idle/gen": {
+   "dat": true,
+   "deGiayY": 0,
+   "deChan": 0.0489,
+   "dayY": -0.0002,
+   "chanY": 0.0489,
+   "gocY": -0.3685,
+   "state": "idle"
+  },
+  "1-chan-cham-san/idle-5s/owner": {
+   "dat": true,
+   "deGiayY": 0,
+   "deChan": 0.0333,
+   "dayY": -0.0002,
+   "chanY": 0.0333,
+   "gocY": -0.3472,
+   "state": "idle"
+  },
+  "1-chan-cham-san/idle-5s/gen": {
+   "dat": true,
+   "deGiayY": 0,
+   "deChan": 0.0489,
+   "dayY": -0.0002,
+   "chanY": 0.0489,
+   "gocY": -0.3674,
+   "state": "idle"
+  },
+  "1-chan-cham-san/di-1s/owner": {
+   "dat": true,
+   "deGiayY": 0,
+   "deChan": 0.0333,
+   "dayY": -0.0001,
+   "chanY": 0.0333,
+   "gocY": -0.3515,
+   "state": "idle"
+  },
+  "1-chan-cham-san/di-1s/gen": {
+   "dat": true,
+   "deGiayY": 0,
+   "deChan": 0.0489,
+   "dayY": -0.0002,
+   "chanY": 0.0489,
+   "gocY": -0.3665,
+   "state": "idle"
+  },
+  "1-chan-cham-san/di-2s/owner": {
+   "dat": true,
+   "deGiayY": 0,
+   "deChan": 0.0333,
+   "dayY": 0,
+   "chanY": 0.0333,
+   "gocY": -0.3525,
+   "state": "idle"
+  },
+  "1-chan-cham-san/di-2s/gen": {
+   "dat": true,
+   "deGiayY": 0,
+   "deChan": 0.0489,
+   "dayY": -0.0002,
+   "chanY": 0.0489,
+   "gocY": -0.3666,
+   "state": "idle"
+  },
+  "1-chan-cham-san/vua-dung/owner": {
+   "dat": true,
+   "deGiayY": 0,
+   "deChan": 0.0333,
+   "dayY": -0.0001,
+   "chanY": 0.0333,
+   "gocY": -0.3485,
+   "state": "idle"
+  },
+  "1-chan-cham-san/vua-dung/gen": {
+   "dat": true,
+   "deGiayY": 0,
+   "deChan": 0.0489,
+   "dayY": -0.0001,
+   "chanY": 0.0489,
+   "gocY": -0.3709,
+   "state": "idle"
+  },
+  "1-chan-cham-san/emote/owner": {
+   "dat": true,
+   "deGiayY": 0,
+   "deChan": 0.0333,
+   "dayY": 0.0006,
+   "chanY": 0.0333,
+   "gocY": -0.3712,
+   "state": "emoting"
+  },
+  "1-chan-cham-san/emote/gen": {
+   "dat": true,
+   "deGiayY": 0,
+   "deChan": 0.0489,
+   "dayY": -0.0053,
+   "chanY": 0.0489,
+   "gocY": -0.3636,
+   "state": "emoting"
+  },
+  "1-chan-cham-san/sau-dung-len/owner": {
+   "dat": true,
+   "deGiayY": 0,
+   "deChan": 0.0333,
+   "dayY": -0.0002,
+   "chanY": 0.0333,
+   "gocY": -0.3471,
+   "state": "idle"
+  },
+  "1-chan-cham-san/sau-dung-len/gen": {
+   "dat": true,
+   "deGiayY": 0,
+   "deChan": 0.0489,
+   "dayY": -0.0002,
+   "chanY": 0.0489,
+   "gocY": -0.3668,
+   "state": "idle"
+  },
+  "2-ngoi-that-su-ngoi": {
+   "dat": true,
+   "ngoi": true,
+   "state": "sitting"
+  },
+  "2-ngoi-hong-dung-mat-ghe": {
+   "dat": true,
+   "ngoi": true,
+   "hipsY": 0.5798,
+   "seatY": 0.495,
+   "dayDui": 0.0848
+  },
+  "2-ngoi-chan-khong-thung-san": {
+   "dat": true,
+   "deGiayY": 0.2391,
+   "ngoi": true
+  },
+  "3-toc-khong-bung/idle/owner": {
+   "dat": true,
+   "lechToc": 0.0006,
+   "lechVay": 0.0006,
+   "soKhop": 22,
+   "tyLeGoc": 0.9307
+  },
+  "3-toc-khong-bung/idle/gen": {
+   "dat": true,
+   "lechToc": 0.017,
+   "lechVay": 0.0057,
+   "soKhop": 58,
+   "tyLeGoc": 1.1167
+  },
+  "3-toc-khong-bung/idle-5s/owner": {
+   "dat": true,
+   "lechToc": 0.0006,
+   "lechVay": 0.0003,
+   "soKhop": 22,
+   "tyLeGoc": 0.9307
+  },
+  "3-toc-khong-bung/idle-5s/gen": {
+   "dat": true,
+   "lechToc": 0.037,
+   "lechVay": 0.0092,
+   "soKhop": 58,
+   "tyLeGoc": 1.1167
+  },
+  "3-toc-khong-bung/di-1s/owner": {
+   "dat": true,
+   "lechToc": 0.0008,
+   "lechVay": 0.0013,
+   "soKhop": 22,
+   "tyLeGoc": 0.9307
+  },
+  "3-toc-khong-bung/di-1s/gen": {
+   "dat": true,
+   "lechToc": 0.0326,
+   "lechVay": 0.0135,
+   "soKhop": 58,
+   "tyLeGoc": 1.1167
+  },
+  "3-toc-khong-bung/di-2s/owner": {
+   "dat": true,
+   "lechToc": 0.0008,
+   "lechVay": 0.0007,
+   "soKhop": 22,
+   "tyLeGoc": 0.9307
+  },
+  "3-toc-khong-bung/di-2s/gen": {
+   "dat": true,
+   "lechToc": 0.0276,
+   "lechVay": 0.0149,
+   "soKhop": 58,
+   "tyLeGoc": 1.1167
+  },
+  "3-toc-khong-bung/vua-dung/owner": {
+   "dat": true,
+   "lechToc": 0.0005,
+   "lechVay": 0.0013,
+   "soKhop": 22,
+   "tyLeGoc": 0.9307
+  },
+  "3-toc-khong-bung/vua-dung/gen": {
+   "dat": true,
+   "lechToc": 0.0165,
+   "lechVay": 0.0031,
+   "soKhop": 58,
+   "tyLeGoc": 1.1167
+  },
+  "3-toc-khong-bung/emote/owner": {
+   "dat": true,
+   "lechToc": 0.0053,
+   "lechVay": 0.0059,
+   "soKhop": 22,
+   "tyLeGoc": 0.9307
+  },
+  "3-toc-khong-bung/emote/gen": {
+   "dat": true,
+   "lechToc": 0.0594,
+   "lechVay": 0.0422,
+   "soKhop": 58,
+   "tyLeGoc": 1.1167
+  },
+  "3-toc-khong-bung/ngoi/owner": {
+   "dat": true,
+   "lechToc": 0.0003,
+   "lechVay": 0.0015,
+   "soKhop": 22,
+   "tyLeGoc": 0.9307
+  },
+  "3-toc-khong-bung/ngoi/gen": {
+   "dat": true,
+   "lechToc": 0.0378,
+   "lechVay": 0.0116,
+   "soKhop": 58,
+   "tyLeGoc": 1.1167
+  },
+  "3-toc-khong-bung/sau-dung-len/owner": {
+   "dat": true,
+   "lechToc": 0.0006,
+   "lechVay": 0.0011,
+   "soKhop": 22,
+   "tyLeGoc": 0.9307
+  },
+  "3-toc-khong-bung/sau-dung-len/gen": {
+   "dat": true,
+   "lechToc": 0.0223,
+   "lechVay": 0.0076,
+   "soKhop": 58,
+   "tyLeGoc": 1.1167
+  },
+  "4-nhin-len-khong-chay": {
+   "dat": true,
+   "n": 1296000,
+   "p5": 65.6,
+   "p50": 190.7,
+   "p95": 221,
+   "p99": 222.9,
+   "max": 225.3
+  },
+  "4-luma/toan-canh": {
+   "dat": true,
+   "n": 1296000,
+   "p5": 105.5,
+   "p50": 189.9,
+   "p95": 204.3,
+   "p99": 216,
+   "max": 254.9
+  },
+  "4-luma/phong-khach": {
+   "dat": true,
+   "n": 1296000,
+   "p5": 106.7,
+   "p50": 158.4,
+   "p95": 204,
+   "p99": 204.3,
+   "max": 242.1
+  },
+  "4-luma/ban-lam-viec": {
+   "dat": true,
+   "n": 1296000,
+   "p5": 59.7,
+   "p50": 191.6,
+   "p95": 213,
+   "p99": 231.7,
+   "max": 255
+  },
+  "4-luma/bep": {
+   "dat": true,
+   "n": 1296000,
+   "p5": 64.4,
+   "p50": 164,
+   "p95": 213,
+   "p99": 227.8,
+   "max": 255
+  },
+  "4-luma/cua-so": {
+   "dat": true,
+   "n": 1296000,
+   "p5": 50.7,
+   "p50": 137.6,
+   "p95": 198.6,
+   "p99": 211.5,
+   "max": 231.6
+  },
+  "5-console-sach": {
+   "dat": true,
+   "loi": []
+  }
+ },
+ "viTriHips": {
+  "o": [
+   3.0005,
+   0.5904,
+   -3.5095
+  ],
+  "g": [
+   3,
+   0.6122,
+   -2.6048
+  ]
+ },
+ "hieuNang": {
+  "calls": 368,
+  "triangles": 226597,
+  "callsNha": 30,
+  "callsVrm": 338,
+  "trianglesNha": 14485,
+  "trianglesVrm": 212112,
+  "coBong": 1024,
+  "pixelRatio": 1,
+  "mesh": 188,
+  "vatLieu": 91,
+  "theoGoc": {
+   "CanNhaAm": 35,
+   "actor:owner": 131,
+   "actor:gen": 18,
+   "(không tên)": 4
+  },
+  "soMay": []
+ },
+ "theFps": "khung đếm được  133 trong 10.02s\n…đã bỏ          0.5s khởi động → 132 khung\nFPS trung bình  16.8\nFPS 1% xấu nhất 3.2  (khung 309 ms)\nlượt vẽ nhà     34\nlượt vẽ VRM     338\ntam giác        226627\nshadow map      1024\npixel ratio     1\n(bấm để đo lại)"
+}

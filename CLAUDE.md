@@ -48,6 +48,7 @@ node scripts/kiem-d1b.mjs     # bằng chứng D1b: mỹ thuật + hiệu năng 
 bash scripts/fetch-anim.sh    # tải bộ chuyển động CC0 (Quaternius) về public/anim/ — chạy 1 lần sau khi clone
 bash scripts/fetch-stt.sh     # C1: venv + model PhoWhisper-small ct2 vào .cache/stt/ — chạy 1 lần (cai-dat.sh gọi sẵn)
 node scripts/kiem-f2.mjs      # bằng chứng F2: điều khiển mượt trên FIREFOX + GPU THẬT, vào docs/f2/ (CHẠY MỘT LẦN)
+node scripts/kiem-g1.mjs      # bằng chứng G1: bỏ trần + chân chạm sàn + tóc, FIREFOX thật, vào docs/g1/ (CHẠY MỘT LẦN)
 node scripts/kiem-e1.mjs      # bằng chứng E1: UI 390 px, não diễn thật, /tts retry, hiểu "Javis", cài 1 lệnh, vào docs/e1/ (CHẠY MỘT LẦN)
 ```
 
@@ -1001,3 +1002,89 @@ và cách tái hiện: **`docs/f2/GOC-DIEU-KHIEN-LOAN.md`**.
 - Mỗi lượt đo mở Firefox **đúng một lần** (một browser/context/page), tải lại bằng `reload/goto`, đóng khi xong hẳn. Không chạy lặp script "cho chắc".
 - **Một lúc chỉ một agent** dùng Firefox thật: trước khi mở, `pgrep -f '^[^ ]*firefox-1543/firefox/firefox'` (NEO ĐẦU DÒNG vào argv[0] — mọi mẫu không neo như `pgrep -f firefox-1543` hay `pgrep -f 'firefox-1543/firefox/firefox'` đều tự khớp chính vòng chờ `bash -c` của mình và của agent khác → cả đội chờ nhau mãi, đã xảy ra 2 lần 27/10) phải trống; phần không cần trình duyệt (đọc code, test, build, merge-tree, viết script) làm trước trong lúc chờ.
 - Lý do: cửa sổ nhấp nháy làm phiền Boss, và nouveau gãy (`kernel rejected pushbuf`) khi ≥3 phiên Firefox GPU cùng lúc.
+## Quyết định G1 — bỏ trần, chân chạm sàn, tóc đúng cỡ (26/10, Issue #56)
+
+Boss xem bản main (F1+F2+F3) trên **Firefox GPU thật**: "không cần làm trần nhà
+vì nhìn rất vướng" và "các nhân vật đang **toàn đi trên không trung**".
+Bằng chứng: `node scripts/kiem-g1.mjs` (CHẠY MỘT LẦN, cờ `docs/g1/.da-chay`,
+cổng riêng **5362**); số đo trước khi sửa ở `docs/g1/do-truoc/`.
+
+- **GỐC của "đi trên không trung": `VRMHumanoidRig.update()` GHIM hông.** Mỗi
+  lượt `vrm.update()`, three-vrm ghi `hips` của xương RAW theo **vị trí hông
+  của model GỐC** (nhánh `boneName === 'hips'`). Chibi hoá nhân xương chân
+  xuống 0,6 nhưng hông vẫn bị kéo về cao độ người lớn ⇒ bàn chân treo
+  **0,35–0,42 m** trên sàn (đo thật trên Firefox: `footY` owner 0,3805 ·
+  gen 0,4200; đáy hộp bao 0,3469 / 0,3709). Không thể tính trước con số đó —
+  nó chỉ biết SAU khi rig chép xuống xương raw.
+- **Cắm chân xuống sàn SAU `vrm.update()`, ở MỌI trạng thái không ngồi.** Bản
+  cũ chỉ ground-snap trong đúng nhánh `chuyenNgoi === 'stand'`; nhánh đứng/đi/
+  emote thì nội suy `goc.position.y` về 0 hoặc nhún `|sin|·0,022` — mà 0 là cao
+  độ của cái gốc đang treo. Nay `capNhat` gọi `camChanXuongSan()` mỗi khung:
+  đo xương bàn chân/ngón thấp nhất rồi dịch gốc đúng hiệu số. Dáng đi vì thế
+  **tự có nhún** (chân trụ đứng yên, thân lên xuống theo đầu gối) — bỏ hẳn cú
+  nhún giả. Đo sau khi sửa: đế giày **0,0000 m** ở idle/đi/emote/vừa dừng/sau
+  khi đứng lên, cả hai nhân vật.
+- **Mốc đế giày đo bằng ĐỈNH QUANH BÀN CHÂN, không bằng `Box3`.** Hộp bao của
+  `SkinnedMesh` là tư thế BIND (bài học A2 vòng 4) nên không kẹp theo nó; mà
+  hộp bao *chính xác* cũng sai cho model tóc dài: đuôi tóc Gen thấp hơn gót
+  chân 0,11 m, lấy đáy hộp làm mặt đế thì cả người lún xuống bấy nhiêu.
+  `chotDeChan()` quét đỉnh `SkinnedMesh` (`getVertexPosition`, đã biến dạng
+  xương) **một lần ở khung thứ 3**, chỉ nhận đỉnh trong bán kính 0,22 m quanh
+  xương bàn chân — ra `deChan` 0,033 m (Javis) / 0,049 m (Gen). Thước này phơi
+  ra `doXuong().deGiayY` để script bằng chứng chấm được.
+- **NGỒI thì hông bám mặt ghế, không cắm chân.** Ghế Kenney cao 0,45 m mà
+  người chibi chỉ cao ~1,25 m (chân 0,59 m) nên **bàn chân đung đưa 0,24 m
+  trên sàn** — đúng như một đứa trẻ ngồi ghế người lớn, không phải lỗi. Giao
+  kèo ở trạng thái ngồi là **không thủng sàn** (`deGiayY ≥ −0,01`) và hông
+  đúng mặt ghế. Muốn chân chạm sàn khi ngồi thì phải hạ ghế xuống ~0,3 m
+  (ghế trẻ em) — việc của bảng bố cục, không phải của `nhanvat.ts`.
+- **TÓC: ba tật chồng nhau, sửa cả ba.** Đo trước: lệch dáng của Gen
+  **0,26 m** và gần như không đổi theo thời gian (tóc duỗi hẳn ra khỏi dáng
+  tác giả vẽ, không phải đung đưa).
+  1. **Lực spring bone tính bằng MÉT trong không gian thế giới**
+     (`stiffness · dt`, `gravityPower · dt`) nên chibi hoá (head ×1,95,
+     `goc.scale` 0,93–1,12) làm lệch tỉ số lực/độ-dài. `dongMocSpring()` nhân
+     `stiffness`/`gravityPower`/`hitRadius` với **tỉ lệ thế giới của chính
+     khớp đó**, rồi mới `setInitState()` + `reset()`.
+  2. **Quán tính tính trong không gian thế giới** ⇒ đi 1,6 m/s là tóc bị quăng
+     lại phía sau. Đặt `joint.center = goc` (API sẵn có của three-vrm): quán
+     tính tính trong hệ quy chiếu nhân vật.
+  3. **`dt` thẳng từ khung hình** ⇒ một khung nặng là một cú ném. Spring chạy
+     **bước cố định 1/60 s**, chia tối đa 4 bước/khung (`physics-tuning`:
+     mô phỏng nhịp cố định, đừng đưa `dt` lớn vào bộ tích phân Euler).
+  Thứ tự một khung hình: `vrm.update(dt)` **không spring** (tháo
+  `springBoneManager` trong đúng lời gọi đó) → `camChanXuongSan()` → spring.
+  Chạy spring trước khi hạ gốc thì mỗi khung đuôi tóc bị cả thân dịch 0,35 m
+  ngay sau lưng nó. Kết quả: lệch dáng **≤ 0,065 m** ở mọi trạng thái.
+- **Tóc dài phải THU GỌN cho vừa người chibi.** Head ×1,95 kéo theo cả chùm
+  tóc: chuỗi tóc của Gen dài 1,33 m trên thân người 1,25 m, quét xuyên mặt sàn
+  dù vật lý đã đúng. `thuGonToc()` nhân tỉ lệ **gốc mỗi chuỗi spring dưới
+  `head`** cho vừa (Gen 0,82; Javis tóc ngắn ra đúng 1 nên không đụng). Phải
+  tính theo **ĐỘ DÀI CHUỖI**, không theo vị trí hiện thời: ở khung thứ 3 tóc
+  vẫn ở dáng cuộn sát đầu, đo vị trí thì kết luận "chưa chạm sàn" rồi không
+  làm gì.
+- **BỎ TRẦN**: xoá tấm trần `PlaneGeometry` ở y = 2,8, 4 thanh phào viền trần,
+  và 2 đèn âm trần (`den-tran-khach`, `den-tran-an`) khỏi bảng bố cục. Tường
+  vẫn cao 2,8 m, chân tường gỗ giữ nguyên. Bỏ trần **không** làm cảnh sáng
+  lên (hemisphere không bị hình học chặn, mặt trời ở ngoài cửa sổ nam) — đo
+  thật luma cả khung 5 preset: p95 **200–213** (mốc ≤ 235), p50 134–190.
+- **Hở trần thì phải có phông trời.** `phongTroi()` — một ống trụ hở hai đầu
+  bán kính 30 m, `MeshBasicMaterial` + `fog: false`, dán đúng texture
+  `troiChieu()` của sân vườn nên trời trong nhà liền mạch với trời ngoài cửa
+  sổ; 1 lượt vẽ. Đáy ống kéo xuống **−2 m** (dưới cả mặt cỏ): tia nhìn chếch
+  nhẹ lên đi gần như ngang suốt 30 m nên chạm ống ở cao độ rất thấp — bản thử
+  bắt đầu từ 2,6 m để lộ một dải nền ngay trên mép tường. Và `MAU_NEN_LAB`
+  đổi từ xám-xanh lạnh `0xdce6ea` sang kem ấm `0xf0ddc0` cho chỗ nào phông
+  trời chưa phủ tới cũng không cắt màu.
+- **Test giữ giao kèo**: `src/api/__tests__/g1-chan-cham-san.test.ts` dựng một
+  **VRM giả tái hiện đúng cơ chế ghim hông**, rồi đòi đế giày về mặt sàn ở
+  đứng/đi, đòi thân KHÔNG đi theo chân đang nhấc (không kẹp cứng theo bbox),
+  và đòi mốc đế đo sau khi cân tầm vóc. Gỡ `camChanXuongSan()` là 4/5 test đỏ.
+- **Cạm bẫy đo bằng chứng (lặp lại bài học F2)**: (1) nouveau + Firefox thỉnh
+  thoảng gãy tiến trình GPU giữa chừng ("channel error") hoặc trả **texture
+  hỏng** (tường đen, cỏ nhiễu màu) — chạy lại bằng `--lai` rồi **nhìn ảnh**
+  trước khi tin; (2) sai tên tham số trong script bằng chứng (`place` thay vì
+  `seat`, `name` thay vì `emote`) bị `.catch` nuốt mất ⇒ mục "ngồi"/"emote"
+  chấm trên một nhân vật đang đứng im và ĐẠT một cách vô nghĩa — nay
+  `chayLenh()` ném lỗi khi lệnh rớt, và có hẳn mục `2-ngoi-that-su-ngoi`;
+  (3) ảnh bằng chứng nén sang `.jpg` ≤1280 px sau khi chạy (14 MB → 1,8 MB).

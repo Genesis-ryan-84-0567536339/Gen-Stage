@@ -68,8 +68,14 @@ import { coNao } from '../behavior/so-nao';
 /**
  * Nền ngoài khung cửa/khoảng hở (D1): trời chiều ấm nhạt — thấy khi camera
  * lùi ra quá mép nhà. Không còn xám-xanh "Tron" của lab.
+ *
+ * G1 (#56): bỏ trần rồi thì cái nền này **lộ ra ở mọi góc ngửa lên** (trước
+ * đây tấm trần che hết), và 0xdce6ea là xám-xanh LẠNH — một vệt lạnh ngay
+ * trên mép tường của căn nhà ấm. Đổi sang kem ấm cùng tông với phông trời
+ * (`phongTroi()` trong `phong.ts`): chỗ nào phông trời chưa phủ tới cũng
+ * không còn cắt màu. Luma 223 (cũ 228) nên không làm cảnh sáng thêm.
  */
-const MAU_NEN_LAB = 0xdce6ea;
+const MAU_NEN_LAB = 0xf0ddc0;
 
 /** Một bộ số đèn của một preset — xem `PRESET_DEN_SO`. */
 export interface SoDen {
