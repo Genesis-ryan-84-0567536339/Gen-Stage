@@ -66,7 +66,10 @@ export const LENH_DEMO: CommandSpec[] = [
   {
     cmd: 'module.demo',
     group: 'module',
-    events: ['module.demoDone'],
+    // H1 vòng 2 (review PR #72 mục 3): handler có `ctx.bus.emit('module.fallback')`
+    // khi `from` không tồn tại — phải KHAI, không thì não đọc `stage.bootstrap`
+    // không biết lệnh này có thể cảnh báo.
+    events: ['module.demoDone', 'module.fallback'],
     desc:
       'MỘT LỆNH = cả màn dựng module: bay màn hình tới trước mặt → code chạy lên màn hình → ' +
       'hạt kết tinh thành module vào tay nhân vật → emote thành công → nói một câu báo xong',
@@ -107,10 +110,23 @@ export const LENH_DEMO: CommandSpec[] = [
       const man =
         a.screen === undefined || a.screen === '' ? manHinhMacDinh(ctx) : s(a.screen);
       if (!man) throw new Error('Sân khấu chưa có màn hình nào để dựng module');
-      if (!ctx.world.coScreen(man)) {
-        throw new Error(
-          `Không có màn hình "${man}". Màn hình đang có: ${ctx.world.screenIds().join(', ')}`,
-        );
+      /*
+       * H1 — cùng giao kèo với `module.build`: `screen` sai thì LẤY màn hình
+       * đầu tiên và cảnh báo, không chết. Cửa 2 vòng 28/10 mục 6 cho thấy não
+       * vẫn gửi `'main'` dù tài liệu đã sửa, nên chốt phải nằm ở server.
+       */
+      let manDung = man;
+      if (!ctx.world.coScreen(manDung)) {
+        const thay = ctx.world.screenIds()[0];
+        if (!thay) throw new Error('Sân khấu chưa có màn hình nào để dựng module');
+        ctx.bus.emit('module.fallback', {
+          module: id,
+          xin: manDung,
+          dung: thay,
+          coSan: ctx.world.screenIds(),
+          vi: `Không có màn hình "${manDung}" — dùng "${thay}" (màn hình đầu tiên đang sống)`,
+        });
+        manDung = thay;
       }
       if (ctx.world.coProp(id)) throw new Error(`Prop "${id}" đã có trên sân khấu`);
       const ai = nguoiDien(ctx);
@@ -141,10 +157,10 @@ export const LENH_DEMO: CommandSpec[] = [
         };
 
         // 1) màn hình bay tới trước mặt — Boss thấy chuyện gì sắp xảy ra
-        if (!(await chay('screen.focus', { screen: man }))) return;
+        if (!(await chay('screen.focus', { screen: manDung }))) return;
         // 2) code chạy lên màn hình (chunks biết trước → `screen.stream` tự
         //    đợi hết mẩu cuối rồi mới `done`, nên bước sau chạy đúng lúc)
-        if (!(await chay('screen.stream', { screen: man, kind: 'code', chunks }))) return;
+        if (!(await chay('screen.stream', { screen: manDung, kind: 'code', chunks }))) return;
         // 3) hạt kết tinh → module vào tay người diễn (`module.build` tự
         //    `actor.hold` qua dispatcher)
         if (
@@ -152,7 +168,7 @@ export const LENH_DEMO: CommandSpec[] = [
             id,
             shape,
             label,
-            from: man,
+            from: manDung,
             durationMs: buildMs,
           }))
         ) {
@@ -167,7 +183,7 @@ export const LENH_DEMO: CommandSpec[] = [
           ctx.bus.emit('module.demoDone', {
             module: id,
             actor: ai,
-            screen: man,
+            screen: manDung,
             steps: buoc.length,
             cancelled: huy,
           });
@@ -176,7 +192,7 @@ export const LENH_DEMO: CommandSpec[] = [
           ctx.bus.emit('module.demoDone', {
             module: id,
             actor: ai,
-            screen: man,
+            screen: manDung,
             steps: buoc.length,
             cancelled: huy,
             error: e instanceof Error ? e.message : String(e),
@@ -188,7 +204,7 @@ export const LENH_DEMO: CommandSpec[] = [
       const streamMs = chunks.reduce((t, c) => t + 90 + Math.min(c.length * 18, 900), 0);
       const noiMs = Math.round(Math.min(9000, Math.max(900, 600 + (cau.length / 13) * 1000)));
       return {
-        result: { module: id, label, screen: man, actor: ai, steps: 5 },
+        result: { module: id, label, screen: manDung, actor: ai, steps: 5 },
         durationMs: Math.round(900 + streamMs + buildMs + 1800 + noiMs),
         done,
         cancel: () => {
