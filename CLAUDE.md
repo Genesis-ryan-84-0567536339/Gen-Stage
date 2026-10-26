@@ -1,5 +1,7 @@
 # Gen-Stage
 
+> **Phiên mới / quota mở lại: đọc `docs/MUC-TIEU-TU-CHAY.md` TRƯỚC và tự chạy vòng lặp trong đó, không chờ Boss nhắc.** Cổng chất lượng: `docs/CONG-CHAT-LUONG.md`.
+
 Sân khấu 3D chạy trong trình duyệt, điều khiển bằng **một bộ lệnh cố định**
 (Actor API v0.1 — `docs/spec/actor-api.md`). Mọi đường vào (nút trên giao diện,
 ô kịch bản, bridge WebSocket, sau này là MCP cho agent) đi qua **cùng một
