@@ -1119,9 +1119,10 @@ lệnh để tăng trải nghiệm chân thực trong quá trình nó suy nghĩ"
   worktree trỏ vào **đúng những thư mục đã bị loại** (`public/models`,
   `public/kenney`, …) nên `git status` sạch mà không che `public/favicon.svg`
   trong tương lai; bỏ dòng FPS khỏi bảng bằng chứng (1–2 fps trên llvmpipe
-  không nói được gì về mượt — Cửa 1); `scripts/kiem-i1.mjs` **từ chối chạy** khi
-  `pgrep -f firefox-1543` còn tiến trình nào (nouveau gãy khi nhiều phiên tranh
-  GPU, mà lượt gãy giữa đường thì số đo vô nghĩa).
+  không nói được gì về mượt — Cửa 1); `scripts/kiem-i1.mjs` **từ chối chạy** khi còn
+  phiên Firefox nào của Playwright (nouveau gãy khi nhiều phiên tranh GPU, mà
+  lượt gãy giữa đường thì số đo vô nghĩa) — **mẫu kiểm đúng xem mục vòng 2c**,
+  không phải `pgrep -f firefox-1543`.
 
 #### Vòng 2b — sau khi tự đo lại (cùng Issue #74)
 
