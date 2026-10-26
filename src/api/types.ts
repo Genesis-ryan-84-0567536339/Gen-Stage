@@ -195,6 +195,16 @@ export interface ActorSnapshot {
    * này để biết Gen đang "nói với ai".
    */
   facingTarget: string | null;
+  /**
+   * J2 (#79) — **hoạt động đang làm** (`actor.activity`): id trong
+   * `BANG_HOAT_DONG`, hay `null` khi không làm gì.
+   *
+   * Không do sân khấu điền: hoạt động là một **chuỗi lệnh** nên nó sống ở tầng
+   * lệnh (`src/behavior/hoat-dong.ts` giữ sổ, `stage.describe` ghép vào đây —
+   * cùng cách `busy`/`queued` ghép từ hàng đợi của dispatcher). Vì vậy trường
+   * này là **tuỳ chọn**: `World`/`san-khau-gia` không phải biết tới nó.
+   */
+  activity?: string | null;
 }
 
 export interface PlaceSnapshot {

@@ -15,6 +15,13 @@ import { giongTheoActor, lopTieng } from '../../audio/tts-client';
 import { boMiengNhep } from '../../audio/so-tieng';
 // C1 (#31) — phiếu mic để biết câu này Boss NÓI chứ không gõ (không phụ thuộc DOM).
 import { layPhieuGiong } from '../../audio/so-giong';
+/**
+ * J2 (#79) — sổ hoạt động. `actor.stop`/`actor.remove` phải cắt cả **chuỗi**
+ * hoạt động, không chỉ bước đang chạy: `catNgang` gọi `cancel` của hành động
+ * hiện tại (một `actor.moveTo` chẳng hạn), còn chuỗi thì vẫn chạy sang bước
+ * sau — Boss bấm "dừng" mà nhân vật vẫn đi tiếp.
+ */
+import { huyHoatDong } from '../../behavior/hoat-dong';
 
 const s = (v: unknown) => String(v);
 
@@ -106,6 +113,7 @@ export const LENH_ACTOR: CommandSpec[] = [
     handler(a, ctx) {
       const id = s(a.actor);
       if (!ctx.world.coActor(id)) throw new Error(`Không có actor "${id}"`);
+      huyHoatDong(id); // J2 — cắt cả chuỗi hoạt động, không chỉ bước đang chạy
       ctx.catNgang(id);
       lopTieng()?.huy(id); // B2 — dọn tiếng + sổ nhép miệng của actor này
       boMiengNhep(id);
@@ -441,6 +449,7 @@ export const LENH_ACTOR: CommandSpec[] = [
     handler(a, ctx) {
       const id = s(a.actor);
       if (!ctx.world.coActor(id)) throw new Error(`Không có actor "${id}"`);
+      huyHoatDong(id); // J2 — xem ghi chú ở import
       const boQua = ctx.catNgang(id);
       lopTieng()?.huy(id); // B2 — im tiếng ngay, không đọc tiếp sau khi stop
       ctx.world.actorStop(id);
