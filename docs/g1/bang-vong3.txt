@@ -1,0 +1,88 @@
+G1 vòng 3 (#56) — review PR #70, hai mục CHẶN. Firefox thật (bản build), sàn y = 0.
+
+BẢNG 1 — ĐẾ GIÀY đo bằng QUÉT ĐỈNH MESH (world space), độc lập với deChan
+
+trạng thái/ai            đếTHẬT   PRbáo   xươngChân  mốcTưThế  đỉnhNhận
+------------------------ --------- --------- --------- -------- -------
+dung/owner                       0   -0.0001    0.0334   0.0334    1019
+dung/gen                         0    0.0006     0.049   0.0484     760
+ngoi-ghe-1/owner           -0.0072   -0.0074     0.086   0.0934    1301
+dung-len-sau-ghe-1/owner         0    0.0002    0.0334   0.0332    1017
+ngoi-ghe-2/owner           -0.0072   -0.0074     0.086   0.0934    1301
+dung-len-sau-ghe-2/owner         0    0.0007    0.0334   0.0327    1015
+ngoi-sofa/owner            -0.0072   -0.0074     0.086   0.0934    1301
+dung-len-sau-sofa/owner          0    0.0001    0.0334   0.0333    1016
+
+Đạt = |đế THẬT| ≤ 0.01 m khi đứng/đi, ≤ 0.02 m khi ngồi.
+"PRbáo" là `doXuong().deGiayY` — in ra chỉ để đối chiếu, KHÔNG dùng để chấm.
+
+BẢNG 2 — LỆCH TÓC mỗi 100 ms suốt 2 s từ lúc gọi emote (mốc ≤ 0.07 m)
+
+rat-vui
+     3 ms  lệchTóc 0.0040  xaĐầuNhất 0.8088
+   101 ms  lệchTóc 0.0188  xaĐầuNhất 0.7999
+   222 ms  lệchTóc 0.0166  xaĐầuNhất 0.8065
+   302 ms  lệchTóc 0.0372  xaĐầuNhất 0.8372
+   404 ms  lệchTóc 0.0369  xaĐầuNhất 0.8402
+   517 ms  lệchTóc 0.0369  xaĐầuNhất 0.8402
+   601 ms  lệchTóc 0.0306  xaĐầuNhất 0.8077
+   702 ms  lệchTóc 0.0436  xaĐầuNhất 0.7744
+   802 ms  lệchTóc 0.0400  xaĐầuNhất 0.7778
+   903 ms  lệchTóc 0.0258  xaĐầuNhất 0.7869
+  1000 ms  lệchTóc 0.0113  xaĐầuNhất 0.8116
+  1101 ms  lệchTóc 0.0195  xaĐầuNhất 0.8126
+  1202 ms  lệchTóc 0.0247  xaĐầuNhất 0.8162
+  1301 ms  lệchTóc 0.0301  xaĐầuNhất 0.8289
+  1401 ms  lệchTóc 0.0323  xaĐầuNhất 0.84
+  1501 ms  lệchTóc 0.0284  xaĐầuNhất 0.8412
+  1601 ms  lệchTóc 0.0263  xaĐầuNhất 0.8077
+  1701 ms  lệchTóc 0.0407  xaĐầuNhất 0.7784
+  1801 ms  lệchTóc 0.0422  xaĐầuNhất 0.7787
+  1901 ms  lệchTóc 0.0317  xaĐầuNhất 0.7811
+  2001 ms  lệchTóc 0.0109  xaĐầuNhất 0.8019
+
+buon
+     2 ms  lệchTóc 0.0070  xaĐầuNhất 0.8198
+   102 ms  lệchTóc 0.0067  xaĐầuNhất 0.8163
+   204 ms  lệchTóc 0.0137  xaĐầuNhất 0.8015
+   300 ms  lệchTóc 0.0222  xaĐầuNhất 0.7905
+   412 ms  lệchTóc 0.0392  xaĐầuNhất 0.7735
+   530 ms  lệchTóc 0.0392  xaĐầuNhất 0.7735
+   601 ms  lệchTóc 0.0339  xaĐầuNhất 0.7789
+   700 ms  lệchTóc 0.0503  xaĐầuNhất 0.7624
+   802 ms  lệchTóc 0.0469  xaĐầuNhất 0.7659
+   902 ms  lệchTóc 0.0319  xaĐầuNhất 0.7809
+  1000 ms  lệchTóc 0.0255  xaĐầuNhất 0.7873
+  1101 ms  lệchTóc 0.0239  xaĐầuNhất 0.7889
+  1212 ms  lệchTóc 0.0221  xaĐầuNhất 0.7907
+  1302 ms  lệchTóc 0.0210  xaĐầuNhất 0.7917
+  1401 ms  lệchTóc 0.0216  xaĐầuNhất 0.7912
+  1501 ms  lệchTóc 0.0203  xaĐầuNhất 0.7924
+  1608 ms  lệchTóc 0.0096  xaĐầuNhất 0.8032
+  1700 ms  lệchTóc 0.0109  xaĐầuNhất 0.8099
+  1801 ms  lệchTóc 0.0147  xaĐầuNhất 0.8154
+  1901 ms  lệchTóc 0.0146  xaĐầuNhất 0.8203
+  2002 ms  lệchTóc 0.0151  xaĐầuNhất 0.8227
+
+ngac-nhien
+     2 ms  lệchTóc 0.0041  xaĐầuNhất 0.8087
+   110 ms  lệchTóc 0.0590  xaĐầuNhất 0.8717
+   200 ms  lệchTóc 0.0733  xaĐầuNhất 0.886
+   302 ms  lệchTóc 0.0623  xaĐầuNhất 0.8751
+   417 ms  lệchTóc 0.0383  xaĐầuNhất 0.7744
+   535 ms  lệchTóc 0.0383  xaĐầuNhất 0.7744
+   611 ms  lệchTóc 0.0427  xaĐầuNhất 0.8554
+   702 ms  lệchTóc 0.1122  xaĐầuNhất 0.8009
+   801 ms  lệchTóc 0.0572  xaĐầuNhất 0.7555
+   901 ms  lệchTóc 0.0511  xaĐầuNhất 0.8638
+  1024 ms  lệchTóc 0.0372  xaĐầuNhất 0.8499
+  1101 ms  lệchTóc 0.0375  xaĐầuNhất 0.8503
+  1201 ms  lệchTóc 0.0347  xaĐầuNhất 0.8474
+  1319 ms  lệchTóc 0.0338  xaĐầuNhất 0.8465
+  1402 ms  lệchTóc 0.0345  xaĐầuNhất 0.8473
+  1519 ms  lệchTóc 0.0388  xaĐầuNhất 0.7901
+  1601 ms  lệchTóc 0.0324  xaĐầuNhất 0.7866
+  1701 ms  lệchTóc 0.0050  xaĐầuNhất 0.8134
+  1801 ms  lệchTóc 0.0070  xaĐầuNhất 0.8198
+  1903 ms  lệchTóc 0.0055  xaĐầuNhất 0.8183
+  2001 ms  lệchTóc 0.0057  xaĐầuNhất 0.8185

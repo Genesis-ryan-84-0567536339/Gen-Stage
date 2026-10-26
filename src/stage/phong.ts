@@ -651,9 +651,10 @@ function remCuaSo(): THREE.Group {
  * (không thì sương kéo nó về lại màu xám), không đổ/nhận bóng.
  */
 function phongTroi(): THREE.Mesh {
+  // MỘT texture dùng chung với sân vườn (xem `troiChieu()`), nên muốn trời lặp
+  // 4 vòng quanh ống trụ thì **nhân UV của hình khối**, không đụng
+  // `tex.repeat` — đổi `repeat` là đổi luôn tấm trời của sân vườn.
   const tex = troiChieu();
-  tex.wrapS = THREE.RepeatWrapping;
-  tex.repeat.set(4, 1);
   /*
    * Băng trời phải KÉO XUỐNG DƯỚI CHÂN TƯỜNG, không bắt đầu ở mép tường.
    * Tia nhìn chếch nhẹ lên từ trong nhà vượt qua mép tường 2,8 m rồi đi
@@ -665,6 +666,9 @@ function phongTroi(): THREE.Mesh {
   const cao = 42;
   const day = -2;
   const hinh = new THREE.CylinderGeometry(30, 30, cao, 24, 1, true);
+  const uv = hinh.getAttribute('uv');
+  for (let i = 0; i < uv.count; i += 1) uv.setX(i, uv.getX(i) * 4);
+  uv.needsUpdate = true;
   const m = new THREE.Mesh(
     hinh,
     new THREE.MeshBasicMaterial({

@@ -1,0 +1,1408 @@
+{
+ "khi": "2026-10-26T18:47:11.188Z",
+ "che": "preview",
+ "moc": {
+  "leDung": 0.01,
+  "leNgoi": 0.02,
+  "lechToc": 0.07
+ },
+ "tai": false,
+ "de": {
+  "dung/owner": {
+   "deGiayThat": 0,
+   "deDuoiMatCa": 0,
+   "xuongChanY": 0.0334,
+   "soXuongChan": 4,
+   "soDinh": 18145,
+   "soNhan": 1019,
+   "cum": "actor:owner",
+   "pr": {
+    "deGiayY": -0.0001,
+    "deGiayMoc": 0,
+    "deChan": 0.0334,
+    "deChanTuThe": 0.0334,
+    "soMocDe": 4
+   }
+  },
+  "dung/gen": {
+   "deGiayThat": 0,
+   "deDuoiMatCa": 0,
+   "xuongChanY": 0.049,
+   "soXuongChan": 4,
+   "soDinh": 23679,
+   "soNhan": 760,
+   "cum": "actor:gen",
+   "pr": {
+    "deGiayY": 0.0006,
+    "deGiayMoc": 0,
+    "deChan": 0.049,
+    "deChanTuThe": 0.0484,
+    "soMocDe": 4
+   }
+  },
+  "di/owner/mau": [
+   0,
+   0.0003,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "ngoi-ghe-1/owner": {
+   "deGiayThat": -0.0072,
+   "deDuoiMatCa": -0.0072,
+   "xuongChanY": 0.086,
+   "soXuongChan": 4,
+   "soDinh": 18145,
+   "soNhan": 1301,
+   "cum": "actor:owner",
+   "pr": {
+    "deGiayY": -0.0074,
+    "deGiayMoc": -0.0074,
+    "deChan": 0.0334,
+    "deChanTuThe": 0.0934,
+    "soMocDe": 4
+   }
+  },
+  "dung-len-sau-ghe-1/owner": {
+   "deGiayThat": 0,
+   "deDuoiMatCa": 0,
+   "xuongChanY": 0.0334,
+   "soXuongChan": 4,
+   "soDinh": 18145,
+   "soNhan": 1017,
+   "cum": "actor:owner",
+   "pr": {
+    "deGiayY": 0.0002,
+    "deGiayMoc": 0,
+    "deChan": 0.0334,
+    "deChanTuThe": 0.0332,
+    "soMocDe": 4
+   }
+  },
+  "ngoi-ghe-2/owner": {
+   "deGiayThat": -0.0072,
+   "deDuoiMatCa": -0.0072,
+   "xuongChanY": 0.086,
+   "soXuongChan": 4,
+   "soDinh": 18145,
+   "soNhan": 1301,
+   "cum": "actor:owner",
+   "pr": {
+    "deGiayY": -0.0074,
+    "deGiayMoc": -0.0074,
+    "deChan": 0.0334,
+    "deChanTuThe": 0.0934,
+    "soMocDe": 4
+   }
+  },
+  "dung-len-sau-ghe-2/owner": {
+   "deGiayThat": 0,
+   "deDuoiMatCa": 0,
+   "xuongChanY": 0.0334,
+   "soXuongChan": 4,
+   "soDinh": 18145,
+   "soNhan": 1015,
+   "cum": "actor:owner",
+   "pr": {
+    "deGiayY": 0.0007,
+    "deGiayMoc": 0,
+    "deChan": 0.0334,
+    "deChanTuThe": 0.0327,
+    "soMocDe": 4
+   }
+  },
+  "ngoi-sofa/owner": {
+   "deGiayThat": -0.0072,
+   "deDuoiMatCa": -0.0072,
+   "xuongChanY": 0.086,
+   "soXuongChan": 4,
+   "soDinh": 18145,
+   "soNhan": 1301,
+   "cum": "actor:owner",
+   "pr": {
+    "deGiayY": -0.0074,
+    "deGiayMoc": -0.0074,
+    "deChan": 0.0334,
+    "deChanTuThe": 0.0934,
+    "soMocDe": 4
+   }
+  },
+  "dung-len-sau-sofa/owner": {
+   "deGiayThat": 0,
+   "deDuoiMatCa": 0,
+   "xuongChanY": 0.0334,
+   "soXuongChan": 4,
+   "soDinh": 18145,
+   "soNhan": 1016,
+   "cum": "actor:owner",
+   "pr": {
+    "deGiayY": 0.0001,
+    "deGiayMoc": 0,
+    "deChan": 0.0334,
+    "deChanTuThe": 0.0333,
+    "soMocDe": 4
+   }
+  }
+ },
+ "toc": {
+  "rat-vui": {
+   "ds": [
+    {
+     "t": 3,
+     "lechToc": 0.004,
+     "xaDauNhat": 0.8088,
+     "lechVay": 0.0088
+    },
+    {
+     "t": 101,
+     "lechToc": 0.0188,
+     "xaDauNhat": 0.7999,
+     "lechVay": 0.0131
+    },
+    {
+     "t": 222,
+     "lechToc": 0.0166,
+     "xaDauNhat": 0.8065,
+     "lechVay": 0.0491
+    },
+    {
+     "t": 302,
+     "lechToc": 0.0372,
+     "xaDauNhat": 0.8372,
+     "lechVay": 0.0521
+    },
+    {
+     "t": 404,
+     "lechToc": 0.0369,
+     "xaDauNhat": 0.8402,
+     "lechVay": 0.0448
+    },
+    {
+     "t": 517,
+     "lechToc": 0.0369,
+     "xaDauNhat": 0.8402,
+     "lechVay": 0.0448
+    },
+    {
+     "t": 601,
+     "lechToc": 0.0306,
+     "xaDauNhat": 0.8077,
+     "lechVay": 0.0414
+    },
+    {
+     "t": 702,
+     "lechToc": 0.0436,
+     "xaDauNhat": 0.7744,
+     "lechVay": 0.0606
+    },
+    {
+     "t": 802,
+     "lechToc": 0.04,
+     "xaDauNhat": 0.7778,
+     "lechVay": 0.0666
+    },
+    {
+     "t": 903,
+     "lechToc": 0.0258,
+     "xaDauNhat": 0.7869,
+     "lechVay": 0.0422
+    },
+    {
+     "t": 1000,
+     "lechToc": 0.0113,
+     "xaDauNhat": 0.8116,
+     "lechVay": 0.0266
+    },
+    {
+     "t": 1101,
+     "lechToc": 0.0195,
+     "xaDauNhat": 0.8126,
+     "lechVay": 0.0289
+    },
+    {
+     "t": 1202,
+     "lechToc": 0.0247,
+     "xaDauNhat": 0.8162,
+     "lechVay": 0.0546
+    },
+    {
+     "t": 1301,
+     "lechToc": 0.0301,
+     "xaDauNhat": 0.8289,
+     "lechVay": 0.0626
+    },
+    {
+     "t": 1401,
+     "lechToc": 0.0323,
+     "xaDauNhat": 0.84,
+     "lechVay": 0.041
+    },
+    {
+     "t": 1501,
+     "lechToc": 0.0284,
+     "xaDauNhat": 0.8412,
+     "lechVay": 0.0434
+    },
+    {
+     "t": 1601,
+     "lechToc": 0.0263,
+     "xaDauNhat": 0.8077,
+     "lechVay": 0.0403
+    },
+    {
+     "t": 1701,
+     "lechToc": 0.0407,
+     "xaDauNhat": 0.7784,
+     "lechVay": 0.0578
+    },
+    {
+     "t": 1801,
+     "lechToc": 0.0422,
+     "xaDauNhat": 0.7787,
+     "lechVay": 0.0683
+    },
+    {
+     "t": 1901,
+     "lechToc": 0.0317,
+     "xaDauNhat": 0.7811,
+     "lechVay": 0.0427
+    },
+    {
+     "t": 2001,
+     "lechToc": 0.0109,
+     "xaDauNhat": 0.8019,
+     "lechVay": 0.0255
+    }
+   ],
+   "khung": [
+    33.2,
+    33.2,
+    34.2,
+    16.1,
+    33.2,
+    17.1,
+    33.2,
+    17.1,
+    50.2,
+    33.2,
+    33.1,
+    33.2,
+    17.1,
+    17.1,
+    116.6,
+    16.1,
+    50.4,
+    17,
+    33.2,
+    17.1,
+    49.3,
+    34.1,
+    16.1,
+    33.2,
+    34.2,
+    33.2,
+    33.2,
+    17.1,
+    33.2,
+    33.2,
+    17.1,
+    33.2,
+    17,
+    49.3,
+    34.1,
+    33.2,
+    33.2,
+    33.2,
+    33.2,
+    34.2,
+    33.1,
+    33.2,
+    33.2,
+    33.1,
+    17.1,
+    33.2,
+    17.1,
+    50.3,
+    33.2,
+    17,
+    49.4,
+    17.1,
+    33.2,
+    33.2,
+    34.2,
+    33.2,
+    33.6,
+    32.7,
+    17.1,
+    16.1,
+    50.2,
+    34.2,
+    16.1
+   ],
+   "buocSpring": 1,
+   "dangNen": "nhay",
+   "clipThat": true,
+   "trangThai": "emoting",
+   "ketQua": {
+    "ok": true,
+    "result": {
+     "actor": "gen",
+     "emote": "rat-vui",
+     "started": true,
+     "durationMs": 2200
+    }
+   },
+   "spring": {
+    "soKhop": 58,
+    "cungMin": 0.7478515977461061,
+    "cungMax": 2.668860047094679,
+    "hamMin": 0,
+    "hamMax": 0.4,
+    "daiMin": 0.04154731098589478,
+    "daiMax": 0.14827000261637105,
+    "lucTrenDai": 0.3
+   },
+   "mocDaOnDinh": true
+  },
+  "buon": {
+   "ds": [
+    {
+     "t": 2,
+     "lechToc": 0.007,
+     "xaDauNhat": 0.8198,
+     "lechVay": 0.0046
+    },
+    {
+     "t": 102,
+     "lechToc": 0.0067,
+     "xaDauNhat": 0.8163,
+     "lechVay": 0.0068
+    },
+    {
+     "t": 204,
+     "lechToc": 0.0137,
+     "xaDauNhat": 0.8015,
+     "lechVay": 0.0096
+    },
+    {
+     "t": 300,
+     "lechToc": 0.0222,
+     "xaDauNhat": 0.7905,
+     "lechVay": 0.0142
+    },
+    {
+     "t": 412,
+     "lechToc": 0.0392,
+     "xaDauNhat": 0.7735,
+     "lechVay": 0.0218
+    },
+    {
+     "t": 530,
+     "lechToc": 0.0392,
+     "xaDauNhat": 0.7735,
+     "lechVay": 0.0218
+    },
+    {
+     "t": 601,
+     "lechToc": 0.0339,
+     "xaDauNhat": 0.7789,
+     "lechVay": 0.0315
+    },
+    {
+     "t": 700,
+     "lechToc": 0.0503,
+     "xaDauNhat": 0.7624,
+     "lechVay": 0.0345
+    },
+    {
+     "t": 802,
+     "lechToc": 0.0469,
+     "xaDauNhat": 0.7659,
+     "lechVay": 0.035
+    },
+    {
+     "t": 902,
+     "lechToc": 0.0319,
+     "xaDauNhat": 0.7809,
+     "lechVay": 0.0321
+    },
+    {
+     "t": 1000,
+     "lechToc": 0.0255,
+     "xaDauNhat": 0.7873,
+     "lechVay": 0.0298
+    },
+    {
+     "t": 1101,
+     "lechToc": 0.0239,
+     "xaDauNhat": 0.7889,
+     "lechVay": 0.0281
+    },
+    {
+     "t": 1212,
+     "lechToc": 0.0221,
+     "xaDauNhat": 0.7907,
+     "lechVay": 0.0273
+    },
+    {
+     "t": 1302,
+     "lechToc": 0.021,
+     "xaDauNhat": 0.7917,
+     "lechVay": 0.0279
+    },
+    {
+     "t": 1401,
+     "lechToc": 0.0216,
+     "xaDauNhat": 0.7912,
+     "lechVay": 0.0291
+    },
+    {
+     "t": 1501,
+     "lechToc": 0.0203,
+     "xaDauNhat": 0.7924,
+     "lechVay": 0.0307
+    },
+    {
+     "t": 1608,
+     "lechToc": 0.0096,
+     "xaDauNhat": 0.8032,
+     "lechVay": 0.0282
+    },
+    {
+     "t": 1700,
+     "lechToc": 0.0109,
+     "xaDauNhat": 0.8099,
+     "lechVay": 0.0243
+    },
+    {
+     "t": 1801,
+     "lechToc": 0.0147,
+     "xaDauNhat": 0.8154,
+     "lechVay": 0.0183
+    },
+    {
+     "t": 1901,
+     "lechToc": 0.0146,
+     "xaDauNhat": 0.8203,
+     "lechVay": 0.0101
+    },
+    {
+     "t": 2002,
+     "lechToc": 0.0151,
+     "xaDauNhat": 0.8227,
+     "lechVay": 0.0042
+    }
+   ],
+   "khung": [
+    34.2,
+    33.2,
+    33.2,
+    33.2,
+    17.1,
+    33.2,
+    17.1,
+    49.2,
+    34.2,
+    33.1,
+    33.2,
+    33.2,
+    34.1,
+    116.7,
+    16.1,
+    50.2,
+    33.2,
+    34.2,
+    16.1,
+    33.1,
+    17.1,
+    33.2,
+    17,
+    50.3,
+    33.2,
+    33.2,
+    33.2,
+    34.1,
+    33.2,
+    33.2,
+    33.2,
+    33.2,
+    17.1,
+    33.2,
+    33.2,
+    34.2,
+    16.1,
+    33.2,
+    34.2,
+    33.2,
+    16.1,
+    17.1,
+    50.3,
+    33.2,
+    17.1,
+    16.1,
+    50.3,
+    17.1,
+    33.2,
+    16.1,
+    50.2,
+    33.2,
+    34.2,
+    33.2,
+    33.2,
+    33.2,
+    33.2,
+    17.1,
+    33.2,
+    33.2,
+    34.2,
+    33.2
+   ],
+   "buocSpring": 2,
+   "dangNen": "idle",
+   "clipThat": true,
+   "trangThai": "emoting",
+   "ketQua": {
+    "ok": true,
+    "result": {
+     "actor": "gen",
+     "emote": "buon",
+     "started": true,
+     "durationMs": 2200
+    }
+   },
+   "spring": {
+    "soKhop": 58,
+    "cungMin": 0.7478515977461061,
+    "cungMax": 2.668860047094679,
+    "hamMin": 0,
+    "hamMax": 0.4,
+    "daiMin": 0.04154731098589478,
+    "daiMax": 0.14827000261637105,
+    "lucTrenDai": 0.3
+   },
+   "mocDaOnDinh": true
+  },
+  "ngac-nhien": {
+   "ds": [
+    {
+     "t": 2,
+     "lechToc": 0.0041,
+     "xaDauNhat": 0.8087,
+     "lechVay": 0.0048
+    },
+    {
+     "t": 110,
+     "lechToc": 0.059,
+     "xaDauNhat": 0.8717,
+     "lechVay": 0.0211
+    },
+    {
+     "t": 200,
+     "lechToc": 0.0733,
+     "xaDauNhat": 0.886,
+     "lechVay": 0.0339
+    },
+    {
+     "t": 302,
+     "lechToc": 0.0623,
+     "xaDauNhat": 0.8751,
+     "lechVay": 0.0312
+    },
+    {
+     "t": 417,
+     "lechToc": 0.0383,
+     "xaDauNhat": 0.7744,
+     "lechVay": 0.0198
+    },
+    {
+     "t": 535,
+     "lechToc": 0.0383,
+     "xaDauNhat": 0.7744,
+     "lechVay": 0.0198
+    },
+    {
+     "t": 611,
+     "lechToc": 0.0427,
+     "xaDauNhat": 0.8554,
+     "lechVay": 0.0183
+    },
+    {
+     "t": 702,
+     "lechToc": 0.1122,
+     "xaDauNhat": 0.8009,
+     "lechVay": 0.0789
+    },
+    {
+     "t": 801,
+     "lechToc": 0.0572,
+     "xaDauNhat": 0.7555,
+     "lechVay": 0.0783
+    },
+    {
+     "t": 901,
+     "lechToc": 0.0511,
+     "xaDauNhat": 0.8638,
+     "lechVay": 0.0767
+    },
+    {
+     "t": 1024,
+     "lechToc": 0.0372,
+     "xaDauNhat": 0.8499,
+     "lechVay": 0.0708
+    },
+    {
+     "t": 1101,
+     "lechToc": 0.0375,
+     "xaDauNhat": 0.8503,
+     "lechVay": 0.0676
+    },
+    {
+     "t": 1201,
+     "lechToc": 0.0347,
+     "xaDauNhat": 0.8474,
+     "lechVay": 0.0615
+    },
+    {
+     "t": 1319,
+     "lechToc": 0.0338,
+     "xaDauNhat": 0.8465,
+     "lechVay": 0.0568
+    },
+    {
+     "t": 1402,
+     "lechToc": 0.0345,
+     "xaDauNhat": 0.8473,
+     "lechVay": 0.0556
+    },
+    {
+     "t": 1519,
+     "lechToc": 0.0388,
+     "xaDauNhat": 0.7901,
+     "lechVay": 0.0162
+    },
+    {
+     "t": 1601,
+     "lechToc": 0.0324,
+     "xaDauNhat": 0.7866,
+     "lechVay": 0.0043
+    },
+    {
+     "t": 1701,
+     "lechToc": 0.005,
+     "xaDauNhat": 0.8134,
+     "lechVay": 0.0033
+    },
+    {
+     "t": 1801,
+     "lechToc": 0.007,
+     "xaDauNhat": 0.8198,
+     "lechVay": 0.005
+    },
+    {
+     "t": 1903,
+     "lechToc": 0.0055,
+     "xaDauNhat": 0.8183,
+     "lechVay": 0.0067
+    },
+    {
+     "t": 2001,
+     "lechToc": 0.0057,
+     "xaDauNhat": 0.8185,
+     "lechVay": 0.0078
+    }
+   ],
+   "khung": [
+    50.3,
+    17.1,
+    49.3,
+    17.1,
+    17.1,
+    49.3,
+    34.1,
+    33.2,
+    16.1,
+    17.1,
+    50.3,
+    33.2,
+    17.1,
+    16.1,
+    133.8,
+    16.1,
+    34.2,
+    16.1,
+    33.2,
+    17.1,
+    50.3,
+    33.2,
+    17.1,
+    49.2,
+    34.2,
+    33.2,
+    33.2,
+    33.2,
+    33.2,
+    17.1,
+    17.1,
+    49.3,
+    17.1,
+    33.2,
+    17.1,
+    50.3,
+    16.1,
+    33.2,
+    17.1,
+    50.2,
+    16.1,
+    34.2,
+    16.1,
+    50.3,
+    33.2,
+    17.1,
+    33.2,
+    17.1,
+    49.3,
+    34.2,
+    33.2,
+    33.1,
+    33.2,
+    34.1,
+    33.2,
+    33.2,
+    33.2,
+    33.2,
+    34.2,
+    16.1,
+    33.2,
+    17.1
+   ],
+   "buocSpring": 1,
+   "dangNen": "giat",
+   "clipThat": true,
+   "trangThai": "emoting",
+   "ketQua": {
+    "ok": true,
+    "result": {
+     "actor": "gen",
+     "emote": "ngac-nhien",
+     "started": true,
+     "durationMs": 1400
+    }
+   },
+   "spring": {
+    "soKhop": 58,
+    "cungMin": 0.7478515977461061,
+    "cungMax": 2.668860047094679,
+    "hamMin": 0,
+    "hamMax": 0.4,
+    "daiMin": 0.04154731098589478,
+    "daiMax": 0.14827000261637105,
+    "lucTrenDai": 0.3
+   },
+   "mocDaOnDinh": true
+  }
+ },
+ "dat": {
+  "de/dung/owner": {
+   "dat": true,
+   "deGiayThat": 0,
+   "deDuoiMatCa": 0,
+   "xuongChanY": 0.0334,
+   "soXuongChan": 4,
+   "soDinh": 18145,
+   "soNhan": 1019,
+   "cum": "actor:owner",
+   "pr": {
+    "deGiayY": -0.0001,
+    "deGiayMoc": 0,
+    "deChan": 0.0334,
+    "deChanTuThe": 0.0334,
+    "soMocDe": 4
+   }
+  },
+  "de/dung/gen": {
+   "dat": true,
+   "deGiayThat": 0,
+   "deDuoiMatCa": 0,
+   "xuongChanY": 0.049,
+   "soXuongChan": 4,
+   "soDinh": 23679,
+   "soNhan": 760,
+   "cum": "actor:gen",
+   "pr": {
+    "deGiayY": 0.0006,
+    "deGiayMoc": 0,
+    "deChan": 0.049,
+    "deChanTuThe": 0.0484,
+    "soMocDe": 4
+   }
+  },
+  "de/di/owner": {
+   "dat": true,
+   "soMau": 12,
+   "min": 0,
+   "max": 0.0003,
+   "xau": []
+  },
+  "de/ngoi/ghe-1": {
+   "dat": true,
+   "deGiayThat": -0.0072,
+   "deDuoiMatCa": -0.0072,
+   "xuongChanY": 0.086,
+   "soXuongChan": 4,
+   "soDinh": 18145,
+   "soNhan": 1301,
+   "cum": "actor:owner",
+   "pr": {
+    "deGiayY": -0.0074,
+    "deGiayMoc": -0.0074,
+    "deChan": 0.0334,
+    "deChanTuThe": 0.0934,
+    "soMocDe": 4
+   },
+   "seatY": 0.2585
+  },
+  "de/dung-len/ghe-1": {
+   "dat": true,
+   "deGiayThat": 0,
+   "deDuoiMatCa": 0,
+   "xuongChanY": 0.0334,
+   "soXuongChan": 4,
+   "soDinh": 18145,
+   "soNhan": 1017,
+   "cum": "actor:owner",
+   "pr": {
+    "deGiayY": 0.0002,
+    "deGiayMoc": 0,
+    "deChan": 0.0334,
+    "deChanTuThe": 0.0332,
+    "soMocDe": 4
+   }
+  },
+  "de/ngoi/ghe-2": {
+   "dat": true,
+   "deGiayThat": -0.0072,
+   "deDuoiMatCa": -0.0072,
+   "xuongChanY": 0.086,
+   "soXuongChan": 4,
+   "soDinh": 18145,
+   "soNhan": 1301,
+   "cum": "actor:owner",
+   "pr": {
+    "deGiayY": -0.0074,
+    "deGiayMoc": -0.0074,
+    "deChan": 0.0334,
+    "deChanTuThe": 0.0934,
+    "soMocDe": 4
+   },
+   "seatY": 0.2585
+  },
+  "de/dung-len/ghe-2": {
+   "dat": true,
+   "deGiayThat": 0,
+   "deDuoiMatCa": 0,
+   "xuongChanY": 0.0334,
+   "soXuongChan": 4,
+   "soDinh": 18145,
+   "soNhan": 1015,
+   "cum": "actor:owner",
+   "pr": {
+    "deGiayY": 0.0007,
+    "deGiayMoc": 0,
+    "deChan": 0.0334,
+    "deChanTuThe": 0.0327,
+    "soMocDe": 4
+   }
+  },
+  "de/ngoi/sofa": {
+   "dat": true,
+   "deGiayThat": -0.0072,
+   "deDuoiMatCa": -0.0072,
+   "xuongChanY": 0.086,
+   "soXuongChan": 4,
+   "soDinh": 18145,
+   "soNhan": 1301,
+   "cum": "actor:owner",
+   "pr": {
+    "deGiayY": -0.0074,
+    "deGiayMoc": -0.0074,
+    "deChan": 0.0334,
+    "deChanTuThe": 0.0934,
+    "soMocDe": 4
+   },
+   "seatY": 0.2585
+  },
+  "de/dung-len/sofa": {
+   "dat": true,
+   "deGiayThat": 0,
+   "deDuoiMatCa": 0,
+   "xuongChanY": 0.0334,
+   "soXuongChan": 4,
+   "soDinh": 18145,
+   "soNhan": 1016,
+   "cum": "actor:owner",
+   "pr": {
+    "deGiayY": 0.0001,
+    "deGiayMoc": 0,
+    "deChan": 0.0334,
+    "deChanTuThe": 0.0333,
+    "soMocDe": 4
+   }
+  },
+  "toc/rat-vui/moc-da-on-dinh": {
+   "dat": true,
+   "mocDaOnDinh": true
+  },
+  "toc/rat-vui/dang-dien-that": {
+   "dat": true,
+   "dangNen": "nhay",
+   "clipThat": true,
+   "trangThai": "emoting"
+  },
+  "toc/rat-vui": {
+   "dat": true,
+   "dinhLechToc": 0.0436,
+   "moc": 0.07,
+   "khungDaiNhatMs": 116.6,
+   "buocSpringToiDa": 1,
+   "mau": [
+    {
+     "t": 3,
+     "lechToc": 0.004,
+     "xaDauNhat": 0.8088,
+     "lechVay": 0.0088
+    },
+    {
+     "t": 101,
+     "lechToc": 0.0188,
+     "xaDauNhat": 0.7999,
+     "lechVay": 0.0131
+    },
+    {
+     "t": 222,
+     "lechToc": 0.0166,
+     "xaDauNhat": 0.8065,
+     "lechVay": 0.0491
+    },
+    {
+     "t": 302,
+     "lechToc": 0.0372,
+     "xaDauNhat": 0.8372,
+     "lechVay": 0.0521
+    },
+    {
+     "t": 404,
+     "lechToc": 0.0369,
+     "xaDauNhat": 0.8402,
+     "lechVay": 0.0448
+    },
+    {
+     "t": 517,
+     "lechToc": 0.0369,
+     "xaDauNhat": 0.8402,
+     "lechVay": 0.0448
+    },
+    {
+     "t": 601,
+     "lechToc": 0.0306,
+     "xaDauNhat": 0.8077,
+     "lechVay": 0.0414
+    },
+    {
+     "t": 702,
+     "lechToc": 0.0436,
+     "xaDauNhat": 0.7744,
+     "lechVay": 0.0606
+    },
+    {
+     "t": 802,
+     "lechToc": 0.04,
+     "xaDauNhat": 0.7778,
+     "lechVay": 0.0666
+    },
+    {
+     "t": 903,
+     "lechToc": 0.0258,
+     "xaDauNhat": 0.7869,
+     "lechVay": 0.0422
+    },
+    {
+     "t": 1000,
+     "lechToc": 0.0113,
+     "xaDauNhat": 0.8116,
+     "lechVay": 0.0266
+    },
+    {
+     "t": 1101,
+     "lechToc": 0.0195,
+     "xaDauNhat": 0.8126,
+     "lechVay": 0.0289
+    },
+    {
+     "t": 1202,
+     "lechToc": 0.0247,
+     "xaDauNhat": 0.8162,
+     "lechVay": 0.0546
+    },
+    {
+     "t": 1301,
+     "lechToc": 0.0301,
+     "xaDauNhat": 0.8289,
+     "lechVay": 0.0626
+    },
+    {
+     "t": 1401,
+     "lechToc": 0.0323,
+     "xaDauNhat": 0.84,
+     "lechVay": 0.041
+    },
+    {
+     "t": 1501,
+     "lechToc": 0.0284,
+     "xaDauNhat": 0.8412,
+     "lechVay": 0.0434
+    },
+    {
+     "t": 1601,
+     "lechToc": 0.0263,
+     "xaDauNhat": 0.8077,
+     "lechVay": 0.0403
+    },
+    {
+     "t": 1701,
+     "lechToc": 0.0407,
+     "xaDauNhat": 0.7784,
+     "lechVay": 0.0578
+    },
+    {
+     "t": 1801,
+     "lechToc": 0.0422,
+     "xaDauNhat": 0.7787,
+     "lechVay": 0.0683
+    },
+    {
+     "t": 1901,
+     "lechToc": 0.0317,
+     "xaDauNhat": 0.7811,
+     "lechVay": 0.0427
+    },
+    {
+     "t": 2001,
+     "lechToc": 0.0109,
+     "xaDauNhat": 0.8019,
+     "lechVay": 0.0255
+    }
+   ]
+  },
+  "toc/buon/moc-da-on-dinh": {
+   "dat": true,
+   "mocDaOnDinh": true
+  },
+  "toc/buon/dang-dien-that": {
+   "dat": true,
+   "dangNen": "idle",
+   "clipThat": true,
+   "trangThai": "emoting"
+  },
+  "toc/buon": {
+   "dat": true,
+   "dinhLechToc": 0.0503,
+   "moc": 0.07,
+   "khungDaiNhatMs": 116.7,
+   "buocSpringToiDa": 2,
+   "mau": [
+    {
+     "t": 2,
+     "lechToc": 0.007,
+     "xaDauNhat": 0.8198,
+     "lechVay": 0.0046
+    },
+    {
+     "t": 102,
+     "lechToc": 0.0067,
+     "xaDauNhat": 0.8163,
+     "lechVay": 0.0068
+    },
+    {
+     "t": 204,
+     "lechToc": 0.0137,
+     "xaDauNhat": 0.8015,
+     "lechVay": 0.0096
+    },
+    {
+     "t": 300,
+     "lechToc": 0.0222,
+     "xaDauNhat": 0.7905,
+     "lechVay": 0.0142
+    },
+    {
+     "t": 412,
+     "lechToc": 0.0392,
+     "xaDauNhat": 0.7735,
+     "lechVay": 0.0218
+    },
+    {
+     "t": 530,
+     "lechToc": 0.0392,
+     "xaDauNhat": 0.7735,
+     "lechVay": 0.0218
+    },
+    {
+     "t": 601,
+     "lechToc": 0.0339,
+     "xaDauNhat": 0.7789,
+     "lechVay": 0.0315
+    },
+    {
+     "t": 700,
+     "lechToc": 0.0503,
+     "xaDauNhat": 0.7624,
+     "lechVay": 0.0345
+    },
+    {
+     "t": 802,
+     "lechToc": 0.0469,
+     "xaDauNhat": 0.7659,
+     "lechVay": 0.035
+    },
+    {
+     "t": 902,
+     "lechToc": 0.0319,
+     "xaDauNhat": 0.7809,
+     "lechVay": 0.0321
+    },
+    {
+     "t": 1000,
+     "lechToc": 0.0255,
+     "xaDauNhat": 0.7873,
+     "lechVay": 0.0298
+    },
+    {
+     "t": 1101,
+     "lechToc": 0.0239,
+     "xaDauNhat": 0.7889,
+     "lechVay": 0.0281
+    },
+    {
+     "t": 1212,
+     "lechToc": 0.0221,
+     "xaDauNhat": 0.7907,
+     "lechVay": 0.0273
+    },
+    {
+     "t": 1302,
+     "lechToc": 0.021,
+     "xaDauNhat": 0.7917,
+     "lechVay": 0.0279
+    },
+    {
+     "t": 1401,
+     "lechToc": 0.0216,
+     "xaDauNhat": 0.7912,
+     "lechVay": 0.0291
+    },
+    {
+     "t": 1501,
+     "lechToc": 0.0203,
+     "xaDauNhat": 0.7924,
+     "lechVay": 0.0307
+    },
+    {
+     "t": 1608,
+     "lechToc": 0.0096,
+     "xaDauNhat": 0.8032,
+     "lechVay": 0.0282
+    },
+    {
+     "t": 1700,
+     "lechToc": 0.0109,
+     "xaDauNhat": 0.8099,
+     "lechVay": 0.0243
+    },
+    {
+     "t": 1801,
+     "lechToc": 0.0147,
+     "xaDauNhat": 0.8154,
+     "lechVay": 0.0183
+    },
+    {
+     "t": 1901,
+     "lechToc": 0.0146,
+     "xaDauNhat": 0.8203,
+     "lechVay": 0.0101
+    },
+    {
+     "t": 2002,
+     "lechToc": 0.0151,
+     "xaDauNhat": 0.8227,
+     "lechVay": 0.0042
+    }
+   ]
+  },
+  "toc/ngac-nhien/moc-da-on-dinh": {
+   "dat": true,
+   "mocDaOnDinh": true
+  },
+  "toc/ngac-nhien/dang-dien-that": {
+   "dat": true,
+   "dangNen": "giat",
+   "clipThat": true,
+   "trangThai": "emoting"
+  },
+  "toc/ngac-nhien": {
+   "dat": false,
+   "dinhLechToc": 0.1122,
+   "moc": 0.07,
+   "khungDaiNhatMs": 133.8,
+   "buocSpringToiDa": 1,
+   "mau": [
+    {
+     "t": 2,
+     "lechToc": 0.0041,
+     "xaDauNhat": 0.8087,
+     "lechVay": 0.0048
+    },
+    {
+     "t": 110,
+     "lechToc": 0.059,
+     "xaDauNhat": 0.8717,
+     "lechVay": 0.0211
+    },
+    {
+     "t": 200,
+     "lechToc": 0.0733,
+     "xaDauNhat": 0.886,
+     "lechVay": 0.0339
+    },
+    {
+     "t": 302,
+     "lechToc": 0.0623,
+     "xaDauNhat": 0.8751,
+     "lechVay": 0.0312
+    },
+    {
+     "t": 417,
+     "lechToc": 0.0383,
+     "xaDauNhat": 0.7744,
+     "lechVay": 0.0198
+    },
+    {
+     "t": 535,
+     "lechToc": 0.0383,
+     "xaDauNhat": 0.7744,
+     "lechVay": 0.0198
+    },
+    {
+     "t": 611,
+     "lechToc": 0.0427,
+     "xaDauNhat": 0.8554,
+     "lechVay": 0.0183
+    },
+    {
+     "t": 702,
+     "lechToc": 0.1122,
+     "xaDauNhat": 0.8009,
+     "lechVay": 0.0789
+    },
+    {
+     "t": 801,
+     "lechToc": 0.0572,
+     "xaDauNhat": 0.7555,
+     "lechVay": 0.0783
+    },
+    {
+     "t": 901,
+     "lechToc": 0.0511,
+     "xaDauNhat": 0.8638,
+     "lechVay": 0.0767
+    },
+    {
+     "t": 1024,
+     "lechToc": 0.0372,
+     "xaDauNhat": 0.8499,
+     "lechVay": 0.0708
+    },
+    {
+     "t": 1101,
+     "lechToc": 0.0375,
+     "xaDauNhat": 0.8503,
+     "lechVay": 0.0676
+    },
+    {
+     "t": 1201,
+     "lechToc": 0.0347,
+     "xaDauNhat": 0.8474,
+     "lechVay": 0.0615
+    },
+    {
+     "t": 1319,
+     "lechToc": 0.0338,
+     "xaDauNhat": 0.8465,
+     "lechVay": 0.0568
+    },
+    {
+     "t": 1402,
+     "lechToc": 0.0345,
+     "xaDauNhat": 0.8473,
+     "lechVay": 0.0556
+    },
+    {
+     "t": 1519,
+     "lechToc": 0.0388,
+     "xaDauNhat": 0.7901,
+     "lechVay": 0.0162
+    },
+    {
+     "t": 1601,
+     "lechToc": 0.0324,
+     "xaDauNhat": 0.7866,
+     "lechVay": 0.0043
+    },
+    {
+     "t": 1701,
+     "lechToc": 0.005,
+     "xaDauNhat": 0.8134,
+     "lechVay": 0.0033
+    },
+    {
+     "t": 1801,
+     "lechToc": 0.007,
+     "xaDauNhat": 0.8198,
+     "lechVay": 0.005
+    },
+    {
+     "t": 1903,
+     "lechToc": 0.0055,
+     "xaDauNhat": 0.8183,
+     "lechVay": 0.0067
+    },
+    {
+     "t": 2001,
+     "lechToc": 0.0057,
+     "xaDauNhat": 0.8185,
+     "lechVay": 0.0078
+    }
+   ]
+  },
+  "spring-khong-chay-trong-vrm-update": {
+   "dat": true,
+   "owner": 0,
+   "gen": 0
+  },
+  "console-sach": {
+   "dat": true,
+   "loi": []
+  }
+ },
+ "loiConsole": [],
+ "springTrongUpdate": {
+  "owner": 0,
+  "gen": 0
+ }
+}

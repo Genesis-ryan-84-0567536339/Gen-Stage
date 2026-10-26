@@ -14,15 +14,40 @@
  * `update()`), rồi khẳng định `NhanVat` vẫn kéo được đế giày về mặt sàn — ở
  * mọi trạng thái, không kẹp cứng theo `bbox.min.y` (bài học A2 vòng 4).
  */
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
 import { NhanVat } from '../../stage/nhanvat';
 
 /** Cao độ hông của "model gốc" (m) — rig normalized sẽ ghim hông ở đây. */
 const HONG_GOC = 0.94;
 
+/** Quản lý spring bone GIẢ: chỉ ghi lại từng bước `dt` được chạy. */
+interface QuanLySpringGia {
+  joints: never[];
+  buoc: number[];
+  /** Bật = giả lập thư viện gọi spring TỪ TRONG `vrm.update()`. */
+  goiTrongUpdate: boolean;
+  setInitState(): void;
+  reset(): void;
+  update(dt: number): void;
+}
+
+function springGia(goiTrongUpdate = false): QuanLySpringGia {
+  const q: QuanLySpringGia = {
+    joints: [],
+    buoc: [],
+    goiTrongUpdate,
+    setInitState: () => {},
+    reset: () => {},
+    update: (dt: number) => {
+      q.buoc.push(dt);
+    },
+  };
+  return q;
+}
+
 /** Dựng một VRM giả: cây xương người + một mesh bọc ngoài để có hộp bao thật. */
-function vrmGia(): { vrm: never; chanT: THREE.Object3D; than: THREE.Mesh } {
+function vrmGia(spring?: QuanLySpringGia): { vrm: never; chanT: THREE.Object3D; than: THREE.Mesh } {
   const scene = new THREE.Group();
   const xuong = new Map<string, THREE.Object3D>();
   const them = (ten: string, cha: THREE.Object3D, y: number, x = 0): THREE.Object3D => {
@@ -79,8 +104,14 @@ function vrmGia(): { vrm: never; chanT: THREE.Object3D; than: THREE.Mesh } {
     meta: { metaVersion: '1' },
     expressionManager: undefined,
     lookAt: undefined,
-    springBoneManager: undefined,
-    update: () => humanoid.update(),
+    springBoneManager: spring,
+    update: (dt: number) => {
+      humanoid.update();
+      // Bẫy của test "spring chạy trong vrm.update": một bản thư viện giữ
+      // tham chiếu bắt trước sẽ gọi spring Ở ĐÂY, dù `vrm.springBoneManager`
+      // đã bị tháo ra.
+      if (spring?.goiTrongUpdate) spring.update(dt);
+    },
   };
   return {
     vrm: vrm as never,
@@ -152,5 +183,138 @@ describe('G1 (#56) — bàn chân phải cắm xuống mặt sàn', () => {
     expect(tuThe.footY - tuThe.minY).toBeGreaterThan(0.02);
     expect(tuThe.footY - tuThe.minY).toBeLessThan(0.05);
     expect(Math.abs(tuThe.minY)).toBeLessThanOrEqual(0.01);
+  });
+});
+
+/** Chạy `n` khung hình theo ĐỒNG HỒ THẬT (tư thế ngồi nội suy theo đồng hồ). */
+async function chayThat(nv: NhanVat, n = 90, nghi = 18): Promise<void> {
+  for (let i = 0; i < n; i += 1) {
+    nv.capNhat(1 / 60);
+    await new Promise((r) => setTimeout(r, nghi));
+  }
+}
+
+/**
+ * G1 vòng 3 — review 26/10 CHẶN 1: **ngồi thì giày lún 5,7 cm dưới sàn**.
+ *
+ * Gốc: `gapChanNgoi` đặt bàn chân theo `MAT_SAN + deChan`, mà `deChan` là
+ * khoảng xương-chân → đế giày chốt MỘT LẦN ở tư thế ĐỨNG. Khi ngồi, cổ chân
+ * xoay nên đế giày nằm xa xương bàn chân hơn hẳn (model thật: 0,093 m thay vì
+ * 0,033 m) ⇒ trừ hằng số của tư thế khác là lún đúng phần chênh. Thước
+ * `deGiayY` cũng trừ đúng hằng số đó nên mọi lượt kiểm trước đều "đạt".
+ *
+ * Test đo bằng **hộp bao chính xác** (`setFromObject(root, true)`, tức hình
+ * học thật của mesh ở tư thế hiện tại), KHÔNG dùng `deChan`. Ghế của test đặt
+ * thấp hơn cẳng chân để điều kiện sàn mới là điều kiện quyết định — đúng tình
+ * huống của cảnh thật (ghế chibi 0,2585 m, cẳng chân 0,25 m).
+ */
+describe('G1 vòng 3 (#56) — NGỒI: đế giày cũng phải ở mặt sàn', () => {
+  /** Mặt ghế thấp hơn cẳng chân của model giả ⇒ sàn là điều kiện quyết định. */
+  const GHE_THAP = 0.18;
+
+  it('ngồi: đế giày về mặt sàn ±2 cm (đo hình học, không qua deChan)', async () => {
+    const { vrm } = vrmGia();
+    const nv = new NhanVat('n1', 'N1', vrm, true);
+    chay(nv);
+    nv.ngoi(GHE_THAP);
+    await chayThat(nv);
+    // Trước khi sửa, cùng model giả này đo được −0,053 m (giày lún dưới sàn).
+    expect(Math.abs(dayNguoi(nv))).toBeLessThanOrEqual(0.02);
+  });
+
+  it('mốc đế giày ĐỔI theo tư thế: ngồi khác đứng, đứng lại thì về mốc cũ', async () => {
+    const { vrm } = vrmGia();
+    const nv = new NhanVat('n2', 'N2', vrm, true);
+    chay(nv);
+    const dung = nv.doXuong();
+    expect(dung.deChanTuThe).toBeCloseTo(dung.deChan as number, 6);
+
+    nv.ngoi(GHE_THAP);
+    await chayThat(nv);
+    const ngoi = nv.doXuong();
+    // cổ chân xoay khi ngồi ⇒ đế giày rời xa xương bàn chân rõ rệt
+    expect(ngoi.deChanTuThe as number).toBeGreaterThan((ngoi.deChan as number) + 0.02);
+    // thước phơi ra cũng phải là thước của TƯ THẾ NÀY, và trùng phép quét
+    expect(ngoi.deGiayY as number).toBeCloseTo(ngoi.deGiayQuet as number, 3);
+
+    nv.dungLen();
+    await chayThat(nv, 90);
+    const lai = nv.doXuong();
+    expect(lai.deChanTuThe).toBeCloseTo(lai.deChan as number, 6);
+    expect(Math.abs(dayNguoi(nv))).toBeLessThanOrEqual(0.01);
+  });
+});
+
+/**
+ * G1 vòng 3 — review 26/10 CHẶN 2 + điểm mong manh 1 & 3: **nhịp spring bone**.
+ *
+ * Bản trước kẹp `buoc = min(dt/soBuoc, 1/60)` với trần 4 bước, nên một khung
+ * hình 338 ms chỉ được mô phỏng 66,7 ms: xương nhảy đủ dáng nhảy, tóc chạy
+ * chậm 5 lần rồi "đuổi kịp" — đo thật `lechToc` vọt 0,348 m.
+ */
+describe('G1 vòng 3 (#56) — spring bone: nhịp cố định, không ăn bớt thời gian', () => {
+  /** Ngủ `ms` thật rồi chạy MỘT khung — spring đo bằng đồng hồ, không bằng `dt`. */
+  async function khungDai(nv: NhanVat, ms: number): Promise<number> {
+    const t0 = performance.now();
+    await new Promise((r) => setTimeout(r, ms));
+    nv.capNhat(1 / 60);
+    return (performance.now() - t0) / 1000;
+  }
+
+  it('khung hình dài ~340 ms vẫn được mô phỏng ĐỦ, mỗi bước ≤ 1/60 s', async () => {
+    const sp = springGia();
+    const { vrm } = vrmGia(sp);
+    const nv = new NhanVat('s1', 'S1', vrm, true);
+    chay(nv, 4);
+    sp.buoc.length = 0;
+    const troi = await khungDai(nv, 340);
+    const tong = sp.buoc.reduce((a, b) => a + b, 0);
+    // Bản vòng 2 mô phỏng nhiều nhất 4 × 1/60 = 66,7 ms cho khung này.
+    expect(tong).toBeGreaterThan(troi - 0.02);
+    expect(tong).toBeLessThanOrEqual(troi + 0.02);
+    for (const b of sp.buoc) expect(b).toBeLessThanOrEqual(1 / 60 + 1e-9);
+    expect(sp.buoc.length).toBeGreaterThanOrEqual(18);
+  });
+
+  it('khung hình ngắn: vẫn đúng đồng hồ, bước ≤ 1/60 s', async () => {
+    const sp = springGia();
+    const { vrm } = vrmGia(sp);
+    const nv = new NhanVat('s2', 'S2', vrm, true);
+    chay(nv, 4);
+    sp.buoc.length = 0;
+    const troi = await khungDai(nv, 12);
+    const tong = sp.buoc.reduce((a, b) => a + b, 0);
+    expect(tong).toBeCloseTo(troi, 3);
+    for (const b of sp.buoc) expect(b).toBeLessThanOrEqual(1 / 60 + 1e-9);
+  });
+
+  it('khung hình khổng lồ (tab vừa hiện lại) không treo máy: trần 24 bước', async () => {
+    const sp = springGia();
+    const { vrm } = vrmGia(sp);
+    const nv = new NhanVat('s3', 'S3', vrm, true);
+    chay(nv, 4);
+    sp.buoc.length = 0;
+    await khungDai(nv, 700);
+    expect(sp.buoc.length).toBeLessThanOrEqual(24);
+    expect(sp.buoc.reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(0.4 + 1e-9);
+  });
+
+  it('thư viện chạy spring TRONG vrm.update → hỏng TO, không im lặng', () => {
+    const canh = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const sp = springGia(true);
+    const { vrm } = vrmGia(sp);
+    const nv = new NhanVat('s4', 'S4', vrm, true);
+    chay(nv, 5);
+    expect(nv.doXuong().springTrongUpdate as number).toBeGreaterThan(0);
+    expect(canh).toHaveBeenCalled();
+    canh.mockRestore();
+  });
+
+  it('bình thường thì spring KHÔNG hề chạy trong vrm.update', () => {
+    const sp = springGia();
+    const { vrm } = vrmGia(sp);
+    const nv = new NhanVat('s5', 'S5', vrm, true);
+    chay(nv, 10);
+    expect(nv.doXuong().springTrongUpdate).toBe(0);
   });
 });

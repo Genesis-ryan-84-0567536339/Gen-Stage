@@ -276,7 +276,18 @@ export function bangGhim(): THREE.Texture {
  * Bầu trời chiều — nền cho SÂN VƯỜN ngoài cửa sổ (cây/hàng rào là hình khối
  * thật dựng trong `phong.ts`, không còn vẽ dẹt lên một tấm như D1).
  */
+let troiMotBan: THREE.Texture | null = null;
+
 export function troiChieu(): THREE.Texture {
+  /*
+   * MỘT bản duy nhất cho cả sân vườn và phông trời (review 26/10, mục vặt):
+   * hai lần gọi là hai CanvasTexture 512×384 trùng hệt nhau, tốn thêm một lượt
+   * vẽ canvas và một texture trên GPU. `wrapS = Repeat` đặt ngay ở đây cho
+   * phông trời dùng được; tấm sân vườn có UV 0…1 nên lặp hay không không đổi
+   * gì. Ai cần lặp nhiều lần thì **nhân UV của hình khối**, đừng đụng
+   * `repeat` của texture dùng chung (xem `phongTroi()`).
+   */
+  if (troiMotBan) return troiMotBan;
   const [cv, g] = canvas(512, 384);
   const rnd = ngauNhien(31337);
   const grad = g.createLinearGradient(0, 0, 0, 384);
@@ -299,7 +310,9 @@ export function troiChieu(): THREE.Texture {
     g.fill();
   }
   const t = tex(cv, [1, 1]);
-  t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
+  t.wrapS = THREE.RepeatWrapping;
+  t.wrapT = THREE.ClampToEdgeWrapping;
+  troiMotBan = t;
   return t;
 }
 

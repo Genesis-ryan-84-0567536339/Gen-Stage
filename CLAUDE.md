@@ -46,6 +46,7 @@ bash scripts/fetch-stt.sh     # C1: venv + model PhoWhisper-small ct2 vào .cach
 node scripts/kiem-f2.mjs      # bằng chứng F2: điều khiển mượt trên FIREFOX + GPU THẬT, vào docs/f2/ (CHẠY MỘT LẦN)
 node scripts/kiem-g1.mjs      # bằng chứng G1: bỏ trần + chân chạm sàn + tóc, FIREFOX thật, vào docs/g1/ (CHẠY MỘT LẦN)
 node scripts/kiem-g1-ngoi.mjs # bằng chứng G1 mục NGỒI: nội thất cỡ chibi, chân chạm sàn khi ngồi (cổng 5363)
+node scripts/kiem-g1-vong3.mjs # bằng chứng G1 vòng 3 (review PR #70): đế giày QUÉT MESH (đứng/đi/ngồi/đứng lên) + lệch tóc mỗi 100 ms khi emote; `--dev` chạy trên dev, `--tai` chặn luồng chính 250 ms/khung để giả khung hình dài (cổng 5451/5452)
 node scripts/kiem-e1.mjs      # bằng chứng E1: UI 390 px, não diễn thật, /tts retry, hiểu "Javis", cài 1 lệnh, vào docs/e1/ (CHẠY MỘT LẦN)
 ```
 

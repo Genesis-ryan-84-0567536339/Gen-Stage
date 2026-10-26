@@ -117,8 +117,22 @@ const NGUONG_SAN_NGOI = -0.01;
  * y = 0; thảm dày 0,6 cm nên đứng trên thảm vẫn nằm trong sai số ±1 cm.
  */
 const MAT_SAN = 0;
-/** Chặn trên cho khoảng xương-bàn-chân → ĐẾ giày đo trên model (m). */
+/** Chặn trên cho khoảng xương-bàn-chân → ĐẾ giày đo trên model (m), tư thế ĐỨNG. */
 const DE_CHAN_MAX = 0.09;
+/**
+ * G1 vòng 3 (#56, review 26/10) — chặn trên cho khoảng xương-chân → đế giày
+ * đo ở **tư thế bất kỳ** (m).
+ *
+ * Vì sao phải có số riêng, cao hơn `DE_CHAN_MAX`: khoảng này KHÔNG phải bề dày
+ * đế giày, nó là "điểm thấp nhất của bàn chân nằm dưới xương bàn chân bao
+ * nhiêu", và nó đổi theo tư thế. Đứng: cổ chân thẳng, đế ngay dưới xương,
+ * 0,033 m. Ngồi: cổ chân xoay nên gót/mũi đổ ra xa xương, đo thật 0,093 m.
+ * Lấy hằng số của tư thế đứng mà trừ cho tư thế ngồi là lún 5,7 cm dưới sàn —
+ * đúng lỗi CHẶN 1 của review.
+ */
+const DE_GIAY_TU_THE_MAX = 0.2;
+/** Đo lại khoảng xương-chân → đế giày mỗi bấy nhiêu ms khi tư thế đang đổi. */
+const CHU_KY_DO_DE = 80;
 /**
  * G1 (#60) — **bước cố định của spring bone** (s). Tóc/váy tích phân Euler nửa
  * ẩn; `dt` của một khung hình nặng (tab vừa hiện lại, GC, đổi cảnh) có thể lên
@@ -128,8 +142,30 @@ const DE_CHAN_MAX = 0.09;
  * thì **chia bước**, không đưa thẳng `dt` lớn vào bộ tích phân.
  */
 const DT_SPRING = 1 / 60;
-/** Trần số bước spring trong MỘT khung hình (khỏi treo máy sau khi tab ẩn lâu). */
-const BUOC_SPRING_TOI_DA = 4;
+/**
+ * Trần số bước spring trong MỘT khung hình (khỏi treo máy sau khi tab ẩn lâu),
+ * và trần thời gian mô phỏng trong một khung (s).
+ *
+ * G1 vòng 3 (#56, review 26/10 — CHẶN 2): bản trước để trần 4 bước **và** kẹp
+ * `buoc = min(dt/soBuoc, DT_SPRING)`, nên khung hình dài 129 ms (bản build) /
+ * 338 ms (dev) chỉ được mô phỏng 66,7 ms. Xương thì nhảy đủ 338 ms dáng nhảy
+ * `Dance_Loop`, tóc chỉ chạy 1/5 chỗ đó ⇒ đuôi tóc **tụt lại sau đầu** đúng
+ * khoảng cách đầu vừa đi: đo thật `lechToc` vọt 0,348 m ở t ≈ 200 ms rồi mới
+ * đuổi kịp. Nhịp cố định chỉ chữa được giật khi nó **không ăn bớt thời gian**:
+ * `24 × 1/60 = 0,4 s` nên mọi khung hình tới 400 ms được mô phỏng ĐỦ, với bước
+ * luôn ≤ 1/60 s. Dài hơn 400 ms (tab vừa hiện lại) thì bỏ phần dư — thà tóc
+ * chậm một khung còn hơn treo máy.
+ */
+const BUOC_SPRING_TOI_DA = 24;
+const DT_SPRING_TOI_DA = 0.4;
+/**
+ * Trần lực MỘT BƯỚC spring, theo tỉ lệ độ dài đoạn xương — xem `dongMocSpring`.
+ * Điều kiện ổn định của tích phân Euler hiện: lực mỗi bước phải nhỏ so với
+ * đoạn xương, không thì đuôi vượt qua tâm và phép chuẩn hoá lật hướng.
+ */
+const TRAN_LUC_BUOC = 0.3;
+/** Bẫy `sb.update` trong bấy nhiêu khung hình đầu để bắt thư viện đổi cách gọi. */
+const SO_KHUNG_BAY_SPRING = 12;
 /**
  * G1 (#60) — **giữ tóc đúng dáng tác giả vẽ sau khi chibi hoá.**
  *
@@ -148,11 +184,19 @@ const TOC_CUNG_THEM = 2.6;
 const TOC_RU_BOT = 0.35;
 /** Tóc không được quét xuống thấp hơn đế giày — chừa lề bấy nhiêu mét. */
 const LE_TOC_TREN_SAN = 0.03;
+/** Chờ bấy nhiêu giây cho tóc về dáng cân bằng rồi mới đóng lại mốc (xem `chotLaiMocToc`). */
+const CHO_ON_TOC = 3;
+/** Phần thân dưới (tính từ đế giày lên) phải KHÔNG có lọn tóc rủ tới. */
+const TOC_CHUA_THAN_DUOI = 0.3;
 /** Chặn dưới khi thu gọn chuỗi tóc (dưới mức này là tóc teo lạc khỏi mái). */
 const THU_TOC_TOI_THIEU = 0.55;
 /** Trục đứng + quay rỗng, dùng lại để không cấp phát mỗi khung hình. */
 const LEN = /* @__PURE__ */ new THREE.Vector3(0, 1, 0);
+/** Lưới thưa hoá mây điểm đế giày (m) — 6 mm là dưới sai số hình học ta cần. */
+const LUOI_MOC_DE = 0.006;
 const KHONG_QUAY = /* @__PURE__ */ new THREE.Quaternion();
+/** Thời gian VÀO của lớp cử chỉ emote/clip (ms) — trần tốc độ xoay thân/đầu. */
+const VAO_CU_CHI_MS = 800;
 /** Đầu gối khi ngồi phải cao hơn mặt ghế ít nhất bao nhiêu mét. */
 const LE_DAU_GOI = 0.03;
 
@@ -874,8 +918,38 @@ export class NhanVat {
    * theo tư thế, kẹp theo nó là kẹp nhầm một hằng số).
    */
   private deChan = 0.03;
+  /**
+   * G1 vòng 3 (#56) — khoảng xương-bàn-chân → **đế giày ở TƯ THẾ HIỆN TẠI** (m).
+   *
+   * Khác `deChan` ở chỗ: `deChan` chốt một lần ở tư thế ĐỨNG, còn số này được
+   * đo lại (quét đỉnh mesh quanh bàn chân) mỗi `CHU_KY_DO_DE` ms trong lúc tư
+   * thế đang đổi — tức khi ngồi và khi chuyển ngồi/đứng. Đứng yên thì nó bằng
+   * đúng `deChan`, không quét gì.
+   */
+  private deChanTuThe = 0.03;
+  /**
+   * Mây điểm vùng giày của từng xương bàn chân/ngón, ghi bằng toạ độ CỤC BỘ
+   * trong hệ xương đó (xem `chotMocDe`). Rỗng = model không quét được đỉnh nào
+   * (sân khấu giả trong test) → rơi về lối dự phòng.
+   */
+  private mocDe: Array<{ bone: THREE.Object3D; diem: Float32Array }> = [];
+  /** Mốc đồng hồ thật của lần quét đế giày gần nhất (ms). */
+  private tDoDe = 0;
+  /**
+   * Đếm số lần `springBoneManager.update()` bị gọi TỪ TRONG `vrm.update()` —
+   * phải luôn là 0 (xem `capNhatVrmKhongSpring`). Khác 0 = `@pixiv/three-vrm`
+   * đã đổi cách gọi spring, thứ tự một khung hình của ta sai mà không có
+   * exception nào. Phơi ra `doXuong()` + báo lỗi console một lần.
+   */
+  private springTrongUpdate = 0;
+  /** Đã báo lỗi "spring chạy trong vrm.update" chưa (báo một lần, không spam). */
+  private daBaoSpring = false;
+  /** Số bước spring của khung hình vừa rồi (bằng chứng nhịp cố định). */
+  private soBuocSpringCuoi = 0;
   /** Mốc đồng hồ thật của khung hình trước (ms) — cho mixer chạy đúng tốc độ. */
   private tKhungTruoc = 0;
+  /** Mốc đồng hồ của khung trước, dùng cho MỌI phần (kể cả spring) — xem `capNhat`. */
+  private tDongHoTruoc = 0;
   /** Mốc đồng hồ thật của khung trước, riêng cho phần LÁI (xem `capNhat`). */
   private tLaiTruoc = 0;
   /* --- F2 (#56): số đo chẩn đoán của khung lái vừa rồi (xem `vanToc()`) --- */
@@ -1022,6 +1096,11 @@ export class NhanVat {
 
   /** Hệ số đã thu gọn chuỗi tóc (1 = không đụng) — xem `thuGonToc`. */
   private tyThuToc = 1;
+  /** Thông số spring sau khi cân lực (bằng chứng số, phơi qua `doToc`). */
+  private soSpring: Record<string, number> | null = null;
+  /** Giây (đồng hồ nhân vật) lúc đóng mốc spring, và đã đóng lại mốc tóc chưa. */
+  private tChotSpring = 0;
+  private daChotLaiToc = false;
 
   /** Các khớp spring bone của model (tóc, váy, phụ kiện). */
   private khopSpring(): THREE.Object3D[] {
@@ -1038,6 +1117,30 @@ export class NhanVat {
     if (!dau) return false;
     for (let p: THREE.Object3D | null = node; p; p = p.parent) if (p === dau) return true;
     return false;
+  }
+
+  /**
+   * ĐÓNG LẠI MỐC TÓC khi tóc đã ổn định — G1 vòng 3 (#56 — CHẶN 2).
+   *
+   * `chotMocToc()` chạy ở khung hình thứ 3, lúc tóc còn ở **dáng tác giả vẽ**
+   * (cuộn sát đầu); phải vài giây sau trọng trường mới kéo nó về dáng cân
+   * bằng thật — chính ghi chú trong `thuGonToc` đã nói thế. Nghĩa là thước
+   * `lechToc` của vòng 2 đo "lệch so với một dáng mà tóc KHÔNG BAO GIỜ ở":
+   * đứng yên, không cử động gì, nó đã báo 0,030–0,058 m. Mốc Boss là 0,07 m,
+   * nên hơn hai phần ba hạn mức bị tiêu vào cái lệch thường trực đó, và con số
+   * trong lúc emote không còn nói được "tóc có văng hay không".
+   *
+   * Đóng lại mốc một lần khi: đã qua `CHO_ON_TOC` giây kể từ lúc đóng mốc
+   * spring, và nhân vật đang ĐỨNG YÊN (không clip, không đi, không lái, không
+   * ngồi) — tức tóc đang ở dáng cân bằng thật. Từ đó `lechToc` đúng nghĩa
+   * "tóc rời dáng nghỉ của nó bao nhiêu mét".
+   */
+  private chotLaiMocToc(): void {
+    if (this.daChotLaiToc || this.tChotSpring === 0) return;
+    if (this.t - this.tChotSpring < CHO_ON_TOC) return;
+    if (this.clip || this.di || this.dangLai || this.dangNgoi || this.chuyenNgoi) return;
+    this.daChotLaiToc = true;
+    this.chotMocToc();
   }
 
   /** Đóng mốc rest cho tóc — gọi NGAY SAU `setInitState()` + `reset()`. */
@@ -1091,6 +1194,8 @@ export class NhanVat {
       lechVay: +lechVay.toFixed(4),
       xaDauNhat: +xaNhat.toFixed(4),
       tyLeGoc: +this.goc.scale.x.toFixed(4),
+      mocDaOnDinh: this.daChotLaiToc,
+      spring: this.soSpring,
     };
   }
 
@@ -1180,7 +1285,25 @@ export class NhanVat {
       // `tuThe.minY` KHÔNG dùng được cho việc này ở model tóc dài (đuôi tóc
       // thấp hơn gót chân) — xem `chotDeChan()`.
       deChan: +this.deChan.toFixed(4),
-      deGiayY: +(this.doChanThapNhat() - this.deChan).toFixed(4),
+      // vòng 3: mốc đế THEO TƯ THẾ hiện tại (đứng = `deChan`, ngồi = đo lại)
+      deChanTuThe: +this.deChanTuThe.toFixed(4),
+      // cao độ MẶT ĐẾ suy từ mốc trong hệ xương (null = model không có mốc)
+      deGiayMoc: Number.isFinite(this.deGiayTheoMoc())
+        ? +this.deGiayTheoMoc().toFixed(4)
+        : null,
+      soMocDe: this.mocDe.length,
+      deGiayY: +(this.doChanThapNhat() - this.deChanTuThe).toFixed(4),
+      /*
+       * `deGiayQuet` — đế giày đo THUẦN HÌNH HỌC (quét đỉnh mesh quanh bàn
+       * chân, không trừ hằng số nào). Chỉ tính khi tư thế đang đổi (ngồi /
+       * chuyển ngồi-đứng), vì ở đó mới có chuyện mốc tư thế đứng sai; đứng/đi
+       * /emote thì `null` để không cho dụng cụ đo làm hỏng cái cần đo (bài học
+       * F2: gọi quét mỗi khung kéo FPS 60 → 8,5 rồi kết luận về độ mượt).
+       */
+      deGiayQuet:
+        this.dangNgoi || this.chuyenNgoi ? +this.quetDayGiay().toFixed(4) : null,
+      springTrongUpdate: this.springTrongUpdate,
+      soBuocSpring: this.soBuocSpringCuoi,
       toc: this.doToc(),
       seatY: +this.seatYHienTai.toFixed(4),
       dayDui: +this.dayDui.toFixed(4),
@@ -1642,10 +1765,17 @@ export class NhanVat {
       // không chui xuống dưới sàn — đùi khi đó hơi chếch lên, vẫn đúng dáng
       // ngồi. Ghế cao hơn (cảnh này) thì bàn chân lơ lửng, chấp nhận được.
       const daiOng = chan ? chan.getWorldPosition(new THREE.Vector3()).distanceTo(pOng) : 0;
-      // G1 (#56): sàn thật của bàn chân là `MAT_SAN + deChan` (đế giày), không
-      // phải y = 0 của xương — ghế thấp thì bàn chân đặt ĐÚNG mặt sàn thay vì
-      // lún xuống 3 cm. `NGUONG_SAN_NGOI` giữ lại làm lề âm 1 cm cho ghế vừa sát.
-      const sanChan = MAT_SAN + this.deChan + NGUONG_SAN_NGOI;
+      // G1 (#56): sàn thật của bàn chân là `MAT_SAN + deChanTuThe` (đế giày),
+      // không phải y = 0 của xương — ghế thấp thì bàn chân đặt ĐÚNG mặt sàn
+      // thay vì lún xuống. `NGUONG_SAN_NGOI` giữ lại làm lề âm 1 cm cho ghế
+      // vừa sát.
+      //
+      // Vòng 3 (#56, review 26/10 — CHẶN 1): phải là `deChanTuThe` (đo lại
+      // theo tư thế NGỒI), không phải `deChan` (hằng số tư thế ĐỨNG). Dùng
+      // hằng số đứng 0,033 trong khi đế giày khi ngồi nằm 0,093 dưới xương
+      // bàn chân ⇒ cả đôi giày lún 5,7 cm dưới ván sàn, mà thước `deGiayY`
+      // cũng trừ đúng hằng số đó nên báo "đạt 2,2 mm".
+      const sanChan = MAT_SAN + this.deChanTuThe + NGUONG_SAN_NGOI;
       const dauGoiY = Math.max(this.seatYHienTai + LE_DAU_GOI, daiOng + sanChan);
       this.quayXuongToi(`${ben}UpperLeg`, pOng.clone().sub(pDui), dauGoiY - pDui.y, truocNguoi, phai, u);
 
@@ -1872,6 +2002,25 @@ export class NhanVat {
   /** Dáng đứng gốc khi KHÔNG có clip thật: tay buông tự nhiên. */
   private datDangDung() {
     tayBuong(this.xuongBo, 1);
+    /*
+     * Chân về dáng đứng. Chỉ có nghĩa ở LỚP DỰ PHÒNG (máy không nạp được bộ
+     * clip CC0): `gapChanNgoi` ghi thẳng tư thế ngồi vào xương chân, mà lớp dự
+     * phòng không có mixer nào xoá hộ. Thiếu dòng này thì đứng lên xong bàn
+     * chân vẫn còn vặn theo dáng ngồi và đế giày hở khỏi sàn 5 cm — bắt được
+     * bằng test "đứng lại thì về mốc cũ" (G1 vòng 3).
+     */
+    for (const t of [
+      'leftUpperLeg',
+      'rightUpperLeg',
+      'leftLowerLeg',
+      'rightLowerLeg',
+      'leftFoot',
+      'rightFoot',
+      'leftToes',
+      'rightToes',
+    ] as const) {
+      this.xuong(t)?.rotation.set(0, 0, 0);
+    }
   }
 
   /** Dáng nền nào nên chạy lúc này (và tốc độ phát). */
@@ -1909,6 +2058,20 @@ export class NhanVat {
     const nay = bayGio();
     this.t = (nay - this.t0) / 1000;
     const t = this.t;
+    /*
+     * dt THẬT của khung này theo ĐỒNG HỒ (s) — G1 vòng 3 (#56 — CHẶN 2).
+     *
+     * `World` truyền vào `dt = min(getDelta(), 1/20)`: trần 50 ms. Lớp clip
+     * nền đã bỏ con số đó để tự đo đồng hồ (`dtThat` dưới đây), nhưng spring
+     * bone thì vẫn ăn `dt` bị kẹp — nên trên khung hình 217–338 ms (Firefox +
+     * nouveau), **xương nhảy đủ thời gian mà tóc chỉ chạy 50 ms**. Tóc tụt lại
+     * sau đầu đúng khoảng đầu vừa đi rồi mới đuổi kịp: đo thật `lechToc` vọt
+     * 0,348 m ở t ≈ 200 ms của emote `rat-vui`. Một bộ tích phân chỉ "nhịp cố
+     * định" khi nó chạy ĐÚNG đồng hồ của phần còn lại.
+     */
+    const dtDongHo =
+      this.tDongHoTruoc > 0 ? Math.min((nay - this.tDongHoTruoc) / 1000, 0.5) : dt;
+    this.tDongHoTruoc = nay;
 
     // tâm trạng tạm (sau actor.emote) tự rã về mặc định
     if (t >= this.hanMood) {
@@ -2218,7 +2381,26 @@ export class NhanVat {
       const troi = (nay - c.batDau) / 1000;
       const dai = Math.max(1, c.dai);
       const u = c.loop ? ((troi * 1000) % dai) / dai : Math.min(1, (troi * 1000) / dai);
-      const w = trongSoCuChi(u, c.loop) * (c.manh ?? 1);
+      /*
+       * G1 vòng 3 (#56 — CHẶN 2): VÀO EMOTE PHẢI CÓ TRẦN TỐC ĐỘ.
+       *
+       * `trongSoCuChi` mặc định vào trong 18 % thời lượng, tức emote 2,2 s thì
+       * cả thân (spine 0,2 + chest 0,1 + neck 0,18 + head 0,18 rad với `buon`)
+       * nghiêng xong trong 396 ms. Đuôi tóc của Nhi cách gốc đầu 1,09 m, nên
+       * đầu nghiêng bấy nhiêu trong bấy nhiêu thời gian là đuôi tóc phải chạy
+       * gần 0,2 m — spring không kịp, chuỗi cuộn lại và `lechToc` vọt (đo
+       * thật: 0,118 m với `buon`, 0,085 m với `rat-vui`).
+       *
+       * Chữa bằng cách khai thời gian vào theo GIÂY, không theo phần trăm
+       * thời lượng: cùng góc nghiêng mà chạy trong `VAO_CU_CHI_MS` thì tốc độ
+       * góc giảm đúng tỉ lệ. Emote ngắn thì vẫn chặn trên ở 42 % thời lượng để
+       * còn kịp diễn.
+       */
+      const vao = Math.min(0.42, Math.max(0.18, VAO_CU_CHI_MS / dai));
+      // RA cũng phải có trần tốc độ: đo thật, đỉnh lệch tóc của `ngac-nhien`
+      // nằm ở cuối emote, lúc thân rời dáng "giật mình" về idle.
+      const ra = Math.min(0.42, Math.max(0.22, VAO_CU_CHI_MS / dai));
+      const w = trongSoCuChi(u, c.loop, vao, ra) * (c.manh ?? 1);
       const ten = c.ten;
       const f = ten.startsWith('emote:')
         ? CU_CHI_EMOTE[ten.slice('emote:'.length)]
@@ -2327,12 +2509,16 @@ export class NhanVat {
       if (this.khungDaVe === 3) {
         this.canDeuChibi();
         this.chotDeChan();
+        this.chotMocDe();
         this.dongMocSpring();
       }
     }
 
+    this.capNhatDeChanTuThe();
+    this.chotLaiMocToc();
     if (!this.dangNgoi) this.camChanXuongSan();
-    this.chaySpring(dt);
+    // spring chạy theo ĐỒNG HỒ THẬT, không theo `dt` đã bị `World` kẹp 1/20 s
+    this.chaySpring(dtDongHo);
   }
 
   /**
@@ -2345,11 +2531,39 @@ export class NhanVat {
   private capNhatVrmKhongSpring(dt: number): void {
     const vrm = this.vrm as unknown as { springBoneManager?: unknown };
     const sb = vrm.springBoneManager;
+    /*
+     * KHẲNG ĐỊNH (review 26/10, điểm mong manh 1): cách tháo-gắn này bám vào
+     * chi tiết BÊN TRONG `VRM.update()`. Nếu thư viện gọi spring qua một tham
+     * chiếu đã bắt trước đó thì spring vẫn chạy trong `vrm.update()`, tức
+     * chạy TRƯỚC `camChanXuongSan()` — tóc giật ngược mỗi khung, không
+     * exception, không test nào bắt. Nên trong vài khung đầu ta bẫy thẳng
+     * `sb.update`: bị gọi ở đây một lần là hỏng TO (báo lỗi console + phơi số
+     * ra `doXuong().springTrongUpdate`), không im lặng chạy sai.
+     */
+    const bay = this.khungDaVe <= SO_KHUNG_BAY_SPRING;
+    const q = sb as { update?: (d: number) => void } | undefined;
+    const goc = bay ? q?.update : undefined;
+    if (q && goc) {
+      q.update = (d: number): void => {
+        this.springTrongUpdate += 1;
+        goc.call(q, d);
+      };
+    }
     vrm.springBoneManager = undefined;
     try {
       this.vrm.update(dt);
     } finally {
       vrm.springBoneManager = sb;
+      if (q && goc) q.update = goc;
+    }
+    if (this.springTrongUpdate > 0 && !this.daBaoSpring) {
+      this.daBaoSpring = true;
+      console.error(
+        `[gen-stage] ${this.id}: @pixiv/three-vrm vẫn chạy spring bone TRONG ` +
+          'vrm.update() dù springBoneManager đã tháo ra — thứ tự một khung ' +
+          'hình của NhanVat.capNhat không còn đúng, tóc sẽ giật. Xem ' +
+          'capNhatVrmKhongSpring().',
+      );
     }
   }
 
@@ -2366,6 +2580,18 @@ export class NhanVat {
    */
   private camChanXuongSan(): void {
     this.goc.updateMatrixWorld(true);
+    /*
+     * Vòng 3 (#56): có mốc đế trong hệ xương thì cắm ĐÚNG MẶT ĐẾ xuống sàn,
+     * không qua hằng số nào. Lúc đi, cổ chân xoay nên đế rời xa xương bàn
+     * chân thêm ~1 cm so với lúc đứng: bản vòng 2 cộng hằng số của tư thế
+     * đứng, đo thật có mẫu giày lún 1,2 cm dưới ván sàn.
+     */
+    const deY = this.deGiayTheoMoc();
+    if (Number.isFinite(deY)) {
+      this.goc.position.y += MAT_SAN - deY;
+      this.goc.updateMatrixWorld(true);
+      return;
+    }
     const chanY = this.doChanThapNhat();
     if (!Number.isFinite(chanY)) return;
     this.goc.position.y += MAT_SAN + this.deChan - chanY;
@@ -2387,18 +2613,55 @@ export class NhanVat {
    * toạ độ 4 xương — không có chi phí thường trực.
    */
   private chotDeChan(): void {
-    this.goc.updateMatrixWorld(true);
+    const day = this.quetDayGiay();
     const chanY = this.doChanThapNhat();
-    if (!Number.isFinite(chanY)) return;
+    if (!Number.isFinite(chanY) || !Number.isFinite(day)) return;
+    this.deChan = THREE.MathUtils.clamp(chanY - day, 0, DE_CHAN_MAX);
+    this.deChanTuThe = this.deChan;
+  }
 
-    const moc: THREE.Vector3[] = [];
-    for (const t of ['leftFoot', 'rightFoot', 'leftToes', 'rightToes'] as const) {
-      const b = this.xuongThat(t);
-      if (b) moc.push(b.getWorldPosition(new THREE.Vector3()));
-    }
-    const v = new THREE.Vector3();
+  /**
+   * QUÉT ĐỈNH MESH quanh bàn chân → cao độ **đế giày thật** (world y) ở tư thế
+   * hiện tại. Đây là phép đo hình học, không trừ hằng số nào: duyệt đỉnh của
+   * mọi `SkinnedMesh` (đã biến dạng xương, `getVertexPosition`), chỉ nhận đỉnh
+   * nằm trong bán kính 0,22 m quanh một xương bàn chân và không cao hơn xương
+   * bàn chân quá 6 cm, rồi lấy `y` nhỏ nhất.
+   */
+  private quetDayGiay(): number {
     let day = Infinity;
+    const so = this.quetVungGiay((v) => {
+      if (v.y < day) day = v.y;
+    });
+    if (so > 0 && Number.isFinite(day)) return day;
+    // không quét được đỉnh nào (model không phải SkinnedMesh) → hộp bao
+    this.goc.updateMatrixWorld(true);
+    return new THREE.Box3().setFromObject(this.goc, true).min.y;
+  }
+
+  /**
+   * Quét đỉnh mesh quanh bàn chân → gọi `nhan(v, bone)` cho MỖI đỉnh thuộc
+   * vùng "giày": nằm trong bán kính 0,22 m quanh một xương bàn chân/ngón và
+   * không cao hơn xương bàn chân thấp nhất của bên đó quá 6 cm. `bone` là
+   * xương gần nhất đỉnh đó — tức xương đang kéo nó đi.
+   */
+  private quetVungGiay(nhan: (v: THREE.Vector3, bone: THREE.Object3D) => void): number {
+    this.goc.updateMatrixWorld(true);
+    const ben = (['left', 'right'] as const)
+      .map((b) => {
+        const xs: THREE.Object3D[] = [];
+        for (const t of [`${b}Foot`, `${b}Toes`] as const) {
+          const x = this.xuongThat(t);
+          if (x) xs.push(x);
+        }
+        const moc = xs.map((x) => x.getWorldPosition(new THREE.Vector3()));
+        return { xuong: xs, moc, tran: moc.length ? Math.min(...moc.map((m) => m.y)) + 0.06 : 0 };
+      })
+      .filter((b) => b.moc.length > 0);
+    if (ben.length === 0) return 0;
+
+    const v = new THREE.Vector3();
     let soDinh = 0;
+    let soNhan = 0;
     this.vrm.scene.traverse((o) => {
       const m = o as THREE.SkinnedMesh;
       if (!m.isSkinnedMesh || typeof m.getVertexPosition !== 'function') return;
@@ -2409,23 +2672,121 @@ export class NhanVat {
       for (let i = 0; i < pos.count; i += 1) {
         m.getVertexPosition(i, v);
         v.applyMatrix4(m.matrixWorld);
-        if (v.y > chanY + 0.06 || v.y >= day) continue;
-        for (const c of moc) {
-          if ((v.x - c.x) ** 2 + (v.z - c.z) ** 2 <= 0.22 * 0.22) {
-            day = v.y;
-            break;
+        for (const b of ben) {
+          if (v.y > b.tran) continue;
+          let gan: THREE.Object3D | null = null;
+          let d2 = 0.22 * 0.22;
+          for (let k = 0; k < b.moc.length; k += 1) {
+            const c = b.moc[k]!;
+            const d = (v.x - c.x) ** 2 + (v.z - c.z) ** 2;
+            if (d <= d2) {
+              d2 = d;
+              gan = b.xuong[k]!;
+            }
           }
+          if (!gan) continue;
+          soNhan += 1;
+          nhan(v, gan);
+          break;
         }
       }
       soDinh += pos.count;
     });
+    return soNhan;
+  }
 
-    if (!Number.isFinite(day)) {
-      // không quét được đỉnh nào (model không phải SkinnedMesh) → hộp bao
-      day = new THREE.Box3().setFromObject(this.goc, true).min.y;
+  /**
+   * CHỐT MÂY ĐIỂM ĐẾ GIÀY trong hệ **xương bàn chân** — G1 vòng 3 (#56).
+   *
+   * Vì sao phải là MÂY ĐIỂM, không phải một điểm thấp nhất: đôi giày là một
+   * khối dài, cổ chân xoay thì điểm thấp nhất **đổi sang đỉnh khác** (đứng là
+   * giữa đế, ngồi là mép gót). Thử bằng một điểm: lúc ngồi nó báo đế ở
+   * −0,007 m trong khi đỉnh thấp nhất thật là −0,055 m — sai 4,8 cm, y như
+   * dùng hằng số. Giữ cả vùng giày (thưa hoá về lưới 6 mm cho nhẹ) rồi mỗi
+   * khung lấy `y` nhỏ nhất sau khi biến đổi là ĐÚNG với mọi góc xoay, giá
+   * khoảng 4 phép nhân một điểm.
+   */
+  private chotMocDe(): void {
+    const theo = new Map<THREE.Object3D, Map<string, THREE.Vector3>>();
+    const tam = new THREE.Vector3();
+    this.quetVungGiay((v, bone) => {
+      let o = theo.get(bone);
+      if (!o) {
+        o = new Map();
+        theo.set(bone, o);
+      }
+      bone.worldToLocal(tam.copy(v));
+      const kh =
+        `${Math.round(tam.x / LUOI_MOC_DE)}|` +
+        `${Math.round(tam.y / LUOI_MOC_DE)}|` +
+        `${Math.round(tam.z / LUOI_MOC_DE)}`;
+      const cu = o.get(kh);
+      if (!cu || tam.y < cu.y) o.set(kh, tam.clone());
+    });
+    this.mocDe = [];
+    for (const [bone, o] of theo) {
+      const diem = new Float32Array(o.size * 3);
+      let i = 0;
+      for (const p of o.values()) {
+        diem[i] = p.x;
+        diem[i + 1] = p.y;
+        diem[i + 2] = p.z;
+        i += 3;
+      }
+      this.mocDe.push({ bone, diem });
     }
-    if (!Number.isFinite(day)) return;
-    this.deChan = THREE.MathUtils.clamp(chanY - day, 0, DE_CHAN_MAX);
+  }
+
+  /**
+   * Cao độ ĐẾ GIÀY hiện tại (m) suy từ mây điểm trong hệ xương — đúng mọi tư
+   * thế, và chỉ cần HÀNG `y` của `matrixWorld` nên 4 phép nhân một điểm.
+   */
+  private deGiayTheoMoc(): number {
+    let y = Infinity;
+    for (const m of this.mocDe) {
+      const e = m.bone.matrixWorld.elements;
+      const d = m.diem;
+      for (let i = 0; i < d.length; i += 3) {
+        const wy = e[1]! * d[i]! + e[5]! * d[i + 1]! + e[9]! * d[i + 2]! + e[13]!;
+        if (wy < y) y = wy;
+      }
+    }
+    return Number.isFinite(y) ? y : NaN;
+  }
+
+  /**
+   * G1 vòng 3 (#56 — CHẶN 1 của review 26/10) — đo lại khoảng xương-chân →
+   * đế giày **theo tư thế hiện thời**.
+   *
+   * Đứng/đi/emote: cổ chân gần như không xoay, mốc `deChan` chốt ở khung thứ 3
+   * đúng tới ±0,3 mm (đo độc lập trong review), nên không quét gì — khỏi tốn.
+   * Ngồi và lúc đang chuyển ngồi/đứng: cổ chân xoay, đế giày rời xa xương bàn
+   * chân tới 9,3 cm, nên phải quét lại. Quét mỗi `CHU_KY_DO_DE` ms (không mỗi
+   * khung hình) là đủ: tư thế ngồi hội tụ trong ~1,2 s.
+   */
+  private capNhatDeChanTuThe(): void {
+    const deY = this.deGiayTheoMoc();
+    const chanY = this.doChanThapNhat();
+    if (Number.isFinite(deY) && Number.isFinite(chanY)) {
+      this.deChanTuThe = THREE.MathUtils.clamp(chanY - deY, 0, DE_GIAY_TU_THE_MAX);
+      return;
+    }
+    /*
+     * LỐI DỰ PHÒNG — model không có `SkinnedMesh` nào (sân khấu giả trong
+     * test, hoặc model lạ): không có mốc trong hệ xương thì quét lại theo chu
+     * kỳ, và chỉ khi tư thế đang đổi (đứng yên thì mốc tư thế đứng vẫn đúng).
+     */
+    if (!this.dangNgoi && !this.chuyenNgoi) {
+      this.deChanTuThe = this.deChan;
+      return;
+    }
+    const nay = bayGio();
+    if (nay - this.tDoDe < CHU_KY_DO_DE) return;
+    this.tDoDe = nay;
+    const day = this.quetDayGiay();
+    const chan2 = this.doChanThapNhat();
+    if (!Number.isFinite(chan2) || !Number.isFinite(day)) return;
+    this.deChanTuThe = THREE.MathUtils.clamp(chan2 - day, 0, DE_GIAY_TU_THE_MAX);
   }
 
   /**
@@ -2446,6 +2807,17 @@ export class NhanVat {
    * 1,6 m/s không quăng tóc ra sau; tóc vẫn đung đưa theo cử động đầu/thân.
    */
   private dongMocSpring(): void {
+    const tt = {
+      soKhop: 0,
+      cungMin: Infinity,
+      cungMax: 0,
+      hamMin: Infinity,
+      hamMax: 0,
+      daiMin: Infinity,
+      daiMax: 0,
+      /** Lực một bước / độ dài đoạn xương, lớn nhất — >1 là mất ổn định. */
+      lucTrenDai: 0,
+    };
     this.goc.updateMatrixWorld(true);
     const sb = this.vrm.springBoneManager as
       | {
@@ -2456,17 +2828,10 @@ export class NhanVat {
       | undefined;
     if (!sb) return;
     this.thuGonToc(sb.joints ?? []);
+    // `center` phải đặt TRƯỚC `setInitState()`: hàm đó lưu đuôi tóc trong hệ
+    // quy chiếu của `center`.
     for (const k of sb.joints ?? []) {
-      if (!k?.bone || !k.settings) continue;
-      k.goc ??= {
-        stiffness: k.settings.stiffness,
-        gravityPower: k.settings.gravityPower,
-        hitRadius: k.settings.hitRadius,
-      };
-      const ty = tyLeTheGioi(k.bone);
-      k.settings.stiffness = k.goc.stiffness * ty * TOC_CUNG_THEM;
-      k.settings.gravityPower = k.goc.gravityPower * ty * TOC_RU_BOT;
-      k.settings.hitRadius = k.goc.hitRadius * ty;
+      if (!k?.bone) continue;
       // quán tính trong hệ quy chiếu NHÂN VẬT (xem ghi chú trên)
       try {
         k.center = this.goc;
@@ -2475,8 +2840,39 @@ export class NhanVat {
       }
     }
     sb.setInitState?.();
+    for (const k of sb.joints ?? []) {
+      if (!k?.bone || !k.settings) continue;
+      k.goc ??= {
+        stiffness: k.settings.stiffness,
+        gravityPower: k.settings.gravityPower,
+        hitRadius: k.settings.hitRadius,
+      };
+      const ty = tyLeTheGioi(k.bone);
+      /*
+       * TRẦN LỰC MỘT BƯỚC — G1 vòng 3 (#56 — CHẶN 2).
+       *
+       * `VRMSpringBoneJoint.update()` cộng `stiffness · dt` vào đuôi đoạn rồi
+       * **chuẩn hoá lại về đúng độ dài đoạn xương**. Đo thật thông số của Nhi
+       * sau khi cân theo tỉ lệ chibi: `stiffness · (1/60) / độ-dài-đoạn` lên
+       * tới **0,938** — tức mỗi bước đuôi bị ném đi gần bằng cả đoạn xương, sát
+       * mép mất ổn định của tích phân Euler hiện. Hệ quả là `lechToc` không
+       * còn là một hàm êm của cử động: cùng một emote, lượt này 0,06 m, lượt
+       * sau 0,30 m, tuỳ khung hình rơi vào đâu — đúng kiểu "tóc văng" Boss
+       * thấy và đúng chỗ review PR #70 đoán. Kẹp ở 30 % độ dài đoạn là điều
+       * kiện ổn định, và là TỈ LỆ nên model nào cũng dùng được.
+       */
+      const dai = doDaiKhop(k);
+      const tran =
+        Number.isFinite(dai) && dai > 0 ? (TRAN_LUC_BUOC * dai) / DT_SPRING : Infinity;
+      k.settings.stiffness = Math.min(k.goc.stiffness * ty * TOC_CUNG_THEM, tran);
+      k.settings.gravityPower = Math.min(k.goc.gravityPower * ty * TOC_RU_BOT, tran);
+      k.settings.hitRadius = k.goc.hitRadius * ty;
+      ghiSo(tt, k.settings.stiffness, k.settings.dragForce ?? 0, dai);
+    }
+    this.soSpring = tt;
     sb.reset?.();
     this.chotMocToc();
+    this.tChotSpring = this.t;
   }
 
   /**
@@ -2527,22 +2923,46 @@ export class NhanVat {
     const deY = this.doChanThapNhat() - this.deChan;
     if (!(daiNhat > 0) || !Number.isFinite(deY)) return;
 
-    const san = deY + LE_TOC_TREN_SAN;
-    if (dauY - daiNhat >= san) return; // tóc buông hết vẫn trên sàn — không đụng
+    /*
+     * G1 vòng 3 (#56 — CHẶN 2): tóc được với tới mức nào không chỉ là "trên
+     * mặt sàn" mà là **trên 1/3 dưới của thân người**.
+     *
+     * Vòng 2 chỉ chặn tóc không quét sàn, nên chuỗi tóc của Nhi dài 1,09 m
+     * trên thân 1,25 m — tóc tới mắt cá. Cánh tay đòn đó biến mỗi cú xoay đầu
+     * khi emote thành vài chục cm đường đi của đuôi tóc, nên `lechToc` không
+     * thể ≤0,07 m dù spring chạy đúng đồng hồ và đúng điều kiện ổn định. Tóc
+     * tới mắt cá cũng không phải tỉ lệ chibi (`tóc đúng cỡ` là đúng mục G1).
+     * Chặn theo TỈ LỆ THÂN NGƯỜI nên model nào cũng dùng được.
+     */
+    const san = Math.max(
+      deY + LE_TOC_TREN_SAN,
+      deY + TOC_CHUA_THAN_DUOI * (dauY - deY),
+    );
+    if (dauY - daiNhat >= san) return; // tóc buông hết vẫn trên mức này — không đụng
     const k = THREE.MathUtils.clamp((dauY - san) / daiNhat, THU_TOC_TOI_THIEU, 1);
     for (const g of gocChuoi) g.bone.scale.multiplyScalar(k);
     this.tyThuToc = k;
     this.goc.updateMatrixWorld(true);
   }
 
-  /** Chạy spring bone theo **bước cố định**, chia bước khi khung hình dài. */
+  /**
+   * Chạy spring bone theo **bước cố định**, chia bước khi khung hình dài.
+   *
+   * Vòng 3 (#56 — CHẶN 2): bước phải chia ĐỦ `dt`, không được kẹp tổng thời
+   * gian. Bản trước mô phỏng nhiều nhất 66,7 ms mỗi khung, nên trên khung
+   * 129–338 ms tóc chạy chậm 2–5 lần so với đồng hồ: xương nhảy đủ, tóc đứng
+   * lại, `lechToc` vọt 0,348 m rồi mới đuổi kịp. Nay `soBuoc · buoc = dt` với
+   * `buoc ≤ 1/60` cho tới khung 400 ms.
+   */
   private chaySpring(dt: number): void {
     const sb = this.vrm.springBoneManager as { update?: (d: number) => void } | undefined;
     if (!sb?.update || !(dt > 0)) return;
     // Chưa đóng mốc xong (3 khung đầu) thì chưa chạy: mốc còn là tư thế bind.
     if (this.khungDaVe < 3) return;
-    const soBuoc = Math.min(BUOC_SPRING_TOI_DA, Math.max(1, Math.ceil(dt / DT_SPRING)));
-    const buoc = Math.min(dt / soBuoc, DT_SPRING);
+    const tong = Math.min(dt, DT_SPRING_TOI_DA);
+    const soBuoc = Math.min(BUOC_SPRING_TOI_DA, Math.max(1, Math.ceil(tong / DT_SPRING)));
+    const buoc = tong / soBuoc;
+    this.soBuocSpringCuoi = soBuoc;
     for (let i = 0; i < soBuoc; i += 1) sb.update(buoc);
   }
 }
@@ -2550,10 +2970,56 @@ export class NhanVat {
 /** Một khớp spring bone của `@pixiv/three-vrm`, phần này file cần đụng tới. */
 interface KhopSpring {
   bone?: THREE.Object3D;
+  /** Xương con làm đuôi đoạn (VRM 1.0); `null` với VRM 0.x. */
+  child?: THREE.Object3D | null;
+  /** Vị trí đuôi trong hệ xương — chỉ có SAU `setInitState()`. */
+  initialLocalChildPosition?: THREE.Vector3;
   center?: THREE.Object3D | null;
-  settings?: { stiffness: number; gravityPower: number; hitRadius: number };
+  settings?: {
+    stiffness: number;
+    gravityPower: number;
+    hitRadius: number;
+    dragForce: number;
+  };
   /** Bản gốc của `settings` trước khi cân theo tỉ lệ (ta tự gắn thêm). */
   goc?: { stiffness: number; gravityPower: number; hitRadius: number };
+}
+
+/**
+ * Độ dài THẬT (m, thế giới) của đoạn xương một khớp spring — đúng cách
+ * `VRMSpringBoneJoint._calcWorldSpaceBoneLength()` tính.
+ */
+function doDaiKhop(k: KhopSpring): number {
+  const b = k.bone;
+  if (!b) return NaN;
+  const con = k.child ?? null;
+  if (con) {
+    return b
+      .getWorldPosition(new THREE.Vector3())
+      .distanceTo(con.getWorldPosition(new THREE.Vector3()));
+  }
+  const p = k.initialLocalChildPosition;
+  if (!p || p.lengthSq() < 1e-12) return NaN;
+  return p.length() * tyLeTheGioi(b);
+}
+
+/** Gom thống kê thông số spring (bằng chứng số cho `doToc`). */
+function ghiSo(
+  tt: Record<string, number>,
+  cung: number,
+  ham: number,
+  dai: number,
+): void {
+  tt.soKhop = (tt.soKhop ?? 0) + 1;
+  tt.cungMin = Math.min(tt.cungMin!, cung);
+  tt.cungMax = Math.max(tt.cungMax!, cung);
+  tt.hamMin = Math.min(tt.hamMin!, ham);
+  tt.hamMax = Math.max(tt.hamMax!, ham);
+  if (Number.isFinite(dai) && dai > 0) {
+    tt.daiMin = Math.min(tt.daiMin!, dai);
+    tt.daiMax = Math.max(tt.daiMax!, dai);
+    tt.lucTrenDai = Math.max(tt.lucTrenDai!, (cung * DT_SPRING) / dai);
+  }
 }
 
 /** Tỉ lệ (đều) của một node so với thế giới — tích scale của cả chuỗi cha. */
