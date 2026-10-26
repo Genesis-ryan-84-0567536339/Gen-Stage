@@ -658,6 +658,34 @@ input[type="checkbox"] { width: 17px; height: 17px; min-height: 0; accent-color:
   0%, 100% { box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.5); }
   50% { box-shadow: 0 0 0 7px rgba(192, 57, 43, 0); }
 }
+/*
+ * F3 (#56) — dòng trạng thái mic ("🎤 đang nghe…" / "⏳ đang nhận dạng…" /
+ * "nghe được: «…»").
+ *
+ * `position: absolute` NGOÀI luồng flex của `#o-chat`: dòng này hiện/ẩn liên
+ * tục mỗi lượt nói, mà ô chat thì nằm sát đáy màn — để nó chen vào flex là ô
+ * chat nhảy lên nhảy xuống mỗi câu.
+ */
+#o-chat-tt {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: calc(100% + 6px);
+  padding: 5px 9px;
+  border-radius: 8px;
+  background: var(--kinh-dam);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--vien);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muc-nhat);
+  /* câu dài thì cắt bằng "…", không bẻ dòng làm che sân khấu */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
 /* 1,5 s Boss sửa chữ mic nhận được: viền xanh chạy cho thấy "sắp gửi" */
 #o-chat.cho-sua input {
   border-color: var(--xanh);

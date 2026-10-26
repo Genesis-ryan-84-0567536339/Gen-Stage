@@ -274,8 +274,10 @@ function dungGoiY(): { goiY: HTMLElement; doiHienGoiY: () => void } {
     dong('W A S D', 'lái nhân vật (giữ để đi liên tục)') +
     dong('1 – 0', '10 emote đầu') +
     dong('Space', 'nói (Enter gửi)') +
-    // C1 (#31) — mic nằm ở `src/audio/mic.ts`, chỉ ghi vào bảng gợi ý ở đây
-    dong('V (giữ)', 'giữ để NÓI, nhả là nhận chữ') +
+    // C1 (#31) — mic nằm ở `src/audio/mic.ts`, chỉ ghi vào bảng gợi ý ở đây.
+    // F3 (#56): nhắc luôn cú bấm xin quyền, vì thiếu nó thì Firefox không bao
+    // giờ mở mic và phím V im lặng tuyệt đối.
+    dong('V (giữ)', 'giữ để NÓI (bấm 🔊 Bật tiếng một lần để cho quyền mic)') +
     dong('C', 'đổi góc máy') +
     dong('E', 'kết tinh module mẫu') +
     dong('R', 'dựng lại sân khấu') +

@@ -347,6 +347,16 @@ export function batStt(host: string, cong: number): Server {
     // Vite ở cổng khác (5173) → khác nguồn. Mở `*` được vì chỉ nghe 127.0.0.1.
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    /*
+     * F3 (#56) — khai rõ `Allow-Methods` + `Max-Age`.
+     *
+     * `Content-Type: audio/ogg; codecs=opus` (dạng MediaRecorder của Firefox)
+     * KHÔNG nằm trong danh sách an toàn của CORS, nên mỗi lượt Boss nói là một
+     * `OPTIONS` đi trước. `Max-Age` cho trình duyệt nhớ kết quả preflight một
+     * ngày → lượt nói thứ hai trở đi tiết kiệm một vòng mạng.
+     */
+    res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+    res.setHeader('Access-Control-Max-Age', '86400');
     if (req.method === 'OPTIONS') {
       res.writeHead(204).end();
       return;
