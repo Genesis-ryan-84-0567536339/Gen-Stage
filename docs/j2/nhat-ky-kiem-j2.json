@@ -1,0 +1,600 @@
+{
+  "chay": "2026-10-26T19:45:16.850Z",
+  "issue": 79,
+  "trinhDuyet": "Playwright firefox-1543, headless:false, llvmpipe (chỉ đo sự kiện + hình học)",
+  "cong": {
+    "web": 5393,
+    "ttsChet": 8899,
+    "sttChet": 8898
+  },
+  "buoc": [
+    {
+      "nhan": "`actor.activities` trả về bảng ≥12 hoạt động",
+      "ok": true,
+      "chiTiet": "12 hoạt động: doc-sach-sofa, pha-ca-phe, go-may-tinh, vuon-vai, ngam-cua-so, tuoi-cay, don-ban-an, nhay-theo-nhac, tap-the-duc, di-dao, uong-nuoc-ghe-an, ngu-gat-sofa",
+      "so": {
+        "soHoatDong": 12
+      }
+    },
+    {
+      "nhan": "hai lệnh mới vào `stage.bootstrap` (nên MCP tự có tool `actor_activity`)",
+      "ok": true,
+      "chiTiet": "46 lệnh trong bootstrap"
+    },
+    {
+      "nhan": "hoạt động «Đọc sách trên sofa» (doc-sach-sofa) chạy trọn",
+      "ok": true,
+      "chiTiet": "r.ok=true · actor.activityDone · 10 bước · state idle · holding null · minY giữa 0.396 / sau 0.3725 · 19795 ms (ước 10900 ms) · ảnh hd-01-doc-sach-sofa.png",
+      "so": {
+        "name": "doc-sach-sofa",
+        "label": "Đọc sách trên sofa",
+        "ok": true,
+        "rOk": true,
+        "suKien": "actor.activityDone",
+        "buoc": 10,
+        "loiBuoc": null,
+        "stateSau": "idle",
+        "holdingSau": null,
+        "minYGiua": 0.396,
+        "minYSau": 0.3725,
+        "anh": "hd-01-doc-sach-sofa.png",
+        "msThat": 19795,
+        "uocMs": 10900
+      }
+    },
+    {
+      "nhan": "hoạt động «Pha cà phê rồi mang về bàn» (pha-ca-phe) chạy trọn",
+      "ok": true,
+      "chiTiet": "r.ok=true · actor.activityDone · 9 bước · state idle · holding null · minY giữa 0.3886 / sau 0.3703 · 18620 ms (ước 10200 ms) · ảnh hd-02-pha-ca-phe.png",
+      "so": {
+        "name": "pha-ca-phe",
+        "label": "Pha cà phê rồi mang về bàn",
+        "ok": true,
+        "rOk": true,
+        "suKien": "actor.activityDone",
+        "buoc": 9,
+        "loiBuoc": null,
+        "stateSau": "idle",
+        "holdingSau": null,
+        "minYGiua": 0.3886,
+        "minYSau": 0.3703,
+        "anh": "hd-02-pha-ca-phe.png",
+        "msThat": 18619,
+        "uocMs": 10200
+      }
+    },
+    {
+      "nhan": "hoạt động «Gõ máy tính» (go-may-tinh) chạy trọn",
+      "ok": true,
+      "chiTiet": "r.ok=true · actor.activityDone · 5 bước · state idle · holding null · minY giữa 0.166 / sau 0.1951 · 9861 ms (ước 9400 ms) · ảnh hd-03-go-may-tinh.png",
+      "so": {
+        "name": "go-may-tinh",
+        "label": "Gõ máy tính",
+        "ok": true,
+        "rOk": true,
+        "suKien": "actor.activityDone",
+        "buoc": 5,
+        "loiBuoc": null,
+        "stateSau": "idle",
+        "holdingSau": null,
+        "minYGiua": 0.166,
+        "minYSau": 0.1951,
+        "anh": "hd-03-go-may-tinh.png",
+        "msThat": 9861,
+        "uocMs": 9400
+      }
+    },
+    {
+      "nhan": "hoạt động «Vươn vai» (vuon-vai) chạy trọn",
+      "ok": true,
+      "chiTiet": "r.ok=true · actor.activityDone · 3 bước · state idle · holding null · minY giữa 0.3662 / sau 0.3689 · 5947 ms (ước 4114 ms) · ảnh hd-04-vuon-vai.png",
+      "so": {
+        "name": "vuon-vai",
+        "label": "Vươn vai",
+        "ok": true,
+        "rOk": true,
+        "suKien": "actor.activityDone",
+        "buoc": 3,
+        "loiBuoc": null,
+        "stateSau": "idle",
+        "holdingSau": null,
+        "minYGiua": 0.3662,
+        "minYSau": 0.3689,
+        "anh": "hd-04-vuon-vai.png",
+        "msThat": 5947,
+        "uocMs": 4114
+      }
+    },
+    {
+      "nhan": "hoạt động «Ra cửa sổ ngắm ra ngoài» (ngam-cua-so) chạy trọn",
+      "ok": true,
+      "chiTiet": "r.ok=true · actor.activityDone · 5 bước · state idle · holding null · minY giữa 0.3595 / sau 0.3685 · 15946 ms (ước 8200 ms) · ảnh hd-05-ngam-cua-so.png",
+      "so": {
+        "name": "ngam-cua-so",
+        "label": "Ra cửa sổ ngắm ra ngoài",
+        "ok": true,
+        "rOk": true,
+        "suKien": "actor.activityDone",
+        "buoc": 5,
+        "loiBuoc": null,
+        "stateSau": "idle",
+        "holdingSau": null,
+        "minYGiua": 0.3595,
+        "minYSau": 0.3685,
+        "anh": "hd-05-ngam-cua-so.png",
+        "msThat": 15946,
+        "uocMs": 8200
+      }
+    },
+    {
+      "nhan": "hoạt động «Tưới cây» (tuoi-cay) chạy trọn",
+      "ok": false,
+      "chiTiet": "r.ok=true · actor.activityDone · 8 bước · state playing · holding null · minY giữa 0.3728 / sau 0.3664 · 11152 ms (ước 8500 ms) · ảnh hd-06-tuoi-cay.png",
+      "so": {
+        "name": "tuoi-cay",
+        "label": "Tưới cây",
+        "ok": false,
+        "rOk": true,
+        "suKien": "actor.activityDone",
+        "buoc": 8,
+        "loiBuoc": null,
+        "stateSau": "playing",
+        "holdingSau": null,
+        "minYGiua": 0.3728,
+        "minYSau": 0.3664,
+        "anh": "hd-06-tuoi-cay.png",
+        "msThat": 11152,
+        "uocMs": 8500
+      }
+    },
+    {
+      "nhan": "hoạt động «Dọn bàn ăn» (don-ban-an) chạy trọn",
+      "ok": true,
+      "chiTiet": "r.ok=true · actor.activityDone · 5 bước · state idle · holding null · minY giữa 0.3902 / sau 0.3664 · 18912 ms (ước 8700 ms) · ảnh hd-07-don-ban-an.png",
+      "so": {
+        "name": "don-ban-an",
+        "label": "Dọn bàn ăn",
+        "ok": true,
+        "rOk": true,
+        "suKien": "actor.activityDone",
+        "buoc": 5,
+        "loiBuoc": null,
+        "stateSau": "idle",
+        "holdingSau": null,
+        "minYGiua": 0.3902,
+        "minYSau": 0.3664,
+        "anh": "hd-07-don-ban-an.png",
+        "msThat": 18912,
+        "uocMs": 8700
+      }
+    },
+    {
+      "nhan": "hoạt động «Nhảy nhẹ theo nhạc» (nhay-theo-nhac) chạy trọn",
+      "ok": false,
+      "chiTiet": "r.ok=true · actor.activityDone · 4 bước · state playing · holding null · minY giữa 0.368 / sau 0.3719 · 17996 ms (ước 9567 ms) · ảnh hd-08-nhay-theo-nhac.png",
+      "so": {
+        "name": "nhay-theo-nhac",
+        "label": "Nhảy nhẹ theo nhạc",
+        "ok": false,
+        "rOk": true,
+        "suKien": "actor.activityDone",
+        "buoc": 4,
+        "loiBuoc": null,
+        "stateSau": "playing",
+        "holdingSau": null,
+        "minYGiua": 0.368,
+        "minYSau": 0.3719,
+        "anh": "hd-08-nhay-theo-nhac.png",
+        "msThat": 17996,
+        "uocMs": 9567
+      }
+    },
+    {
+      "nhan": "hoạt động «Tập thể dục ngắn» (tap-the-duc) chạy trọn",
+      "ok": true,
+      "chiTiet": "r.ok=true · actor.activityDone · 4 bước · state idle · holding null · minY giữa 0.3675 / sau 0.3661 · 9677 ms (ước 8800 ms) · ảnh hd-09-tap-the-duc.png",
+      "so": {
+        "name": "tap-the-duc",
+        "label": "Tập thể dục ngắn",
+        "ok": true,
+        "rOk": true,
+        "suKien": "actor.activityDone",
+        "buoc": 4,
+        "loiBuoc": null,
+        "stateSau": "idle",
+        "holdingSau": null,
+        "minYGiua": 0.3675,
+        "minYSau": 0.3661,
+        "anh": "hd-09-tap-the-duc.png",
+        "msThat": 9677,
+        "uocMs": 8800
+      }
+    },
+    {
+      "nhan": "hoạt động «Đi dạo một vòng» (di-dao) chạy trọn",
+      "ok": false,
+      "chiTiet": "r.ok=true · actor.activityDone · 4 bước · state emoting · holding null · minY giữa 0.3513 / sau 0.2895 · 21238 ms (ước 10400 ms) · ảnh hd-10-di-dao.png",
+      "so": {
+        "name": "di-dao",
+        "label": "Đi dạo một vòng",
+        "ok": false,
+        "rOk": true,
+        "suKien": "actor.activityDone",
+        "buoc": 4,
+        "loiBuoc": null,
+        "stateSau": "emoting",
+        "holdingSau": null,
+        "minYGiua": 0.3513,
+        "minYSau": 0.2895,
+        "anh": "hd-10-di-dao.png",
+        "msThat": 21238,
+        "uocMs": 10400
+      }
+    },
+    {
+      "nhan": "hoạt động «Ngồi ghế ăn uống nước» (uong-nuoc-ghe-an) chạy trọn",
+      "ok": true,
+      "chiTiet": "r.ok=true · actor.activityDone · 9 bước · state idle · holding null · minY giữa 0.3804 / sau 0.3161 · 17484 ms (ước 7733 ms) · ảnh hd-11-uong-nuoc-ghe-an.png",
+      "so": {
+        "name": "uong-nuoc-ghe-an",
+        "label": "Ngồi ghế ăn uống nước",
+        "ok": true,
+        "rOk": true,
+        "suKien": "actor.activityDone",
+        "buoc": 9,
+        "loiBuoc": null,
+        "stateSau": "idle",
+        "holdingSau": null,
+        "minYGiua": 0.3804,
+        "minYSau": 0.3161,
+        "anh": "hd-11-uong-nuoc-ghe-an.png",
+        "msThat": 17484,
+        "uocMs": 7733
+      }
+    },
+    {
+      "nhan": "hoạt động «Ngủ gật trên sofa» (ngu-gat-sofa) chạy trọn",
+      "ok": true,
+      "chiTiet": "r.ok=true · actor.activityDone · 6 bước · state idle · holding null · minY giữa 0.357 / sau 0.2895 · 19862 ms (ước 10600 ms) · ảnh hd-12-ngu-gat-sofa.png",
+      "so": {
+        "name": "ngu-gat-sofa",
+        "label": "Ngủ gật trên sofa",
+        "ok": true,
+        "rOk": true,
+        "suKien": "actor.activityDone",
+        "buoc": 6,
+        "loiBuoc": null,
+        "stateSau": "idle",
+        "holdingSau": null,
+        "minYGiua": 0.357,
+        "minYSau": 0.2895,
+        "anh": "hd-12-ngu-gat-sofa.png",
+        "msThat": 19862,
+        "uocMs": 10600
+      }
+    },
+    {
+      "nhan": "MỐC 1 — cả 12 hoạt động chạy TRỌN, mỗi cái một ảnh",
+      "ok": false,
+      "chiTiet": "9/12 trọn · 12 ảnh trong docs/j2/",
+      "so": {
+        "soTron": 9,
+        "soHoatDong": 12,
+        "soAnh": 12
+      }
+    },
+    {
+      "nhan": "MỐC 2 — đế giày (quét mesh) KHÔNG lún: minY ≥ −0,01 m ở mọi mẫu",
+      "ok": true,
+      "chiTiet": "thấp nhất 0.166 m (state playing, hoạt động «go-may-tinh»), xương bàn chân 0.269 m",
+      "so": {
+        "minY": 0.166,
+        "footY": 0.269,
+        "state": "playing",
+        "hoatDong": "go-may-tinh"
+      }
+    },
+    {
+      "nhan": "`stage.describe().activity` báo đúng hoạt động đang làm",
+      "ok": true,
+      "chiTiet": "activity = \"di-dao\""
+    },
+    {
+      "nhan": "MỐC 4 — t(user.text) → t(actor.activityCancelled) ≤300 ms",
+      "ok": false,
+      "chiTiet": "null ms (cắt sau — bước; hoạt động bắt đầu 2525 ms trước đó)",
+      "so": {
+        "treCatMs": null,
+        "buocDaChay": null
+      }
+    },
+    {
+      "nhan": "cắt rồi thì `activity` về null và Nhi quay sang Boss (không đi tiếp)",
+      "ok": false,
+      "chiTiet": "{\"activity\":\"di-dao\",\"state\":\"walking\",\"queued\":2}",
+      "so": {
+        "activity": "di-dao",
+        "state": "walking",
+        "queued": 2
+      }
+    },
+    {
+      "nhan": "lệnh gửi ngay sau cú cắt vẫn `ok`",
+      "ok": true,
+      "chiTiet": "{\"ok\":true,\"result\":{\"actor\":\"gen\",\"emote\":\"dong-y\",\"started\":true,\"durationMs\":1300}}"
+    },
+    {
+      "nhan": "MỐC 3 — rảnh 65 s → ≥2 hoạt động TỰ SINH, khác nhau",
+      "ok": true,
+      "chiTiet": "2 lượt: tuoi-cay → doc-sach-sofa (2 loại khác nhau)",
+      "so": {
+        "soLuot": 2,
+        "ten": [
+          "tuoi-cay",
+          "doc-sach-sofa"
+        ],
+        "soKhacNhau": 2
+      }
+    },
+    {
+      "nhan": "lệnh tự sinh đi qua dispatcher với nguồn \"tu-sinh-hoat\" (phân biệt được trong nhật ký)",
+      "ok": true,
+      "chiTiet": "2 lệnh nguồn tu-sinh-hoat: tuoi-cay, doc-sach-sofa",
+      "so": {
+        "soLenhTuSinh": 2
+      }
+    },
+    {
+      "nhan": "lượt tự sinh đầu tiên nổ sau ~20 s im lặng (ngưỡng `ranhMs`)",
+      "ok": true,
+      "chiTiet": "lượt 1 ở +25331 ms · khoảng giữa hai lượt 38649 ms",
+      "so": {
+        "luot1Ms": 25331,
+        "giuaHaiLuotMs": 38649
+      }
+    },
+    {
+      "nhan": "sau khi tự sinh hoạt, chân vẫn chạm sàn (minY ≥ −0,01 m)",
+      "ok": true,
+      "chiTiet": "minY 0.3614 m (state walking)",
+      "so": {
+        "minY": 0.3614,
+        "footY": 0.4096,
+        "state": "walking"
+      }
+    },
+    {
+      "nhan": "r.ok = true cho MỌI lệnh trong cả phiên",
+      "ok": true,
+      "chiTiet": "192 lệnh, 0 lỗi",
+      "so": {
+        "soLenh": 192,
+        "loi": []
+      }
+    },
+    {
+      "nhan": "hoạt động chạy bằng LỆNH CÓ SẴN qua ctx.run (nhật ký có đủ moveTo/sit/play/emote)",
+      "ok": true,
+      "chiTiet": "16 lệnh actor.activity · 192 lệnh tổng"
+    },
+    {
+      "nhan": "console 0 lỗi suốt cả vòng",
+      "ok": false,
+      "chiTiet": "[console] [JavaScript Error: \"Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at http://localhost:8898/stt/khoe. (Reason: CORS request did not succeed). Status code: (null).\"] | [console] [JavaScript Error: \"Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at http://127.0.0.1:8899/tts?text=Nhi+%C6%A1i%2C+l%E1%BA%A1i+%C4%91%C3%A2y+gi%C3%BAp+anh+ch%C3%BAt&voice=nam&rate=0&pitch=0. (Reason: CORS request did not succeed). Status code: (null).\"] | [console] [JavaScript Error: \"Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at http://127.0.0.1:8899/tts?text=D%E1%BA%A1%2C+l%E1%BA%A1i+ch%E1%BB%97+S%E1%BA%BFp&voice=nu&rate=0&pitch=0. (Reason: CORS request did not succeed). Status code: (null).\"]",
+      "so": {
+        "loiConsole": [
+          "[console] [JavaScript Error: \"Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at http://localhost:8898/stt/khoe. (Reason: CORS request did not succeed). Status code: (null).\"]",
+          "[console] [JavaScript Error: \"Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at http://127.0.0.1:8899/tts?text=Nhi+%C6%A1i%2C+l%E1%BA%A1i+%C4%91%C3%A2y+gi%C3%BAp+anh+ch%C3%BAt&voice=nam&rate=0&pitch=0. (Reason: CORS request did not succeed). Status code: (null).\"]",
+          "[console] [JavaScript Error: \"Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at http://127.0.0.1:8899/tts?text=D%E1%BA%A1%2C+l%E1%BA%A1i+ch%E1%BB%97+S%E1%BA%BFp&voice=nu&rate=0&pitch=0. (Reason: CORS request did not succeed). Status code: (null).\"]"
+        ]
+      }
+    }
+  ],
+  "hoatDong": [
+    {
+      "name": "doc-sach-sofa",
+      "label": "Đọc sách trên sofa",
+      "ok": true,
+      "rOk": true,
+      "suKien": "actor.activityDone",
+      "buoc": 10,
+      "loiBuoc": null,
+      "stateSau": "idle",
+      "holdingSau": null,
+      "minYGiua": 0.396,
+      "minYSau": 0.3725,
+      "anh": "hd-01-doc-sach-sofa.png",
+      "msThat": 19795,
+      "uocMs": 10900
+    },
+    {
+      "name": "pha-ca-phe",
+      "label": "Pha cà phê rồi mang về bàn",
+      "ok": true,
+      "rOk": true,
+      "suKien": "actor.activityDone",
+      "buoc": 9,
+      "loiBuoc": null,
+      "stateSau": "idle",
+      "holdingSau": null,
+      "minYGiua": 0.3886,
+      "minYSau": 0.3703,
+      "anh": "hd-02-pha-ca-phe.png",
+      "msThat": 18619,
+      "uocMs": 10200
+    },
+    {
+      "name": "go-may-tinh",
+      "label": "Gõ máy tính",
+      "ok": true,
+      "rOk": true,
+      "suKien": "actor.activityDone",
+      "buoc": 5,
+      "loiBuoc": null,
+      "stateSau": "idle",
+      "holdingSau": null,
+      "minYGiua": 0.166,
+      "minYSau": 0.1951,
+      "anh": "hd-03-go-may-tinh.png",
+      "msThat": 9861,
+      "uocMs": 9400
+    },
+    {
+      "name": "vuon-vai",
+      "label": "Vươn vai",
+      "ok": true,
+      "rOk": true,
+      "suKien": "actor.activityDone",
+      "buoc": 3,
+      "loiBuoc": null,
+      "stateSau": "idle",
+      "holdingSau": null,
+      "minYGiua": 0.3662,
+      "minYSau": 0.3689,
+      "anh": "hd-04-vuon-vai.png",
+      "msThat": 5947,
+      "uocMs": 4114
+    },
+    {
+      "name": "ngam-cua-so",
+      "label": "Ra cửa sổ ngắm ra ngoài",
+      "ok": true,
+      "rOk": true,
+      "suKien": "actor.activityDone",
+      "buoc": 5,
+      "loiBuoc": null,
+      "stateSau": "idle",
+      "holdingSau": null,
+      "minYGiua": 0.3595,
+      "minYSau": 0.3685,
+      "anh": "hd-05-ngam-cua-so.png",
+      "msThat": 15946,
+      "uocMs": 8200
+    },
+    {
+      "name": "tuoi-cay",
+      "label": "Tưới cây",
+      "ok": false,
+      "rOk": true,
+      "suKien": "actor.activityDone",
+      "buoc": 8,
+      "loiBuoc": null,
+      "stateSau": "playing",
+      "holdingSau": null,
+      "minYGiua": 0.3728,
+      "minYSau": 0.3664,
+      "anh": "hd-06-tuoi-cay.png",
+      "msThat": 11152,
+      "uocMs": 8500
+    },
+    {
+      "name": "don-ban-an",
+      "label": "Dọn bàn ăn",
+      "ok": true,
+      "rOk": true,
+      "suKien": "actor.activityDone",
+      "buoc": 5,
+      "loiBuoc": null,
+      "stateSau": "idle",
+      "holdingSau": null,
+      "minYGiua": 0.3902,
+      "minYSau": 0.3664,
+      "anh": "hd-07-don-ban-an.png",
+      "msThat": 18912,
+      "uocMs": 8700
+    },
+    {
+      "name": "nhay-theo-nhac",
+      "label": "Nhảy nhẹ theo nhạc",
+      "ok": false,
+      "rOk": true,
+      "suKien": "actor.activityDone",
+      "buoc": 4,
+      "loiBuoc": null,
+      "stateSau": "playing",
+      "holdingSau": null,
+      "minYGiua": 0.368,
+      "minYSau": 0.3719,
+      "anh": "hd-08-nhay-theo-nhac.png",
+      "msThat": 17996,
+      "uocMs": 9567
+    },
+    {
+      "name": "tap-the-duc",
+      "label": "Tập thể dục ngắn",
+      "ok": true,
+      "rOk": true,
+      "suKien": "actor.activityDone",
+      "buoc": 4,
+      "loiBuoc": null,
+      "stateSau": "idle",
+      "holdingSau": null,
+      "minYGiua": 0.3675,
+      "minYSau": 0.3661,
+      "anh": "hd-09-tap-the-duc.png",
+      "msThat": 9677,
+      "uocMs": 8800
+    },
+    {
+      "name": "di-dao",
+      "label": "Đi dạo một vòng",
+      "ok": false,
+      "rOk": true,
+      "suKien": "actor.activityDone",
+      "buoc": 4,
+      "loiBuoc": null,
+      "stateSau": "emoting",
+      "holdingSau": null,
+      "minYGiua": 0.3513,
+      "minYSau": 0.2895,
+      "anh": "hd-10-di-dao.png",
+      "msThat": 21238,
+      "uocMs": 10400
+    },
+    {
+      "name": "uong-nuoc-ghe-an",
+      "label": "Ngồi ghế ăn uống nước",
+      "ok": true,
+      "rOk": true,
+      "suKien": "actor.activityDone",
+      "buoc": 9,
+      "loiBuoc": null,
+      "stateSau": "idle",
+      "holdingSau": null,
+      "minYGiua": 0.3804,
+      "minYSau": 0.3161,
+      "anh": "hd-11-uong-nuoc-ghe-an.png",
+      "msThat": 17484,
+      "uocMs": 7733
+    },
+    {
+      "name": "ngu-gat-sofa",
+      "label": "Ngủ gật trên sofa",
+      "ok": true,
+      "rOk": true,
+      "suKien": "actor.activityDone",
+      "buoc": 6,
+      "loiBuoc": null,
+      "stateSau": "idle",
+      "holdingSau": null,
+      "minYGiua": 0.357,
+      "minYSau": 0.2895,
+      "anh": "hd-12-ngu-gat-sofa.png",
+      "msThat": 19862,
+      "uocMs": 10600
+    }
+  ],
+  "tomTat": {
+    "soBuoc": 27,
+    "soOk": 20,
+    "thatBai": [
+      "hoạt động «Tưới cây» (tuoi-cay) chạy trọn: r.ok=true · actor.activityDone · 8 bước · state playing · holding null · minY giữa 0.3728 / sau 0.3664 · 11152 ms (ước 8500 ms) · ảnh hd-06-tuoi-cay.png",
+      "hoạt động «Nhảy nhẹ theo nhạc» (nhay-theo-nhac) chạy trọn: r.ok=true · actor.activityDone · 4 bước · state playing · holding null · minY giữa 0.368 / sau 0.3719 · 17996 ms (ước 9567 ms) · ảnh hd-08-nhay-theo-nhac.png",
+      "hoạt động «Đi dạo một vòng» (di-dao) chạy trọn: r.ok=true · actor.activityDone · 4 bước · state emoting · holding null · minY giữa 0.3513 / sau 0.2895 · 21238 ms (ước 10400 ms) · ảnh hd-10-di-dao.png",
+      "MỐC 1 — cả 12 hoạt động chạy TRỌN, mỗi cái một ảnh: 9/12 trọn · 12 ảnh trong docs/j2/",
+      "MỐC 4 — t(user.text) → t(actor.activityCancelled) ≤300 ms: null ms (cắt sau — bước; hoạt động bắt đầu 2525 ms trước đó)",
+      "cắt rồi thì `activity` về null và Nhi quay sang Boss (không đi tiếp): {\"activity\":\"di-dao\",\"state\":\"walking\",\"queued\":2}",
+      "console 0 lỗi suốt cả vòng: [console] [JavaScript Error: \"Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at http://localhost:8898/stt/khoe. (Reason: CORS request did not succeed). Status code: (null).\"] | [console] [JavaScript Error: \"Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at http://127.0.0.1:8899/tts?text=Nhi+%C6%A1i%2C+l%E1%BA%A1i+%C4%91%C3%A2y+gi%C3%BAp+anh+ch%C3%BAt&voice=nam&rate=0&pitch=0. (Reason: CORS request did not succeed). Status code: (null).\"] | [console] [JavaScript Error: \"Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at http://127.0.0.1:8899/tts?text=D%E1%BA%A1%2C+l%E1%BA%A1i+ch%E1%BB%97+S%E1%BA%BFp&voice=nu&rate=0&pitch=0. (Reason: CORS request did not succeed). Status code: (null).\"]"
+    ]
+  }
+}

@@ -344,6 +344,23 @@ describe('J2 tự sinh hoạt khi rảnh', () => {
     expect(t.may.trangThai().soCat).toBe(1);
   });
 
+  it('Boss gõ cũng cắt hoạt động do NÃO gọi, không chỉ hoạt động tự sinh', async () => {
+    /*
+     * Lỗi đo được trên Firefox lượt 1: máy gác bằng cờ "lượt này của tôi" nên
+     * Boss gõ giữa một `actor.activity` do não gọi thì Nhi đi tiếp hết vòng
+     * dạo. Một hoạt động không bao giờ là việc gấp — xem `coNguoiGoi()`.
+     */
+    const t = dungTuSinh();
+    await t.dispatcher.run('actor.activity', { actor: 'gen', name: 'di-dao' }, 'bridge');
+    expect(layHoatDong('gen')).toBe('di-dao');
+    expect(t.may.trangThai().dangChay).toBe(false); // không phải lượt của máy
+    const cat: string[] = [];
+    t.bus.on('actor.activityCancelled', (e) => cat.push(String(e.data.activity)));
+    t.bus.emit('user.text', { actor: 'owner', text: 'Nhi ơi', to: 'camera' });
+    expect(cat).toEqual(['di-dao']);
+    expect(layHoatDong('gen')).toBeNull();
+  });
+
   it('Boss bấm mic (`user.listening`) cũng cắt — mốc sớm nhất, chưa có chữ', async () => {
     const t = dungTuSinh();
     await t.tien(21_000);

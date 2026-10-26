@@ -147,10 +147,30 @@ export function batTuSinhHoat(ts: ThamSoTuSinhHoat): MayTuSinhHoat {
    */
   function coNguoiGoi(): void {
     const now = bayGio();
-    if (genId && dangChay) {
-      if (huyHoatDong(genId) !== null) soCat++;
-      dangChay = false;
-      tXongLuot = now;
+    // `genId` chỉ được điền trong `doc()`; Boss có thể gõ TRƯỚC nhịp quét đầu
+    // tiên (và test thì không gọi `nhip()` tay trước đó) — đọc lại cho chắc.
+    if (genId === null) doc();
+    /*
+     * Cắt **MỌI hoạt động đang chạy**, không chỉ hoạt động do máy này sinh ra.
+     *
+     * Bản đầu gác bằng cờ `dangChay` (= "lượt này của tôi") và đo thật trên
+     * Firefox bắt đúng lỗi đó: Boss gõ giữa một `actor.activity` do **não/bảng
+     * lệnh** gọi thì KHÔNG có `actor.activityCancelled` nào, Nhi đi tiếp hết
+     * vòng dạo (`{activity:"di-dao", state:"walking"}` sau khi Boss đã gõ).
+     *
+     * Luật đúng: **một hoạt động không bao giờ là việc gấp.** Boss gõ/nói là
+     * cần Nhi chú ý ngay, nên hoạt động nhường chỗ bất kể ai đặt nó. Điều này
+     * KHÔNG phá "lệnh não > phản xạ": mọi lệnh não khác (`moveTo`, `say`,
+     * `play`…) vẫn chạy nguyên, chỉ riêng chuỗi hoạt động bị cắt — và chính
+     * lệnh `actor.activity` cũng đã theo luật "lệnh sau thắng" (gọi hoạt động
+     * mới thì cắt hoạt động cũ).
+     */
+    if (genId) {
+      if (huyHoatDong(genId) !== null) {
+        soCat++;
+        dangChay = false;
+        tXongLuot = now;
+      }
     }
     tRanhTu = now;
   }
@@ -235,10 +255,11 @@ export function batTuSinhHoat(ts: ThamSoTuSinhHoat): MayTuSinhHoat {
    */
   boNghe.push(
     bus.on('cmd.queued', (e) => {
-      if (e.data.actor !== genId) return;
+      const gen = genId ?? doc().gen;
+      if (e.data.actor !== gen) return;
       // Bước của CHÍNH hoạt động xếp hàng sau một cú chêm của phản xạ — không
       // phải ai xen vào (xem `dangGuiBuoc` trong `hoat-dong.ts`).
-      if (dangGuiBuoc(String(genId))) return;
+      if (dangGuiBuoc(String(gen))) return;
       coNguoiGoi();
     }),
   );
@@ -247,7 +268,7 @@ export function batTuSinhHoat(ts: ThamSoTuSinhHoat): MayTuSinhHoat {
   for (const ten of ['actor.activityDone', 'actor.activityCancelled']) {
     boNghe.push(
       bus.on(ten, (e) => {
-        if (e.data.actor !== genId) return;
+        if (e.data.actor !== (genId ?? doc().gen)) return;
         dangChay = false;
         tXongLuot = bayGio();
         tRanhTu = bayGio();

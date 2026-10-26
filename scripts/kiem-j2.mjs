@@ -59,9 +59,18 @@ if (argv.includes('--lai')) {
 /* ------------------------------------------------------------- cổng riêng */
 
 const CONG_WEB = Number(process.env.GEN_STAGE_WEB_PORT ?? 5393);
-/** Cổng CHẾT cho TTS/STT — xem ghi chú ở `moTrang()`. */
-const CONG_TTS_CHET = 8899;
-const CONG_STT_CHET = 8898;
+/**
+ * Đường TTS/STT **vô hiệu nhưng CÙNG ORIGIN** — xem ghi chú ở `moTrang()`.
+ *
+ * Lượt đo đầu trỏ sang cổng chết 8898/8899 và ăn **3 lỗi console** kiểu
+ * *"Cross-Origin Request Blocked … CORS request did not succeed"* — Firefox ghi
+ * `console.error` cho cú `fetch` chết tới origin khác, trước khi code của mình
+ * kịp `catch`. Trỏ vào một đường **trên chính cổng web** thì `vite preview`
+ * trả 404 sạch sẽ, `chuanBiGiong`/`khoeStt` tự `catch` và chỉ còn
+ * `console.warn` (không tính là lỗi). Mất giọng không ảnh hưởng số đo: không
+ * hoạt động nào nói.
+ */
+const DUONG_TAT = '/__tat-tieng';
 /**
  * Firefox qua X11 + **llvmpipe**, như `kiem-g3.mjs`/`kiem-i1.mjs`.
  *
@@ -111,7 +120,7 @@ const nhatKy = {
   chay: new Date().toISOString(),
   issue: 79,
   trinhDuyet: 'Playwright firefox-1543, headless:false, llvmpipe (chỉ đo sự kiện + hình học)',
-  cong: { web: CONG_WEB, ttsChet: CONG_TTS_CHET, sttChet: CONG_STT_CHET },
+  cong: { web: CONG_WEB, duongTat: DUONG_TAT },
   buoc: [],
 };
 let soBuoc = 0;
@@ -199,21 +208,55 @@ async function moTrang() {
    * `bridge=0`: bộ này không cần bridge (xem đầu file), và nối vào bridge thật
    * của Boss là vừa sai số vừa giành sân khấu với Boss.
    *
-   * `ttsPort`/`sttPort` trỏ vào cổng CHẾT (8898/8899) — `bridge=0` chỉ tắt
-   * đường **ws**, còn `urlTts()`/`urlStt()` vẫn mặc định 8788/8790, tức bridge
-   * THẬT của Boss đang chạy. Lệnh `GET /tts` chỉ đọc cache nên vô hại, nhưng
-   * "cổng riêng" phải là cổng riêng cho MỌI đường. Mất giọng không ảnh hưởng
-   * số đo: không hoạt động nào nói, và `chuanBiGiong` hỏng chỉ ghi
-   * `console.warn` (không phải `error`) rồi nhép miệng theo độ dài chữ như A1.
+   * `ttsUrl`/`sttUrl` trỏ vào một đường vô hiệu **trên chính cổng web** —
+   * `bridge=0` chỉ tắt đường **ws**, còn `urlTts()`/`urlStt()` vẫn mặc định
+   * 8788/8790, tức bridge THẬT của Boss đang chạy. `GET /tts` chỉ đọc cache
+   * nên vô hại, nhưng "cổng riêng" phải là cổng riêng cho MỌI đường.
+   *
+   * Vì sao **cùng origin** chứ không phải cổng chết: xem `DUONG_TAT` — cú
+   * `fetch` chết sang origin khác bị Firefox ghi thẳng `console.error` (lỗi
+   * CORS) trước khi code mình kịp `catch`, và nó ăn mất phép đo "console 0 lỗi".
    */
-  await page.goto(`http://localhost:${CONG_WEB}/?bridge=0&ttsPort=${CONG_TTS_CHET}&sttPort=${CONG_STT_CHET}`, {
-    waitUntil: 'load',
-    timeout: 180000,
-  });
+  const tat = `http://localhost:${CONG_WEB}${DUONG_TAT}`;
+  await page.goto(
+    `http://localhost:${CONG_WEB}/?bridge=0&ttsUrl=${encodeURIComponent(tat)}` +
+      `&sttUrl=${encodeURIComponent(tat)}`,
+    {
+      waitUntil: 'load',
+      timeout: 180000,
+    },
+  );
   await page.waitForFunction(() => window.stage?.san === true, null, { timeout: 180000 });
   await page.evaluate(() => {
     window.__ev = [];
     window.stage.on('*', (e) => window.__ev.push({ t: e.t, event: e.event, data: e.data }));
+    /*
+     * **Chốt tư thế NGAY tại mốc `actor.activityDone`**, đồng bộ trong handler.
+     *
+     * Lượt đo đầu chấm `state` 600 ms SAU mốc đó và thấy `playing`/`emoting` ở
+     * 3 hoạt động — rồi tưởng hoạt động bỏ dở. Thật ra cả 3 đều kết thúc ở
+     * `buc-trung-tam`, nơi Nam đứng: Nhi vừa rảnh thì **phản xạ C0** (ưu tiên
+     * thấp nhất, đúng thiết kế) chạy nhánh "Boss đứng gần > 4 s → chào nhẹ" =
+     * `actor.turnTo` (state `playing`) + `actor.emote chao` (state `emoting`).
+     * Tức app đúng, **dụng cụ đo sai**: muốn biết "hoạt động kết thúc về idle"
+     * thì phải đọc đúng lúc nó kết thúc, không đọc nửa giây sau.
+     *
+     * `window.stage.doXuong()` là **đồng bộ**, nên chốt được ngay trong
+     * handler (`stage.describe` qua dispatcher thì đã là một `await`).
+     */
+    window.__chot = {};
+    window.stage.on('actor.activityDone', (e) => {
+      try {
+        const d = window.stage.doXuong(String(e.data.actor));
+        window.__chot[String(e.data.activity)] = {
+          state: d.state,
+          minY: d.tuThe?.minY ?? null,
+          footY: d.tuThe?.footY ?? null,
+        };
+      } catch {
+        /* actor vừa bị xoá */
+      }
+    });
   });
   return { browser, page, loiConsole };
 }
@@ -303,6 +346,8 @@ try {
     await nghi(Math.min(3000, Math.max(900, (h.estimatedMs ?? 6000) / 3)));
     const giua = await doChan(page);
     const xong = await choHoatDongXong(page, t0, Math.max(40000, (h.estimatedMs ?? 8000) * 4));
+    // tư thế CHỐT ngay tại mốc `activityDone` (xem ghi chú trong `moTrang`)
+    const chot = await page.evaluate((ten) => window.__chot[ten] ?? null, h.name);
     await nghi(600);
     const sau = await doChan(page);
     const st = await page.evaluate(() =>
@@ -315,7 +360,7 @@ try {
     const anh = `hd-${String(soAnh).padStart(2, '0')}-${h.name}.png`;
     await page.screenshot({ path: `${THU_MUC}/${anh}` });
 
-    for (const m of [giua, sau]) {
+    for (const m of [giua, sau, chot ?? {}]) {
       if (m.minY === null || !Number.isFinite(m.minY)) continue;
       if (chanXau === null || m.minY < chanXau.minY) chanXau = { ...m, hoatDong: h.name };
     }
@@ -323,7 +368,9 @@ try {
       r.ok === true &&
       xong?.event === 'actor.activityDone' &&
       xong?.data?.errors === undefined &&
-      st.state === 'idle' &&
+      // "về idle" chấm ở ĐÚNG mốc kết thúc; 600 ms sau đó phản xạ C0 có quyền
+      // tiếp quản (chào nhẹ) và điều đó KHÔNG phải lỗi của hoạt động
+      (chot?.state === 'idle' || chot?.state === 'sitting') &&
       st.holding === null &&
       st.activity === null;
     ketHd.push({
@@ -334,8 +381,10 @@ try {
       suKien: xong?.event ?? 'KHÔNG CÓ',
       buoc: xong?.data?.steps ?? null,
       loiBuoc: xong?.data?.errors ?? null,
-      stateSau: st.state,
+      stateChot: chot?.state ?? null,
+      stateSau600: st.state,
       holdingSau: st.holding,
+      minYChot: chot?.minY ?? null,
       minYGiua: giua.minY,
       minYSau: sau.minY,
       anh,
@@ -346,7 +395,8 @@ try {
       `hoạt động «${h.label}» (${h.name}) chạy trọn`,
       ok,
       `r.ok=${r.ok} · ${xong?.event ?? 'không có sự kiện'} · ${xong?.data?.steps ?? '—'} bước · ` +
-        `state ${st.state} · holding ${st.holding} · minY giữa ${giua.minY} / sau ${sau.minY} · ` +
+        `state tại mốc xong ${chot?.state ?? '—'} (sau 600 ms: ${st.state}) · holding ${st.holding} · ` +
+        `minY giữa ${giua.minY} / chốt ${chot?.minY ?? '—'} / sau ${sau.minY} · ` +
         `${Date.now() - t0} ms (ước ${h.estimatedMs} ms) · ảnh ${anh}` +
         (xong?.data?.errors ? ` · LỖI BƯỚC: ${JSON.stringify(xong.data.errors)}` : ''),
       ketHd.at(-1),
@@ -507,8 +557,8 @@ try {
   const bangHd = ketHd
     .map(
       (x) =>
-        `| ${x.name} | ${x.buoc ?? '—'} | ${x.msThat} ms (ước ${x.uocMs}) | ${x.minYGiua} / ${x.minYSau} | ` +
-        `${x.stateSau} | ${x.ok ? '✅' : '❌'} | \`${x.anh}\` |`,
+        `| ${x.name} | ${x.buoc ?? '—'} | ${x.msThat} ms (ước ${x.uocMs}) | ${x.minYGiua} / ${x.minYChot} / ${x.minYSau} | ` +
+        `${x.stateChot} | ${x.ok ? '✅' : '❌'} | \`${x.anh}\` |`,
     )
     .join('\n');
   const bang = [
@@ -524,14 +574,14 @@ try {
     '',
     '### Từng hoạt động',
     '',
-    '| hoạt động | bước | thời lượng | minY giữa / sau (m) | state cuối | kết | ảnh |',
+    '| hoạt động | bước | thời lượng | minY giữa / chốt / sau (m) | state tại mốc xong | kết | ảnh |',
     '| --- | --- | --- | --- | --- | --- | --- |',
     bangHd,
     '',
     `Tự sinh hoạt: ${tenTuSinh.join(' → ') || '(không có)'}; lượt đầu ở +${
       tuSinh.length ? tuSinh[0].t - tYen : '—'
     } ms sau khi Boss để yên.`,
-    `Cổng web riêng ${CONG_WEB}, \`?bridge=0\` + TTS/STT trỏ cổng chết — không đụng 5173/8787-8790 của Boss.`,
+    `Cổng web riêng ${CONG_WEB}, \`?bridge=0\` + TTS/STT trỏ \`${DUONG_TAT}\` cùng origin — không đụng 5173/8787-8790 của Boss.`,
   ].join('\n');
   writeFileSync(`${THU_MUC}/bang.md`, bang + '\n');
   in_('\n' + bang + '\n');
