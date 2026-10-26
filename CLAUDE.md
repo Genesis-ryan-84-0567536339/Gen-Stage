@@ -1189,3 +1189,15 @@ sân khấu hết tiếng)**.
   nào xong trước (việc thật hay trần), việc thật vẫn chạy tới cùng nên audio
   không bị cắt — nó chỉ mất quyền chặn câu sau mãi mãi. Quy tắc chung: **thêm
   một khoá dùng chung thì phải thêm trần cho nó trong cùng một lần sửa.**
+
+- **Trần của `choGiongRanh` phải CHẶT (1,5 s), khác trần của chuỗi khoá (8 s).**
+  Bên gọi là `actor.say`, mà nó **đang giữ chỗ actor** trong dispatcher suốt
+  lúc chờ. Đo thật trên Firefox (lượt 31/36) với trần 8 s: câu đệm của Nhi ngồi
+  trong `choGiongRanh` **4 giây**, bị `catNhe` của não huỷ (`huy: true`), rồi
+  câu của não vào đúng chỗ đó lại chờ tiếp — **cả lượt không ai nói gì**, mà
+  `r.ok` vẫn **157/157** vì không lệnh nào *lỗi*, chúng chỉ bị nhường chỗ. Bài
+  học hai phần: (1) việc duy nhất hàm đó cần che là **cái đuôi audio** (vài
+  trăm ms) vì phản xạ đã không gửi câu khi còn người khác đang nói — nên trần
+  phải nhỏ hơn mọi khoảng có thể nuốt trọn một lượt; (2) **`r.ok` 100 % không
+  chứng minh là có tiếng**: phải đo `actor.sayStart`, vì đường "bị huỷ" cố ý
+  trả `ok: true`.

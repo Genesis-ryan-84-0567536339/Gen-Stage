@@ -331,6 +331,30 @@ describe('LopTieng — tải, phát, nhép miệng', () => {
     await expect(cho).resolves.toBeUndefined();
   });
 
+  /**
+   * Trần của `choGiongRanh` phải CHẶT (1,5 s), không phải 8 s như trần chuỗi.
+   *
+   * Bên gọi là `actor.say`, nó **đang giữ chỗ actor** trong lúc chờ. Đo thật
+   * (lượt 31/36) với trần 8 s: câu đệm ngồi chờ 4 s rồi bị não huỷ, câu của
+   * não vào chỗ đó chờ tiếp — cả lượt không ai nói gì, mà `r.ok` vẫn 100 %.
+   */
+  it('choGiongRanh() không bao giờ chờ quá 2 s (không nuốt trọn một lượt)', async () => {
+    const { ctx } = ctxGia();
+    const ctxTreo = {
+      ...(ctx as unknown as Record<string, unknown>),
+      state: 'suspended' as AudioContextState,
+      resume: () => new Promise<void>(() => undefined),
+    } as unknown as AudioContext;
+    ghiMiengNhep('owner', miengGia().mieng);
+    const t = new LopTieng({ fetchFn: fetchGia(2048), taoCtx: () => ctxTreo });
+    const cau = await t.chuanBi('owner', 'Câu treo.', {});
+    cau!.phat();
+
+    const t0 = Date.now();
+    await t.choGiongRanh();
+    expect(Date.now() - t0).toBeLessThan(2000);
+  });
+
   it('choGiongRanh() chờ hết câu đang phát rồi mới trả về', async () => {
     const { ctx } = ctxGia();
     ghiMiengNhep('owner', miengGia().mieng);

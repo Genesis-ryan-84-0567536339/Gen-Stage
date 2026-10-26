@@ -357,13 +357,27 @@ export class LopTieng {
   /**
    * Chờ tới khi **không còn giọng nào** trên sân khấu (bubble phải chờ cùng).
    *
-   * Cũng có trần riêng: bên gọi là `actor.say`, mà nó đang giữ chỗ actor trong
-   * dispatcher — chờ vô hạn ở đây là khoá luôn cả hàng đợi của nhân vật đó.
+   * **Trần RIÊNG và CHẶT (1,5 s), không dùng `TRAN_KHOA_MS`.**
+   *
+   * Đo thật trên Firefox (lượt 31/36) cho thấy vì sao: bên gọi là `actor.say`,
+   * mà nó **đang giữ chỗ actor** trong dispatcher trong lúc chờ. Với trần 8 s,
+   * câu đệm của Nhi ngồi trong hàm này suốt 4 giây, rồi bị `catNhe` của não
+   * huỷ (`huy: true`), và câu của não vào đúng chỗ đó lại chờ tiếp — cả lượt
+   * **không ai nói gì**: mốc 3/3b/4a/4b và "não vẫn nói được" đều ✗ trong khi
+   * `r.ok` vẫn 157/157 (không lệnh nào lỗi, chúng chỉ bị nhường chỗ).
+   *
+   * Việc duy nhất hàm này cần che là **cái đuôi audio** của người nói trước
+   * (`actor.sayDone` bắn theo ước lượng, có thể sớm hơn `buf.duration` cả trăm
+   * ms) — chứ không phải cả câu, vì `phan-xa.ts` đã không gửi câu khi còn
+   * người khác đang nói. 1,5 s dư cho cái đuôi, và nhỏ hơn mọi khoảng có thể
+   * nuốt trọn một lượt hội thoại.
    */
+  private static TRAN_CHO_RANH_MS = 1500;
+
   choGiongRanh(): Promise<void> {
     return Promise.race([
       this.vaoKhoaGiong(async () => undefined),
-      new Promise<void>((r) => setTimeout(r, LopTieng.TRAN_KHOA_MS)),
+      new Promise<void>((r) => setTimeout(r, LopTieng.TRAN_CHO_RANH_MS)),
     ]);
   }
 
