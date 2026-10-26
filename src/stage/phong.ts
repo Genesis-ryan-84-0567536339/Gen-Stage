@@ -638,6 +638,52 @@ function remCuaSo(): THREE.Group {
   return g;
 }
 
+/**
+ * PHÔNG TRỜI ẤM phía trên tường — G1 (#56), thay chỗ tấm trần vừa bỏ.
+ *
+ * Bỏ trần xong thì mọi góc máy chếch lên nhìn thẳng vào `scene.background`
+ * (xám xanh 0xdce6ea): phòng ấm mà "nóc" lạnh ngắt, lộ ngay là cảnh hở. Một
+ * ống trụ hở hai đầu bao quanh nhà, dán đúng texture `troiChieu()` của khu
+ * vườn (xanh nhạt trên, cam ấm dưới) là đủ: ĐỨNG TỪ TRONG NHÀ nhìn lên chỉ
+ * thấy trời chiều liền mạch với trời ngoài cửa sổ.
+ *
+ * Rẻ như không: 1 lượt vẽ, `MeshBasicMaterial` (không nhận đèn), `fog: false`
+ * (không thì sương kéo nó về lại màu xám), không đổ/nhận bóng.
+ */
+function phongTroi(): THREE.Mesh {
+  const tex = troiChieu();
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.repeat.set(4, 1);
+  /*
+   * Băng trời phải KÉO XUỐNG DƯỚI CHÂN TƯỜNG, không bắt đầu ở mép tường.
+   * Tia nhìn chếch nhẹ lên từ trong nhà vượt qua mép tường 2,8 m rồi đi
+   * **gần như ngang** suốt 30 m tới ống trụ, nên nó chạm ống ở cao độ rất
+   * thấp: bản thử bắt đầu từ y = 2,6 để lộ một dải nền xám xanh ngay trên
+   * mép tường (thấy rõ ở ảnh ngửa máy). Đáy −2 m nằm dưới cả mặt cỏ sân vườn
+   * (−0,02 m) nên không còn khe nào; phần dưới bị nhà và sân vườn che hết.
+   */
+  const cao = 42;
+  const day = -2;
+  const hinh = new THREE.CylinderGeometry(30, 30, cao, 24, 1, true);
+  const m = new THREE.Mesh(
+    hinh,
+    new THREE.MeshBasicMaterial({
+      map: tex,
+      side: THREE.BackSide,
+      toneMapped: false,
+      fog: false,
+      // hơi ghì lại cho khỏi cháy trắng ở khung `toan-canh` (luma p95 ≤ 235)
+      color: 0xe8e2d6,
+    }),
+  );
+  m.name = 'PhongTroi';
+  m.position.y = day + cao / 2;
+  m.castShadow = false;
+  m.receiveShadow = false;
+  m.userData.khongGop = true;
+  return m;
+}
+
 /* --------------------------------------------------------------------- cảnh */
 
 export type Phong = {
@@ -754,18 +800,23 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
     nhom.add(be);
   }
 
-  /* --- trần + chân tường GỖ + phào viền trần --- */
-  const tran = new THREE.Mesh(
-    new THREE.PlaneGeometry(KICH_THUOC_PHONG, KICH_THUOC_SAU),
-    new THREE.MeshStandardMaterial({ color: 0xf7f1e4, roughness: 0.95 }),
-  );
-  tran.rotation.x = Math.PI / 2;
-  tran.position.y = CAO_TUONG;
-  tran.userData.khongGop = true;
-  nhom.add(tran);
-
+  /*
+   * --- chân tường GỖ (KHÔNG còn trần, KHÔNG còn phào viền trần) ---
+   *
+   * G1 (#56) — Boss 26/10 xem bản main trên Firefox: **"không cần làm trần nhà
+   * vì nhìn rất vướng"**. Tấm trần `PlaneGeometry` ở y = 2,8 chiếm hơn một
+   * phần ba khung hình ở `toan-canh` và cắt ngang mọi góc máy chếch lên.
+   * Theo `level-design` (blockout): khuôn hình một căn phòng bằng **tường +
+   * phông nền**, mái che chỉ thêm khi người chơi thật sự cần cảm giác kín.
+   *
+   * Bỏ trần KHÔNG làm cảnh sáng lên: `HemisphereLight` không bị hình học chặn
+   * (nó không đổ bóng), và mặt trời là `DirectionalLight` đặt NGOÀI cửa sổ nam
+   * chứ không chiếu qua chỗ trần. Thứ duy nhất đổi là nhìn lên thấy gì — nên
+   * phải có `phongTroi()` bên dưới, không thì lộ nền xám của `scene.background`.
+   *
+   * Tường vẫn cao `CAO_TUONG` = 2,8 m, chân tường gỗ giữ nguyên.
+   */
   const matChanTuong = new THREE.MeshStandardMaterial({ color: 0x8a6a44, roughness: 0.55 });
-  const matPhao = new THREE.MeshStandardMaterial({ color: 0xf2e9d8, roughness: 0.8 });
   for (const [dai, x, z, ry] of [
     [KICH_THUOC_PHONG, 0, -nuaZ + 0.03, 0],
     [KICH_THUOC_PHONG, 0, nuaZ - 0.03, 0],
@@ -776,11 +827,9 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
     chan.position.set(x, 0.065, z);
     chan.rotation.y = ry;
     nhom.add(chan);
-    const phao = new THREE.Mesh(new THREE.BoxGeometry(dai, 0.1, 0.07), matPhao);
-    phao.position.set(x, CAO_TUONG - 0.05, z);
-    phao.rotation.y = ry;
-    nhom.add(phao);
   }
+
+  nhom.add(phongTroi());
 
   /*
    * DÃY BẾP LIỀN MẠCH THEO CHỮ L (F1 #56; nối tiếp PR #51 vòng 2).

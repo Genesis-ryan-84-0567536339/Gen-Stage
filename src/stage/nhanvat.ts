@@ -112,6 +112,44 @@ const DAY_DUI_MIN = 0.04;
 const DAY_DUI_MAX = 0.15;
 /** Ngưỡng sàn — bàn chân khi ngồi không được thấp hơn mức này. */
 const NGUONG_SAN_NGOI = -0.01;
+/**
+ * G1 (#56) — **mặt sàn nhà** (m). Sàn của `phong.ts` là một `PlaneGeometry` ở
+ * y = 0; thảm dày 0,6 cm nên đứng trên thảm vẫn nằm trong sai số ±1 cm.
+ */
+const MAT_SAN = 0;
+/** Chặn trên cho khoảng xương-bàn-chân → ĐẾ giày đo trên model (m). */
+const DE_CHAN_MAX = 0.09;
+/**
+ * G1 (#60) — **bước cố định của spring bone** (s). Tóc/váy tích phân Euler nửa
+ * ẩn; `dt` của một khung hình nặng (tab vừa hiện lại, GC, đổi cảnh) có thể lên
+ * cả giây và khi đó lực trọng trường · `dt` ném đuôi tóc đi rất xa trong MỘT
+ * bước, rồi quán tính `1 − dragForce` giữ nó dao động mãi — đúng cái Boss thấy
+ * là "tóc văng". Theo `physics-tuning`: mô phỏng ở nhịp CỐ ĐỊNH, khung hình dài
+ * thì **chia bước**, không đưa thẳng `dt` lớn vào bộ tích phân.
+ */
+const DT_SPRING = 1 / 60;
+/** Trần số bước spring trong MỘT khung hình (khỏi treo máy sau khi tab ẩn lâu). */
+const BUOC_SPRING_TOI_DA = 4;
+/**
+ * G1 (#60) — **giữ tóc đúng dáng tác giả vẽ sau khi chibi hoá.**
+ *
+ * Chibi hoá nhân xương `head` lên 1,95, nên chùm tóc cũng to gấp đôi: với Gen,
+ * đuôi tóc cách gốc đầu 0,75 m ở dáng gốc mà thân người chỉ cao 1,25 m. Cân
+ * lực theo tỉ lệ (xem `dongMocSpring`) giữ đúng **tỉ số** lực/độ-dài của model
+ * gốc, nhưng ở cỡ đó cân bằng của nó là tóc rủ THẲNG — đo thật: đuôi tóc trôi
+ * ra 1,22 m, quét xuống dưới cả mặt sàn.
+ *
+ * Dáng đúng là dáng tác giả vẽ (`setInitState`), nên kéo cân bằng về phía đó:
+ * cứng hơn, rủ nhẹ hơn. Tóc vẫn đung đưa theo cử động, chỉ không còn duỗi
+ * thành rèm. Hai số này là **tỉ lệ so với model gốc**, không phải số tuyệt
+ * đối — model nào cũng dùng được.
+ */
+const TOC_CUNG_THEM = 2.6;
+const TOC_RU_BOT = 0.35;
+/** Tóc không được quét xuống thấp hơn đế giày — chừa lề bấy nhiêu mét. */
+const LE_TOC_TREN_SAN = 0.03;
+/** Chặn dưới khi thu gọn chuỗi tóc (dưới mức này là tóc teo lạc khỏi mái). */
+const THU_TOC_TOI_THIEU = 0.55;
 /** Trục đứng + quay rỗng, dùng lại để không cấp phát mỗi khung hình. */
 const LEN = /* @__PURE__ */ new THREE.Vector3(0, 1, 0);
 const KHONG_QUAY = /* @__PURE__ */ new THREE.Quaternion();
@@ -670,8 +708,9 @@ export class NhanVat {
       const b = chanP0.getWorldPosition(new THREE.Vector3());
       this.dayDui = THREE.MathUtils.clamp(a.distanceTo(b) * 0.5, DAY_DUI_MIN, DAY_DUI_MAX);
     }
-    const chan0 = this.doChanThapNhat();
-    if (Number.isFinite(chan0)) this.chanDungY = chan0;
+    // KHÔNG đo mốc chân ở đây: trước lượt `vrm.update()` đầu tiên, xương raw
+    // còn ở tư thế BIND (đo thật: bàn chân y = 0,49 m). Mốc thật chốt ở khung
+    // hình thứ 3 trong `capNhat` (`chotDeChan`).
   }
 
   /** `y` thấp nhất của bàn chân/ngón chân trên xương RAW (tư thế hiện tại). */
@@ -827,11 +866,14 @@ export class NhanVat {
   /** Lúc bắt đầu `ngoi()` (ms) và `goc.position.y` lúc đó. */
   private ngoiTu = 0;
   private ngoiGocY = 0;
-  /** Lúc rời ghế (`dungLen`/`diToi`) và `goc.position.y` lúc đó. */
-  private dungTu = 0;
-  private dungGocY = 0;
-  /** `y` bàn chân thấp nhất khi ĐỨNG THẲNG, gốc tại 0 (mốc cắm chân xuống sàn). */
-  private chanDungY = 0.07;
+  /**
+   * Khoảng từ **xương bàn chân/ngón thấp nhất** xuống **đế giày** (m), đo MỘT
+   * lần trên chính model ở tư thế đứng (xem `chotDeChan`). Cắm chân xuống sàn
+   * là đặt `xương thấp nhất = MAT_SAN + deChan`, không phải kẹp `bbox.min.y`
+   * (bài học A2 vòng 4: hộp bao của `SkinnedMesh` là tư thế BIND, không đổi
+   * theo tư thế, kẹp theo nó là kẹp nhầm một hằng số).
+   */
+  private deChan = 0.03;
   /** Mốc đồng hồ thật của khung hình trước (ms) — cho mixer chạy đúng tốc độ. */
   private tKhungTruoc = 0;
   /** Mốc đồng hồ thật của khung trước, riêng cho phần LÁI (xem `capNhat`). */
@@ -964,6 +1006,94 @@ export class NhanVat {
     };
   }
 
+  /* ------------------------------------------------- G1 (#60): số đo TÓC */
+
+  /**
+   * Mốc REST của tóc/váy: với mỗi khớp spring bone, khoảng cách từ khớp đó tới
+   * gốc xương `head` (m) đúng lúc `setInitState()` được gọi.
+   *
+   * Vì sao đo bằng **khoảng cách tới đầu** chứ không bằng toạ độ thế giới:
+   * nhân vật đi lại và quay người suốt, toạ độ thế giới đổi liên tục một cách
+   * hợp lệ; còn "tóc bung" nghĩa là chùm tóc **rời xa đầu** so với lúc nằm im.
+   * Đại lượng đó bất biến với dịch chuyển/quay, nên so sánh được giữa idle,
+   * đi và emote mà không cần trừ đi chuyển động của thân.
+   */
+  private tocMoc = new Map<THREE.Object3D, number>();
+
+  /** Hệ số đã thu gọn chuỗi tóc (1 = không đụng) — xem `thuGonToc`. */
+  private tyThuToc = 1;
+
+  /** Các khớp spring bone của model (tóc, váy, phụ kiện). */
+  private khopSpring(): THREE.Object3D[] {
+    const sb = this.vrm.springBoneManager as { joints?: Iterable<{ bone?: THREE.Object3D }> } | undefined;
+    if (!sb?.joints) return [];
+    const ra: THREE.Object3D[] = [];
+    for (const k of sb.joints) if (k?.bone) ra.push(k.bone);
+    return ra;
+  }
+
+  /** Khớp này có nằm dưới xương `head` không (tức là TÓC, không phải váy)? */
+  private duoiDau(node: THREE.Object3D): boolean {
+    const dau = this.vrm.humanoid?.getRawBoneNode('head');
+    if (!dau) return false;
+    for (let p: THREE.Object3D | null = node; p; p = p.parent) if (p === dau) return true;
+    return false;
+  }
+
+  /** Đóng mốc rest cho tóc — gọi NGAY SAU `setInitState()` + `reset()`. */
+  private chotMocToc(): void {
+    const dau = this.vrm.humanoid?.getRawBoneNode('head');
+    if (!dau) return;
+    this.goc.updateMatrixWorld(true);
+    const vDau = dau.getWorldPosition(new THREE.Vector3());
+    this.tocMoc.clear();
+    const v = new THREE.Vector3();
+    for (const b of this.khopSpring()) this.tocMoc.set(b, b.getWorldPosition(v).distanceTo(vDau));
+  }
+
+  /**
+   * G1 (#60) — bằng chứng số cho "tóc sao loạn quá".
+   *
+   * `lechToc` = lệch LỚN NHẤT (m) giữa khoảng cách khớp-tóc → đầu ở tư thế
+   * hiện tại và khoảng cách đó lúc đóng mốc rest. Tóc chạy đúng thì nó chỉ
+   * đung đưa vài cm; tóc bung thì chùm tóc dựng ra xa đầu hàng chục cm.
+   */
+  doToc(): Record<string, unknown> {
+    const dau = this.vrm.humanoid?.getRawBoneNode('head');
+    const khop = this.khopSpring();
+    if (!dau || khop.length === 0) {
+      return { soKhop: khop.length, coMoc: this.tocMoc.size, lechToc: 0, lechVay: 0 };
+    }
+    this.goc.updateMatrixWorld(true);
+    const vDau = dau.getWorldPosition(new THREE.Vector3());
+    const v = new THREE.Vector3();
+    let lechToc = 0;
+    let lechVay = 0;
+    let soToc = 0;
+    let xaNhat = 0;
+    for (const b of khop) {
+      const moc = this.tocMoc.get(b);
+      if (moc === undefined) continue;
+      const nay = b.getWorldPosition(v).distanceTo(vDau);
+      const lech = Math.abs(nay - moc);
+      if (this.duoiDau(b)) {
+        soToc += 1;
+        if (lech > lechToc) lechToc = lech;
+        if (nay > xaNhat) xaNhat = nay;
+      } else if (lech > lechVay) lechVay = lech;
+    }
+    return {
+      soKhop: khop.length,
+      soToc,
+      coMoc: this.tocMoc.size,
+      lechToc: +lechToc.toFixed(4),
+      tyThuToc: +this.tyThuToc.toFixed(4),
+      lechVay: +lechVay.toFixed(4),
+      xaDauNhat: +xaNhat.toFixed(4),
+      tyLeGoc: +this.goc.scale.x.toFixed(4),
+    };
+  }
+
   /* ----------------------------------------------------------- đọc trạng thái */
 
   get state(): ActorState {
@@ -1045,6 +1175,13 @@ export class NhanVat {
       vrm0: this.vrm0,
       huongGoc: this.huongGoc(),
       huongMat: this.huongMat(),
+      gocY: +this.goc.position.y.toFixed(4),
+      // G1 (#56) — cao độ MẶT ĐẾ GIÀY (m): thước thật của "chân chạm sàn".
+      // `tuThe.minY` KHÔNG dùng được cho việc này ở model tóc dài (đuôi tóc
+      // thấp hơn gót chân) — xem `chotDeChan()`.
+      deChan: +this.deChan.toFixed(4),
+      deGiayY: +(this.doChanThapNhat() - this.deChan).toFixed(4),
+      toc: this.doToc(),
       seatY: +this.seatYHienTai.toFixed(4),
       dayDui: +this.dayDui.toFixed(4),
       dangNgoiCo: this.dangNgoi,
@@ -1103,11 +1240,13 @@ export class NhanVat {
     }
   }
 
-  /** Rời ghế: ghi mốc để đưa gốc về mặt sàn theo đồng hồ thật. */
+  /**
+   * Rời ghế. Không ghi mốc độ cao nào nữa: từ G1 (#56), hễ không ngồi thì mỗi
+   * khung hình `camChanXuongSan()` tự đưa đế giày về mặt sàn, nên suốt clip
+   * `Sitting_Exit` nhân vật đứng lên mà chân không rời sàn một phân.
+   */
   private roiGhe(): void {
     this.dangNgoi = false;
-    this.dungTu = bayGio();
-    this.dungGocY = this.goc.position.y;
   }
 
   /** Đi tới một điểm trên sàn. Tới nơi đúng `durationMs` đã hứa. */
@@ -1503,7 +1642,11 @@ export class NhanVat {
       // không chui xuống dưới sàn — đùi khi đó hơi chếch lên, vẫn đúng dáng
       // ngồi. Ghế cao hơn (cảnh này) thì bàn chân lơ lửng, chấp nhận được.
       const daiOng = chan ? chan.getWorldPosition(new THREE.Vector3()).distanceTo(pOng) : 0;
-      const dauGoiY = Math.max(this.seatYHienTai + LE_DAU_GOI, daiOng + NGUONG_SAN_NGOI);
+      // G1 (#56): sàn thật của bàn chân là `MAT_SAN + deChan` (đế giày), không
+      // phải y = 0 của xương — ghế thấp thì bàn chân đặt ĐÚNG mặt sàn thay vì
+      // lún xuống 3 cm. `NGUONG_SAN_NGOI` giữ lại làm lề âm 1 cm cho ghế vừa sát.
+      const sanChan = MAT_SAN + this.deChan + NGUONG_SAN_NGOI;
+      const dauGoiY = Math.max(this.seatYHienTai + LE_DAU_GOI, daiOng + sanChan);
       this.quayXuongToi(`${ben}UpperLeg`, pOng.clone().sub(pDui), dauGoiY - pDui.y, truocNguoi, phai, u);
 
       // 2) cẳng chân: rủ THẲNG XUỐNG trước mép ghế
@@ -2003,29 +2146,23 @@ export class NhanVat {
       }
     }
 
-    /* --- độ cao thân: nhún khi đi, hạ xuống khi ngồi --- */
-    if (dangDi) {
-      this.goc.position.y = Math.abs(Math.sin(this.phaBuoc)) * 0.022;
-    } else if (this.dangNgoi) {
-      this.datTuTheNgoi();
-    } else if (this.chuyenNgoi === 'stand') {
-      // ĐANG ĐỨNG LÊN: giữ bàn chân CẮM XUỐNG SÀN suốt clip `Sitting_Exit`.
-      // Nội suy gốc về 0 theo thời gian thì thân về mặt sàn trước khi chân
-      // duỗi xong → nhân vật lơ lửng vài phân giữa chừng (thấy rõ trên máy
-      // không GPU vì clip chạy chậm hơn đồng hồ nhiều lần).
-      this.vrm.humanoid?.update();
-      this.goc.updateMatrixWorld(true);
-      const chanY = this.doChanThapNhat();
-      if (Number.isFinite(chanY)) this.goc.position.y += this.chanDungY - chanY;
-    } else {
-      // Về đúng mặt sàn theo ĐỒNG HỒ THẬT (xem ghi chú trong `ngoi()`): lerp
-      // theo `dt` cần cả chục khung hình, trên máy kiểm ~1 fps là cả chục
-      // giây, nên ảnh/số đo sau `actor.stand` toàn chụp lúc còn đang lên.
-      const u = muot(
-        THREE.MathUtils.clamp((bayGio() - this.dungTu) / (DAI_CLIP.stand ?? 900), 0, 1),
-      );
-      this.goc.position.y = THREE.MathUtils.lerp(this.dungGocY, 0, u);
-    }
+    /*
+     * --- độ cao thân ---
+     *
+     * NGỒI: hông bám mặt ghế (`datTuTheNgoi`). Mọi tư thế khác — đứng, đi,
+     * emote, đang đứng lên khỏi ghế — **cắm chân xuống sàn** sau `vrm.update()`
+     * ở cuối hàm (`camChanXuongSan`), nên ở đây không còn gì phải nội suy:
+     * không nhún giả bằng `|sin(phaBuoc)|·0,022`, không lerp gốc về 0.
+     *
+     * Vì sao bản cũ treo người giữa không trung (Boss 26/10, #56): nhân vật
+     * chibi hoá bằng cách scale XƯƠNG CHÂN xuống 0,6, nhưng `VRMHumanoidRig`
+     * ghi `hips` của xương raw theo **vị trí hông của model GỐC** mỗi lượt
+     * `vrm.update()` (`VRMHumanoidRig.update()`, nhánh `boneName === 'hips'`).
+     * Hông bị ghim ở cao độ người lớn còn chân thì ngắn đi 40 % ⇒ bàn chân
+     * treo 0,35–0,42 m trên sàn, đo thật trước khi sửa. Không có cách nào kẹp
+     * trước được con số đó: nó chỉ biết SAU khi rig chép xuống xương raw.
+     */
+    if (this.dangNgoi) this.datTuTheNgoi();
 
     /* --- LỚP 3 (vi mô): dáng tâm trạng/kiểu idle, thở, nhìn quanh --- */
     if (x.chest) x.chest.rotation.z += st.gapVai;
@@ -2163,13 +2300,22 @@ export class NhanVat {
       this.hanBongBong = 0;
     }
 
-    this.vrm.update(dt);
+    /*
+     * THỨ TỰ MỘT KHUNG HÌNH (G1 #56/#60) — đổi thứ tự là hỏng một trong ba:
+     *   1. `vrm.update(dt)` **không có spring**: rig normalized chép xuống
+     *      xương raw, biểu cảm + lookAt cập nhật;
+     *   2. `camChanXuongSan()`: biết xương bàn chân thật đang ở đâu rồi mới
+     *      hạ gốc cho đế chạm sàn;
+     *   3. spring bone chạy **sau** cú hạ gốc, theo bước cố định.
+     * Làm spring trước bước 2 thì mỗi khung hình đuôi tóc bị cả thân dịch
+     * xuống 0,35 m ngay sau lưng nó (đuôi tóc lưu trong KHÔNG GIAN THẾ GIỚI)
+     * → tóc bị giật ngược lên mỗi khung, đúng cái "tóc văng" Boss thấy.
+     */
+    this.capNhatVrmKhongSpring(dt);
 
     /*
-     * D1b (#48) — hai việc phải làm MỘT LẦN, và phải làm **sau `vrm.update()`
-     * của vài khung hình đầu**, không ở hàm dựng:
-     *   1. `canDeuChibi()` cân tầm vóc hai nhân vật;
-     *   2. đóng mốc lại spring bone (tóc/váy).
+     * D1b (#48) — ba việc phải làm MỘT LẦN, sau `vrm.update()` của vài khung
+     * đầu, không ở hàm dựng: cân tầm vóc, chốt mốc đế chân, đóng mốc spring.
      * Lý do: `@pixiv/three-vrm` diễn hoạt trên rig **normalized** rồi mới chép
      * xuống xương RAW trong `vrm.update()`. Đo xương raw trước lượt update
      * đầu tiên là đo **tư thế bind** — đo thật: bàn chân ở y = 0,49 m, lấy số
@@ -2180,15 +2326,241 @@ export class NhanVat {
       this.khungDaVe++;
       if (this.khungDaVe === 3) {
         this.canDeuChibi();
-        this.goc.updateMatrixWorld(true);
-        const sb = this.vrm.springBoneManager as
-          | { setInitState?: () => void; reset?: () => void }
-          | undefined;
-        sb?.setInitState?.();
-        sb?.reset?.();
+        this.chotDeChan();
+        this.dongMocSpring();
       }
     }
+
+    if (!this.dangNgoi) this.camChanXuongSan();
+    this.chaySpring(dt);
   }
+
+  /**
+   * `vrm.update(dt)` nhưng **để dành phần spring bone** cho `chaySpring()`.
+   *
+   * `VRM.update()` gọi thẳng `springBoneManager.update(delta)` ở cuối, không
+   * có cờ tắt; cách duy nhất không phải fork thư viện là tháo cái quản lý ra
+   * trong đúng lời gọi đó rồi gắn lại.
+   */
+  private capNhatVrmKhongSpring(dt: number): void {
+    const vrm = this.vrm as unknown as { springBoneManager?: unknown };
+    const sb = vrm.springBoneManager;
+    vrm.springBoneManager = undefined;
+    try {
+      this.vrm.update(dt);
+    } finally {
+      vrm.springBoneManager = sb;
+    }
+  }
+
+  /**
+   * CẮM CHÂN XUỐNG SÀN — đặt gốc theo **xương bàn chân thật sau `vrm.update()`**.
+   *
+   * Không kẹp theo `Box3.setFromObject` (bài học A2 vòng 4: hộp bao của
+   * `SkinnedMesh` là tư thế BIND nên không đổi theo tư thế), và không cộng một
+   * hằng số đoán trước: đo xương, lấy `deChan` đã chốt trên chính model, hiệu
+   * số bao nhiêu thì dịch gốc bấy nhiêu.
+   *
+   * Vì bàn chân thấp nhất LUÔN nằm đúng mặt sàn, dáng đi tự có nhún (chân trụ
+   * đứng yên, thân lên xuống theo đầu gối) — không cần `|sin|·0,022` giả nữa.
+   */
+  private camChanXuongSan(): void {
+    this.goc.updateMatrixWorld(true);
+    const chanY = this.doChanThapNhat();
+    if (!Number.isFinite(chanY)) return;
+    this.goc.position.y += MAT_SAN + this.deChan - chanY;
+    this.goc.updateMatrixWorld(true);
+  }
+
+  /**
+   * Chốt `deChan` = xương bàn chân thấp nhất − **mặt đế giày**, đo MỘT lần.
+   *
+   * Không lấy `Box3.setFromObject(goc, true).min.y` làm mặt đế: model tóc dài
+   * (Gen) có đuôi tóc **thấp hơn gót chân** — đo thật, đáy hộp bao của Gen nằm
+   * 0,11 m dưới bàn chân, lấy số đó mà cắm xuống sàn thì cả người lún xuống
+   * đúng bấy nhiêu. Đế giày phải đo bằng **chính các đỉnh quanh bàn chân**:
+   * quét đỉnh của `SkinnedMesh` (đã biến dạng xương, `getVertexPosition`), chỉ
+   * nhận đỉnh nằm trong bán kính 0,22 m quanh một xương bàn chân và không cao
+   * hơn mắt cá quá 6 cm.
+   *
+   * Quét một lượt ở khung hình thứ 3 (vài ms), sau đó mỗi khung chỉ còn đọc
+   * toạ độ 4 xương — không có chi phí thường trực.
+   */
+  private chotDeChan(): void {
+    this.goc.updateMatrixWorld(true);
+    const chanY = this.doChanThapNhat();
+    if (!Number.isFinite(chanY)) return;
+
+    const moc: THREE.Vector3[] = [];
+    for (const t of ['leftFoot', 'rightFoot', 'leftToes', 'rightToes'] as const) {
+      const b = this.xuongThat(t);
+      if (b) moc.push(b.getWorldPosition(new THREE.Vector3()));
+    }
+    const v = new THREE.Vector3();
+    let day = Infinity;
+    let soDinh = 0;
+    this.vrm.scene.traverse((o) => {
+      const m = o as THREE.SkinnedMesh;
+      if (!m.isSkinnedMesh || typeof m.getVertexPosition !== 'function') return;
+      const pos = m.geometry.getAttribute('position');
+      if (!pos) return;
+      // trần an toàn: model dày đỉnh bất thường thì bỏ qua, dùng lối dự phòng
+      if (soDinh + pos.count > 400000) return;
+      for (let i = 0; i < pos.count; i += 1) {
+        m.getVertexPosition(i, v);
+        v.applyMatrix4(m.matrixWorld);
+        if (v.y > chanY + 0.06 || v.y >= day) continue;
+        for (const c of moc) {
+          if ((v.x - c.x) ** 2 + (v.z - c.z) ** 2 <= 0.22 * 0.22) {
+            day = v.y;
+            break;
+          }
+        }
+      }
+      soDinh += pos.count;
+    });
+
+    if (!Number.isFinite(day)) {
+      // không quét được đỉnh nào (model không phải SkinnedMesh) → hộp bao
+      day = new THREE.Box3().setFromObject(this.goc, true).min.y;
+    }
+    if (!Number.isFinite(day)) return;
+    this.deChan = THREE.MathUtils.clamp(chanY - day, 0, DE_CHAN_MAX);
+  }
+
+  /**
+   * G1 (#60) — đóng mốc spring bone SAU khi đã scale xương + scale gốc, và
+   * **cân lực theo tỉ lệ thật của từng khớp**.
+   *
+   * Vì sao phải cân lực: `VRMSpringBoneJoint.update()` cộng
+   * `stiffness · dt` và `gravityPower · dt` vào đuôi tóc **bằng mét trong
+   * không gian thế giới**, rồi chuẩn hoá về đúng độ dài đoạn xương. Chibi hoá
+   * nhân xương `head` lên 1,95 (và `goc.scale` 0,93–1,12), nên cùng một tóc
+   * nhưng đoạn xương dài gấp đôi, trong khi lực vẫn là số mét của model gốc →
+   * tỉ số lực/độ-dài lệch đúng bấy nhiêu lần, đuôi tóc duỗi thẳng ra khỏi dáng
+   * tác giả vẽ và quét ra xa đầu (đo thật trước khi sửa: lệch 0,25 m).
+   * Nhân `stiffness`/`gravityPower`/`hitRadius` với đúng tỉ lệ thế giới của
+   * khớp là đưa động lực học về **đúng dáng đã authored**, ở mọi cỡ.
+   *
+   * `center = goc`: quán tính tính trong hệ quy chiếu của nhân vật, nên đi lại
+   * 1,6 m/s không quăng tóc ra sau; tóc vẫn đung đưa theo cử động đầu/thân.
+   */
+  private dongMocSpring(): void {
+    this.goc.updateMatrixWorld(true);
+    const sb = this.vrm.springBoneManager as
+      | {
+          joints?: Iterable<KhopSpring>;
+          setInitState?: () => void;
+          reset?: () => void;
+        }
+      | undefined;
+    if (!sb) return;
+    this.thuGonToc(sb.joints ?? []);
+    for (const k of sb.joints ?? []) {
+      if (!k?.bone || !k.settings) continue;
+      k.goc ??= {
+        stiffness: k.settings.stiffness,
+        gravityPower: k.settings.gravityPower,
+        hitRadius: k.settings.hitRadius,
+      };
+      const ty = tyLeTheGioi(k.bone);
+      k.settings.stiffness = k.goc.stiffness * ty * TOC_CUNG_THEM;
+      k.settings.gravityPower = k.goc.gravityPower * ty * TOC_RU_BOT;
+      k.settings.hitRadius = k.goc.hitRadius * ty;
+      // quán tính trong hệ quy chiếu NHÂN VẬT (xem ghi chú trên)
+      try {
+        k.center = this.goc;
+      } catch {
+        /* bản three-vrm không có `center` — bỏ qua, phần còn lại vẫn đúng */
+      }
+    }
+    sb.setInitState?.();
+    sb.reset?.();
+    this.chotMocToc();
+  }
+
+  /**
+   * THU GỌN CHUỖI TÓC cho vừa người chibi — G1 (#60).
+   *
+   * Tóc được bọc da theo xương dưới `head`, mà chibi hoá nhân `head` lên 1,95:
+   * tóc dài của Gen vì thế dài ra gần gấp đôi, đo thật đuôi tóc cách gốc đầu
+   * 1,33 m trên một thân người cao 1,25 m — quét xuyên qua mặt sàn, nhìn như
+   * tóc "loạn" dù vật lý đã chạy đúng.
+   *
+   * Chữa bằng cách nhân tỉ lệ **chuỗi tóc** (gốc mỗi chuỗi spring nằm dưới
+   * `head`) cho đúng hệ số để đuôi tóc dài nhất dừng trên đế giày. Mái tóc ôm
+   * sọ vẫn bọc theo xương `head` nên không hở: chỉ các lọn RỦ bị rút ngắn.
+   * Hệ số tự tính theo model, tóc ngắn (Javis) ra đúng 1 nên không đụng gì.
+   */
+  private thuGonToc(joints: Iterable<KhopSpring>): void {
+    const dau = this.vrm.humanoid?.getRawBoneNode('head');
+    if (!dau) return;
+    const ds = [...joints].filter((k): k is KhopSpring & { bone: THREE.Object3D } =>
+      !!k?.bone && this.duoiDau(k.bone),
+    );
+    if (ds.length === 0) return;
+    const laSpring = new Set(ds.map((k) => k.bone));
+    const gocChuoi = ds.filter((k) => !k.bone.parent || !laSpring.has(k.bone.parent));
+    if (gocChuoi.length === 0) return;
+
+    this.goc.updateMatrixWorld(true);
+    const v = new THREE.Vector3();
+    const u = new THREE.Vector3();
+    const dauY = dau.getWorldPosition(v).y;
+    /*
+     * Đo bằng ĐỘ DÀI CHUỖI, không bằng vị trí hiện thời: ở khung hình thứ 3
+     * tóc vẫn đang ở dáng tác giả vẽ (cuộn sát đầu), phải vài giây sau trọng
+     * trường mới kéo nó duỗi ra. Lấy vị trí lúc đó mà tính thì kết luận "tóc
+     * chưa chạm sàn" rồi không thu gọn gì — đúng cái bẫy của vòng thử đầu.
+     * Độ dài chuỗi là bao nhiêu thì chỗ thấp nhất tóc VỚI TỚI là bấy nhiêu.
+     */
+    let daiNhat = 0;
+    for (const k of ds) {
+      let dai = 0;
+      let b: THREE.Object3D = k.bone;
+      while (b.parent && laSpring.has(b.parent)) {
+        dai += b.getWorldPosition(v).distanceTo(b.parent.getWorldPosition(u));
+        b = b.parent;
+      }
+      if (dai > daiNhat) daiNhat = dai;
+    }
+    const deY = this.doChanThapNhat() - this.deChan;
+    if (!(daiNhat > 0) || !Number.isFinite(deY)) return;
+
+    const san = deY + LE_TOC_TREN_SAN;
+    if (dauY - daiNhat >= san) return; // tóc buông hết vẫn trên sàn — không đụng
+    const k = THREE.MathUtils.clamp((dauY - san) / daiNhat, THU_TOC_TOI_THIEU, 1);
+    for (const g of gocChuoi) g.bone.scale.multiplyScalar(k);
+    this.tyThuToc = k;
+    this.goc.updateMatrixWorld(true);
+  }
+
+  /** Chạy spring bone theo **bước cố định**, chia bước khi khung hình dài. */
+  private chaySpring(dt: number): void {
+    const sb = this.vrm.springBoneManager as { update?: (d: number) => void } | undefined;
+    if (!sb?.update || !(dt > 0)) return;
+    // Chưa đóng mốc xong (3 khung đầu) thì chưa chạy: mốc còn là tư thế bind.
+    if (this.khungDaVe < 3) return;
+    const soBuoc = Math.min(BUOC_SPRING_TOI_DA, Math.max(1, Math.ceil(dt / DT_SPRING)));
+    const buoc = Math.min(dt / soBuoc, DT_SPRING);
+    for (let i = 0; i < soBuoc; i += 1) sb.update(buoc);
+  }
+}
+
+/** Một khớp spring bone của `@pixiv/three-vrm`, phần này file cần đụng tới. */
+interface KhopSpring {
+  bone?: THREE.Object3D;
+  center?: THREE.Object3D | null;
+  settings?: { stiffness: number; gravityPower: number; hitRadius: number };
+  /** Bản gốc của `settings` trước khi cân theo tỉ lệ (ta tự gắn thêm). */
+  goc?: { stiffness: number; gravityPower: number; hitRadius: number };
+}
+
+/** Tỉ lệ (đều) của một node so với thế giới — tích scale của cả chuỗi cha. */
+function tyLeTheGioi(node: THREE.Object3D): number {
+  let ty = 1;
+  for (let p: THREE.Object3D | null = node; p; p = p.parent) ty *= p.scale.x;
+  return ty || 1;
 }
 
 /** Vào/ra mềm cho nội suy (ease-in-out). */
