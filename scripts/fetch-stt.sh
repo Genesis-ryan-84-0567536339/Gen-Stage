@@ -12,6 +12,19 @@
 #
 # Vì sao PhoWhisper-small chứ không whisper.cpp / Vosk: số đo thật trên máy
 # Boss ở `docs/c1/so-sanh.md`.
+#
+# ---
+#
+# G3 (#62) — TẢI THÊM MODEL LỚN để ĐO, không phải để chạy mặc định:
+#
+#   bash scripts/fetch-stt.sh medium   # PhoWhisper-medium ct2 (~1,5 GB)
+#   bash scripts/fetch-stt.sh large    # PhoWhisper-large  ct2 (~3,1 GB)
+#   bash scripts/fetch-stt.sh turbo    # whisper large-v3-turbo ct2 (~1,6 GB)
+#   bash scripts/fetch-stt.sh bo-do    # cả ba, cho bàn đo `do-stt.mjs chay`
+#
+# Không tải sẵn trong `cai-dat.sh`: Boss chỉ cần MỘT model để nói, ba model
+# kia là của bàn đo một lần (`docs/g3/ket-qua.md`). Xoá bớt được bằng
+# `rm -rf .cache/stt/models/<tên>` mà sân khấu vẫn chạy.
 set -u
 cd "$(dirname "$0")/.."
 
@@ -22,6 +35,41 @@ MODEL="$GOC/models/PhoWhisper-small-ct2"
 REPO="quocphu/PhoWhisper-ct2-FasterWhisper"
 THUMUC="PhoWhisper-small-ct2-fasterWhisper"
 TEP="config.json model.bin preprocessor_config.json tokenizer.json vocabulary.json"
+
+# Tải một model ct2 bất kỳ: taiModel <thư mục đích> <repo HF> <thư mục trong repo|.>
+taiModel() {
+  local dich="$1" repo="$2" trong="$3" f duong
+  mkdir -p "$dich"
+  for f in $TEP; do
+    [ -s "$dich/$f" ] && continue
+    if [ "$trong" = "." ]; then duong="$f"; else duong="$trong/$f"; fi
+    echo "   · $f"
+    curl -fL --retry 3 --progress-bar \
+      -o "$dich/$f" "https://huggingface.co/$repo/resolve/main/$duong" || {
+        rm -f "$dich/$f"; echo "Tải $f lỗi."; return 1; }
+  done
+  [ -s "$dich/model.bin" ]
+}
+
+# `bash scripts/fetch-stt.sh <tên model>` — cần venv đã có (chạy không tham số trước).
+case "${1:-}" in
+  medium|large|turbo|bo-do)
+    [ -x "$VENV/bin/python" ] || { echo "Chạy 'bash scripts/fetch-stt.sh' trước (cần venv)."; exit 1; }
+    ok=0
+    for m in $([ "$1" = "bo-do" ] && echo "medium large turbo" || echo "$1"); do
+      case "$m" in
+        medium) d="$GOC/models/PhoWhisper-medium-ct2"; r="$REPO"; t="PhoWhisper-medium-ct2-fasterWhisper";;
+        large)  d="$GOC/models/PhoWhisper-large-ct2";  r="$REPO"; t="PhoWhisper-large-ct2-fasterWhisper";;
+        # large-v3-turbo: bản ct2 float16 công khai; thợ nạp với compute_type=int8
+        # thì ctranslate2 tự lượng tử hoá lúc nạp, không cần convert tay.
+        turbo)  d="$GOC/models/whisper-large-v3-turbo-ct2"; r="deepdml/faster-whisper-large-v3-turbo-ct2"; t=".";;
+      esac
+      if [ -s "$d/model.bin" ]; then echo "STT: $m đã có ($d)."; continue; fi
+      echo "STT: tải $m → $d"
+      taiModel "$d" "$r" "$t" || ok=1
+    done
+    exit $ok;;
+esac
 
 xong() { [ -x "$VENV/bin/python" ] && [ -f "$MODEL/model.bin" ]; }
 if xong; then
@@ -53,13 +101,7 @@ echo "STT 2/3 — cài faster-whisper (CPU, không CUDA)…"
   exit 1; }
 
 echo "STT 3/3 — tải PhoWhisper-small ct2 (~465 MB, một lần)…"
-mkdir -p "$MODEL"
-for f in $TEP; do
-  [ -s "$MODEL/$f" ] && continue
-  curl -fL --retry 3 --progress-bar \
-    -o "$MODEL/$f" "https://huggingface.co/$REPO/resolve/main/$THUMUC/$f" || {
-      rm -f "$MODEL/$f"; echo "Tải $f lỗi."; exit 1; }
-done
+taiModel "$MODEL" "$REPO" "$THUMUC" || exit 1
 
 xong && echo "STT: xong. Giữ phím V trong trình duyệt để nói." || {
   echo "STT: cài chưa đủ."; exit 1; }

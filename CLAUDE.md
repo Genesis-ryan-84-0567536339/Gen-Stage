@@ -145,11 +145,12 @@ biết registry, **giao diện** không gọi thẳng vào sân khấu.
 | `src/audio/nut-tieng.ts` | **B2** — nút "🔊 Bật tiếng" mở khoá autoplay, nhớ bằng `localStorage` |
 | `bridge/stt.ts` | **C1** — nhận dạng giọng Việt: `POST /stt` (cổng 8790) → ffmpeg 16 kHz mono → thợ python (PhoWhisper-small ct2 int8) → `{ text, confidence, durationMs, goiGen }`, cache `.cache/stt/cache/<sha1>.json` |
 | `bridge/stt-worker.py` | **C1** — thợ nhận dạng chạy mãi: nạp model + hâm máy một lần lúc bật bridge, mỗi dòng stdin là một wav |
-| `bridge/so-tu.ts` | **C1** — SỔ TỪ NHÀ: sửa tên riêng (`Gen`, `connector`, `Baserow`, `module`, `Kho Ryan`) sau nhận dạng. Hạ WER 47 % → 5 %; khớp mờ cho tên dài, đồng âm khai tay cho tên ngắn |
+| `bridge/so-tu.ts` | **C1** — SỔ TỪ NHÀ: sửa tên riêng (`Gen`, `connector`, `Baserow`, `module`, `Kho Ryan`) sau nhận dạng. Hạ WER 47 % → 5 %; khớp mờ cho tên dài, đồng âm khai tay cho tên ngắn. **G3 (#67)** thêm `suaTenDauCau()`: viết đúng "Nhi"/"Nam" khi tên ở ĐẦU câu + theo sau là động từ lệnh (không khai vào `SO_TU` — sổ đó viết đè ở bất kỳ đâu, mà `nghi` cũng là "nghĩ") |
 | `src/audio/mic.ts` | **C1** — giữ phím **V** (hoặc giữ nút 🎤) để nói: `MediaRecorder` + đo RMS → `POST /stt` → chữ vào ô chat 1,5 s cho Boss sửa |
-| `src/audio/vad.ts` | **C1** — cắt im lặng đầu/cuối theo RMS (ngưỡng tương đối theo đỉnh, chừa 120 ms mỗi đầu). Không phụ thuộc DOM |
+| `src/audio/vad.ts` | **C1** — cắt im lặng đầu/cuối theo RMS (ngưỡng tương đối theo đỉnh, chừa **200 ms** mỗi đầu từ **G3 #62** — giọng thật vào câu ngay khi vừa bấm, 120 ms làm mất phụ âm đầu). Không phụ thuộc DOM |
 | `src/audio/so-giong.ts` | **C1** — sổ nối mic ↔ `commands/actor.ts`: phiếu dùng một lần để `actor.say` biết câu này Boss NÓI chứ không gõ |
-| `scripts/do-stt.mjs` | **C1** — bàn đo: sinh 20 wav bằng TTS của bridge, chấm WER/độ trễ từng engine (`docs/c1/so-sanh.md`) |
+| `scripts/do-stt.mjs` | **C1** — bàn đo: sinh 20 wav bằng TTS của bridge, chấm WER/độ trễ từng engine (`docs/c1/so-sanh.md`). **G3 (#62)**: `ban` sinh bộ TTS **làm bẩn như mic laptop**, `ten` + `do-ten` đo **đúng người nhận** end-to-end, `thu` dựng bộ từ giọng thật, `chay <tên> <model>` chạy đúng thợ của bridge (`docs/g3/ket-qua.md`) |
+| `scripts/kiem-g3.mjs` | **G3 (#62)** — bằng chứng trên Firefox thật: bridge lưu audio thô mỗi lượt, nút "✎ Sửa" ghi cặp (giọng, chữ đúng), ràng buộc mic, 15 câu đời thường. Chạy **một lần** (cờ `docs/g3/.da-chay`) |
 | `src/api/__tests__/` | `san-khau-gia.ts` (sân khấu giả, không WebGL) + test dispatcher/describe/script/A3 |
 
 ### Thêm một lệnh mới
@@ -490,6 +491,55 @@ Số đo đầy đủ và lý do loại từng lựa chọn: **`docs/c1/so-sanh.
 - **Cạm bẫy Chrome**: `--use-file-for-fake-audio-capture` với đường có **khoảng
   trắng** làm Chrome tự tắt sau 4 s, không một dòng lỗi. Thư mục dự án của Boss
   có khoảng trắng, nên `scripts/kiem-c1.mjs` chép wav sang `/tmp` trước.
+
+## Quyết định G3 — giọng THẬT của Boss (28/10, Issue #62 · review #67)
+
+Số đo đầy đủ: **`docs/g3/ket-qua.md`**. Boss: *"nhận diện giọng nói tào lao
+quá"*.
+
+- **Số của C1 (WER 7,9 %) đúng nhưng vô dụng**: đo trên giọng TTS — sạch,
+  chậm, chuẩn dấu, băng rộng. Trên bộ TTS **làm bẩn như mic laptop** (nói
+  nhanh +20…40 %, lọc 300–3400 Hz, nhiễu hồng −30 dBFS, reverb, nén động):
+  WER **31,8 %**. Đó mới là con số Boss nghe thấy.
+- **Và trước G3 KHÔNG THỂ đo trên giọng Boss**: bridge chỉ giữ chữ
+  (`.cache/stt/cache/*.json`), không giữ âm — 16 tệp json, 0 tệp audio. Nên
+  việc đầu tiên là **mở sổ thu** (`.cache/stt/thu/<ts>.ogg` + `.json`, vòng 50
+  tệp) và nút **"✎ Sửa"** ở ô chat ghi cặp `(giọng thật, chữ đúng)` vào
+  `.cache/stt/mau/`. Bộ kiểm chuẩn tự dài ra mỗi lần Boss sửa.
+- **Nâng cỡ model KHÔNG chữa được.** PhoWhisper-medium (gấp 3 cỡ): WER 31,1 %
+  so với 31,8 % — chênh 0,7 điểm, mà trễ trung vị 13,8 s so với 3,9 s (**3,5
+  lần**, vượt mốc 5 s). Cùng hình với C1 mục 3, khác chỗ nghẽn: lần này cái
+  làm engine nghe sai là **âm học**, và thêm tham số cho model không sinh ra
+  thông tin đã mất ở micro. → **giữ PhoWhisper-small**, đổ tiền vào tín hiệu
+  vào và lớp hiểu lệnh.
+- **KHÔNG làm 2 tầng** (small trả nhanh, bộ lớn chốt lại) dù Issue gợi ý: lấy
+  0,7 điểm WER mà phải thêm `user.text` sửa lại cho mọi lớp nghe sự kiện học,
+  tranh CPU với tầng nhanh, và hoàn tác hành động Nhi vừa diễn — lỗ. Cửa còn
+  mở: đo lại bằng một lệnh khi có bộ mẫu giọng thật.
+- **Gọi tên bằng GIỌNG phải dựa vào VỊ TRÍ, không dựa vào dấu phẩy.** Review
+  #67: gọi tên mới chỉ 5/10 đúng người. "Nhi" dài 3 ký tự nên ngưỡng fuzzy là
+  **0** (`nia`/`nghi`/`ni` trượt hết), và giọng nói **không bao giờ có dấu
+  phẩy** nên luật "gọi trần + phẩy" vô nghĩa. Luật mới: tên ở **đầu câu** +
+  theo sau là "ơi"/"à" hoặc một **động từ lệnh**. Động từ ở cổng so **khớp y,
+  không fuzzy** — fuzzy thì `cham` cách `chao` 1 ký tự và "nam châm hút sắt"
+  lọt. Cách nghe chệch trùng hẳn từ thường (`nghi` = "nghỉ") cần động từ không
+  mơ hồ. `TIN_HIEU_GOI` không chứa `nay` vì "**năm nay** nhà mình…" khớp ngay.
+  **Thà bỏ sót một lời gọi hơn là bắt nhân vật diễn giữa câu Boss nói chuyện.**
+- **Bỏ bí danh `gien`**: fuzzy ≤1 ký tự bắt luôn `mien` → "miền nam" thành gọi
+  Nhi.
+- **Câu đời thường phải khai `kêu`/`bảo`/`nhờ` thành TỪ KHOÁ của mẫu**, không
+  để máy bỏ qua: mỗi từ không dùng tới bị trừ 0,7 điểm (`diemThat`) nên hai ba
+  từ đệm đầu câu đẩy mẫu xuống dưới ngưỡng 1,5 — đó là lý do "tôi kêu bạn đi
+  kiếm chỗ ngồi" **nghe đúng từng chữ mà vẫn mất lệnh**.
+- **Câu có tên mà không khớp mẫu → `user.text` mang `hint: 'co-the-la-lenh'`**.
+  Chỉ thêm một trường, không đổi luồng, không tự đoán: đoán sai là Nhi làm sai
+  việc, hỏi lại một câu thì không mất gì.
+- **Mic**: xin thêm 16 kHz mono (dạng **trần**, không `exact` — `exact` làm mic
+  cũ ném `OverconstrainedError` và Boss mất hẳn mic); VAD chừa **200 ms** thay
+  120 (log thật: "Gen ơi, qua ghế ngồi đi" → "**dạ nơi** qua ghế ngồi đi");
+  **toast tên thiết bị mic** một lần/phiên (laptop có 3 mic, Firefox lấy "mặc
+  định hệ thống"); **chạm nhanh = bật/tắt** thay vì bỏ lượt im lặng (skill
+  `input-systems`: hành động chỉ-giữ phải có bản bật/tắt tương đương).
 
 ## Quyết định HEARTBEAT + RECONNECT + WATCHDOG (26/10, Issue #37)
 

@@ -287,7 +287,12 @@ export const BI_DANH_NHAN_VAT: Record<string, string[]> = {
   gen: [
     'gen',
     'ghen',
-    'gien',
+    /*
+     * G3 (#67) — BỎ `gien`. Máy khớp cộng fuzzy ≤1 ký tự cho từ 4 ký tự
+     * (`nguong()` trong `ngu-phap.ts`), nên `gien` bắt luôn **`mien`**: đo thật
+     * trên bộ TTS bẩn thấy "**miền nam** …" bị hiểu thành gọi Nhi. "Gien" vốn
+     * chỉ là một cách viết của "Gen" mà `gen` + fuzzy đã phủ gần hết.
+     */
     'jen',
     'gel',
     // G2 (28/10) — "Nhi" dễ trùng từ thường ("nhí", số đếm), chỉ khai cụm có

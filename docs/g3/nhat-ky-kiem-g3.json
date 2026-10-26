@@ -1,0 +1,433 @@
+{
+  "chay": "2026-10-26T14:24:52.129Z",
+  "issue": 62,
+  "cong": {
+    "ws": 8940,
+    "tts": 8941,
+    "mcp": 8942,
+    "stt": 8943,
+    "web": 5380
+  },
+  "loadavg": "9.58 10.44 10.29 1/2932 1771311",
+  "buoc": [
+    {
+      "nhan": "bridge bật STT thật",
+      "ok": true,
+      "chiTiet": "{\"ok\":true,\"daCai\":true,\"model\":\".cache/stt/models/PhoWhisper-small-ct2\",\"thu\":\".cache/stt/thu\",\"mau\":\".cache/stt/mau\"}",
+      "so": {
+        "ok": true,
+        "daCai": true,
+        "model": ".cache/stt/models/PhoWhisper-small-ct2",
+        "thu": ".cache/stt/thu",
+        "mau": ".cache/stt/mau"
+      }
+    },
+    {
+      "nhan": "bridge khai thư mục thu + mẫu (việc 1 của #62)",
+      "ok": true,
+      "chiTiet": "thu=.cache/stt/thu mau=.cache/stt/mau"
+    },
+    {
+      "nhan": "dọn cache + thu/ + mau/ trước khi đo",
+      "ok": true,
+      "chiTiet": null
+    },
+    {
+      "nhan": "ba cờ lọc BẬT: echoCancellation + noiseSuppression + autoGainControl",
+      "ok": true,
+      "chiTiet": "{\"echoCancellation\":true,\"noiseSuppression\":true,\"autoGainControl\":true,\"channelCount\":1,\"sampleRate\":16000}",
+      "so": {
+        "echoCancellation": true,
+        "noiseSuppression": true,
+        "autoGainControl": true,
+        "channelCount": 1,
+        "sampleRate": 16000
+      }
+    },
+    {
+      "nhan": "xin 16 kHz MONO ngay từ mic (channelCount 1 + sampleRate 16000)",
+      "ok": true,
+      "chiTiet": "channelCount=1 sampleRate=16000"
+    },
+    {
+      "nhan": "KHÔNG dùng { exact: … } — mic không chạy nổi 16 kHz vẫn mở được",
+      "ok": true,
+      "chiTiet": "{\"echoCancellation\":true,\"noiseSuppression\":true,\"autoGainControl\":true,\"channelCount\":1,\"sampleRate\":16000}"
+    },
+    {
+      "nhan": "toast nói ra TÊN THIẾT BỊ mic đang nghe",
+      "ok": true,
+      "chiTiet": "[\"🎤 Đang nghe bằng: Default Audio Device\",\"🎤 Mic mở cho phiên này (Firefox không nhớ quyền trên localhost) — giữ V để nói\"]",
+      "so": [
+        "🎤 Đang nghe bằng: Default Audio Device",
+        "🎤 Mic mở cho phiên này (Firefox không nhớ quyền trên localhost) — giữ V để nói"
+      ]
+    },
+    {
+      "nhan": "micDo() ghi tên thiết bị để script/Issue đọc được",
+      "ok": true,
+      "chiTiet": "tenMic \"Default Audio Device\" (thiết bị thật của máy: \"Default Audio Device\")"
+    },
+    {
+      "nhan": "nghe được chữ tiếng Việt từ giọng đi qua MediaRecorder thật của Firefox",
+      "ok": true,
+      "chiTiet": "ô chat \"jen ơi qua ghế ngồi đi jen ơi qua\" · tin 0.79 · trễ 32112 ms",
+      "so": {
+        "soMauRms": 62,
+        "dinhRms": 0.3153882112348478,
+        "coTieng": true,
+        "byteGui": 50838,
+        "dangBlob": "audio/ogg; codecs=opus",
+        "text": "jen ơi qua ghế ngồi đi jen ơi qua",
+        "confidence": 0.79,
+        "treMs": 32112,
+        "loi": "",
+        "ts": "2026-10-26T14-25-38-916",
+        "quyen": "duoc",
+        "nhoQuyen": false,
+        "giuStream": true,
+        "buoc": [
+          "14:25:00.207 bridge STT sẵn tại http://localhost:8943",
+          "14:25:00.208 quyền mic lúc nạp trang: cho",
+          "14:25:01.596 xin quyền mic (trước khi hỏi: cho)",
+          "14:25:01.787 mic MỞ sau 191 ms · track \"Default Audio Device\" · Firefox KHÔNG nhớ quyền",
+          "14:25:03.586 dùng mic giữ sẵn — 0 ms, không hỏi quyền",
+          "14:25:03.587 đang ghi · dạng \"audio/ogg; codecs=opus\"",
+          "14:25:06.807 nhả · 62 mẫu RMS · đỉnh 0.3154 · coTieng true · 50838 byte \"audio/ogg; codecs=opus\"",
+          "14:25:38.921 nghe được sau 32112 ms · tin 0.79 · \"jen ơi qua ghế ngồi đi jen ơi qua\""
+        ],
+        "tenMic": "Default Audio Device",
+        "batTat": false,
+        "dung": true
+      }
+    },
+    {
+      "nhan": "CÓ TỆP AUDIO THÔ trong .cache/stt/thu/ (trước G3: không có tệp nào)",
+      "ok": true,
+      "chiTiet": "2 tệp: 2026-10-26T14-25-38-916.json, 2026-10-26T14-25-38-916.ogg",
+      "so": {
+        "tepThu": [
+          "2026-10-26T14-25-38-916.json",
+          "2026-10-26T14-25-38-916.ogg"
+        ]
+      }
+    },
+    {
+      "nhan": "tệp .json kèm theo ghi đủ chữ + độ tin + dải cắt VAD + model",
+      "ok": true,
+      "chiTiet": "{\"ma\":\"2026-10-26T14-25-38-916\",\"luc\":\"2026-10-26T14:25:38.916Z\",\"dang\":\"audio/ogg; codecs=opus\",\"byte\":50838,\"cat\":{\"tuMs\":0,\"denMs\":3100},\"text\":\"jen ơi qua ghế ngồi đi jen ơi qua\",\"tho\":\"jen ơi qua ghế ngồi đi jen ơi ",
+      "so": {
+        "ma": "2026-10-26T14-25-38-916",
+        "luc": "2026-10-26T14:25:38.916Z",
+        "dang": "audio/ogg; codecs=opus",
+        "byte": 50838,
+        "cat": {
+          "tuMs": 0,
+          "denMs": 3100
+        },
+        "text": "jen ơi qua ghế ngồi đi jen ơi qua",
+        "tho": "jen ơi qua ghế ngồi đi jen ơi qua.",
+        "confidence": 0.79,
+        "durationMs": 5128,
+        "audioMs": 3100,
+        "model": ".cache/stt/models/PhoWhisper-small-ct2"
+      }
+    },
+    {
+      "nhan": "dải cắt VAD chừa 200 ms (việc 4 của #62)",
+      "ok": true,
+      "chiTiet": "tu=0 den=3100 ms"
+    },
+    {
+      "nhan": "mã lượt (ts) có trong gói trả về cho trình duyệt",
+      "ok": true,
+      "chiTiet": "2026-10-26T14-25-38-916"
+    },
+    {
+      "nhan": "dòng \"nghe được\" có nút \"✎ Sửa\"",
+      "ok": true,
+      "chiTiet": "\"nghe được: «jen ơi qua ghế ngồi đi jen ơi qua»✎ Sửa\""
+    },
+    {
+      "nhan": "bấm Sửa → hiện \"✓ Lưu mẫu\" và HUỶ hẹn tự gửi (không để câu bay đi giữa lúc sửa)",
+      "ok": true,
+      "chiTiet": "\"sửa chữ trong ô dưới rồi bấm:✓ Lưu mẫu\" · class ô chat \"\""
+    },
+    {
+      "nhan": "có CẶP (audio, chữ đúng) trong .cache/stt/mau/",
+      "ok": true,
+      "chiTiet": "3 tệp: 2026-10-26T14-25-38-916.json, 2026-10-26T14-25-38-916.ogg, 2026-10-26T14-25-38-916.txt",
+      "so": {
+        "tepMau": [
+          "2026-10-26T14-25-38-916.json",
+          "2026-10-26T14-25-38-916.ogg",
+          "2026-10-26T14-25-38-916.txt"
+        ]
+      }
+    },
+    {
+      "nhan": "tệp .txt chứa đúng chữ Boss gõ lại",
+      "ok": true,
+      "chiTiet": "\"Gen ơi, qua ghế ngồi đi\""
+    },
+    {
+      "nhan": "Boss thấy một dòng xác nhận đã lưu mẫu",
+      "ok": true,
+      "chiTiet": "[\"🗣️ ngồi xuống → actor.sit\",\"✓ Đã lưu mẫu — sẽ đo lại trên đúng giọng Sếp\"]"
+    },
+    {
+      "nhan": "15 câu đời thường ra đúng hành động (mốc #62: ≥ 12)",
+      "ok": true,
+      "chiTiet": "15/15 đúng",
+      "so": [
+        {
+          "cau": "tôi kêu hai bạn qua ghế ngồi đi",
+          "mongDoi": "actor.sit",
+          "duoc": "actor.sit",
+          "actor": "owner",
+          "dung": true
+        },
+        {
+          "cau": "Gen ơi, qua ghế ngồi đi",
+          "mongDoi": "actor.sit",
+          "duoc": "actor.sit",
+          "actor": "gen",
+          "dung": true
+        },
+        {
+          "cau": "đi qua đây thôi",
+          "mongDoi": "actor.moveTo",
+          "duoc": "actor.moveTo",
+          "actor": "gen",
+          "dung": true
+        },
+        {
+          "cau": "tôi kêu bạn đi kiếm chỗ ngồi",
+          "mongDoi": "actor.sit",
+          "duoc": "actor.sit",
+          "actor": "gen",
+          "dung": true
+        },
+        {
+          "cau": "bảo Javis đi tới cửa",
+          "mongDoi": "actor.moveTo",
+          "duoc": "actor.moveTo",
+          "actor": "owner",
+          "dung": true
+        },
+        {
+          "cau": "nhờ Gen qua bàn điều khiển",
+          "mongDoi": "actor.moveTo",
+          "duoc": "actor.moveTo",
+          "actor": "gen",
+          "dung": true
+        },
+        {
+          "cau": "hai bạn lại đây",
+          "mongDoi": "actor.moveTo",
+          "duoc": "actor.moveTo",
+          "actor": "owner",
+          "dung": true
+        },
+        {
+          "cau": "cả hai qua bục trung tâm",
+          "mongDoi": "actor.moveTo",
+          "duoc": "actor.moveTo",
+          "actor": "owner",
+          "dung": true
+        },
+        {
+          "cau": "Gen tới đây coi",
+          "mongDoi": "actor.moveTo",
+          "duoc": "actor.moveTo",
+          "actor": "gen",
+          "dung": true
+        },
+        {
+          "cau": "kêu Gen vui lên",
+          "mongDoi": "actor.emote",
+          "duoc": "actor.emote",
+          "actor": "gen",
+          "dung": true
+        },
+        {
+          "cau": "mọi người ngồi xuống đi",
+          "mongDoi": "actor.sit",
+          "duoc": "actor.sit",
+          "actor": "owner",
+          "dung": true
+        },
+        {
+          "cau": "Gen ngồi ghế hai đi",
+          "mongDoi": "actor.sit",
+          "duoc": "actor.sit",
+          "actor": "gen",
+          "dung": true
+        },
+        {
+          "cau": "Javis đứng lên đi",
+          "mongDoi": "actor.stand",
+          "duoc": "actor.stand",
+          "actor": "owner",
+          "dung": true
+        },
+        {
+          "cau": "kêu Gen qua kệ module",
+          "mongDoi": "actor.moveTo",
+          "duoc": "actor.moveTo",
+          "actor": "gen",
+          "dung": true
+        },
+        {
+          "cau": "các bạn qua đây coi",
+          "mongDoi": "actor.moveTo",
+          "duoc": "actor.moveTo",
+          "actor": "owner",
+          "dung": true
+        }
+      ]
+    },
+    {
+      "nhan": "câu nát + có tên → `user.text` mang hint \"co-the-la-lenh\", KHÔNG handled",
+      "ok": true,
+      "chiTiet": "{\"actor\":\"owner\",\"text\":\"Gen ơi, tôi kêu hai bạn qua hồi đi mà dính dáng hồi đi\",\"to\":\"camera\",\"hint\":\"co-the-la-lenh\",\"diem\":-0.2999999999999998}",
+      "so": {
+        "actor": "owner",
+        "text": "Gen ơi, tôi kêu hai bạn qua hồi đi mà dính dáng hồi đi",
+        "to": "camera",
+        "hint": "co-the-la-lenh",
+        "diem": -0.2999999999999998
+      }
+    },
+    {
+      "nhan": "console 0 lỗi",
+      "ok": true,
+      "chiTiet": "",
+      "so": []
+    }
+  ],
+  "cauDoiThuong": [
+    {
+      "cau": "tôi kêu hai bạn qua ghế ngồi đi",
+      "mongDoi": "actor.sit",
+      "duoc": "actor.sit",
+      "actor": "owner",
+      "dung": true
+    },
+    {
+      "cau": "Gen ơi, qua ghế ngồi đi",
+      "mongDoi": "actor.sit",
+      "duoc": "actor.sit",
+      "actor": "gen",
+      "dung": true
+    },
+    {
+      "cau": "đi qua đây thôi",
+      "mongDoi": "actor.moveTo",
+      "duoc": "actor.moveTo",
+      "actor": "gen",
+      "dung": true
+    },
+    {
+      "cau": "tôi kêu bạn đi kiếm chỗ ngồi",
+      "mongDoi": "actor.sit",
+      "duoc": "actor.sit",
+      "actor": "gen",
+      "dung": true
+    },
+    {
+      "cau": "bảo Javis đi tới cửa",
+      "mongDoi": "actor.moveTo",
+      "duoc": "actor.moveTo",
+      "actor": "owner",
+      "dung": true
+    },
+    {
+      "cau": "nhờ Gen qua bàn điều khiển",
+      "mongDoi": "actor.moveTo",
+      "duoc": "actor.moveTo",
+      "actor": "gen",
+      "dung": true
+    },
+    {
+      "cau": "hai bạn lại đây",
+      "mongDoi": "actor.moveTo",
+      "duoc": "actor.moveTo",
+      "actor": "owner",
+      "dung": true
+    },
+    {
+      "cau": "cả hai qua bục trung tâm",
+      "mongDoi": "actor.moveTo",
+      "duoc": "actor.moveTo",
+      "actor": "owner",
+      "dung": true
+    },
+    {
+      "cau": "Gen tới đây coi",
+      "mongDoi": "actor.moveTo",
+      "duoc": "actor.moveTo",
+      "actor": "gen",
+      "dung": true
+    },
+    {
+      "cau": "kêu Gen vui lên",
+      "mongDoi": "actor.emote",
+      "duoc": "actor.emote",
+      "actor": "gen",
+      "dung": true
+    },
+    {
+      "cau": "mọi người ngồi xuống đi",
+      "mongDoi": "actor.sit",
+      "duoc": "actor.sit",
+      "actor": "owner",
+      "dung": true
+    },
+    {
+      "cau": "Gen ngồi ghế hai đi",
+      "mongDoi": "actor.sit",
+      "duoc": "actor.sit",
+      "actor": "gen",
+      "dung": true
+    },
+    {
+      "cau": "Javis đứng lên đi",
+      "mongDoi": "actor.stand",
+      "duoc": "actor.stand",
+      "actor": "owner",
+      "dung": true
+    },
+    {
+      "cau": "kêu Gen qua kệ module",
+      "mongDoi": "actor.moveTo",
+      "duoc": "actor.moveTo",
+      "actor": "gen",
+      "dung": true
+    },
+    {
+      "cau": "các bạn qua đây coi",
+      "mongDoi": "actor.moveTo",
+      "duoc": "actor.moveTo",
+      "actor": "owner",
+      "dung": true
+    }
+  ],
+  "micLog": [
+    "[mic] bridge STT sẵn tại http://localhost:8943",
+    "[mic] quyền mic lúc nạp trang: cho",
+    "[mic] xin quyền mic (trước khi hỏi: cho)",
+    "[mic] mic MỞ sau 191 ms · track \"Default Audio Device\" · Firefox KHÔNG nhớ quyền",
+    "[mic] dùng mic giữ sẵn — 0 ms, không hỏi quyền",
+    "[mic] đang ghi · dạng \"audio/ogg; codecs=opus\"",
+    "[mic] nhả · 62 mẫu RMS · đỉnh 0.3154 · coTieng true · 50838 byte \"audio/ogg; codecs=opus\"",
+    "[mic] nghe được sau 32112 ms · tin 0.79 · \"jen ơi qua ghế ngồi đi jen ơi qua\"",
+    "[mic] đã ghi mẫu giọng thật cho lượt 2026-10-26T14-25-38-916"
+  ],
+  "loiConsole": [],
+  "tong": {
+    "soBuoc": 21,
+    "soOk": 21,
+    "thatBai": []
+  }
+}

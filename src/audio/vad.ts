@@ -24,7 +24,18 @@ export interface CauHinhVad {
   nguongTheoDinh?: number;
   /** Sàn tuyệt đối: dưới mức này thì coi là im kể cả khi cả lượt đều rất nhỏ. */
   nguongSan?: number;
-  /** Chừa lại bấy nhiêu ms trước/sau đoạn nói, để không cắt mất phụ âm đầu. */
+  /**
+   * Chừa lại bấy nhiêu ms trước/sau đoạn nói, để không cắt mất phụ âm đầu.
+   *
+   * G3 (#62): **200 ms**, trước là 120. Giọng Boss thật nói nhanh và vào câu
+   * ngay khi vừa bấm, nên mép lên của RMS tới **sau** phụ âm đầu — log thật
+   * 28/10 có "dạ nơi qua ghế ngồi đi" (Boss nói *"Gen ơi, qua ghế ngồi đi"*:
+   * mất hẳn chữ đầu). Đây đúng là "input buffering" của skill `input-systems`
+   * đặt ở miền âm: nhớ lại một khoảng trước khi hệ thống *tưởng* là bắt đầu.
+   *
+   * 200 ms im thêm mỗi đầu **không** đổi trễ đáng kể: Whisper luôn chạy encoder
+   * trên cửa sổ đệm 30 s (đo ở `docs/c1/so-sanh.md` mục 4).
+   */
   chuaMs?: number;
   /** Đoạn to ngắn hơn thế này là tiếng cộc bàn / tiếng nhả phím, không phải nói. */
   toiThieuMs?: number;
@@ -33,7 +44,7 @@ export interface CauHinhVad {
 const MAC_DINH: Required<CauHinhVad> = {
   nguongTheoDinh: 0.18,
   nguongSan: 0.004,
-  chuaMs: 120,
+  chuaMs: 200,
   toiThieuMs: 150,
 };
 

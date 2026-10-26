@@ -38,8 +38,13 @@ import {
   BI_DANH_PLACE,
   CAU_CHUA_HIEU,
   CHO_SEP,
+  DONG_TU_LENH,
+  DONG_TU_LENH_MO_HO,
+  DONG_TU_NGHE_NHAM,
   GHE_GAN_NHAT,
   GOC_MAY_KE,
+  NGHE_NHAM_TEN,
+  TIN_HIEU_GOI,
   XAC_NHAN,
   boDau,
   gan,
@@ -173,13 +178,69 @@ export function tachNguoiNhan(
    * `tach()` chạy), nên phải soi câu GỐC, không soi `cau.sach[0]`.
    */
   const goiTranDauCau = textGoc ? /^\s*(nam|nhi)\s*,/i.exec(boDau(textGoc)) : null;
-  if (goiTranDauCau) {
-    const tenTran = goiTranDauCau[1];
+  /**
+   * 1c. G3 (#67) — GỌI TRẦN BẰNG GIỌNG: tên ở ĐẦU CÂU + theo sau là tín hiệu
+   * gọi ("ơi"/"à") hoặc một ĐỘNG TỪ LỆNH. **Không cần dấu phẩy.**
+   *
+   * Luật 1b của G2 đúng cho chữ Boss GÕ, nhưng vô nghĩa với giọng: STT trả
+   * một dòng chữ liền, không bao giờ có dấu phẩy. Review #67 đo trên bộ TTS
+   * bẩn: gọi tên mới chỉ **5/10** đúng người, và "Nam đi tới bếp" là ca trượt
+   * tiêu biểu.
+   *
+   * Ba ràng buộc giữ luật này khỏi ăn vào câu thường — mỗi cái chặn một ca đo
+   * được, test giữ cả ba:
+   *   · **chỉ từ đầu câu** → "miền nam", "ở phía nam" không khớp;
+   *   · **phải có động từ lệnh / "ơi" ngay sau** → "nam châm hút sắt",
+   *     "nhí nhảnh quá" không khớp;
+   *   · cách nghe chệch trùng hẳn từ Việt thường (`nghi` = "nghỉ"/"nghĩ") thì
+   *     động từ theo sau **không được mơ hồ** → "nghỉ đi" giữ nguyên nghĩa,
+   *     "nghi qua bàn điều khiển" mới là gọi Nhi.
+   */
+  const goiTranGiong = (() => {
+    const dau = cau.sach[0];
+    const sau = cau.sach[1];
+    if (!dau) return null;
+    /*
+     * So KHỚP Y, không fuzzy, cho từ đứng sau tên.
+     *
+     * Đây chỉ là **cái cổng** quyết định "có phải lời gọi không"; việc khớp
+     * lệnh thật vẫn fuzzy như cũ ở dưới. Fuzzy ngay tại cổng thì "**nam châm**
+     * hút sắt" lọt: `cham` cách `chao` (động từ "chào") đúng 1 ký tự, mà từ 4
+     * ký tự được phép lệch 1. Thà bỏ sót một lời gọi (câu rơi về người nhận
+     * mặc định) hơn là bắt nhân vật diễn giữa câu Boss đang nói chuyện.
+     */
+    const laTinHieuGoi = sau !== undefined && TIN_HIEU_GOI.includes(sau);
+    const sauChuan = sau !== undefined ? (DONG_TU_NGHE_NHAM[sau] ?? sau) : undefined;
+    const laDongTuLenh = sauChuan !== undefined && DONG_TU_LENH.includes(sauChuan);
+    // Đo trên dạng ĐÃ chuẩn hoá: `bi` → `di`, mà `di` là động từ mơ hồ. Soi
+    // `sau` thô thì "nghi bi …" lọt qua cửa hẹp dù động từ thật là "đi".
+    const moHo = sauChuan !== undefined && DONG_TU_LENH_MO_HO.includes(sauChuan);
+    for (const t of NGHE_NHAM_TEN) {
+      if (t.dongAm.some((x) => boDau(x) === dau) && (laTinHieuGoi || laDongTuLenh))
+        return t.ten;
+      // dạng "hẹp": chỉ nhận khi động từ theo sau KHÔNG mơ hồ
+      if (
+        (t.hep ?? []).some((x) => boDau(x) === dau) &&
+        (laTinHieuGoi || (laDongTuLenh && !moHo))
+      )
+        return t.ten;
+    }
+    return null;
+  })();
+  const tenTran = goiTranDauCau?.[1] ?? goiTranGiong;
+  if (tenTran) {
+    /*
+     * Cắt luôn cả tiếng gọi "ơi"/"à" đi kèm: để lại thì "Nhi ơi, ngồi đi" còn
+     * một từ lạ giữa câu, mà mỗi từ không dùng tới bị trừ 0,7 điểm (`diemThat`)
+     * — đủ để đẩy lệnh ngắn xuống dưới ngưỡng 1,5.
+     */
+    const sau = cau.sach[1];
+    const dai = sau !== undefined && TIN_HIEU_GOI.includes(sau) ? 2 : 1;
     return {
       nguoiNhan: [tenTran === 'nam' ? idOwner : idGen],
       coGoiTen: true,
       moiNguoi: false,
-      conLai: cat(cau, 0, 1),
+      conLai: cat(cau, 0, dai),
     };
   }
 
@@ -637,7 +698,24 @@ export function batHieuLenh(
       bc.actors.find((a) => a.id === kq.nguoiNhan[0])?.controlledBy === 'owner';
 
     if (kq.mau === null && !javisTuDo) {
-      // Nhi (gen) nghe câu tự do → giữ nguyên luồng cũ: `user.text` chảy tới não
+      /*
+       * Nhi (gen) nghe câu tự do → giữ nguyên luồng cũ: `user.text` chảy tới não.
+       *
+       * G3 (#62) — THÊM MỘT TRƯỜNG, KHÔNG ĐỔI LUỒNG. Boss gọi đúng tên nhân
+       * vật mà không mẫu nào khớp thì gần như chắc đó là **lệnh nói kiểu đời
+       * thường** chứ không phải câu hỏi: log thật 28/10 có "tôi kêu hai bạn
+       * qua hồi đi mà dính dáng hồi đi" — engine nghe nát, mẫu nào cũng trượt,
+       * nhưng rõ ràng Boss đang sai việc chứ không trò chuyện.
+       *
+       * Nên đánh dấu `hint: 'co-the-la-lenh'` để não biết **trả lời ngắn và
+       * hỏi lại** thay vì tán chuyện. Cố tình KHÔNG đặt `handled` và KHÔNG tự
+       * đoán lệnh: đoán sai là Nhi làm sai việc, mà "hỏi lại một câu" thì
+       * không mất gì. `diem` đi kèm để não/Issue biết nó trượt ngưỡng bao xa.
+       */
+      if (data && kq.coGoiTen) {
+        data.hint = 'co-the-la-lenh';
+        data.diem = kq.diem;
+      }
       return kq;
     }
 
