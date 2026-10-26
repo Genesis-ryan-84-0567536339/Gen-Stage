@@ -11,7 +11,6 @@
  * `world.ts`).
  */
 import * as THREE from 'three';
-import { batSang } from '../stage/bloom-layer';
 
 export const SO_HAT_TOI_DA = 4000;
 
@@ -91,7 +90,7 @@ export class KetTinh {
     });
     this.diem = new THREE.Points(geo, mat);
     // C3 (#40): hạt kết tinh nằm trong danh sách BLOOM chọn lọc.
-    this.scene.add(batSang(this.diem));
+    this.scene.add(this.diem);
 
     // đuôi sáng nhẹ: cùng dữ liệu nhưng nội suy trễ pha + hạt to hơn, mờ hơn
     // (spec thẩm mỹ A3: "kết tinh có đã" — không chỉ là lưới hạt tụ cứng).
@@ -108,7 +107,7 @@ export class KetTinh {
       toneMapped: false,
     });
     this.diemDuoi = new THREE.Points(geoDuoi, matDuoi);
-    this.scene.add(batSang(this.diemDuoi));
+    this.scene.add(this.diemDuoi);
   }
 
   /** Gọi mỗi khung hình; trả `true` khi hiệu ứng xong và đã dọn dẹp. */

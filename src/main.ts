@@ -12,6 +12,7 @@ import { Dispatcher } from './api/dispatcher';
 import { World } from './stage/world';
 import { dungGiaoDien } from './ui/index';
 import { batPhim } from './ui/phim';
+import { batDoFps, coDoFps } from './ui/do-fps';
 // B3 (#21) — ô chat dưới màn hình: cùng đường với Space, bắn `user.text`.
 import { batOChat, type OChat } from './ui/o-chat';
 // C2 (#32) — lớp hiểu lệnh giọng: nghe `user.text`/`user.speech` trên bus.
@@ -47,6 +48,14 @@ export interface CuaStage {
   feed(screen: string, chunk: string): void;
   /** Số đo xương (bằng chứng số cho `scripts/kiem-a2.mjs`). */
   doXuong(actor: string): Record<string, unknown>;
+  /**
+   * D1b (#48) — số lượt vẽ / tam giác / số mesh của khung vừa render. Boss
+   * 26/10: "đừng đòi GPU lớn" → bằng chứng hiệu năng phải là SỐ, không phải
+   * cảm giác. Mốc tự đặt: `calls ≤ 150`, `triangles ≤ 300k`.
+   */
+  hieuNang(): Record<string, unknown>;
+  /** D1b — chiếu điểm thế giới ra toạ độ điểm ảnh (đo luma ĐÚNG vùng mặt). */
+  chieuDiem(p: [number, number, number]): { x: number; y: number };
   /** Đặt góc máy thủ công, tức thì (ảnh bằng chứng — xem `World.datMayThu`). */
   datMay(vt: [number, number, number], tam: [number, number, number]): void;
   /**
@@ -138,6 +147,8 @@ window.stage = {
   log: () => nhatKy.toJSON(),
   bridge: (bat) => (bat ? bridge.bat() : bridge.tat()),
   doXuong: (actor) => world.doXuongActor(actor),
+  hieuNang: () => world.doHieuNang(),
+  chieuDiem: (p) => world.chieuDiem(p),
   datMay: (vt, tam) => world.datMayThu(vt, tam),
   batTieng: () => tieng?.batTieng() ?? Promise.resolve(false),
   doTieng: (actor) => tieng?.thongKe(actor) ?? { soMau: 0, soMauDuong: 0, dinh: 0 },
@@ -198,6 +209,13 @@ async function khoiDong(): Promise<void> {
   // C0 (#28) — bật "tuỷ sống" của Gen. Đặt sau khi cảnh đã có đủ nhân vật, và
   // trước `stage.ready` để câu đầu tiên của Sếp cũng được phản xạ bắt.
   batPhanXa({ dispatcher, bus });
+
+  /*
+   * D1b vòng 2 — `?fps=1`: thước FPS trong app để Boss TỰ ĐO trên Firefox +
+   * GPU thật. Số FPS từ script bằng chứng (Chromium + swiftshader) chỉ dùng so
+   * tương đối, không phải thước hiệu năng thật.
+   */
+  if (coDoFps()) batDoFps({ hieuNang: () => world.doHieuNang() });
 
   loading.classList.add('xong');
   sanSang = true;

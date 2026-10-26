@@ -1,0 +1,143 @@
+{
+  "anh": {
+    "toan-canh-giao-dien": "docs/d1b/toan-canh-giao-dien.png",
+    "toan-canh": "docs/d1b/toan-canh-1440.png",
+    "phong-khach": "docs/d1b/phong-khach-1440.png",
+    "ban-lam-viec": "docs/d1b/ban-lam-viec-1440.png",
+    "bep": "docs/d1b/bep-1440.png",
+    "cua-so": "docs/d1b/cua-so-1440.png",
+    "ban-tra-can": "docs/d1b/ban-tra-can.png",
+    "owner-mat": "docs/d1b/owner-mat-nang.png",
+    "gen-mat": "docs/d1b/gen-mat-nang.png",
+    "mobile": "docs/d1b/mobile-390x844.png"
+  },
+  "luma": {
+    "javisMat": {
+      "n": 1116,
+      "p5": 130.2,
+      "p50": 156.5,
+      "p95": 165.6,
+      "p99": 172.1,
+      "max": 174.6
+    },
+    "genMat": {
+      "n": 1116,
+      "p5": 157.4,
+      "p50": 165.5,
+      "p95": 168,
+      "p99": 213.3,
+      "max": 213.3
+    },
+    "toan-canh": {
+      "n": 1296000,
+      "p5": 85.3,
+      "p50": 134.5,
+      "p95": 204.1,
+      "p99": 212.1,
+      "max": 251.1
+    },
+    "phong-khach": {
+      "n": 1296000,
+      "p5": 86.2,
+      "p50": 134.7,
+      "p95": 204.1,
+      "p99": 204.1,
+      "max": 213.8
+    },
+    "ban-lam-viec": {
+      "n": 1296000,
+      "p5": 113.7,
+      "p50": 156.2,
+      "p95": 222,
+      "p99": 238.5,
+      "max": 254.9
+    },
+    "bep": {
+      "n": 1296000,
+      "p5": 103.3,
+      "p50": 144.3,
+      "p95": 168.5,
+      "p99": 186.8,
+      "max": 220.6
+    },
+    "cua-so": {
+      "n": 1296000,
+      "p5": 48.8,
+      "p50": 131,
+      "p95": 154.5,
+      "p99": 200.9,
+      "max": 220.6
+    }
+  },
+  "hieuNang": {
+    "calls": 377,
+    "triangles": 227087,
+    "callsNha": 39,
+    "callsVrm": 338,
+    "trianglesNha": 14975,
+    "trianglesVrm": 212112,
+    "coBong": 1024,
+    "pixelRatio": 1,
+    "mesh": 187,
+    "vatLieu": 90,
+    "theoGoc": {
+      "CanNhaAm": 34,
+      "actor:owner": 131,
+      "actor:gen": 18,
+      "(không tên)": 4
+    }
+  },
+  "fps": {
+    "d1b": 0.92,
+    "d1DoCungCach": 0.81,
+    "ghiChu": "swiftshader (renderer PHẦN MỀM) — biên độ nhiễu ±40 % giữa hai lượt đo liền nhau, LỚN HƠN mọi chênh lệch D1/D1b, nên con số này KHÔNG kết luận được gì về hiệu năng. Thước chính của PR là calls/triangles/shadow size. FPS thật: mở `?fps=1` trên Firefox + GPU thật (xem src/ui/do-fps.ts)."
+  },
+  "hopMat": {
+    "javis": {
+      "x": 702,
+      "y": 466,
+      "w": 36,
+      "h": 31
+    },
+    "gen": {
+      "x": 702,
+      "y": 466,
+      "w": 36,
+      "h": 31
+    }
+  },
+  "chibi": {
+    "javis": {
+      "daChibi": true,
+      "caoXuong": 1.0081,
+      "rawHeadY": 1.3927,
+      "rawNeckY": 1.3199,
+      "rawHipsY": 0.936,
+      "caoTong": 1.5336,
+      "dauCao": 0.5651,
+      "tyLeDauNguoi": 2.714
+    },
+    "gen": {
+      "daChibi": true,
+      "caoXuong": 1.0109,
+      "rawHeadY": 1.4285,
+      "rawNeckY": 1.3615,
+      "rawHipsY": 0.9796,
+      "caoTong": 1.7765,
+      "dauCao": 0.6959,
+      "tyLeDauNguoi": 2.553
+    }
+  },
+  "fpsMau": [
+    0.52,
+    0.92,
+    1.01
+  ],
+  "bangThuGonMobile": true,
+  "consoleLoi": [],
+  "datMoc": {
+    "mat": true,
+    "canh": true,
+    "bangMobile": true
+  }
+}

@@ -70,6 +70,30 @@ export interface KhoiCanh {
    * đi qua được (ghế, cửa, thảm, đèn sàn — không chắn lối).
    */
   chan?: readonly [number, number];
+
+  /* ------------------------------------------------- D1b (Issue #48) thêm */
+
+  /**
+   * Cao độ CHÂN khối so với sàn (m) — đồ treo tường (tranh, tủ bếp trên, bảng
+   * ghim, máy hút mùi) và gối trên mặt sofa. Không khai = đứng trên sàn.
+   */
+  datY?: number;
+  /**
+   * Đặt **lên nóc** khối khác (id trong bảng này): `phong.ts` đo mặt trên THẬT
+   * của khối kia rồi đặt lên đó. Đo thật, không viết số tay — mặt bàn Kenney
+   * mỗi model một cao độ khác nhau. Khối đỡ phải đứng TRƯỚC trong bảng.
+   */
+  tren?: string;
+  /**
+   * Lệch khỏi tâm ô lưới (m, `[dx, dz]` theo trục thế giới). Chỉ dành cho ĐỒ
+   * NHỎ bày trên mặt bàn/kệ — `kiemLuoi()` vẫn soi `tai`, nên lưới 0,5 m của
+   * nội thất lớn không bị phá, mà cốc/sách/chuột vẫn bày được tự nhiên.
+   */
+  lech?: Diem2;
+  /** Nhóm chất liệu phủ lên model (xem `chat-lieu.ts`). Không khai = gỗ. */
+  chat?: 'go' | 'vai' | 'kim-loai' | 'tham' | 'nham';
+  /** Nhuộm riêng phần VẢI của model sang màu này (đất/olive) — `nhuomVai()`. */
+  mauVai?: number;
 }
 
 /**
@@ -98,15 +122,15 @@ export const KHOI_CANH: readonly KhoiCanh[] = [
   // "tvStand" riêng, `cabinetTelevision` đúng là tủ kệ TV có khe màn hình.
   { id: 'ke-tivi', vung: 'phong-khach', tai: [-6.5, -0.5], quay: 90, kenney: 'cabinetTelevision', kenneyPhu: 'cabinetTelevisionDoors', cao: 0.55, rongToiDa: 1.4, chan: [0.7, 0.35] },
   // sofa 2-3 chỗ, quay mặt về kệ TV (-Z)
-  { id: 'sofa', vung: 'phong-khach', tai: [-4.5, 1.5], quay: 180, kenney: 'loungeDesignSofa', kenneyPhu: 'loungeSofa', rong: 1.9, rongToiDa: 2.1, chan: [0.95, 0.5] },
+  { id: 'sofa', vung: 'phong-khach', tai: [-4.5, 1.5], quay: 180, kenney: 'loungeDesignSofa', kenneyPhu: 'loungeSofa', rong: 1.9, rongToiDa: 2.1, chan: [0.95, 0.5], chat: 'vai', mauVai: 0x7d7247 },
   // thảm trải dài từ bàn trà qua sofa — place `buc-trung-tam` đứng ở mép nam
   // (z 2,6, xem noi-dung.ts), KHÔNG chắn đường, không chạm hộp sofa (z ≤ 2,0).
-  { id: 'tham', vung: 'phong-khach', tai: [-4.5, 1.5], quay: 0, kenney: 'rugRounded', kenneyPhu: 'rugRound', rong: 2.4 },
+  { id: 'tham', vung: 'phong-khach', tai: [-4.5, 1.5], quay: 0, kenney: 'rugRounded', kenneyPhu: 'rugRound', rong: 2.6, chat: 'tham' },
   // bàn trà giữa sofa và kệ TV
-  { id: 'ban-tra', vung: 'phong-khach', tai: [-4.5, 0.5], quay: 0, kenney: 'tableCoffee', kenneyPhu: 'tableCoffeeGlass', cao: 0.38, rongToiDa: 1.1, chan: [0.55, 0.4] },
+  { id: 'ban-tra', vung: 'phong-khach', tai: [-4.5, 0.5], quay: 0, kenney: 'tableCoffee', kenneyPhu: 'tableCoffeeGlass', cao: 0.38, rongToiDa: 1.1, chan: [0.55, 0.4], mauVai: 0x6b4a2f },
   // 2 cây chậu trang trí, không chắn đường
-  { id: 'cay-1', vung: 'phong-khach', tai: [-6.5, 4.5], quay: 0, kenney: 'plantSmall1', kenneyPhu: 'plantSmall2', cao: 1.1 },
-  { id: 'cay-2', vung: 'phong-khach', tai: [-1.5, 4.5], quay: 0, kenney: 'plantSmall2', kenneyPhu: 'plantSmall1', cao: 1.0 },
+  { id: 'cay-1', vung: 'phong-khach', tai: [-6, 4], quay: 0, kenney: 'plantSmall1', kenneyPhu: 'plantSmall2', cao: 1.1 },
+  { id: 'cay-2', vung: 'phong-khach', tai: [-2, 4], quay: 0, kenney: 'plantSmall2', kenneyPhu: 'plantSmall1', cao: 1.0 },
   // đèn sàn cạnh cửa sổ — NGUỒN BLOOM "rất nhẹ" DUY NHẤT được phép ở D1
   { id: 'den-san', vung: 'phong-khach', tai: [-1.5, 1.0], quay: 0, kenney: 'lampRoundFloor', kenneyPhu: 'lampSquareFloor', cao: 1.5 },
 
@@ -114,20 +138,67 @@ export const KHOI_CANH: readonly KhoiCanh[] = [
   // bàn làm việc áp tường bắc, mặt bàn hướng vào phòng (+Z) — place `ban-dieu-khien`
   { id: 'ban-dieu-khien', vung: 'ban-lam-viec', tai: [4, -4.5], quay: 0, kenney: 'tableCross', kenneyPhu: 'desk', rong: 1.3, rongToiDa: 1.5, chan: [0.65, 0.35] },
   // ghế làm việc, quay mặt vào bàn (-Z)
-  { id: 'ghe-2', vung: 'ban-lam-viec', tai: [4, -3.5], quay: 180, kenney: 'chairModernFrameCushion', kenneyPhu: 'chairDesk', cao: 0.46 },
+  { id: 'ghe-2', vung: 'ban-lam-viec', tai: [4, -3.5], quay: 180, kenney: 'chairModernFrameCushion', kenneyPhu: 'chairDesk', cao: 0.9, chat: 'vai', mauVai: 0x7d7247 },
   // kệ sách áp tường đông — place `ke-module`
-  { id: 'ke-module', vung: 'ban-lam-viec', tai: [6.5, -4], quay: 270, kenney: 'bookcaseClosedWide', kenneyPhu: 'bookcaseClosed', cao: 1.9, rongToiDa: 1.4, chan: [0.7, 0.35] },
+  { id: 'ke-module', vung: 'ban-lam-viec', tai: [6.5, -4], quay: 270, kenney: 'bookcaseOpen', kenneyPhu: 'bookcaseClosedWide', cao: 1.9, rongToiDa: 1.4, chan: [0.7, 0.35] },
 
   /* ================================= BẾP (x > 1, z > 0,5) ================================= */
-  { id: 'tu-bep', vung: 'bep', tai: [6.5, 0.5], quay: 270, kenney: 'kitchenCabinetUpperCorner', kenneyPhu: 'kitchenCabinet', cao: 1.0, rongToiDa: 1.2, chan: [0.6, 0.35] },
-  { id: 'bep-nau', vung: 'bep', tai: [6.5, 2.0], quay: 270, kenney: 'kitchenStove', kenneyPhu: 'kitchenStoveElectric', cao: 0.95, rongToiDa: 1.1, chan: [0.55, 0.35] },
-  { id: 'tu-lanh', vung: 'bep', tai: [6.5, 4.0], quay: 270, kenney: 'kitchenFridgeLarge', kenneyPhu: 'kitchenFridge', cao: 1.8, rongToiDa: 1.1, chan: [0.55, 0.4] },
+  { id: 'tu-bep', vung: 'bep', tai: [6.5, 0.5], quay: 270, kenney: 'kitchenCabinet', kenneyPhu: 'kitchenCabinetDrawer', cao: 0.95, rongToiDa: 1.2, chan: [0.6, 0.35] },
+  { id: 'bep-nau', vung: 'bep', tai: [6.5, 2.0], quay: 270, kenney: 'kitchenStove', kenneyPhu: 'kitchenStoveElectric', cao: 0.95, rongToiDa: 1.1, chan: [0.55, 0.35], chat: 'kim-loai' },
+  { id: 'tu-lanh', vung: 'bep', tai: [6.5, 4.0], quay: 270, kenney: 'kitchenFridgeLarge', kenneyPhu: 'kitchenFridge', cao: 1.8, rongToiDa: 1.1, chan: [0.55, 0.4], chat: 'kim-loai' },
   // bàn ăn giữa khu bếp + 4 ghế quanh bàn (`ghe-1` là mốc đo seatY)
   { id: 'ban-an', vung: 'bep', tai: [3.5, 2.5], quay: 0, kenney: 'tableRound', kenneyPhu: 'table', rong: 1.2, rongToiDa: 1.3, chan: [0.6, 0.6] },
-  { id: 'ghe-1', vung: 'bep', tai: [3.5, 1.5], quay: 0, kenney: 'chairModernCushion', kenneyPhu: 'chairDesk', cao: 0.46 },
-  { id: 'ban-an-ghe-2', vung: 'bep', tai: [3.5, 3.5], quay: 180, kenney: 'chairModernCushion', kenneyPhu: 'chairDesk', cao: 0.46 },
-  { id: 'ban-an-ghe-3', vung: 'bep', tai: [2.5, 2.5], quay: 90, kenney: 'chairModernCushion', kenneyPhu: 'chairDesk', cao: 0.46 },
-  { id: 'ban-an-ghe-4', vung: 'bep', tai: [4.5, 2.5], quay: 270, kenney: 'chairModernCushion', kenneyPhu: 'chairDesk', cao: 0.46 },
+  { id: 'ghe-1', vung: 'bep', tai: [3.5, 1.5], quay: 0, kenney: 'chairModernCushion', kenneyPhu: 'chairDesk', cao: 0.88, chat: 'vai', mauVai: 0x8a6a42 },
+  { id: 'ban-an-ghe-2', vung: 'bep', tai: [3.5, 3.5], quay: 180, kenney: 'chairModernCushion', kenneyPhu: 'chairDesk', cao: 0.88, chat: 'vai', mauVai: 0x8a6a42 },
+  { id: 'ban-an-ghe-3', vung: 'bep', tai: [2.5, 2.5], quay: 90, kenney: 'chairModernCushion', kenneyPhu: 'chairDesk', cao: 0.88, chat: 'vai', mauVai: 0x8a6a42 },
+  { id: 'ban-an-ghe-4', vung: 'bep', tai: [4.5, 2.5], quay: 270, kenney: 'chairModernCushion', kenneyPhu: 'chairDesk', cao: 0.88, chat: 'vai', mauVai: 0x8a6a42 },
+
+
+  /* =================== D1b (Issue #48) — ĐỒ ĐẠC CHO NHÀ CÓ NGƯỜI Ở =================== */
+  // Boss: "nhà thật đang có người ở, ấm, gọn mà đầy đặn". Mọi khối thêm vào
+  // đều NGOÀI hành lang (|x| > 1) và không chồng hộp chắn nào đã có.
+
+  /* --- phòng khách: 2 ghế đơn, bàn cạnh sofa + đèn bàn, gối, sách/cốc, cây, tranh --- */
+  { id: 'ghe-don-1', vung: 'phong-khach', tai: [-6.5, 2.5], quay: 55, kenney: 'loungeChair', kenneyPhu: 'chairCushion', cao: 0.78, rongToiDa: 0.85, chan: [0.4, 0.4], chat: 'vai', mauVai: 0x8a6a42 },
+  { id: 'ghe-don-2', vung: 'phong-khach', tai: [-3, 3], quay: 200, kenney: 'loungeDesignChair', kenneyPhu: 'loungeChair', cao: 0.78, rongToiDa: 0.85, chan: [0.4, 0.4], chat: 'vai', mauVai: 0x7d7247 },
+  { id: 'ban-canh-sofa', vung: 'phong-khach', tai: [-6.5, 1], quay: 0, kenney: 'sideTable', kenneyPhu: 'sideTableDrawers', cao: 0.5, rongToiDa: 0.55, chan: [0.28, 0.28], mauVai: 0x6b4a2f },
+  { id: 'den-ban-sofa', vung: 'phong-khach', tai: [-6.5, 1], tren: 'ban-canh-sofa', quay: 0, kenney: 'lampRoundTable', kenneyPhu: 'lampSquareTable', cao: 0.42 },
+  // gối tựa: đặt theo cao độ mặt ngồi đo được của sofa (0,42 m), lệch khỏi tâm
+  { id: 'goi-1', vung: 'phong-khach', tai: [-5, 1.5], lech: [0, -0.16], datY: 0.42, quay: 14, kenney: 'pillow', rong: 0.44, chat: 'vai', mauVai: 0xb08a4e },
+  { id: 'goi-2', vung: 'phong-khach', tai: [-4, 1.5], lech: [0, -0.16], datY: 0.42, quay: -16, kenney: 'pillowBlue', kenneyPhu: 'pillow', rong: 0.44, chat: 'vai', mauVai: 0x6d7a52 },
+  { id: 'sach-ban-tra', vung: 'phong-khach', tai: [-4.5, 0.5], lech: [-0.2, 0.02], tren: 'ban-tra', quay: 18, kenney: 'books', rong: 0.28, chat: 'nham' },
+  { id: 'coc-tra', vung: 'phong-khach', tai: [-4.5, 0.5], lech: [0.2, -0.1], tren: 'ban-tra', quay: 0, rong: 0.1, chat: 'nham' },
+  { id: 'cay-3', vung: 'phong-khach', tai: [-6.5, -3.5], quay: 0, kenney: 'pottedPlant', kenneyPhu: 'plantSmall3', cao: 1.35 },
+  { id: 'tranh-1', vung: 'phong-khach', tai: [-7, 1], datY: 1.45, quay: 90 },
+  { id: 'tranh-2', vung: 'phong-khach', tai: [-7, 2.5], datY: 1.45, quay: 90 },
+  { id: 'tranh-3', vung: 'phong-khach', tai: [-3, -5], datY: 1.45, quay: 0 },
+
+  /* --- bàn làm việc: máy tính, đèn bàn, sách, cốc, bảng ghim --- */
+  { id: 'ban-phim', vung: 'ban-lam-viec', tai: [4, -4.5], lech: [0, 0.2], tren: 'ban-dieu-khien', quay: 0, kenney: 'computerKeyboard', rong: 0.42, chat: 'nham' },
+  { id: 'chuot', vung: 'ban-lam-viec', tai: [4, -4.5], lech: [0.34, 0.2], tren: 'ban-dieu-khien', quay: 0, kenney: 'computerMouse', rong: 0.1, chat: 'nham' },
+  { id: 'den-ban', vung: 'ban-lam-viec', tai: [4, -4.5], lech: [-0.52, -0.04], tren: 'ban-dieu-khien', quay: 20, kenney: 'lampSquareTable', kenneyPhu: 'lampRoundTable', cao: 0.42 },
+  { id: 'sach-ban', vung: 'ban-lam-viec', tai: [4, -4.5], lech: [0.52, -0.06], tren: 'ban-dieu-khien', quay: -12, kenney: 'books', rong: 0.26, chat: 'nham' },
+  { id: 'coc-ban', vung: 'ban-lam-viec', tai: [4, -4.5], lech: [0.3, -0.08], tren: 'ban-dieu-khien', quay: 0, rong: 0.1, chat: 'nham' },
+  { id: 'bang-ghim', vung: 'ban-lam-viec', tai: [4, -5], datY: 1.3, quay: 0 },
+
+  // sách XẾP TRÊN KỆ (kệ đổi sang `bookcaseOpen` để nhìn thấy ruột kệ)
+  { id: 'sach-ke-1', vung: 'ban-lam-viec', tai: [6.5, -4], lech: [-0.08, -0.38], datY: 1.24, quay: 270, kenney: 'books', rong: 0.3, chat: 'nham' },
+  { id: 'sach-ke-2', vung: 'ban-lam-viec', tai: [6.5, -4], lech: [-0.08, 0.36], datY: 0.82, quay: 262, kenney: 'books', rong: 0.3, chat: 'nham' },
+
+  /* --- bếp: tủ dưới + bồn rửa, 2 tủ trên, máy hút mùi, lò vi sóng, cà phê --- */
+  { id: 'tu-duoi-1', vung: 'bep', tai: [6.5, -1], quay: 270, kenney: 'kitchenSink', kenneyPhu: 'kitchenCabinetDrawer', cao: 0.95, rongToiDa: 1.0, chan: [0.5, 0.35] },
+  { id: 'tu-tren-1', vung: 'bep', tai: [6.5, 0.5], datY: 1.5, quay: 270, kenney: 'kitchenCabinetUpper', kenneyPhu: 'kitchenCabinetUpperLow', cao: 0.7, rongToiDa: 1.0 },
+  { id: 'tu-tren-2', vung: 'bep', tai: [6.5, -1], datY: 1.5, quay: 270, kenney: 'kitchenCabinetUpperDouble', kenneyPhu: 'kitchenCabinetUpper', cao: 0.7, rongToiDa: 1.0 },
+  { id: 'hut-mui', vung: 'bep', tai: [6.5, 2], datY: 1.55, quay: 270, kenney: 'hoodModern', kenneyPhu: 'hoodLarge', cao: 0.55, rongToiDa: 1.0, chat: 'kim-loai' },
+  { id: 'lo-vi-song', vung: 'bep', tai: [6.5, 0.5], lech: [-0.1, 0.28], tren: 'tu-bep', quay: 270, kenney: 'kitchenMicrowave', rong: 0.45, chat: 'kim-loai' },
+  { id: 'may-ca-phe', vung: 'bep', tai: [6.5, -1], lech: [-0.1, 0.3], tren: 'tu-duoi-1', quay: 270, kenney: 'kitchenCoffeeMachine', cao: 0.3, chat: 'kim-loai' },
+  { id: 'binh-hoa', vung: 'bep', tai: [3.5, 2.5], lech: [0, 0.16], tren: 'ban-an', quay: 0, kenney: 'plantSmall3', kenneyPhu: 'plantSmall1', cao: 0.34 },
+  { id: 'trai-cay', vung: 'bep', tai: [3.5, 2.5], lech: [-0.26, -0.12], tren: 'ban-an', quay: 0, rong: 0.26, chat: 'nham' },
+
+  /* --- hành lang: kệ giày (ghế băng), móc áo, thảm chùi chân --- */
+  { id: 'ke-giay', vung: 'hanh-lang', tai: [2, -4.5], quay: 0, kenney: 'benchCushionLow', kenneyPhu: 'bench', rong: 1.0, rongToiDa: 1.1, chan: [0.5, 0.22], chat: 'vai', mauVai: 0x8a6a42 },
+  { id: 'moc-ao', vung: 'hanh-lang', tai: [-2, -4.5], quay: 0, kenney: 'coatRackStanding', kenneyPhu: 'coatRack', cao: 1.72 },
+  { id: 'tham-cua', vung: 'hanh-lang', tai: [1.5, -4], quay: 0, kenney: 'rugDoormat', rong: 0.95, chat: 'vai', mauVai: 0x6b5a3a },
 
   /* ================================ CỬA RA VÀO (tường bắc) ================================ */
   // place `cua` — KHÔNG có `chan`: cửa phải đi qua được.
