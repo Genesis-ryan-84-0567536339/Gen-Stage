@@ -9,6 +9,7 @@
  */
 import * as THREE from 'three';
 import { HOLOGRAM } from './bo-cuc';
+import { batSang } from './bloom-layer';
 
 const DOI_MAU: Record<string, { vien: number; chu: number; nen: number }> = {
   text: { vien: 0x5fe0ff, chu: 0xdfffff, nen: 0x02181f },
@@ -78,14 +79,15 @@ export class ManHinh {
       toneMapped: false,
     });
     this.panel = new THREE.Mesh(new THREE.PlaneGeometry(size, h), this.mat);
-    this.group.add(this.panel);
+    // C3 (#40): nội dung hologram nằm trong danh sách BLOOM chọn lọc.
+    this.group.add(batSang(this.panel));
 
     const vienGeo = new THREE.EdgesGeometry(new THREE.PlaneGeometry(size * 1.015, h * 1.03));
     this.khung = new THREE.LineSegments(
       vienGeo,
       new THREE.LineBasicMaterial({ color: 0x5fe0ff, transparent: true, opacity: 0.85 }),
     );
-    this.group.add(this.khung);
+    this.group.add(batSang(this.khung));
 
     // chân đế hologram mỏng, phát sáng nhẹ dưới màn hình
     this.chan = new THREE.Mesh(
@@ -93,7 +95,7 @@ export class ManHinh {
       new THREE.MeshBasicMaterial({ color: 0x5fe0ff, transparent: true, opacity: 0.5, toneMapped: false }),
     );
     this.chan.position.y = -h / 2 - 0.06;
-    this.group.add(this.chan);
+    this.group.add(batSang(this.chan));
 
     this.group.position.copy(pos);
     this.group.rotation.y = rotY;

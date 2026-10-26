@@ -19,6 +19,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { datSeatY } from './noi-dung';
+import { batSang } from './bloom-layer';
 import {
   BAN_CONG,
   BAN_KINH_BUC,
@@ -450,9 +451,12 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
   // 5 dải sáng dài cho phòng 16 m (geometry emissive, bloom lo phần toả sáng)
   // nhưng chỉ 2 PointLight thật cho cả trần — hiệu năng (spec mục 5).
   for (let i = -2; i <= 2; i++) {
-    const strip = khoiSang(0.3, 0.06, 12.5, i % 2 === 0 ? MAU_CYAN : 0xeaf6ff, 0.8);
+    // C3 (#40): Boss "chói mắt" — hạ cường độ từ 0.8 xuống 0.55.
+    const strip = khoiSang(0.3, 0.06, 12.5, i % 2 === 0 ? MAU_CYAN : 0xeaf6ff, 0.55);
     strip.position.set(i * 3.0, CAO_TUONG - 0.05, 0);
-    nhom.add(strip);
+    // C3 (#40): dải đèn trần nằm trong BLOOM chọn lọc — vật duy nhất ngoài
+    // vòng/mép bục + hologram + hạt kết tinh + fx được phép phát sáng.
+    nhom.add(batSang(strip));
   }
   for (const z of [-4, 3]) {
     const den = new THREE.PointLight(0xdcf2ff, 10, 16, 2);
@@ -541,8 +545,10 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
   vongBuc.rotation.x = -Math.PI / 2;
   vongBuc.position.set(0, caoBuc + 0.015, 0);
   vongBuc.name = 'vongBuc';
-  nhom.add(vongBuc);
-  nhom.add(denDiem(0xbfeaff, 7, 9, 0, 2.6, 0));
+  // C3 (#40): vòng sáng quanh bục — nằm trong danh sách BLOOM chọn lọc.
+  nhom.add(batSang(vongBuc));
+  // C3 (#40): đèn ngay trên đầu owner ở bục — hạ cường độ 7 → 4,5 (Boss: "chói mắt", point light không chiếu thẳng mặt).
+  nhom.add(denDiem(0xbfeaff, 4.5, 9, 0, 2.6, 0));
 
   /* --- VÙNG B: bàn điều khiển cong + 2 ghế + 2 đèn ấm --- */
   /**
@@ -599,8 +605,9 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
     const matGhe = bb.max.y - bb.min.y > 0.01 ? Math.min(bb.max.y, 0.55) : 0;
     if (matGhe > 0) datSeatY(k.id, matGhe);
   }
-  nhom.add(denDiem(MAU_DEN_AM, 16, 11, BAN_CONG.tai[0] - 1.2, 2.2, BAN_CONG.tai[1] - 1.6));
-  nhom.add(denDiem(MAU_DEN_AM, 16, 11, BAN_CONG.tai[0] - 1.2, 2.2, BAN_CONG.tai[1] + 1.6));
+  // C3 (#40): 2 đèn ấm ở bàn điều khiển (Gen đứng ngay đó) — hạ 16 → 10 để không chiếu thẳng chói vào mặt.
+  nhom.add(denDiem(MAU_DEN_AM, 10, 11, BAN_CONG.tai[0] - 1.2, 2.2, BAN_CONG.tai[1] - 1.6));
+  nhom.add(denDiem(MAU_DEN_AM, 10, 11, BAN_CONG.tai[0] - 1.2, 2.2, BAN_CONG.tai[1] + 1.6));
 
   /* --- VÙNG C: kệ module + 2 máy phát + cột + cửa --- */
   for (const k of KHOI_CANH.filter((q) => q.vung === 'kho')) {
@@ -614,7 +621,8 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
             : cotKinhTuDung;
     dungKhoi(k, duPhong);
   }
-  nhom.add(denDiem(MAU_DEN_AM, 13, 10, -nua + 1.8, 2.1, -1));
+  // C3 (#40): đèn ấm khu kệ module — hạ 13 → 9.
+  nhom.add(denDiem(MAU_DEN_AM, 9, 10, -nua + 1.8, 2.1, -1));
   // dải sáng dưới chân khung cửa (gợi lối ra)
   {
     const den = khoiSang(0.05, 0.05, 3.0, MAU_CAM, 1.0);
@@ -684,11 +692,13 @@ function dungBucTuDung(): THREE.Group {
   g.add(than);
   const mep = new THREE.Mesh(
     new THREE.TorusGeometry(1.25, 0.035, 10, 64),
-    new THREE.MeshStandardMaterial({ color: MAU_CYAN, emissive: MAU_CYAN, emissiveIntensity: 1.3 }),
+    // C3 (#40): Boss "chói mắt" — hạ từ 1.3 xuống 0.85 (vẫn thấy rõ viền sáng).
+    new THREE.MeshStandardMaterial({ color: MAU_CYAN, emissive: MAU_CYAN, emissiveIntensity: 0.85 }),
   );
   mep.rotation.x = Math.PI / 2;
   mep.position.y = 0.2;
-  g.add(mep);
+  // mép bục: nằm trong danh sách BLOOM chọn lọc.
+  g.add(batSang(mep));
   return g;
 }
 

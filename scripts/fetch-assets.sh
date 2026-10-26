@@ -26,55 +26,58 @@ OWNER_OUT="$PUB/models/owner.vrm"
 
 KENNEY_URL="https://kenney.nl/media/pages/assets/furniture-kit/440e0608a4-1677580847/kenney_furniture-kit.zip"
 KENNEY_ZIP="$TMP/kenney_furniture-kit.zip"
+KENNEY_STAMP="$PUB/kenney/.url"
 
 say() { printf '\n==> %s\n' "$*"; }
 
-# --- 1. Nhân vật VRM (VRoid AvatarSample_B, CC0-ish / VRoid Hub sample license) ---
-say "Tải nhân vật VRM"
-if [ -s "$VRM_OUT" ]; then
-  echo "    đã có $VRM_OUT, bỏ qua"
-else
-  ok=0
+# C3 (#40) — Boss: fetch-assets.sh bỏ qua owner.vrm CŨ (Biz Dude 2,2 MB) vì
+# file đã tồn tại, nên sau khi đổi URL (C0) Boss vẫn thấy model cũ dù đã merge.
+# Nay mỗi file tải ghi kèm `<file>.url` = URL vừa tải. Lần sau script so URL
+# trong biến với URL trong stamp: khác nhau (hoặc thiếu stamp vì file có từ
+# trước cơ chế này) → coi như chưa có, tải lại. Giống nhau → bỏ qua thật.
+#
+# Dùng: taiFileCoStamp <url> <out> <nhan>
+taiFileCoStamp() {
+  local url="$1" out="$2" nhan="$3" stamp="$2.url"
+  if [ -s "$out" ] && [ -f "$stamp" ] && [ "$(cat "$stamp")" = "$url" ]; then
+    echo "    đã có $out (đúng URL), bỏ qua"
+    return 0
+  fi
+  if [ -s "$out" ]; then
+    echo "    $out đã có nhưng URL khác stamp cũ (hoặc chưa có stamp) — tải lại"
+  fi
+  local ok=0
   for i in 1 2 3; do
-    echo "    lần thử $i: $VRM_URL"
-    if curl -fL --retry 2 --connect-timeout 20 -o "$VRM_OUT.part" "$VRM_URL"; then
-      mv "$VRM_OUT.part" "$VRM_OUT"; ok=1; break
+    echo "    lần thử $i: $url"
+    if curl -fL --retry 2 --connect-timeout 20 -o "$out.part" "$url"; then
+      mv "$out.part" "$out"; echo -n "$url" > "$stamp"; ok=1; break
     fi
     sleep 2
   done
   if [ "$ok" -ne 1 ]; then
-    rm -f "$VRM_OUT.part"
-    echo "    !! Không tải được VRM. Tải tay 1 file VRM miễn phí rồi lưu thành:"
-    echo "       $VRM_OUT"
-    echo "       Nguồn dự phòng: https://hub.vroid.com/en/characters (sample), hoặc repo pixiv/three-vrm"
+    rm -f "$out.part"
+    echo "    !! Không tải được $nhan. Tải tay rồi lưu thành: $out"
+    return 1
   fi
-fi
+  return 0
+}
+
+# --- 1. Nhân vật VRM (VRoid AvatarSample_B, CC0-ish / VRoid Hub sample license) ---
+say "Tải nhân vật VRM"
+taiFileCoStamp "$VRM_URL" "$VRM_OUT" "VRM" || \
+  echo "       Nguồn dự phòng: https://hub.vroid.com/en/characters (sample), hoặc repo pixiv/three-vrm"
 
 # --- 1b. Nhân vật NAM anime cho owner (CC0, VRoid HairSample_Male) ---
 say "Tải nhân vật NAM anime cho owner (VRoid HairSample_Male, CC0)"
-if [ -s "$OWNER_OUT" ]; then
-  echo "    đã có $OWNER_OUT, bỏ qua"
-else
-  ok=0
-  for i in 1 2 3; do
-    echo "    lần thử $i: $OWNER_URL"
-    if curl -fL --retry 2 --connect-timeout 20 -o "$OWNER_OUT.part" "$OWNER_URL"; then
-      mv "$OWNER_OUT.part" "$OWNER_OUT"; ok=1; break
-    fi
-    sleep 2
-  done
-  if [ "$ok" -ne 1 ]; then
-    rm -f "$OWNER_OUT.part"
-    echo "    !! Không tải được VRM nam. App sẽ tự dùng tạm models/avatar.vrm cho owner."
-    echo "       Tải tay một VRM nam CC0 rồi lưu thành: $OWNER_OUT"
-    echo "       Nguồn: https://github.com/madjin/vrm-samples (vroid/beta/HairSample_Male.vrm)"
-  fi
-fi
+taiFileCoStamp "$OWNER_URL" "$OWNER_OUT" "VRM nam" || {
+  echo "       App sẽ tự dùng tạm models/avatar.vrm cho owner."
+  echo "       Nguồn: https://github.com/madjin/vrm-samples (vroid/beta/HairSample_Male.vrm)"
+}
 
 # --- 2. Nội thất Kenney Furniture Kit (CC0) ---
 say "Tải nội thất Kenney Furniture Kit (CC0)"
-if [ -n "$(ls -A "$PUB/kenney" 2>/dev/null)" ]; then
-  echo "    đã có model trong $PUB/kenney, bỏ qua"
+if [ -n "$(ls -A "$PUB/kenney" 2>/dev/null)" ] && [ -f "$KENNEY_STAMP" ] && [ "$(cat "$KENNEY_STAMP")" = "$KENNEY_URL" ]; then
+  echo "    đã có model trong $PUB/kenney (đúng URL), bỏ qua"
 else
   ok=0
   for i in 1 2 3; do
@@ -85,9 +88,11 @@ else
   if [ "$ok" -eq 1 ]; then
     rm -rf "$TMP/kenney_unzip"; mkdir -p "$TMP/kenney_unzip"
     unzip -q -o "$KENNEY_ZIP" -d "$TMP/kenney_unzip"
+    rm -f "$PUB/kenney"/*.glb
     # Lấy đúng thư mục GLB (GLTF format), đổ phẳng vào public/kenney/
     find "$TMP/kenney_unzip" -type f -name '*.glb' -exec cp -f {} "$PUB/kenney/" \;
     cp -f "$TMP/kenney_unzip/License.txt" "$PUB/kenney/License.txt" 2>/dev/null || true
+    echo -n "$KENNEY_URL" > "$KENNEY_STAMP"
     echo "    xong: $(ls -1 "$PUB/kenney"/*.glb 2>/dev/null | wc -l) file .glb"
   else
     echo "    !! Không tải được Kenney sau 3 lần thử."
