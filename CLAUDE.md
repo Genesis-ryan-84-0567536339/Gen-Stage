@@ -1191,6 +1191,11 @@ kế đầy đủ: `docs/spec/actor-api.md` mục **3.2f**. Bằng chứng Firef
   mà asset không được commit — thêm file mới chỉ để ba cái prop nhỏ là đổi lấy
   một bước cài đặt nữa cho Boss. Dựng **một lần** rồi dùng mãi, cuối hoạt động
   tự `actor.drop` + `prop.moveTo` về chỗ cũ.
+- **Không hoạt động nào NÓI.** Bảng chỉ có `moveTo`/`sit`/`stand`/`play`/
+  `emote`/`turnTo`/`express`, cố ý: lời hứa "một giọng, không chồng" của I1b
+  (#75) được giữ ở đây bằng cách **không mở miệng**, chứ không phải bằng thêm
+  một cái cổng nữa vào `aiKhacDangNoi()`. Hoạt động là *việc Nhi làm khi không
+  ai nói chuyện với mình*; muốn nó bình luận thì não gọi `actor.say` riêng.
 - **Vùng giữa tạm là `buc-trung-tam`** (hằng `VUNG_GIUA`): `bo-cuc.ts` chưa có
   `VUNG_HOAT_DONG`, và J1 đang sửa file đó — có hằng thật thì đổi đúng một dòng.
 - **Cạm bẫy đo trên sân khấu giả, bản J2**: hành động giả dài **20 ms thật**
