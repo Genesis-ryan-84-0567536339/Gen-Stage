@@ -59,6 +59,9 @@ if (argv.includes('--lai')) {
 /* ------------------------------------------------------------- cổng riêng */
 
 const CONG_WEB = Number(process.env.GEN_STAGE_WEB_PORT ?? 5393);
+/** Cổng CHẾT cho TTS/STT — xem ghi chú ở `moTrang()`. */
+const CONG_TTS_CHET = 8899;
+const CONG_STT_CHET = 8898;
 /**
  * Firefox qua X11 + **llvmpipe**, như `kiem-g3.mjs`/`kiem-i1.mjs`.
  *
@@ -108,7 +111,7 @@ const nhatKy = {
   chay: new Date().toISOString(),
   issue: 79,
   trinhDuyet: 'Playwright firefox-1543, headless:false, llvmpipe (chỉ đo sự kiện + hình học)',
-  cong: { web: CONG_WEB },
+  cong: { web: CONG_WEB, ttsChet: CONG_TTS_CHET, sttChet: CONG_STT_CHET },
   buoc: [],
 };
 let soBuoc = 0;
@@ -192,9 +195,18 @@ async function moTrang() {
     if (m.type() === 'error') loiConsole.push(`[console] ${m.text()}`);
   });
   page.on('pageerror', (e) => loiConsole.push(`[pageerror] ${e.message}`));
-  // `bridge=0`: bộ này không cần bridge (xem đầu file), và nối vào bridge thật
-  // của Boss là vừa sai số vừa giành sân khấu với Boss.
-  await page.goto(`http://localhost:${CONG_WEB}/?bridge=0`, {
+  /*
+   * `bridge=0`: bộ này không cần bridge (xem đầu file), và nối vào bridge thật
+   * của Boss là vừa sai số vừa giành sân khấu với Boss.
+   *
+   * `ttsPort`/`sttPort` trỏ vào cổng CHẾT (8898/8899) — `bridge=0` chỉ tắt
+   * đường **ws**, còn `urlTts()`/`urlStt()` vẫn mặc định 8788/8790, tức bridge
+   * THẬT của Boss đang chạy. Lệnh `GET /tts` chỉ đọc cache nên vô hại, nhưng
+   * "cổng riêng" phải là cổng riêng cho MỌI đường. Mất giọng không ảnh hưởng
+   * số đo: không hoạt động nào nói, và `chuanBiGiong` hỏng chỉ ghi
+   * `console.warn` (không phải `error`) rồi nhép miệng theo độ dài chữ như A1.
+   */
+  await page.goto(`http://localhost:${CONG_WEB}/?bridge=0&ttsPort=${CONG_TTS_CHET}&sttPort=${CONG_STT_CHET}`, {
     waitUntil: 'load',
     timeout: 180000,
   });
@@ -519,7 +531,7 @@ try {
     `Tự sinh hoạt: ${tenTuSinh.join(' → ') || '(không có)'}; lượt đầu ở +${
       tuSinh.length ? tuSinh[0].t - tYen : '—'
     } ms sau khi Boss để yên.`,
-    `Cổng web riêng ${CONG_WEB}, \`?bridge=0\` — không đụng 5173/8787-8790 của Boss.`,
+    `Cổng web riêng ${CONG_WEB}, \`?bridge=0\` + TTS/STT trỏ cổng chết — không đụng 5173/8787-8790 của Boss.`,
   ].join('\n');
   writeFileSync(`${THU_MUC}/bang.md`, bang + '\n');
   in_('\n' + bang + '\n');
