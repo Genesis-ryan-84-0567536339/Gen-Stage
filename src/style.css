@@ -712,7 +712,7 @@ input[type="checkbox"] { width: 17px; height: 17px; min-height: 0; accent-color:
 #o-chat-tt button {
   flex: 0 0 auto;
   pointer-events: auto;
-  /* mốc chạm 44 px của skill `game-ui-ux` — ngón tay trên màn 390 px */
+  /* trên máy tính thì gọn (chuột), mốc chạm 44 px để dành cho màn hẹp ở dưới */
   min-height: 28px;
   padding: 0 10px;
   font: inherit;
@@ -730,6 +730,7 @@ input[type="checkbox"] { width: 17px; height: 17px; min-height: 0; accent-color:
   border: 1px solid var(--vien);
 }
 @media (max-width: 760px) {
+  /* mốc chạm 44 px của skill `game-ui-ux` — ngón tay trên màn 390 px */
   #o-chat-tt button { min-height: 44px; min-width: 44px; }
 }
 
