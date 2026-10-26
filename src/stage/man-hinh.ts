@@ -62,7 +62,10 @@ export interface MacDinhManHinh {
 
 export const MAC_DINH_MAN_HINH: Record<string, MacDinhManHinh> = {
   // màn hình máy tính trên bàn — cỡ thật ~0,55 m, không phải tấm hologram lớn
-  'may-tinh': tuKhoi('ban-dieu-khien', 1.1, 0.25, 0.55),
+  // D1b (#48): hạ 1,1 → 0,97 m. Mặt bàn `ban-dieu-khien` đo được ~0,75 m,
+  // panel cao ~0,31 m + chân ~0,06 → tâm panel đúng 0,97 thì màn hình ĐỨNG
+  // TRÊN mặt bàn, không lơ lửng phía trên như ảnh D1.
+  'may-tinh': tuKhoi('ban-dieu-khien', 0.97, 0.2, 0.55),
   // TV treo trên kệ phòng khách — cỡ thật ~1,1 m
   tivi: tuKhoi('ke-tivi', 0.95, 0.35, 1.1),
 };

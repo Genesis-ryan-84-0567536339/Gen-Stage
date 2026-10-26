@@ -1,0 +1,131 @@
+{
+  "anh": {
+    "toan-canh": "docs/d1b/toan-canh-1440.png",
+    "phong-khach": "docs/d1b/phong-khach-1440.png",
+    "ban-lam-viec": "docs/d1b/ban-lam-viec-1440.png",
+    "bep": "docs/d1b/bep-1440.png",
+    "cua-so": "docs/d1b/cua-so-1440.png",
+    "ban-tra-can": "docs/d1b/ban-tra-can.png",
+    "owner-mat": "docs/d1b/owner-mat-nang.png",
+    "gen-mat": "docs/d1b/gen-mat-nang.png",
+    "mobile": "docs/d1b/mobile-390x844.png"
+  },
+  "luma": {
+    "javisMat": {
+      "n": 1116,
+      "p5": 158.1,
+      "p50": 162.5,
+      "p95": 166.4,
+      "p99": 167.2,
+      "max": 168
+    },
+    "genMat": {
+      "n": 1116,
+      "p5": 162.3,
+      "p50": 166.6,
+      "p95": 183.3,
+      "p99": 214.1,
+      "max": 214.1
+    },
+    "toan-canh": {
+      "n": 403200,
+      "p5": 102.2,
+      "p50": 145.7,
+      "p95": 205.9,
+      "p99": 215.2,
+      "max": 252.7
+    },
+    "phong-khach": {
+      "n": 403200,
+      "p5": 26.7,
+      "p50": 157.4,
+      "p95": 172,
+      "p99": 184.1,
+      "max": 237.7
+    },
+    "ban-lam-viec": {
+      "n": 403200,
+      "p5": 48.5,
+      "p50": 176.9,
+      "p95": 234.9,
+      "p99": 243.3,
+      "max": 254.9
+    },
+    "bep": {
+      "n": 403200,
+      "p5": 105.3,
+      "p50": 149.1,
+      "p95": 182.8,
+      "p99": 189.6,
+      "max": 232.6
+    },
+    "cua-so": {
+      "n": 403200,
+      "p5": 23.6,
+      "p50": 115.2,
+      "p95": 154.7,
+      "p99": 216.4,
+      "max": 249.7
+    }
+  },
+  "hieuNang": {
+    "calls": 462,
+    "triangles": 223920,
+    "mesh": 275,
+    "vatLieu": 171,
+    "theoGoc": {
+      "CanNhaAm": 122,
+      "actor:owner": 131,
+      "actor:gen": 18,
+      "(không tên)": 4
+    }
+  },
+  "fps": {
+    "d1b": 1.12,
+    "d1DoCungCach": 0.81,
+    "ghiChu": "swiftshader (renderer phần mềm), 4 s ổn định — số tuyệt đối vô nghĩa, chỉ so TƯƠNG ĐỐI với D1 đo cùng máy cùng cách"
+  },
+  "hopMat": {
+    "javis": {
+      "x": 702,
+      "y": 466,
+      "w": 36,
+      "h": 31
+    },
+    "gen": {
+      "x": 702,
+      "y": 466,
+      "w": 36,
+      "h": 31
+    }
+  },
+  "chibi": {
+    "javis": {
+      "daChibi": true,
+      "caoXuong": 1.0114,
+      "rawHeadY": 1.3921,
+      "rawNeckY": 1.3191,
+      "rawHipsY": 0.9354,
+      "caoTong": 1.5596,
+      "dauCao": 0.588,
+      "tyLeDauNguoi": 2.652
+    },
+    "gen": {
+      "daChibi": true,
+      "caoXuong": 1.0076,
+      "rawHeadY": 1.4275,
+      "rawNeckY": 1.3602,
+      "rawHipsY": 0.9793,
+      "caoTong": 1.7725,
+      "dauCao": 0.6966,
+      "tyLeDauNguoi": 2.544
+    }
+  },
+  "fpsMau": [
+    0.97,
+    1.12,
+    1.16
+  ],
+  "bangThuGonMobile": true,
+  "consoleLoi": []
+}

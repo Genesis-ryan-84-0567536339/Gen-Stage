@@ -40,6 +40,7 @@ node scripts/kiem-mo-phong-loi-cu.mjs  # mô phỏng nguyên nhân gốc #37 (na
 node scripts/kiem-reconnect.mjs        # bằng chứng heartbeat + backoff + watchdog (#37): driver sống 10 phút, giết bridge giữa chừng, vào docs/nao/reconnect.* (CHẠY MỘT LẦN)
 node scripts/kiem-c0.mjs      # bằng chứng C0: phản xạ xã hội + nhân vật nam anime, vào docs/c0/ (CHẠY MỘT LẦN)
 node scripts/kiem-c1.mjs      # bằng chứng C1: giữ V nói → bridge nhận chữ → user.speech → Gen phản ứng, vào docs/c1/ (CHẠY MỘT LẦN)
+node scripts/kiem-d1b.mjs     # bằng chứng D1b: mỹ thuật + hiệu năng (calls/tam giác/FPS) vào docs/d1b/ (CHẠY MỘT LẦN)
 bash scripts/fetch-anim.sh    # tải bộ chuyển động CC0 (Quaternius) về public/anim/ — chạy 1 lần sau khi clone
 bash scripts/fetch-stt.sh     # C1: venv + model PhoWhisper-small ct2 vào .cache/stt/ — chạy 1 lần (cai-dat.sh gọi sẵn)
 node scripts/kiem-e1.mjs      # bằng chứng E1: UI 390 px, não diễn thật, /tts retry, hiểu "Javis", cài 1 lệnh, vào docs/e1/ (CHẠY MỘT LẦN)
@@ -695,3 +696,114 @@ trong comment cuối của #48), nên mỗi cái có một test giữ trong
   từ `gen-stage.desktop` trong repo) khỏi `scripts/chay.sh` (mỗi ngày, không
   tải gì nữa). `chay.sh` nhận ra đã cài bằng cờ `.cache/da-cai-dat`; chưa cài
   thì vẫn chạy được, chỉ chậm lần đầu.
+## Quyết định D1b — mỹ thuật căn nhà + tối ưu đồ hoạ (26/10, Issue #48)
+
+Boss sau D1: "cảnh còn **trống và thô**" → rồi ngay sau đó: "**tối ưu đồ hoạ,
+đừng đòi GPU lớn**". Hai yêu cầu đó kéo ngược nhau, và cách giải là: **đẹp
+bằng ánh sáng + màu + chất liệu + bố cục, KHÔNG bằng hậu kỳ**.
+
+- **BỎ HẲN HẬU KỲ.** Không SSAO, không DOF, không vignette, và **gỡ luôn bloom
+  chọn lọc của C3 (#40)**: hai `EffectComposer`, `UnrealBloomPass`, `mixPass`
+  và lượt "tô đen mọi vật rồi trả lại vật liệu" mỗi khung hình đã đi hết. Giờ
+  `veMotKhung()` chỉ còn `renderer.render(scene, camera)`. `batSang()` ở
+  `bloom-layer.ts` giữ nguyên nhưng thành **vô hại** (chỉ bật một bit layer,
+  không ai đọc) nên `phong.ts`/`fx/*.ts` không phải sửa dòng nào.
+- **Ngân sách GPU tự đặt, đo bằng số** (`window.stage.hieuNang()` →
+  `renderer.info.render`): pixel ratio ≤ **1,5** (cũ 2), **một** đèn đổ bóng
+  với shadow map **1024** (2048 chỉ khi `renderer.capabilities.maxTextureSize
+  ≥ 8192`), texture procedural ≤ **1024 px** và dùng chung một bản, đồ nhỏ
+  **không đổ bóng** (chỉ `receiveShadow`), hàng rào + tán cây sân vườn dùng
+  `InstancedMesh`. FPS tụt < 24 quá 2 s thì `haChatLuong()` tắt bóng đổ + hạ
+  pixel ratio về 1 (thay cho "tự tắt bloom" cũ).
+- **`gopTinh()` gộp mesh tĩnh theo (vật liệu, có đổ bóng hay không)** sau khi
+  dựng xong nhà. Mấu chốt làm nó có tác dụng nằm ở `chat-lieu.ts`: vật liệu
+  dẫn xuất được **cache theo `(vật liệu gốc, nhóm, màu nhuộm)`** chứ không
+  `clone()` mỗi mesh một bản — clone mỗi mesh thì mỗi mesh một vật liệu, không
+  gộp được gì. Đo thật: **nhà 116 mesh**; phần còn lại là VRM nhân vật
+  (`owner` 131 mesh, `gen` 18 — có từ trước D1b, không đụng).
+  **Chưa đạt mốc `calls ≤ 150`** (đo 461): hơn 2/3 số mesh của cảnh là của
+  model VRM, gộp chúng thì mất skinning + morph target của mặt. Ghi nợ.
+- **Chất liệu phủ lên Kenney bằng texture VÂN TRUNG TÍNH** (`vanGo`/`vanVai`/
+  `vanKimLoai`, trung bình ≈ trắng): nhân vào `color` sẵn có của model nên
+  model giữ đúng màu gốc mà hết phẳng lì — đúng bài học "vật liệu không nhân
+  màu hai lần", lần này dùng làm lợi thế. Texture **mang màu** (sàn ván gỗ
+  12 cm, thảm hoa văn, tranh, bảng ghim, cỏ, trời) thì `color` phải để trắng.
+  `nhuom()` chỉ đổi những vật liệu đủ sáng + đủ bão hoà (mảng vải lớn), bỏ qua
+  chân gỗ/khung tối — nhờ vậy nhuộm sofa sang olive mà chân sofa không đổi màu.
+- **Thảm KHÔNG dùng model Kenney.** UV của Kenney là **atlas bảng màu** (mỗi
+  mặt trỏ vào một ô vài pixel): dán hoa văn lên đó ra một mảng màu trơn. Thảm
+  dựng bằng một tấm phẳng UV 0…1 của riêng mình.
+- **Bảng bố cục nhận 4 trường mới** (vẫn là dữ liệu thuần): `datY` (đồ treo
+  tường), `tren` (đặt lên **nóc đo được** của khối khác — mặt bàn Kenney mỗi
+  model một cao độ, không được viết số tay), `lech` (đồ nhỏ bày lệch khỏi tâm
+  ô lưới; `kiemLuoi()` vẫn soi `tai` nên lưới 0,5 m của nội thất lớn còn
+  nguyên), `chat`/`mauVai`. Thêm **26 khối**: 2 ghế đơn, gối, sách/cốc bàn
+  trà, 3 tranh, bàn cạnh sofa + đèn bàn, cây thứ ba, bàn phím/chuột/đèn/sách/
+  cốc/bảng ghim ở bàn làm việc, tủ trên/dưới + bồn rửa + hút mùi + lò vi sóng
+  + máy cà phê ở bếp, bình hoa + đĩa trái cây trên bàn ăn, kệ giày + móc áo +
+  thảm chùi chân ở hành lang. Test mới: **không hộp chắn nào chồng nhau**,
+  mọi hộp nằm trong nhà, `tren` chỉ trỏ tới khối đứng trước.
+- **Ghế Kenney từng bị chuẩn hoá `cao: 0.46`** — đó là cao độ MẶT NGỒI, không
+  phải chiều cao ghế → ghế ăn bé như ghế búp bê (thấy rõ ở ảnh D1b vòng 1).
+  Sửa thành chiều cao thật 0,88–0,9 m, và `datSeatY` đo mặt ngồi ≈ **55 % chiều
+  cao ghế** (kẹp ≤ 0,52 m) thay cho `min(bbox.max.y, 0.55)`.
+- **Ngoài cửa sổ là SÂN VƯỜN thật** (cỏ, hàng rào, 8 bụi cây, rồi mới tới phông
+  trời chiều ở xa), không còn một tấm ảnh dán lên mặt kính. **Khung chia ô của
+  cửa sổ đổ bóng** — vệt nắng chiều có nét trên sàn là điểm nhấn của cả cảnh.
+- **Bụi nắng phải là hạt TRÒN.** `PointsMaterial` không có `map` cho ra **ô
+  vuông xám** lổn nhổn giữa không khí (ảnh D1b vòng 1). Thêm một texture 32 px
+  gradient tròn + `AdditiveBlending`.
+- **Bảng lệnh mobile: phải nghe cả `resize`.** Code cũ chỉ kiểm `innerWidth <
+  900` **một lần lúc dựng**, nên mở trang ở 1440 px rồi thu cửa sổ (hoặc ảnh
+  bằng chứng đổi viewport) thì bảng vẫn mở che kín màn 390 px — đúng cái Boss
+  thấy ở D1, không phải tại cảnh. Thêm listener, và **không đè lên ý Boss** khi
+  Boss đã tự bấm nút mở/đóng.
+- **Cạm bẫy đo bằng chứng**: máy kiểm chạy ~0,8 fps, **một khung hình > 1
+  giây**, nên handler `resize` không kịp chạy trong 600 ms — phải chờ 3 s mới
+  đọc được `#bang.thu-gon`.
+- **Luma mặt phải đo ĐÚNG VÙNG DA.** Bản D1 lấy một ô vuông 380 px giữa ảnh;
+  D1b chiếu xương `head` ra điểm ảnh (`window.stage.chieuDiem()`) rồi lấy hộp
+  **thấp hơn gốc xương 6,8 cm, rộng 7,8 cm** — gốc xương `head` của VRM nằm ở
+  chân sọ, lấy hộp quanh nó là trùm tóc đen (đo thật: p5 = 1,4 trong khi mặt
+  sáng bình thường).
+
+### Vòng 2 — sau kiểm độc lập trên main (chấm cảnh 2,0/5)
+
+- **Model Kenney đã có `map` thì KHÔNG thay `map` được.** `map` của Kenney là
+  **atlas bảng màu** (mỗi mặt trỏ vào một ô vài pixel) — thay bằng vân là mất
+  sạch màu phân biệt từng bộ phận, để nguyên thì khối phẳng lì (đúng điểm bị
+  chấm "sofa/ghế/bàn là khối phẳng"). Cách rẻ mà thật: `onBeforeCompile` tiêm
+  một dòng vào shader chuẩn — **nhân** màu khuếch tán với vân, toạ độ vân lấy
+  từ **vị trí đỉnh trong không gian model** (không dùng `uv` atlas). Không
+  thêm pass, không thêm render target, chỉ một `texture2D` nữa mỗi điểm ảnh.
+  Phải khai `customProgramCacheKey` không thì three dùng lại chương trình đã
+  biên dịch của vật liệu khác.
+- **Luma toàn cảnh**: `toneMappingExposure` 1,0 → **0,86**, nắng 1,35 → 1,15,
+  hemisphere 1,05 → 0,95 (và màu đất hemisphere sáng lên 0x9c7f5c cho trần
+  khỏi nâu xỉn — trần hứng đúng màu ĐẤT của hemisphere vì pháp tuyến quay
+  xuống). Mốc mới có trong script bằng chứng: toàn cảnh p95 ∈ [205, 230].
+- **Chiều cao nhân vật KHÔNG đo bằng hộp bao.** `Box3.setFromObject` trên
+  `SkinnedMesh` trả hộp **tư thế bind**, không phản ánh gì việc đã scale
+  xương: đo thật Gen có hộp bao 1,74 m trong khi gốc xương `head` chỉ ở
+  0,96 m. Thước đúng là **xương bàn chân → gốc xương đầu** (`caoXuong`, thêm
+  vào `doChibi()`), chuẩn hoá về **1,01 m** — đúng số của Javis, nên Javis
+  không đổi gì còn Gen về bằng. Kết quả: 1,013 vs 1,007 (trước: 1,656 vs
+  1,522 theo thước hộp bao).
+- **Cân tầm vóc + đóng mốc spring bone phải làm ở KHUNG HÌNH THỨ 3, sau
+  `vrm.update()`** — không phải trong hàm dựng. `@pixiv/three-vrm` diễn hoạt
+  trên rig **normalized** rồi mới chép xuống xương RAW trong `vrm.update()`;
+  đọc xương raw trước lượt update đầu là đọc **tư thế bind** (đo thật: bàn
+  chân ở y = 0,49 m) → scale theo số đó ra một ông khổng lồ đụng trần. Đây
+  cũng là chỗ gọi lại `springBoneManager.setInitState()` + `reset()` cho tóc
+  Gen hết văng/xuyên vai.
+- **Góc `toan-canh` đặt ở ngang tầm mắt, chéo từ góc phòng khách sang bếp**
+  (`vt (-6,0, 1,82, 4,2)` → `tam (2,5, 1,0, -1,6)`, fov 66): thấy đủ 3 khu, và
+  **cả Javis lẫn Gen nằm quanh trục giữa khung**, không rơi vào dải 390 px bên
+  phải mà bảng lệnh che. Đặt máy cao sát trần thì trần chiếm 40 % khung hình —
+  phòng chỉ cao 2,8 m, máy càng cao càng thấy trần.
+- Thêm: màn hình `may-tinh` hạ xuống **đứng trên mặt bàn** (tâm panel 0,97 m);
+  kệ sách đổi sang `bookcaseOpen` + **2 chồng sách trên kệ**; ngoài vườn thêm
+  **2 mái nhà hàng xóm** (tường + mái dốc + ô cửa sáng đèn) và tán cây 3 lớp
+  thay quả cầu mờ; bụi nắng co về đúng luồng nắng cửa sổ (48 hạt, 0,022 m).
+- Bằng chứng: `scripts/kiem-d1b.mjs` (CHẠY MỘT LẦN, cờ `docs/d1b/.da-chay`,
+  cổng riêng **5211**).

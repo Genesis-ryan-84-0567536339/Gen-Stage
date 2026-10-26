@@ -226,6 +226,76 @@ describe('bảng bố cục căn nhà (Issue #43 — D1)', () => {
   });
 });
 
+describe('bảng bố cục D1b — nhà đầy đặn (Issue #48)', () => {
+  it('KHÔNG hộp chắn nào chồng lên hộp chắn khác', () => {
+    const hs = hopChan();
+    const chong: string[] = [];
+    for (let i = 0; i < hs.length; i++) {
+      for (let j = i + 1; j < hs.length; j++) {
+        const a = hs[i]!;
+        const b = hs[j]!;
+        if (a.x0 < b.x1 && a.x1 > b.x0 && a.z0 < b.z1 && a.z1 > b.z0) {
+          chong.push(`${a.id} ✕ ${b.id}`);
+        }
+      }
+    }
+    expect(chong).toEqual([]);
+  });
+
+  it('mọi hộp chắn nằm TRONG nhà (không khối nào lòi ra ngoài tường)', () => {
+    for (const h of hopChan()) {
+      expect(h.x0, h.id).toBeGreaterThanOrEqual(-NUA_RONG);
+      expect(h.x1, h.id).toBeLessThanOrEqual(NUA_RONG);
+      expect(h.z0, h.id).toBeGreaterThanOrEqual(-NUA_SAU);
+      expect(h.z1, h.id).toBeLessThanOrEqual(NUA_SAU);
+    }
+  });
+
+  it('`tren` chỉ trỏ tới khối có thật và đứng TRƯỚC trong bảng (dựng xong mới đo được nóc)', () => {
+    const daGap = new Set<string>();
+    for (const k of KHOI_CANH) {
+      if (k.tren !== undefined) {
+        expect(daGap.has(k.tren), `${k.id} đặt trên ${k.tren}`).toBe(true);
+      }
+      daGap.add(k.id);
+    }
+  });
+
+  it('đồ bày trên bàn có `tren` hoặc `datY`, không món nào lơ lửng vô cớ', () => {
+    for (const k of KHOI_CANH) {
+      if (k.lech) expect(k.tren !== undefined || k.datY !== undefined, k.id).toBe(true);
+      if (k.datY !== undefined) expect(k.datY, k.id).toBeGreaterThan(0);
+    }
+  });
+
+  it('đủ đồ cho "nhà có người ở": ≥ 2 ghế đơn, 3 cây, 3 tranh, bàn trà có đồ', () => {
+    const id = new Set(KHOI_CANH.map((k) => k.id));
+    expect(id.has('ghe-don-1') && id.has('ghe-don-2')).toBe(true);
+    expect(KHOI_CANH.filter((k) => /^cay-/.test(k.id)).length).toBeGreaterThanOrEqual(3);
+    expect(KHOI_CANH.filter((k) => /^tranh-/.test(k.id)).length).toBeGreaterThanOrEqual(3);
+    const tranBanTra = KHOI_CANH.filter((k) => k.tren === 'ban-tra').map((k) => k.id);
+    expect(tranBanTra).toContain('sach-ban-tra');
+    expect(tranBanTra).toContain('coc-tra');
+    // bàn làm việc: máy tính + đèn + sách + cốc + bảng ghim
+    const tranBan = KHOI_CANH.filter((k) => k.tren === 'ban-dieu-khien').map((k) => k.id);
+    expect(tranBan.length).toBeGreaterThanOrEqual(4);
+    expect(id.has('bang-ghim')).toBe(true);
+    // bếp: tủ trên + tủ dưới + bàn ăn có trái cây/bình hoa
+    expect(id.has('tu-tren-1') && id.has('tu-duoi-1')).toBe(true);
+    expect(KHOI_CANH.filter((k) => k.tren === 'ban-an').length).toBeGreaterThanOrEqual(2);
+    // hành lang: kệ giày + móc áo + thảm
+    expect(id.has('ke-giay') && id.has('moc-ao') && id.has('tham-cua')).toBe(true);
+  });
+
+  it('chỗ đứng của MỌI place vẫn đi tới được sau khi thêm đồ', () => {
+    for (const p of PLACES) {
+      const d2 = p.standAt ?? p.pos;
+      if (p.kind === 'seat') continue; // ghế thì đứng chồng là đúng (ngồi xuống)
+      expect(biChan(d2[0], d2[2]), `chỗ đứng của ${p.id}`).toBeNull();
+    }
+  });
+});
+
 describe('controlledBy (Issue #18 mục 3)', () => {
   it('stage.describe trả controlledBy cho mọi actor', async () => {
     const st = await dc();

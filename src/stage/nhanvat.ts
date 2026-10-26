@@ -138,6 +138,12 @@ const LE_DAU_GOI = 0.03;
  * Mọi hệ số đều `setScalar` (scale ĐỀU, không hệ số âm) nên da/tóc không răng
  * cưa và pháp tuyến không lộn.
  */
+/**
+ * D1b (#48) — hai nhân vật phải CÙNG tầm vóc: khoảng cách **xương bàn chân → gốc
+ * xương đầu** (m) sau chibi hoá. Xem `NhanVat.canDeuChibi()`.
+ */
+const CAO_XUONG_CHUAN = 1.01;
+
 const CHIBI_TUYET_DOI: Partial<Record<TenXuong, number>> = {
   hips: 1,
   spine: 0.9,
@@ -574,6 +580,8 @@ export class NhanVat {
   }
 
   private tyLeChest = 1;
+  /** D1b — đếm khung hình đã vẽ (cân tầm vóc + spring bone ở khung thứ 3). */
+  private khungDaVe = 0;
   /** Đã áp chibi hoá lên xương raw chưa (bằng chứng Issue #17). */
   private daChibi = false;
   /**
@@ -647,6 +655,37 @@ export class NhanVat {
   }
 
   /**
+   * D1b (#48) — **cân đều hai nhân vật**. Kiểm độc lập: Javis 1,656 m còn Gen
+   * 1,522 m, đứng cạnh nhau như hai bộ truyện khác nhau. `CHIBI_TUYET_DOI` là
+   * tỉ lệ *nhân lên xương gốc*, mà hai model VRM gốc vốn khác tầm vóc, nên
+   * cùng một bảng tỉ lệ vẫn ra hai dáng.
+   *
+   * **Đo bằng XƯƠNG, không bằng hộp bao.** `Box3.setFromObject` trên
+   * `SkinnedMesh` trả hộp của **tư thế bind**, không phản ánh chút nào việc
+   * đã scale xương — đo thật: Gen có hộp bao cao 1,74 m trong khi gốc xương
+   * `head` chỉ ở 0,96 m. Thước đúng là khoảng cách **xương bàn chân → gốc xương
+   * đầu**, thứ duy nhất đổi theo chibi hoá và không bị tóc/váy làm nhiễu.
+   */
+  private canDeuChibi(): void {
+    const h = this.vrm.humanoid;
+    if (!h) return;
+    const yXuong = (ten: TenXuong) =>
+      h.getRawBoneNode(ten)?.getWorldPosition(new THREE.Vector3()).y ?? NaN;
+    this.goc.updateMatrixWorld(true);
+    const yDau = yXuong('head');
+    const yChan = Math.min(
+      ...['leftFoot', 'rightFoot', 'leftToes', 'rightToes']
+        .map((t) => yXuong(t as TenXuong))
+        .filter((v) => Number.isFinite(v)),
+    );
+    if (!Number.isFinite(yDau) || !Number.isFinite(yChan)) return;
+    const caoXuong = yDau - yChan;
+    if (caoXuong < 0.3) return;
+    this.goc.scale.multiplyScalar(THREE.MathUtils.clamp(CAO_XUONG_CHUAN / caoXuong, 0.6, 1.6));
+    this.goc.updateMatrixWorld(true);
+  }
+
+  /**
    * C0 (#28) — bật/tắt dáng **lắng nghe**: gật đầu nhẹ, nghiêng đầu khi người
    * nói đang hỏi. Lớp vi mô (xem `capNhat`), **không chiếm thân** — nghe là
    * việc làm song song với mọi việc khác.
@@ -665,8 +704,16 @@ export class NhanVat {
     const hop = new THREE.Box3().setFromObject(this.goc, true);
     const cao = hop.max.y - hop.min.y;
     const dauCao = hop.max.y - yThat('neck');
+    const yChan = Math.min(
+      ...['leftFoot', 'rightFoot', 'leftToes', 'rightToes']
+        .map((t) => yThat(t as TenXuong))
+        .filter((v) => Number.isFinite(v)),
+    );
     return {
       daChibi: this.daChibi,
+      // D1b: thước THẬT (hộp bao `caoTong` bên dưới là tư thế BIND, chỉ giữ
+      // lại cho các bằng chứng cũ so sánh được).
+      caoXuong: +(yThat('head') - yChan).toFixed(4),
       rawHeadY: +yThat('head').toFixed(4),
       rawNeckY: +yThat('neck').toFixed(4),
       rawHipsY: +yThat('hips').toFixed(4),
@@ -1774,6 +1821,30 @@ export class NhanVat {
     }
 
     this.vrm.update(dt);
+
+    /*
+     * D1b (#48) — hai việc phải làm MỘT LẦN, và phải làm **sau `vrm.update()`
+     * của vài khung hình đầu**, không ở hàm dựng:
+     *   1. `canDeuChibi()` cân tầm vóc hai nhân vật;
+     *   2. đóng mốc lại spring bone (tóc/váy).
+     * Lý do: `@pixiv/three-vrm` diễn hoạt trên rig **normalized** rồi mới chép
+     * xuống xương RAW trong `vrm.update()`. Đo xương raw trước lượt update
+     * đầu tiên là đo **tư thế bind** — đo thật: bàn chân ở y = 0,49 m, lấy số
+     * đó mà scale thì nhân vật thành người khổng lồ cao đụng trần. Chờ 3 khung
+     * hình là rig đã về tư thế idle thật, số đo mới đúng.
+     */
+    if (this.khungDaVe < 3) {
+      this.khungDaVe++;
+      if (this.khungDaVe === 3) {
+        this.canDeuChibi();
+        this.goc.updateMatrixWorld(true);
+        const sb = this.vrm.springBoneManager as
+          | { setInitState?: () => void; reset?: () => void }
+          | undefined;
+        sb?.setInitState?.();
+        sb?.reset?.();
+      }
+    }
   }
 }
 

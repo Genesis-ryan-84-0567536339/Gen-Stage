@@ -47,6 +47,14 @@ export interface CuaStage {
   feed(screen: string, chunk: string): void;
   /** Số đo xương (bằng chứng số cho `scripts/kiem-a2.mjs`). */
   doXuong(actor: string): Record<string, unknown>;
+  /**
+   * D1b (#48) — số lượt vẽ / tam giác / số mesh của khung vừa render. Boss
+   * 26/10: "đừng đòi GPU lớn" → bằng chứng hiệu năng phải là SỐ, không phải
+   * cảm giác. Mốc tự đặt: `calls ≤ 150`, `triangles ≤ 300k`.
+   */
+  hieuNang(): Record<string, unknown>;
+  /** D1b — chiếu điểm thế giới ra toạ độ điểm ảnh (đo luma ĐÚNG vùng mặt). */
+  chieuDiem(p: [number, number, number]): { x: number; y: number };
   /** Đặt góc máy thủ công, tức thì (ảnh bằng chứng — xem `World.datMayThu`). */
   datMay(vt: [number, number, number], tam: [number, number, number]): void;
   /**
@@ -138,6 +146,8 @@ window.stage = {
   log: () => nhatKy.toJSON(),
   bridge: (bat) => (bat ? bridge.bat() : bridge.tat()),
   doXuong: (actor) => world.doXuongActor(actor),
+  hieuNang: () => world.doHieuNang(),
+  chieuDiem: (p) => world.chieuDiem(p),
   datMay: (vt, tam) => world.datMayThu(vt, tam),
   batTieng: () => tieng?.batTieng() ?? Promise.resolve(false),
   doTieng: (actor) => tieng?.thongKe(actor) ?? { soMau: 0, soMauDuong: 0, dinh: 0 },
