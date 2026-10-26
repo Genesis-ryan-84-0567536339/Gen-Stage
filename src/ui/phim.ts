@@ -247,6 +247,23 @@ export function batPhim(
     // của chữ, không phải lệnh lái.
     if (e.isComposing || e.keyCode === 229) return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
+    /**
+     * H1 (#69 mục 21) — **PHÍM LẶP KHÔNG PHẢI LỆNH MỚI.**
+     *
+     * Giữ một phím thì trình duyệt bắn `keydown` lặp ~30 lần/giây với
+     * `e.repeat === true`. Chuẩn `input-systems` (Core workflow 3) gọi đây là
+     * "đọc sai mép tín hiệu": giữ `1` thành 30 `actor.emote`/giây (dispatcher
+     * xếp hàng rồi cắt ngang nhau), giữ `C` thành đổi góc máy loạn, giữ `E`
+     * sinh một đống module, giữ `R` reset sân khấu liên tục.
+     *
+     * Đặt ngay sau `isComposing` (và trước MỌI nhánh phím) nên không nhánh nào
+     * phải tự nhớ kiểm: nhánh hướng vẫn đúng vì `dangGiu` + `batNhipSteer()`
+     * mới là thứ giữ nhân vật đi, chứ không phải nhịp `keydown` lặp.
+     */
+    if (e.repeat) {
+      e.preventDefault();
+      return;
+    }
 
     if (HUONG[e.code]) {
       e.preventDefault();

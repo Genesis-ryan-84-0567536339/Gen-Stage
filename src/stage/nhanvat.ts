@@ -364,6 +364,85 @@ export function buocLai(
   const tocThat = dt > 0 ? Math.hypot(diX, diZ) / dt : 0;
   return { x: nx, z: nz, vx: nvx, vz: nvz, dangDi: tocThat > NGUONG_DI, tocThat, chanX, chanZ };
 }
+
+/**
+ * Quãng tối đa cho **một bước con** của `actor.moveTo` (m).
+ *
+ * Cùng lý lẽ với `BUOC_LAI_TOI_DA` của `actor.steer`, nhưng ở đây không có
+ * `dt` nào để kẹp: `diToi` nội suy theo **đồng hồ thật**, nên một khung hình
+ * dài (tab vừa hiện lại, máy giật) có thể đòi dời 3–4 m trong một lần. Gọi
+ * `truotVaCham` một lần cho cả quãng đó là **lọt xuyên** (tunneling) qua sofa
+ * mỏng 0,4 m. Chia nhỏ 0,15 m — bằng nửa bề dày vật cản mỏng nhất trong
+ * `bo-cuc.ts` chia 1,3 — rồi giải va chạm từng bước con.
+ */
+const BUOC_DI_TOI_DA = 0.15;
+/** Trần số bước con một khung (lưới an toàn chống "spiral of death"). */
+const BUOC_CON_TOI_DA = 48;
+/**
+ * Kẹt bao lâu (ms) thì `actor.moveTo` **bỏ cuộc** và trả actor về `idle`.
+ *
+ * 600 ms: dài hơn mọi cú trượt men mép bàn (chỉ chặn 1–2 khung) nhưng ngắn
+ * hơn hạn kiên nhẫn của người xem khi Nhi dí mặt vào sofa.
+ */
+const KET_TOI_DA_MS = 600;
+
+/** Kết quả một khung `actor.moveTo` sau va chạm (xem `buocDiToi`). */
+export interface KhungDiToi {
+  x: number;
+  z: number;
+  /** Quãng còn thiếu so với điểm nội suy lý tưởng (m). > 0 là đang bị chặn. */
+  thieu: number;
+  /** Khung này có bị vật cản ăn mất một phần bước không. */
+  chan: boolean;
+  /** Quãng THẬT đã dời được trong khung này (m). */
+  daDi: number;
+}
+
+/**
+ * **Một khung `actor.moveTo`, thuần tuý** — H1 (#69 mục 38 + 39).
+ *
+ * Trước H1 `diToi` gán thẳng `goc.position = lerp(tu, den, u)` nên **mọi lệnh
+ * của agent/MCP/não đi xuyên sofa, bàn ăn, kệ sách**: Boss lái WASD thì không
+ * xuyên (vì `buocLai` gọi `truotVaCham`), Nhi đi theo lệnh thì xuyên — đúng
+ * cái mắt đọc ra thành "nội thất lộn xộn / nhân vật kỳ".
+ *
+ * Hàm này nhận **điểm nội suy lý tưởng** của khung (`dichX`, `dichZ` — vẫn do
+ * đồng hồ thật quyết định, nên `durationMs` vẫn là lời hứa) rồi bò tới đó qua
+ * `truotVaCham` theo từng bước con ≤ `BUOC_DI_TOI_DA`. Chặn một trục thì
+ * **trượt** dọc mép như `actor.steer`; chặn cả hai thì đứng yên và báo `chan`.
+ *
+ * Không đụng `THREE`, không đụng DOM ⇒ test lái thẳng vào hộp chắn thật của
+ * `bo-cuc.ts` mà không cần model VRM.
+ */
+export function buocDiToi(
+  x0: number,
+  z0: number,
+  dichX: number,
+  dichZ: number,
+  banKinh = BAN_KINH_THAN,
+): KhungDiToi {
+  let x = x0;
+  let z = z0;
+  const tong = Math.hypot(dichX - x0, dichZ - z0);
+  const soBuoc = Math.min(BUOC_CON_TOI_DA, Math.max(1, Math.ceil(tong / BUOC_DI_TOI_DA)));
+  for (let i = 1; i <= soBuoc; i += 1) {
+    const u = i / soBuoc;
+    const [nx, nz] = truotVaCham(
+      x,
+      z,
+      x0 + (dichX - x0) * u,
+      z0 + (dichZ - z0) * u,
+      banKinh,
+    );
+    // Chặn cả hai trục ⇒ bước con không nhích: bỏ luôn các bước con còn lại,
+    // vì mọi bước sau chỉ đẩy sâu hơn vào cùng cái hộp đó.
+    if (nx === x && nz === z) break;
+    x = nx;
+    z = nz;
+  }
+  const thieu = Math.hypot(dichX - x, dichZ - z);
+  return { x, z, thieu, chan: thieu > 1e-4, daDi: Math.hypot(x - x0, z - z0) };
+}
 /** Bán kính thân người khi kiểm va chạm với bàn/kệ (m). */
 const BAN_KINH_THAN = 0.34;
 
@@ -567,6 +646,14 @@ export class NhanVat {
 
   // đi lại
   private di: ChuyenDi | null = null;
+  /**
+   * H1 — ms liên tục mà `actor.moveTo` **không nhích được một phân** vì vật
+   * cản. Chạm `KET_TOI_DA_MS` thì kết thúc hành động sớm: để mặc thì agent
+   * ngồi đợi hết `durationMs` cho một chuyến đi không bao giờ tới.
+   */
+  private ketTu = 0;
+  /** Mốc đồng hồ thật của khung `moveTo` trước (để cộng `ketTu`). */
+  private tKetTruoc = 0;
   private phaBuoc = 0;
 
   // xoay người
@@ -1120,8 +1207,18 @@ export class NhanVat {
     const kc = tu.distanceTo(den);
     if (kc < 0.04) return hanhDongXongNgay(0);
 
-    const tocDo = speed && speed > 0 ? speed : TOC_DO_DI;
+    /**
+     * H1 (#69 mục 39) — **KẸP `speed`.**
+     *
+     * `diToi` cũ chỉ kiểm `speed > 0`, nên `actor.moveTo { speed: 50 }` nhảy
+     * qua cả căn nhà trong một khung hình: không vật cản nào dày 50 cm chặn
+     * được một bước 0,8 m. Trần là `TOC_DO_STEER` (1,6 m/s) — đúng trần mà
+     * `actor.steer` đã dùng, nên hai đường vào cùng một bất biến
+     * "bước/khung < nửa bề dày vật cản mỏng nhất".
+     */
+    const tocDo = Math.min(speed && speed > 0 ? speed : TOC_DO_DI, TOC_DO_STEER);
     const dai = (kc / tocDo) * 1000;
+    this.ketTu = 0;
     let hd!: HanhDongCoTay;
     hd = hanhDong(dai, () => {
       this.di = null;
@@ -1922,17 +2019,39 @@ export class NhanVat {
     if (this.di) {
       const d = this.di;
       const u = Math.min(1, (nay - d.batDau) / d.dai);
-      this.goc.position.x = d.tu.x + (d.den.x - d.tu.x) * u;
-      this.goc.position.z = d.tu.z + (d.den.z - d.tu.z) * u;
-      this.phaBuoc = ((nay - d.batDau) / 1000) * 7.5;
+      /*
+       * H1 (#69 mục 38) — đường đi của `actor.moveTo` **đi qua va chạm**.
+       *
+       * Điểm nội suy theo đồng hồ thật vẫn là *mong muốn* (nên `durationMs`
+       * vẫn là lời hứa), nhưng vị trí thật phải qua `truotVaCham` của
+       * `bo-cuc.ts` — xem `buocDiToi`. Chặn một trục thì trượt dọc mép bàn,
+       * chặn cả hai thì đứng yên chứ không xuyên qua sofa.
+       */
+      const kqDi = buocDiToi(this.goc.position.x, this.goc.position.z, d.tu.x + (d.den.x - d.tu.x) * u, d.tu.z + (d.den.z - d.tu.z) * u);
+      this.goc.position.x = kqDi.x;
+      this.goc.position.z = kqDi.z;
+      // Nhún thân + pha bước chỉ chạy khi THẬT SỰ dời được chỗ: ép vào sofa
+      // mà vẫn nhún là đúng cái "chạy bộ tại chỗ" F2 đã xoá cho `steer`.
+      if (kqDi.daDi > 1e-5) this.phaBuoc = ((nay - d.batDau) / 1000) * 7.5;
 
-      if (u >= 1) {
+      /*
+       * Kẹt hẳn `KET_TOI_DA_MS` → kết thúc sớm. `durationMs` là lời hứa về
+       * *thời gian*, không phải lời hứa "chắc chắn tới nơi": thà trả actor về
+       * `idle` ngay để não biết đường bị chặn, hơn là để nó đợi hết giờ rồi
+       * nhận một `at` rỗng không hiểu vì sao.
+       */
+      if (kqDi.chan && kqDi.daDi <= 1e-5) this.ketTu += nay - (this.tKetTruoc || nay);
+      else this.ketTu = 0;
+      this.tKetTruoc = nay;
+
+      if (u >= 1 || this.ketTu >= KET_TOI_DA_MS) {
         this.di = null;
         this.phaBuoc = 0;
+        this.ketTu = 0;
         this.traViec(d.hd);
         d.hd.xong();
       } else {
-        dangDi = true;
+        dangDi = kqDi.daDi > 1e-5;
         // F2 — cùng một phép xoay độc lập FPS như phần lái (xem `heSoBam`):
         // `dt * 7` cũ quay tức thì ở FPS thấp và quay 600°/s ở 60 FPS.
         const goc = Math.atan2(d.den.x - d.tu.x, d.den.z - d.tu.z);

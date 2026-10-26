@@ -28,6 +28,7 @@ import type {
 } from '../api/types';
 import type { EventBus } from '../events';
 import {
+  CAO_TUONG,
   denDiem,
   dungPhong,
   KICH_THUOC_PHONG,
@@ -36,7 +37,8 @@ import {
   MAU_CYAN,
   MAU_DEN_AM,
 } from './phong';
-import { NhanVat, TOC_DO_DI, uocThoiLuongNoi } from './nhanvat';
+import { heSoBam, NhanVat, TOC_DO_DI, uocThoiLuongNoi } from './nhanvat';
+import { dayTayMay, kepTrongHop, type HopNha } from './may-quay';
 import {
   BIEU_CAM,
   CLIPS,
@@ -62,6 +64,43 @@ import { coNao } from '../behavior/so-nao';
  * lùi ra quá mép nhà. Không còn xám-xanh "Tron" của lab.
  */
 const MAU_NEN_LAB = 0xdce6ea;
+
+/** Một bộ số đèn của một preset — xem `PRESET_DEN_SO`. */
+export interface SoDen {
+  /** Cường độ `HemisphereLight` (trời/đất). */
+  troi: number;
+  /** Cường độ `DirectionalLight` chính ("nắng chiều"). */
+  nang: number;
+  /** Màu đèn nắng. */
+  nangMau: number;
+  /** Cường độ đèn viền phía bắc. */
+  vien: number;
+  /** `renderer.toneMappingExposure`. */
+  exposure: number;
+  /** Màu nền + màu fog. */
+  nen: number;
+}
+
+/**
+ * H1 (#69 mục 34) — **MỘT NGUỒN SỰ THẬT cho cường độ đèn.**
+ *
+ * Trước H1 có HAI bộ số: `dungAnhSang()` dựng cảnh bằng `troi 0.95 / nang 1.15
+ * / vien 0.22`, còn `sceneLight('sang')` ghi `troi 1.2 / nang 1.0 / vien 0.3`
+ * và đổi luôn màu đèn nắng. Nên chỉ cần gọi `scene.light sang` **một lần** —
+ * bấm `R` (`stage.reset` đi qua `sceneLight`), bảng lệnh, phím, hay một lệnh
+ * của não — là trời sáng thêm 26 % so với lúc mở trang, vượt mốc luma p95 đã
+ * chốt ở D1b. Đúng lỗi "chói" Boss báo.
+ *
+ * Giờ `dungAnhSang()` và `sceneLight()` cùng đọc bảng này, nên **không thể**
+ * lệch nữa: muốn đổi độ sáng thì sửa đúng một chỗ. Số của `sang` lấy theo bản
+ * `dungAnhSang()` — đó là bộ đã có số đo luma p95 chốt ở D1b/F1, còn bộ của
+ * `sceneLight` cũ chưa bao giờ được đo.
+ */
+export const PRESET_DEN_SO: Record<string, SoDen> = {
+  sang: { troi: 0.95, nang: 1.15, nangMau: 0xffd79a, vien: 0.22, exposure: 0.86, nen: MAU_NEN_LAB },
+  toi: { troi: 0.34, nang: 0.22, nangMau: 0x6f9ec8, vien: 0.45, exposure: 0.8, nen: 0x060a0f },
+  am: { troi: 0.8, nang: 0.8, nangMau: MAU_CAM, vien: 0.25, exposure: 0.86, nen: 0x1c1208 },
+};
 /** Bán kính coi là "đang ở" một place. */
 const BAN_KINH_AT = 0.9;
 /**
@@ -134,6 +173,56 @@ const MAY_NGANG: GocMay = {
  * — nhà trần thấp (2,8 m) nên lệch thấp hơn hẳn bản lab.
  */
 const LECH_THEO_OWNER = /* @__PURE__ */ new THREE.Vector3(1.8, 2.0, 2.6);
+
+/* ======================= H1 (#69) — tay máy & bước cố định ================= */
+
+/** Lề cách tường cho camera (m) — đủ để near plane 0,1 không cắt vào tường. */
+const LE_MAY_TUONG = 0.4;
+/** Lề cách trần cho camera (m): trần 2,8 ⇒ camera cao nhất 2,5. */
+const LE_MAY_TRAN = 0.3;
+/** Camera không được thấp hơn mốc này (m) — không chui xuống dưới sàn. */
+const MAY_Y_MIN = 0.4;
+/**
+ * **Hộp trong nhà** mà camera được phép ở (H1 mục 15). Nhà 14 × 10 m, trần
+ * 2,8 m — nên hộp là 13,2 × 9,2 × (0,4…2,5).
+ */
+const HOP_MAY: HopNha = {
+  hx: KICH_THUOC_PHONG / 2 - LE_MAY_TUONG,
+  hz: KICH_THUOC_SAU / 2 - LE_MAY_TUONG,
+  yMin: MAY_Y_MIN,
+  yMax: CAO_TUONG - LE_MAY_TRAN,
+};
+/**
+ * H1 (#69 mục 14) — **`maxDistance` theo kích thước nhà**, không phải hằng 26
+ * của bản lab 16 × 16 m. Nhà chỉ 14 × 10 m: nửa đường chéo ≈ 8,6 m đã là
+ * khoảng xa nhất có nghĩa trong nhà, 26 m thì OrbitControls cho Boss lùi ra
+ * tận ngoài sân rồi mới kẹp.
+ */
+const MAY_XA_TOI_DA = Math.hypot(KICH_THUOC_PHONG, KICH_THUOC_SAU) / 2;
+/** Tay máy ngắn nhất (m) — khớp `controls.minDistance` để hai bên không giằng. */
+const MAY_GAN_TOI_DA = 0.6;
+/**
+ * H1 (#69 mục 6) — **hằng thời gian camera BAY** (s), thay `min(1, dt·3,2)`.
+ *
+ * F2 (#56) đã đổi camera *bám* sang lò xo độc lập FPS nhưng bỏ sót camera
+ * *bay* (`camera.preset`, `camera.focus`): `dt·3,2` ở 60 FPS cho 0,053/khung,
+ * ở 10 FPS cho 0,32/khung — tức cùng một đoạn code bay nhanh chậm khác nhau
+ * theo máy, và `CLAUDE.md` mục D1 tự ghi "1,5 s chỉ đi được ~30 % quãng".
+ * Dùng `heSoBam(dt, τ)` của F2: τ = 0,28 s ⇒ 95 % quãng trong ~0,85 s ở MỌI
+ * FPS.
+ */
+const TAU_MAY_BAY = 0.28;
+/**
+ * H1 (#69 mục 1–3) — **bước mô phỏng cố định** (s). 60 Hz: đúng nhịp mà lò xo
+ * camera (ω = 9) và hằng thời gian của F2 được chỉnh theo.
+ */
+const BUOC_CO_DINH = 1 / 60;
+/**
+ * Trần số bước mô phỏng một khung hình. Chạm trần thì **bỏ phần dư** thay vì
+ * dồn sang khung sau: dồn là "spiral of death" (khung sau phải chạy nhiều bước
+ * hơn ⇒ càng chậm ⇒ càng nhiều bước). 5 bước = bù được tới 83 ms giật.
+ */
+const BUOC_TOI_DA = 5;
 /**
  * F2 (#56 mục 2) — **tần số riêng của lò xo camera bám** (rad/s).
  *
@@ -259,6 +348,21 @@ export class World implements StageWorld {
    * (lấy mẫu từ ngoài kéo FPS 60 → 8,5, tức làm hỏng đúng cái đang đo).
    */
   private soMay: Array<[number, number, number, number, number]> = [];
+  /** H1 — phần `dt` chưa tiêu của accumulator bước cố định (s). */
+  private duDt = 0;
+  /** H1 — số khung đã phải bỏ bước vì chạm `BUOC_TOI_DA` (máy đang chậm thật). */
+  private khungTranBuoc = 0;
+  /** H1 — vector tạm cho tay máy: không cấp phát trong đường render. */
+  private readonly tayMay = new THREE.Vector3();
+  /**
+   * H1 — có kẹp camera trong nhà hay không.
+   *
+   * Luôn `true` cho camera THẬT của Boss. Chỉ `datMayThu()` (`window.stage
+   * .datMay`, dụng cụ chụp ảnh bằng chứng, không nằm trong Actor API) được tắt
+   * — vài ảnh bằng chứng cố tình đặt máy **ngoài nhà** nhìn vào (b1, d1b).
+   * Boss chạm chuột vào sân khấu là bật lại ngay (`controls` 'start').
+   */
+  private kepMay = true;
   private bossDaXoay = false;
   private lanCuoiBossHoatDong = Date.now();
 
@@ -276,7 +380,8 @@ export class World implements StageWorld {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     // C3 (#40) hạ 1.1 → 1.0; D1b (#48) hạ tiếp 1.0 → 0.86: kiểm độc lập đo
     // luma TOÀN CẢNH p95 246–250 (cháy mảng sáng), mốc đặt lại là 215–225.
-    this.renderer.toneMappingExposure = 0.86;
+    // H1 (#69): số nằm trong `PRESET_DEN_SO.sang` — một nguồn sự thật.
+    this.renderer.toneMappingExposure = PRESET_DEN_SO.sang.exposure;
 
     this.scene.background = new THREE.Color(MAU_NEN_LAB);
     // fog rất nhẹ (0.015): cho chiều sâu, KHÔNG làm mờ khối ở cuối phòng 16 m
@@ -294,9 +399,11 @@ export class World implements StageWorld {
     this.controls.target.copy(MAY_NGANG.tam);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.07;
-    this.controls.minDistance = 1.5;
-    // phòng 16 m: phải cho lùi xa hơn nhiều so với bản 7,2 m (cũ 9,5)
-    this.controls.maxDistance = 26;
+    // H1: khớp đúng trần/sàn của tay máy (`MAY_GAN_TOI_DA`) để OrbitControls
+    // và spring arm không giằng nhau quanh một khoảng cách khác nhau.
+    this.controls.minDistance = MAY_GAN_TOI_DA;
+    // H1 (#69 mục 14): theo kích thước NHÀ (14 × 10 m) — xem `MAY_XA_TOI_DA`.
+    this.controls.maxDistance = MAY_XA_TOI_DA;
     this.controls.maxPolarAngle = Math.PI * 0.49;
     this.controls.minPolarAngle = Math.PI * 0.12;
     this.controls.enablePan = false;
@@ -304,6 +411,7 @@ export class World implements StageWorld {
     this.controls.addEventListener('start', () => {
       this.bossDaXoay = true;
       this.tamTuBay = null;
+      this.kepMay = true;
       this.lanCuoiBossHoatDong = Date.now();
     });
 
@@ -334,12 +442,13 @@ export class World implements StageWorld {
     // D1b: hemisphere ẤM hẳn (trời vàng nhạt / sàn gỗ nâu) — bản D1 để trời
     // xanh lạnh 0xcfe3ef nên mảng tối trong nhà ngả xanh, trái hẳn ảnh tham
     // chiếu "nhà gỗ ấm, nắng chiều mềm".
-    this.troi = new THREE.HemisphereLight(0xffe9c8, 0x9c7f5c, 0.95);
+    const so = PRESET_DEN_SO.sang;
+    this.troi = new THREE.HemisphereLight(0xffe9c8, 0x9c7f5c, so.troi);
     this.scene.add(this.troi);
 
     // "Nắng chiều": đặt phía NAM (z dương, phía cửa sổ) và cao, chiếu chếch
     // vào trong nhà — mô phỏng ánh nắng xiên qua cửa sổ lớn buổi chiều.
-    this.nang = new THREE.DirectionalLight(0xffd79a, 1.15);
+    this.nang = new THREE.DirectionalLight(so.nangMau, so.nang);
     // Hạ thấp + đẩy chéo: mặt trời chiều xuống thấp thì VỆT NẮNG qua cửa sổ
     // dài hẳn ra giữa sàn (bản D1 đèn cao 7 m gần như thẳng đứng, bóng ngắn
     // cụt — đúng chỗ Boss kêu "thô").
@@ -371,7 +480,7 @@ export class World implements StageWorld {
     this.nang.shadow.radius = 2.5;
     this.scene.add(this.nang);
 
-    this.vien = new THREE.DirectionalLight(MAU_CAM, 0.22);
+    this.vien = new THREE.DirectionalLight(MAU_CAM, so.vien);
     this.vien.position.set(0, 4.2, -5.0);
     this.scene.add(this.vien);
 
@@ -396,6 +505,11 @@ export class World implements StageWorld {
     // 0.25: môi trường chỉ để mép khối không đen tịt. Bản thử 0.42 cộng với
     // hemisphere 1.1 làm cảnh bệt như phủ sương sữa — mất hết khối.
     this.scene.environmentIntensity = 0.25;
+
+    // H1 — dựng cảnh và `sceneLight('sang')` phải cho ra ĐÚNG MỘT trạng thái:
+    // chốt cả exposure + nền ở đây theo cùng bảng mà `sceneLight` đọc.
+    this.renderer.toneMappingExposure = so.exposure;
+    this.denPreset = 'sang';
   }
 
   /** Nạp phòng + nhân vật mặc định + 2 màn hình (máy tính + TV). Gọi một lần lúc khởi động. */
@@ -454,6 +568,17 @@ export class World implements StageWorld {
 
   private motKhung(): void {
     this.dongHo.update();
+    /**
+     * H1 (#69 mục 1–3) — **`dt` KẸP ĐÚNG MỘT CHỖ, ở đây.**
+     *
+     * Trước H1 một khung hình có 4 đồng hồ khác nhau (xem kiểm toán mục 2).
+     * Giờ khung hình có đúng một `dt` thật, rồi mọi **mô phỏng** (lò xo camera
+     * bám, camera bay, kẹp tay máy) chạy ở `BUOC_CO_DINH` = 1/60 qua
+     * accumulator dưới đây; **render** vẫn mỗi `requestAnimationFrame`.
+     *
+     * Nhờ vậy số đo của một lượt bám camera ở 30, 60 hay 144 FPS là **cùng
+     * một quỹ đạo** — điều `heSoBam`/`buocLoXo` của F2 chỉ làm gần đúng.
+     */
     const dt = Math.min(this.dongHo.getDelta(), 1 / 20);
 
     // điểm con trỏ chiếu ra không gian, cách camera 2,4 m
@@ -475,6 +600,45 @@ export class World implements StageWorld {
       nv.capNhat(dt);
     }
 
+    /*
+     * H1 — ACCUMULATOR: tích luỹ `dt` rồi chạy mô phỏng camera theo bước cố
+     * định. Chạm trần bước thì **bỏ phần dư** (không dồn sang khung sau) và
+     * ghi sổ: dồn lại là "spiral of death", còn im lặng thì không ai biết máy
+     * đang chậm thật.
+     */
+    this.duDt += dt;
+    let soBuoc = 0;
+    while (this.duDt >= BUOC_CO_DINH && soBuoc < BUOC_TOI_DA) {
+      this.buocMoPhong(BUOC_CO_DINH);
+      this.duDt -= BUOC_CO_DINH;
+      soBuoc += 1;
+    }
+    if (this.duDt >= BUOC_CO_DINH) {
+      this.duDt = 0;
+      this.khungTranBuoc += 1;
+    }
+
+    for (const mh of this.screens.values()) mh.capNhat(dt);
+
+    for (const [id, kt] of [...this.ketTinhDangChay]) {
+      if (kt.capNhat()) this.ketTinhDangChay.delete(id);
+    }
+    this.fxDangChay = this.fxDangChay.filter((hu) => !hu.capNhat());
+
+    this.capNhatBongBong();
+    this.controls.update();
+    // Boss xoay/zoom bằng chuột cũng phải nằm trong nhà: kẹp SAU
+    // `controls.update()` (nó mới là người ghi cuối cùng lên camera).
+    this.kepMayTrongNha();
+    this.veMotKhung();
+    this.theoDoiFps(dt);
+  }
+
+  /**
+   * H1 — **một bước mô phỏng camera** ở `BUOC_CO_DINH`. Chỉ chứa thứ phụ
+   * thuộc thời gian; không render, không đọc input.
+   */
+  private buocMoPhong(dt: number): void {
     /* --- camera bám owner (preset `theo-owner`) --- */
     if (this.theoOwner) {
       const nv = this.actors.get(this.theoOwner);
@@ -512,23 +676,60 @@ export class World implements StageWorld {
     }
 
     if (this.tamTuBay) {
-      const k = Math.min(1, dt * 3.2);
+      /*
+       * H1 (#69 mục 6) — camera BAY cũng dùng hệ số bám theo thời gian của F2
+       * (`heSoBam`), không còn `min(1, dt·3,2)`. Đây là chỗ duy nhất F2 bỏ
+       * sót: `camera.preset` và `camera.focus` của Boss bay nhanh chậm khác
+       * nhau giữa GPU thật và máy kiểm.
+       */
+      const k = heSoBam(dt, TAU_MAY_BAY);
       this.camera.position.lerp(this.tamTuBay.vt, k);
       this.controls.target.lerp(this.tamTuBay.tam, k);
       if (this.camera.position.distanceTo(this.tamTuBay.vt) < 0.02) this.tamTuBay = null;
     }
 
-    for (const mh of this.screens.values()) mh.capNhat(dt);
+    // Mọi bước mô phỏng kết thúc bằng một lần kẹp: đích của lò xo bám hay của
+    // camera bay đều có thể nằm ngoài tường (lệch cố định ở góc nhà).
+    this.kepMayTrongNha();
+  }
 
-    for (const [id, kt] of [...this.ketTinhDangChay]) {
-      if (kt.capNhat()) this.ketTinhDangChay.delete(id);
+  /**
+   * H1 (#69 mục 14 + 15) — **SPRING ARM**: giữ camera trong nhà.
+   *
+   * Hai việc, đúng thứ tự:
+   *   1. kẹp **tâm ngắm** vào hộp nhà — tâm ở ngoài thì mọi phép dưới vô nghĩa;
+   *   2. **cắt tay máy** (`tâm → camera`) tại mặt hộp nhà trừ lề, tức rút
+   *      camera vào thay vì để nó xuyên tường/trần. Giữ nguyên **hướng** nhìn,
+   *      chỉ đổi khoảng cách — đúng `SpringArm3D` mà `camera-systems` tả.
+   *
+   * Hình học nằm trong `may-quay.ts` (dữ liệu thuần, test được). Xem ở đó lý
+   * do tính bằng phép slab thay vì `Raycaster`.
+   */
+  private kepMayTrongNha(): void {
+    if (!this.kepMay) return;
+    const tam = this.controls.target;
+    const [tx, ty, tz] = kepTrongHop(tam.x, tam.y, tam.z, HOP_MAY);
+    tam.set(tx, ty, tz);
+
+    this.tayMay.subVectors(this.camera.position, tam);
+    const xa = this.tayMay.length();
+    if (xa < 1e-5) {
+      // camera trùng tâm ngắm (chưa đặt góc nào): đẩy ra một tay máy mặc định
+      this.camera.position.set(tx, ty, tz + MAY_GAN_TOI_DA);
+      return;
     }
-    this.fxDangChay = this.fxDangChay.filter((hu) => !hu.capNhat());
-
-    this.capNhatBongBong();
-    this.controls.update();
-    this.veMotKhung();
-    this.theoDoiFps(dt);
+    this.tayMay.divideScalar(xa);
+    const dai = dayTayMay(
+      [tx, ty, tz],
+      [this.tayMay.x, this.tayMay.y, this.tayMay.z],
+      Math.min(xa, MAY_XA_TOI_DA),
+      HOP_MAY,
+      0.12,
+      MAY_GAN_TOI_DA,
+    );
+    if (Math.abs(dai - xa) > 1e-6) {
+      this.camera.position.copy(tam).addScaledVector(this.tayMay, dai);
+    }
   }
 
   /**
@@ -623,6 +824,31 @@ export class World implements StageWorld {
     gocActor.forEach((o, i) => (o.visible = hien[i]));
     this.renderer.render(this.scene, this.camera);
 
+    /*
+     * H1 (#69 mục 28) — ĐO xem `frustumCulled = false` trên mọi mesh VRM
+     * (`nhanvat.ts`) đang tốn bao nhiêu.
+     *
+     * Không đoán: bật lại cull cho đúng các mesh VRM, vẽ một khung, đọc
+     * `calls`, rồi trả về nguyên trạng. Nếu ở góc máy đang xét số không đổi
+     * thì cull không cứu được gì (nhân vật đang trong khung hình); nếu giảm
+     * mạnh ở các preset nhìn đi chỗ khác thì đó là lãi thật và đáng đổi — kèm
+     * rủi ro tóc/váy "nháy mất" vì `boundingSphere` của skinned mesh tính ở
+     * tư thế bind. Số đo nằm trong PR H1.
+     */
+    const meshVrm: THREE.Mesh[] = [];
+    for (const g of gocActor) {
+      g.traverse((o) => {
+        const m = o as THREE.Mesh;
+        if (m.isMesh && !m.frustumCulled) meshVrm.push(m);
+      });
+    }
+    for (const m of meshVrm) m.frustumCulled = true;
+    this.renderer.render(this.scene, this.camera);
+    const callsCull = this.renderer.info.render.calls;
+    const triCull = this.renderer.info.render.triangles;
+    for (const m of meshVrm) m.frustumCulled = false;
+    this.renderer.render(this.scene, this.camera);
+
     const r = this.renderer.info.render;
     let mesh = 0;
     const theoGoc: Record<string, number> = {};
@@ -658,6 +884,19 @@ export class World implements StageWorld {
       theoGoc,
       // F2 — sổ camera bám (xem `soMay`); rỗng khi không ở preset `theo-owner`
       soMay: this.soMay,
+      /* --- H1 (#69): bằng chứng tay máy + bước cố định --- */
+      may: {
+        vt: [this.camera.position.x, this.camera.position.y, this.camera.position.z],
+        tam: [this.controls.target.x, this.controls.target.y, this.controls.target.z],
+        xa: this.camera.position.distanceTo(this.controls.target),
+        kep: this.kepMay,
+      },
+      hopNha: HOP_MAY,
+      mocDen: PRESET_DEN_SO,
+      buocCoDinh: BUOC_CO_DINH,
+      khungTranBuoc: this.khungTranBuoc,
+      /* --- H1 (#69 mục 28): lãi nếu bật lại frustum culling cho mesh VRM --- */
+      cull: { meshVrm: meshVrm.length, calls: callsCull, triangles: triCull },
     };
   }
 
@@ -1131,38 +1370,25 @@ export class World implements StageWorld {
     }
     this.denPreset = preset;
     const bg = this.scene.background as THREE.Color;
-    switch (preset) {
-      case 'sang':
-        this.troi.intensity = 1.2;
-        this.nang.intensity = 1.0;
-        this.nang.color.setHex(0xffe0b0);
-        this.vien.intensity = 0.3;
-        bg.setHex(MAU_NEN_LAB);
-        // C3 (#40) 1.1 → 1.0; D1b (#48) → 0.86 (xem constructor).
-        this.renderer.toneMappingExposure = 0.86;
-        break;
-      case 'toi':
-        this.troi.intensity = 0.34;
-        this.nang.intensity = 0.22;
-        this.nang.color.setHex(0x6f9ec8);
-        this.vien.intensity = 0.45;
-        bg.setHex(0x060a0f);
-        this.renderer.toneMappingExposure = 0.8;
-        break;
-      case 'am':
-        this.troi.intensity = 0.8;
-        this.nang.intensity = 0.8;
-        this.nang.color.setHex(MAU_CAM);
-        this.vien.intensity = 0.25;
-        bg.setHex(0x1c1208);
-        this.renderer.toneMappingExposure = 0.86;
-        break;
-    }
+    /*
+     * H1 (#69 mục 34) — KHÔNG viết số ở đây nữa. `switch` cũ là nơi hai bộ số
+     * tách đôi: `dungAnhSang()` một bộ, nhánh `'sang'` một bộ khác, nên bấm
+     * `R` là cảnh chói hơn lúc mở trang. Mọi số nằm trong `PRESET_DEN_SO`.
+     */
+    const so = PRESET_DEN_SO[preset];
+    if (!so) throw new Error(`Thiếu số đèn cho preset "${preset}" trong PRESET_DEN_SO`);
+    this.troi.intensity = so.troi;
+    this.nang.intensity = so.nang;
+    this.nang.color.setHex(so.nangMau);
+    this.vien.intensity = so.vien;
+    bg.setHex(so.nen);
+    this.renderer.toneMappingExposure = so.exposure;
     if (this.scene.fog instanceof THREE.FogExp2) this.scene.fog.color.copy(bg);
   }
 
   cameraFocus(target: string, distance = 3.0): void {
     this.theoOwner = null;
+    this.kepMay = true;
     const v = this.viTriMucTieu(target);
     if (!v) throw new Error(`Không biết "${target}" ở đâu`);
     const tam = new THREE.Vector3(v[0], v[1] + 1.1, v[2]);
@@ -1184,6 +1410,9 @@ export class World implements StageWorld {
     this.theoOwner = null;
     this.tamTuBay = null;
     this.bossDaXoay = true;
+    // H1: dụng cụ chụp ảnh được đặt máy NGOÀI nhà (ảnh toàn cảnh b1/d1b) —
+    // tắt kẹp cho tới khi Boss chạm chuột hoặc gọi một `camera.*` thật.
+    this.kepMay = false;
     this.camera.position.set(vt[0], vt[1], vt[2]);
     this.controls.target.set(tam[0], tam[1], tam[2]);
     this.camera.lookAt(this.controls.target);
@@ -1196,6 +1425,7 @@ export class World implements StageWorld {
     }
     this.mayPreset = name;
     this.theoOwner = null;
+    this.kepMay = true;
     if (name === 'theo-owner') {
       // bám nhân vật có controlledBy = 'owner' (không có thì actor đầu tiên)
       const chu =
