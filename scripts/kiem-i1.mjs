@@ -27,10 +27,15 @@
  *   1. t(`user.listening on`) → t(`actor.lookAt` của Nhi) ≤150 ms
  *   2. t(`user.text`) → t(gật, tức `actor.listening`) ≤300 ms
  *   3. t(`user.text`) → t(câu đệm **bắt đầu phát**) ≤400 ms
- *   4. não trễ 8 s: ≥1 đổi tư thế + ĐÚNG 1 câu nối, không chồng giọng
+ *   4. não trễ 8 s: ≥1 đổi tư thế + ĐÚNG 1 câu nối
  *   5. não trả lời ở 2 s: không câu nối, việc chêm bị cắt, não nói ngay
  *   6. đang bận (clip lặp của não): vẫn `lookAt` ≤300 ms, **hàng đợi không mất**
- *   7. console 0 lỗi · mọi lệnh `ok` · FPS lúc chờ não không tụt
+ *   7. **trần tầng 2** (vòng 2): não im 60 s → sau 30 s có câu kết, số emote
+ *      của phản xạ NGỪNG tăng, và nhịp thường (thả mắt về chỗ cũ) sống lại
+ *   8. **ĐỈNH SỐ GIỌNG CÙNG PHÁT = 1** trong MỌI ca (vòng 2) — đo ở tầng
+ *      audio thật bằng móc `AudioBufferSourceNode.start`/`ended`, không phải
+ *      đếm `actor.sayStart` của một actor (xem ghi chú ở `dinhGiong`)
+ *   9. console 0 lỗi · mọi lệnh `ok`
  *
  * Ra trong `docs/i1/`:
  *   01-tang-0-nghe-mic.png    Nhi vừa quay về máy quay lúc Boss bấm mic
@@ -102,6 +107,26 @@ const MOI_TRUONG_FF = { ...process.env, LIBGL_ALWAYS_SOFTWARE: '1', MOZ_ENABLE_W
 /* ---------------------------------------------------------------- tiện ích */
 
 const in_ = (...x) => console.log(...x);
+
+/**
+ * **Không mở Firefox khi đã có phiên nào đang chạy.**
+ *
+ * Máy này có nhiều worktree agent; nouveau gãy (`kernel rejected pushbuf`)
+ * khi vài phiên Firefox cùng dùng GPU, và lượt chạy nào gãy giữa đường thì số
+ * đo vô nghĩa. Thà dừng với một câu rõ ràng còn hơn đo trên sân khấu đang
+ * tranh GPU. Bộ này mở trình duyệt **đúng một lần** cho cả lượt.
+ */
+function kiemFirefoxTrong() {
+  const r = spawnSync('pgrep', ['-f', 'firefox-1543'], { encoding: 'utf8' });
+  const pid = String(r.stdout ?? '').trim().split(/\s+/).filter(Boolean);
+  if (pid.length === 0) return;
+  console.error(
+    `\n⛔ Đã có ${pid.length} tiến trình firefox-1543 đang chạy (PID ${pid.join(', ')}).\n` +
+      '   Chạy I1 lúc này là đo trên GPU đang bị tranh — nouveau gãy giữa lượt.\n' +
+      '   Chờ phiên kia xong (hoặc tắt nó) rồi chạy lại: node scripts/kiem-i1.mjs --lai\n',
+  );
+  process.exit(3);
+}
 const nghi = (ms) => new Promise((r) => setTimeout(r, ms));
 const thatBai = [];
 const nhatKy = {
@@ -400,6 +425,31 @@ async function moTrang(wavB64) {
   await page.evaluate(() => {
     window.__ev = [];
     window.stage.on('*', (e) => window.__ev.push({ t: e.t, event: e.event, data: e.data }));
+    /**
+     * I1 vòng 2 (review PR #75 lỗi chặn 1) — **đếm GIỌNG THẬT đang phát**.
+     *
+     * Thước cũ đếm `actor.sayStart`/`sayDone` **của một actor** rồi kết luận
+     * "đỉnh 1" — mà Nhi-với-Nhi thì KHÔNG THỂ chồng (dispatcher giữ 1 slot
+     * mỗi actor, lớp tiếng còn nối audio theo từng người), nên con số đó là
+     * hệ quả có sẵn của kiến trúc, không chứng minh gì. Cái phải đo là **hai
+     * nhân vật cùng mở miệng**. Chỉ lớp TTS dùng `AudioBufferSourceNode`
+     * (emote dùng `createOscillator`), nên móc ở đây là đúng một thước giọng.
+     */
+    window.__am = { dinh: 0, dang: 0, moc: [] };
+    const S = window.AudioBufferSourceNode;
+    if (S) {
+      const start0 = S.prototype.start;
+      S.prototype.start = function (...a) {
+        window.__am.dang++;
+        window.__am.dinh = Math.max(window.__am.dinh, window.__am.dang);
+        window.__am.moc.push({ t: Date.now(), pha: 'bat', dang: window.__am.dang });
+        this.addEventListener('ended', () => {
+          window.__am.dang = Math.max(0, window.__am.dang - 1);
+          window.__am.moc.push({ t: Date.now(), pha: 'het', dang: window.__am.dang });
+        });
+        return start0.apply(this, a);
+      };
+    }
     window.__khung = 0;
     const dem = () => {
       window.__khung++;
@@ -413,6 +463,14 @@ async function moTrang(wavB64) {
 /* ---------------------------------------------------- đọc hai cái sổ của app */
 
 const ev = (page) => page.evaluate(() => window.__ev);
+/** Đặt lại thước giọng cho một ca (giữ số đang phát, xoá đỉnh + mốc). */
+const amDatLai = (page) =>
+  page.evaluate(() => {
+    window.__am.dinh = window.__am.dang;
+    window.__am.moc.length = 0;
+  });
+/** Đỉnh số giọng cùng phát từ lần `amDatLai` gần nhất. */
+const dinhGiong = (page) => page.evaluate(() => window.__am.dinh);
 /**
  * Nhật ký LỆNH. `window.stage.log()` trả **chuỗi JSON** của cả gói
  * `{ version, xuatLuc, banGhi }` (xem `src/log.ts`), không phải mảng — lấy
@@ -432,10 +490,14 @@ const sauLenh = (ds, cmd, tu, loc = () => true) =>
   ds.find((b) => b.cmd === cmd && b.t >= tu && loc(b)) ?? null;
 
 /**
- * Đỉnh số câu của một actor đang phát cùng lúc.
+ * Đỉnh số câu của **một** actor đang phát cùng lúc — **thước YẾU, giữ lại để
+ * so sánh**.
  *
- * Đây là thước duy nhất của lời hứa "**một giọng, không bao giờ chồng**":
- * `sayStart` +1, `sayDone` −1. Đỉnh > 1 là có hai câu cùng chạy.
+ * Review PR #75 chỉ ra: Nhi-với-Nhi *không thể* chồng (dispatcher giữ 1 slot
+ * `chiemActor` mỗi actor, lớp tiếng còn nối audio theo từng người), nên "đỉnh
+ * 1" ở đây gần như là tautology. Thước thật của lời hứa "một giọng" là
+ * `dinhGiong()` — móc `AudioBufferSourceNode`, đếm **giọng đang phát** bất kể
+ * của ai.
  */
 function dinhChongGiong(ds, actor, tu, den) {
   let dang = 0;
@@ -462,6 +524,7 @@ const demCau = (ds, chu, tu, den) =>
 
 /* ======================================================= chạy bằng chứng */
 
+kiemFirefoxTrong();
 in_(`\n--- dựng bridge (cổng ${CONG_WS}-${CONG_STT}) + web ${CONG_WEB} ---`);
 const khoe = await moBridge();
 ghi('bridge bật, STT thật đã cài', khoe?.daCai === true, JSON.stringify(khoe).slice(0, 160));
@@ -573,6 +636,7 @@ try {
   in_('\n--- mốc 2,3,4: có chữ → gật ≤300 ms, câu đệm ≤400 ms, não trễ 8 s ---');
   const fpsTruoc = await page.evaluate(() => window.__khung);
   const tFpsTruoc = Date.now();
+  await amDatLai(page);
   const tGo = Date.now();
   const guiOk = await page.evaluate(() => window.stage.guiChat('Nhi ơi, hôm nay mình làm gì nhỉ'));
   ghi('ô chat nhận câu gõ (cùng cửa mic dùng)', guiOk === true, `guiChat → ${guiOk}`);
@@ -595,20 +659,39 @@ try {
     `${tre2} ms (question=${String(evGat?.data?.question)})`,
     { treMs: tre2 },
   );
+  /**
+   * **MỐC 3 tính từ lúc NAM DỨT LỜI, không từ `user.text`** (I1 vòng 2).
+   *
+   * Review PR #75 đo được hai giọng chồng nhau: `actor.say` bắn `user.text`
+   * ngay **đầu câu** của Nam, Nam còn đọc 2–3 s nữa, mà mốc câu đệm chỉ
+   * 200 ms. Issue #74 ghi thẳng *"không bao giờ nói chồng"*, nên cửa đúng là
+   * `actor.sayDone` của Nam — **mốc sớm nhất Nhi trả lời được mà không chen
+   * vào giọng người khác**. Lời hứa 400 ms giữ nguyên, chỉ đổi điểm gốc.
+   */
+  const evNamXong = evText
+    ? sauEv(ds, 'actor.sayDone', evText.t, (e) => e.data?.actor === 'owner')
+    : null;
+  const CAC_CAU_DEM = ['Dạ, Sếp?', 'Em nghe ạ', 'Sếp cần gì ạ?', 'Dạ em đây'];
   const evDem = evText
     ? sauEv(
         ds,
         'actor.sayStart',
         evText.t,
-        (e) => e.data?.actor === 'gen' && ['Dạ, Sếp?', 'Em nghe ạ', 'Sếp cần gì ạ?', 'Dạ em đây'].includes(e.data?.text),
+        (e) => e.data?.actor === 'gen' && CAC_CAU_DEM.includes(e.data?.text),
       )
     : null;
-  const tre3 = evText && evDem ? evDem.t - evText.t : null;
+  const goc3 = evNamXong?.t ?? evText?.t ?? 0;
+  const tre3 = evDem ? evDem.t - goc3 : null;
   ghi(
-    'MỐC 3 — t(user.text) → t(câu đệm BẮT ĐẦU PHÁT) ≤400 ms',
-    tre3 !== null && tre3 <= 400,
-    `${tre3} ms — «${evDem?.data?.text}»`,
-    { treMs: tre3, cau: evDem?.data?.text ?? null },
+    'MỐC 3 — t(Nam dứt lời) → t(câu đệm BẮT ĐẦU PHÁT) ≤400 ms',
+    tre3 !== null && tre3 >= 0 && tre3 <= 400,
+    `${tre3} ms — «${evDem?.data?.text}» (Nam dứt lời ${evNamXong ? evNamXong.t - evText.t : '—'} ms sau user.text)`,
+    { treMs: tre3, cau: evDem?.data?.text ?? null, namNoiMs: evNamXong && evText ? evNamXong.t - evText.t : null },
+  );
+  ghi(
+    'MỐC 3b — câu đệm KHÔNG bắt đầu trước khi Nam dứt lời (không chồng giọng)',
+    evDem !== null && evNamXong !== null && evDem.t >= evNamXong.t,
+    evDem && evNamXong ? `câu đệm t=${evDem.t} · Nam dứt lời t=${evNamXong.t}` : 'thiếu mốc',
   );
 
   // chờ hết 8 s của não giả + để câu trả lời chạy
@@ -628,6 +711,7 @@ try {
   const soNoi8 = demCau(ds, CAU_NOI, evText?.t ?? tGo, tNao8);
   const soLau8 = demCau(ds, CAU_NOI_LAU, evText?.t ?? tGo, tNao8);
   const dinh8 = dinhChongGiong(ds, 'gen', evText?.t ?? tGo, tNao8 + 6000);
+  const dinhAm8 = await dinhGiong(page);
   ghi(
     'MỐC 4a — não trễ 8 s: ≥1 ĐỔI TƯ THẾ trong lúc chờ',
     soTuThe8 >= 1,
@@ -641,10 +725,10 @@ try {
     { soCauNoi: soNoi8, soCauLau: soLau8 },
   );
   ghi(
-    'MỐC 4c — KHÔNG chồng giọng (đỉnh số câu của Nhi phát cùng lúc = 1)',
-    dinh8 === 1,
-    `đỉnh ${dinh8}`,
-    { dinhChongGiong: dinh8 },
+    'MỐC 4c — ĐỈNH SỐ GIỌNG THẬT CÙNG PHÁT = 1 (móc AudioBufferSourceNode)',
+    dinhAm8 === 1,
+    `đỉnh ${dinhAm8} giọng (thước cũ, chỉ đếm câu của Nhi: ${dinh8})`,
+    { dinhGiong: dinhAm8, dinhCauCuaNhi: dinh8 },
   );
   const evNao8 = sauEv(ds, 'actor.sayStart', tNao8 - 50, (e) => e.data?.actor === 'gen' && e.data?.text === CAU_NAO);
   ghi(
@@ -661,6 +745,7 @@ try {
   in_('\n--- mốc 5: não trả lời ở 2 s → không câu nối, việc chêm bị cắt ---');
   treNao = 2000;
   await nghi(1500);
+  await amDatLai(page);
   const tGo2 = Date.now();
   await page.evaluate(() => window.stage.guiChat('Nhi ơi, còn việc gì nữa không'));
   await nghi(7000);
@@ -681,10 +766,12 @@ try {
     evNao2 ? `${evNao2.t - tNao2} ms sau lệnh của não` : 'não không nói được',
     { treNaoNoiMs: evNao2 ? evNao2.t - tNao2 : null },
   );
+  const dinhAm2 = await dinhGiong(page);
   ghi(
-    'MỐC 5c — vẫn một giọng duy nhất quanh lúc cắt',
-    dinhChongGiong(ds, 'gen', evText2?.t ?? tGo2, tNao2 + 6000) === 1,
-    `đỉnh ${dinhChongGiong(ds, 'gen', evText2?.t ?? tGo2, tNao2 + 6000)}`,
+    'MỐC 5c — ĐỈNH SỐ GIỌNG THẬT CÙNG PHÁT = 1 quanh lúc cắt',
+    dinhAm2 === 1,
+    `đỉnh ${dinhAm2} giọng`,
+    { dinhGiong: dinhAm2 },
   );
   await page.screenshot({ path: `${THU_MUC}/03-nao-tra-loi.png` });
 
@@ -731,6 +818,7 @@ try {
    * được 0 lệnh và trông như phản xạ hỏng. Thước đo phải đứng đúng chỗ tật
    * xảy ra, không phải chỗ lớp khác đã nuốt sự kiện.
    */
+  await amDatLai(page);
   const tGo3 = Date.now();
   await page.evaluate(() => window.stage.guiChat('Nhi ơi, hôm nay mình làm gì nhỉ'));
   await nghi(1200);
@@ -781,8 +869,77 @@ try {
   );
 
 
-  /* ================================================ mốc 7: sạch + mượt */
-  in_('\n--- mốc 7: mọi lệnh ok · console 0 lỗi · FPS không tụt ---');
+  /* ======================================= mốc 7 (vòng 2): TRẦN của tầng 2 */
+  in_('\n--- mốc 7: não im 60 s → sau 30 s có câu kết, vòng "đang nghĩ" DỪNG ---');
+  // dọn việc dài của bước trước để Nhi rảnh, nhưng KHÔNG xoá hàng đợi bằng
+  // `actor.stop` lên Nhi giữa lúc còn việc chờ — cứ chờ nó chạy hết
+  await nghi(4000);
+  treNao = 3_600_000; // não "nhận câu rồi chết giữa đường"
+  await amDatLai(page);
+  const tGo4 = Date.now();
+  await page.evaluate(() => window.stage.guiChat('Nhi ơi, hôm nay mình làm gì nhỉ'));
+  await nghi(35000);
+  ds = await ev(page);
+  dsL = await lenh(page);
+  const evText4 = sauEv(ds, 'user.text', tGo4, (e) => e.data?.actor === 'owner');
+  const demEmote = (tu, den) =>
+    dsL.filter(
+      (b) =>
+        b.cmd === 'actor.emote' &&
+        b.nguon === 'phan-xa' &&
+        b.args?.actor === 'gen' &&
+        b.t >= tu &&
+        b.t <= den,
+    ).length;
+  const CAU_KET = 'Não em chưa trả lời, Sếp thử lại nhé.';
+  const soKet = demCau(ds, CAU_KET, evText4?.t ?? tGo4, Date.now());
+  const emoteA = demEmote(evText4?.t ?? tGo4, Date.now());
+  ghi(
+    'MỐC 7a — hết trần 30 s → nói ĐÚNG 1 câu kết',
+    soKet === 1,
+    `câu kết ×${soKet} («${CAU_KET}»)`,
+    { soCauKet: soKet },
+  );
+  // thêm 25 s nữa (tổng 60 s): số emote của phản xạ phải NGỪNG tăng
+  await nghi(25000);
+  dsL = await lenh(page);
+  ds = await ev(page);
+  const emoteB = demEmote(evText4?.t ?? tGo4, Date.now());
+  ghi(
+    'MỐC 7b — não im 60 s: số emote của phản xạ NGỪNG tăng sau mốc 30 s',
+    emoteB === emoteA,
+    `mốc 35 s: ${emoteA} emote · mốc 60 s: ${emoteB} emote (review đo bản cũ: 8 → 11, vẫn tăng)`,
+    { emote35s: emoteA, emote60s: emoteB },
+  );
+  ghi(
+    'MỐC 7c — không nói thêm câu nào sau câu kết',
+    demCau(ds, CAU_KET, evText4?.t ?? tGo4, Date.now()) === 1 &&
+      demCau(ds, CAU_NOI, (evText4?.t ?? tGo4) + 1, Date.now()) <= 1,
+    `câu kết ×${demCau(ds, CAU_KET, evText4?.t ?? tGo4, Date.now())}`,
+  );
+  const nhinSau = await page.evaluate(() =>
+    window.stage.run('stage.describe').then((r) => {
+      const g = r.result.actors.find((a) => a.id === 'gen');
+      const o = r.result.actors.find((a) => a.id === 'owner');
+      return {
+        lookingAt: g.lookingAt,
+        xa: +Math.hypot(g.pos[0] - o.pos[0], g.pos[2] - o.pos[2]).toFixed(2),
+      };
+    }),
+  );
+  ghi(
+    'MỐC 7d — nhịp thường sống lại: Nhi thả mắt về việc đang làm (mục 4 của nhịp)',
+    nhinSau.lookingAt !== 'camera',
+    `lookingAt "${nhinSau.lookingAt}" · cách Nam ${nhinSau.xa} m (bản cũ: mục 4 bị !tangHai khoá vĩnh viễn)`,
+    nhinSau,
+  );
+  const dinhAm7 = await dinhGiong(page);
+  ghi('MỐC 7e — cả bước này vẫn ĐỈNH 1 giọng', dinhAm7 <= 1, `đỉnh ${dinhAm7} giọng`, {
+    dinhGiong: dinhAm7,
+  });
+
+  /* ================================================ mốc 8: sạch + mượt */
+  in_('\n--- mốc 8: mọi lệnh ok · console 0 lỗi ---');
   await page.setViewportSize({ width: 390, height: 844 });
   await nghi(3000);
   await page.screenshot({ path: `${THU_MUC}/04-mobile-390.png` });
@@ -839,20 +996,27 @@ try {
     '| --- | --- | --- | --- |',
     `| t(\`user.listening on\`) → t(\`actor.lookAt\` Nhi) | ≤150 ms | **${tre1} ms** | ${tre1 <= 150 ? '✅' : '❌'} |`,
     `| t(\`user.text\`) → t(gật, \`actor.listening\`) | ≤300 ms | **${tre2} ms** | ${tre2 <= 300 ? '✅' : '❌'} |`,
-    `| t(\`user.text\`) → t(câu đệm bắt đầu phát) | ≤400 ms | **${tre3} ms** | ${tre3 <= 400 ? '✅' : '❌'} |`,
+    `| t(**Nam dứt lời**) → t(câu đệm bắt đầu phát) | ≤400 ms | **${tre3} ms** | ${tre3 !== null && tre3 >= 0 && tre3 <= 400 ? '✅' : '❌'} |`,
+    `| câu đệm bắt đầu **sau** khi Nam dứt lời | bắt buộc | **${evDem && evNamXong ? (evDem.t >= evNamXong.t ? 'có' : 'KHÔNG') : '—'}** | ${evDem && evNamXong && evDem.t >= evNamXong.t ? '✅' : '❌'} |`,
     `| não trễ 8 s: đổi tư thế | ≥1 | **${soTuThe8}** | ${soTuThe8 >= 1 ? '✅' : '❌'} |`,
     `| não trễ 8 s: câu nối | đúng 1 | **${soNoi8}** (câu "hơi lâu" ${soLau8}) | ${soNoi8 === 1 && soLau8 === 0 ? '✅' : '❌'} |`,
-    `| não trễ 8 s: chồng giọng | đỉnh 1 | **${dinh8}** | ${dinh8 === 1 ? '✅' : '❌'} |`,
+    `| **giọng thật cùng phát** (não 8 s) | đỉnh 1 | **${dinhAm8}** | ${dinhAm8 === 1 ? '✅' : '❌'} |`,
+    `| **giọng thật cùng phát** (não 2 s, lúc cắt) | đỉnh 1 | **${dinhAm2}** | ${dinhAm2 === 1 ? '✅' : '❌'} |`,
+    `| **giọng thật cùng phát** (trần tầng 2) | đỉnh 1 | **${dinhAm7}** | ${dinhAm7 <= 1 ? '✅' : '❌'} |`,
     `| não trả lời ở 2 s: câu nối | 0 | **${demCau(ds, CAU_NOI, evText2?.t ?? tGo2, tNao2 + 500)}** | ✅ |`,
     `| não trả lời ở 2 s: não nói sau lệnh | ngay | **${evNao2 ? evNao2.t - tNao2 : '—'} ms** | ${evNao2 && evNao2.t - tNao2 <= 1500 ? '✅' : '❌'} |`,
     `| đang việc của não: \`lookAt\` | ≤300 ms | **${lk3 && evText3 ? lk3.t - evText3.t : '—'} ms** | ${lk3 && evText3 && lk3.t - evText3.t <= 300 ? '✅' : '❌'} |`,
     `| đang việc của não: hàng đợi | không mất | **queued ${banSau.queued}**, 0 \`cmd.interrupted\` cho Nhi | ${banSau.queued === 1 && catNhi === null ? '✅' : '❌'} |`,
+    `| trần tầng 2: câu kết sau 30 s | đúng 1 | **${soKet}** | ${soKet === 1 ? '✅' : '❌'} |`,
+    `| trần tầng 2: emote phản xạ 35 s → 60 s | ngừng tăng | **${emoteA} → ${emoteB}** | ${emoteB === emoteA ? '✅' : '❌'} |`,
+    `| trần tầng 2: nhịp thường sống lại | Nhi thả mắt | **lookingAt "${nhinSau.lookingAt}"** | ${nhinSau.lookingAt !== 'camera' ? '✅' : '❌'} |`,
     `| \`r.ok\` mọi lệnh | 100 % | **${dsL.length - loiLenh.length}/${dsL.length}** | ${loiLenh.length === 0 ? '✅' : '❌'} |`,
-    `| FPS chờ não vs rảnh | không tụt | **${fpsChoNao} / ${fpsRanh} fps** | ${fpsChoNao >= fpsRanh * 0.8 ? '✅' : '❌'} |`,
     `| console | 0 lỗi | **${loiConsole.length}** | ${loiConsole.length === 0 ? '✅' : '❌'} |`,
     '',
     `STT giọng thật qua MediaRecorder của Firefox: «${chuNghe.oChat}» (tin ${chuNghe.micDo.confidence}, trễ ${chuNghe.micDo.treMs} ms).`,
     `Cổng riêng ${CONG_WS}-${CONG_STT} + web ${CONG_WEB}; không đụng 5173/8787-8790 của Boss.`,
+    `Đỉnh giọng đo bằng móc AudioBufferSourceNode.start/ended — chỉ lớp TTS dùng node đó.`,
+    `FPS lượt này ${fpsChoNao}/${fpsRanh} (llvmpipe) — CỐ Ý không đưa vào bảng: số renderer phần mềm không nói được gì về mượt (Cửa 1).`,
   ].join('\n');
   writeFileSync(`${THU_MUC}/bang.md`, bang + '\n');
   in_('\n' + bang + '\n');

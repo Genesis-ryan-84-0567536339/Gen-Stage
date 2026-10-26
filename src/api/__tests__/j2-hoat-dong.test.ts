@@ -34,6 +34,7 @@ import {
 } from '../../behavior/hoat-dong';
 import { MAC_DINH_TU_SINH, batTuSinhHoat } from '../../behavior/tu-sinh-hoat';
 import { PLACES, timPlace } from '../../stage/noi-dung';
+import { biChan } from '../../stage/bo-cuc';
 
 const nhipMicro = () => new Promise<void>((r) => setTimeout(r, 0));
 
@@ -118,6 +119,28 @@ describe('J2 bảng hoạt động — mọi bước phải hợp lệ với reg
       const iDung = h.buoc.findIndex((b, i) => i > iNgoi && b.cmd === 'actor.stand');
       expect(iDung, `${h.id}: ngồi ở bước ${iNgoi} mà không có actor.stand sau đó`)
         .toBeGreaterThan(iNgoi);
+    }
+  });
+
+  it('không xuyên nội thất: mọi chỗ ĐỨNG của hoạt động đều ngoài hộp chắn', () => {
+    /*
+     * `actor.moveTo <place>` đưa nhân vật tới `standAt` (không có thì `pos`),
+     * nên đó chính là chỗ nhân vật đứng khi diễn. `biChan()` là **đúng cái
+     * hàm** `actor.steer` dùng để chặn đường, kể cả bán kính người 0,3 m —
+     * nên hoạt động nào trỏ vào một place có chỗ đứng nằm trong hộp chắn là
+     * nhân vật đứng xuyên nội thất, bằng số, không phải bằng mắt.
+     *
+     * Chỗ NGỒI (`actor.sit`) cố ý không soi: ghế là nội thất mình phải chồng
+     * lên mới ngồi được, và `ghe-*`/`sofa` không khai `chan` (ghế phải kéo
+     * qua được — xem `bo-cuc.ts`).
+     */
+    for (const h of BANG_HOAT_DONG) {
+      for (const b of h.buoc) {
+        if (b.cmd !== 'actor.moveTo' || typeof b.args?.to !== 'string') continue;
+        const p = timPlace(b.args.to)!;
+        const [x, , z] = p.standAt ?? p.pos;
+        expect(biChan(x, z), `${h.id}: chỗ đứng của «${b.args.to}» nằm trong hộp chắn`).toBeNull();
+      }
     }
   });
 

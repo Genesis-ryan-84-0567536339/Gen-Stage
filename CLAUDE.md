@@ -1073,6 +1073,60 @@ lệnh để tăng trải nghiệm chân thực trong quá trình nó suy nghĩ"
   `soCho()`. Và `actorSay` ghi **hai** dòng `say:` (nội dung + hành động chiếm
   thân), đếm cả hai là mỗi câu thành hai câu.
 
+### Vòng 2 — sau review độc lập PR #75 (2 lỗi chặn + 3 điểm mong manh)
+
+- **"Một giọng" là XUYÊN NHÂN VẬT, và thước đo cũ mù với chuyện đó.** Review
+  móc `AudioBufferSourceNode.start`/`ended` (chỉ lớp TTS dùng node này; emote
+  dùng `createOscillator`) và đo **đỉnh 2 giọng** trong cả ba ca. Gốc: `actor.say`
+  bắn `user.text` ở **đầu câu** của Nam, Nam đọc câu của Boss mất 2–3 s giọng
+  thật, mà I1 vòng 1 hạ `choNaoMs` còn 200 ms → Nhi chen "Dạ, Sếp?" vào giữa
+  câu Nam. Mốc 1,5 s của C0 che chuyện đó một cách **tình cờ**. Nay phản xạ giữ
+  sổ `aiDangNoi` từ `actor.sayStart`/`sayDone` của **mọi** actor, và mọi câu
+  (lẫn tư thế có tiếng) phải qua cửa `aiKhacDangNoi()`. Gật/nhìn (không tiếng)
+  vẫn tức thì.
+  Hệ quả cho thước đo: lời hứa "câu đệm ≤400 ms" tính từ **lúc Nam dứt lời** —
+  mốc sớm nhất Nhi trả lời được mà không chồng giọng. Và thước "đỉnh số
+  `actor.sayStart` của Nhi" là **tautology** (dispatcher giữ 1 slot mỗi actor,
+  lớp tiếng còn nối audio theo từng người): thước thật phải ở tầng audio.
+- **Câu đệm phải HOÃN, không được BỎ.** Bản vòng 1 xoá `choNao` ngay khi tới
+  hạn, nói được hay không — mà trong app thật Nam LUÔN đọc câu của Boss, nên
+  câu đệm bị bỏ lặng lẽ và để lại khoảng im tới mốc câu nối 6 s. Giữ `choNao`
+  tới khi nói được, hoặc tới lúc câu đệm hết nghĩa (mốc câu nối tiếp quản) —
+  không bao giờ nói cả hai.
+- **Tầng 2 phải có TRẦN.** Ba cửa ra của vòng 1 (câu của não, lệnh của não,
+  câu không gửi cho Nhi) đều cần **não mở miệng**. Não nhận `user.text` rồi
+  chết giữa đường ⇒ `tangHai` không bao giờ tắt: review đo `actor.emote` của
+  phản xạ **8 ở mốc 32 s → 11 ở mốc 46 s và vẫn tăng**, và nhánh "Boss lại gần
+  → chào nhẹ" bị `!tangHai` khoá **vĩnh viễn**. Nay có `tranTangHaiMs` = 30 s
+  (nói `CAU_HET_CHO` rồi thoát hẳn) + hai cửa sập `bridge.disconnected` và
+  `bridge.brain { count: 0 }`.
+- **`world.actorInterrupt` KHÔNG cắt được câu đang trong cửa sổ `chuanBiGiong`.**
+  Dispatcher chiếm chỗ actor **trước** khi gọi handler, nhưng `actor.say` còn
+  `await chuanBiGiong` (fetch `/tts` + `decodeAudioData`, 300–900 ms thật) mới
+  tạo hành động — trong cửa sổ đó **không có gì để huỷ**, câu bị cắt vẫn phát
+  trọn và câu của não xếp hàng sau nó (đo được: não nói muộn **616–854 ms** chứ
+  không phải "ngay"). Vitest không bao giờ thấy vì `lopTieng()` là `null` nên
+  cửa sổ bằng 0. Sửa: `CommandCtx.daHuy()` + `Dispatcher.catNhe()` (huỷ hành
+  động, **giữ hàng đợi**, đánh dấu `daHuy`), và `actor.say` đọc cửa đó ngay sau
+  `await` rồi thôi, trả `ok: true` kèm `huy: true`.
+- **Cờ `boolean` của phản xạ không bao giờ khớp được với slot thật của
+  dispatcher.** `dangDienCho` tự hết hạn theo nhịp 100 ms, nên có cửa sổ cờ còn
+  bật trong lúc slot đã thuộc về não → phản xạ cắt rồi **xếp câu đệm SAU câu
+  của não**. Bỏ hẳn cờ, đọc `Dispatcher.nguonDangChay(actor)` — nguồn sự thật
+  của chính dispatcher, không có cửa sổ nào.
+- **`actor.faceTo` xoay cả thân người đang NGỒI** (`goc.rotation.y`): đo được
+  Nhi ngồi `ghe-1` (ghế `facing: 0`) mà `facing: 318` — lệch ghế 42°. Lỗi có từ
+  C0; I1 mở thêm một cửa cho nó (tầng 0, mỗi lần bấm mic). Bịt ở **hai** chỗ
+  gọi: `quayVeNeuDuoc` trong phản xạ và chính `actor.say` (nơi duy nhất biết ai
+  đang ngồi). Ngồi thì đầu/mắt là đủ.
+- **Dọn vụn theo review**: `.gitignore` không thêm luật rộng tay — symlink của
+  worktree trỏ vào **đúng những thư mục đã bị loại** (`public/models`,
+  `public/kenney`, …) nên `git status` sạch mà không che `public/favicon.svg`
+  trong tương lai; bỏ dòng FPS khỏi bảng bằng chứng (1–2 fps trên llvmpipe
+  không nói được gì về mượt — Cửa 1); `scripts/kiem-i1.mjs` **từ chối chạy** khi
+  `pgrep -f firefox-1543` còn tiến trình nào (nouveau gãy khi nhiều phiên tranh
+  GPU, mà lượt gãy giữa đường thì số đo vô nghĩa).
+
 ## Quyết định J2 — bảng hoạt động + tự sinh hoạt khi rảnh (27/10, Issue #79)
 
 Boss: *"tăng thêm các động tác hành vi của các nhân vật cho phong phú"*. Thiết
@@ -1147,3 +1201,4 @@ kế đầy đủ: `docs/spec/actor-api.md` mục **3.2f**. Bằng chứng Firef
 - **`steps` trong `actor.activityDone` đếm MỌI lệnh đã chạy**, kể cả phần prop
   (`prop.spawn` → `actor.hold` → `actor.drop` → `prop.moveTo`) mà bảng không
   khai — nên nó ≥ số bước trong bảng, không bằng.
+
