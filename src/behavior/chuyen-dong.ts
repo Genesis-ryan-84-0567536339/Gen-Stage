@@ -216,6 +216,7 @@ export const NEN_CLIP: Record<string, string> = {
  * | that-bai | Crouch_Idle_Loop | ôm đầu |
  * | ngac-nhien | Hit_Chest (×0.5) | tay che miệng |
  * | cham-chu | Driving_Loop | gõ nhịp tay |
+ * | chu-y (C0 #28) | Idle_Loop | ngẩng đầu, nghiêng nhẹ, tay hơi mở |
  * | dong-y / tu-choi / chao | Idle_Talking_Loop | ngón cái · xua tay · vẫy tay |
  * | buon / suy-nghi / ra-lenh / boi-roi / met | Idle_Loop | sụp vai · chống cằm · chỉ tay · gãi đầu · vươn vai |
  */
@@ -235,6 +236,8 @@ export const NEN_EMOTE: Record<string, string> = {
   'boi-roi': 'idle',
   met: 'idle',
   'cham-chu': 'ban',
+  // C0 (#28) — đứng yên, phần ngẩng đầu/nghiêng do lớp cử chỉ lo
+  'chu-y': 'idle',
 };
 
 /** Thời gian crossfade giữa hai dáng nền (giây) — spec vòng 2: 0,25 s thật. */
@@ -284,6 +287,21 @@ export class KhoChuyenDong {
     const hum = vrm.humanoid;
     const ra = new Map<string, THREE.AnimationClip>();
     if (!hum) return ra;
+    /**
+     * C0 (#28) — **model VRM 0.x phải xoay delta 180° quanh trục đứng.**
+     *
+     * Bộ xương *normalized* của `@pixiv/three-vrm` lấy trục theo **hệ của
+     * chính file model**: VRM 1.0 nhìn về +Z, VRM 0.x nhìn về −Z. Delta trong
+     * `bake` đo trên bộ nguồn Quaternius (hệ +Z), nên đắp thẳng lên model VRM0
+     * là quay ngược trục X/Z — đo được trên `HairSample_Male`: cánh tay phải
+     * nhận đúng góc nhưng **ngược dấu z** (−0,58 thay vì +0,57) nên hai tay
+     * giơ thẳng lên trời và ở nguyên đó. `VRMUtils.rotateVRM0` KHÔNG sửa chỗ
+     * này: nó chỉ xoay `vrm.scene`, còn hệ trục cục bộ của xương normalized
+     * thì không đổi.
+     *
+     * Liên hợp với Ry(180°) = đổi dấu x và z của quaternion.
+     */
+    const vrm0 = (vrm.meta as { metaVersion?: string }).metaVersion === '0';
 
     // cặp xương dùng được trên model này
     const cap: Array<{ nguon: THREE.Object3D; ten: string; dich: THREE.Object3D }> = [];
@@ -315,7 +333,7 @@ export class KhoChuyenDong {
     for (const [khoa, dn] of Object.entries(DANG_NEN)) {
       const clip = this.clips.get(dn.nguon);
       if (!clip) continue;
-      ra.set(khoa, this.bake(mixer, clip, khoa, cap, nghichGoc));
+      ra.set(khoa, this.bake(mixer, clip, khoa, cap, nghichGoc, vrm0));
     }
 
     mixer.stopAllAction();
@@ -336,6 +354,7 @@ export class KhoChuyenDong {
     khoa: string,
     cap: Array<{ nguon: THREE.Object3D; ten: string; dich: THREE.Object3D }>,
     nghichGoc: Map<string, THREE.Quaternion>,
+    vrm0 = false,
   ): THREE.AnimationClip {
     const soKhung = Math.max(2, Math.round(clip.duration * FPS_BAKE) + 1);
     const thoiGian = new Float32Array(soKhung);
@@ -373,9 +392,10 @@ export class KhoChuyenDong {
           else xoan.normalize();
           tam.multiply(xoan.invert());
         }
-        gt[i * 4] = tam.x;
+        // liên hợp Ry(180°) cho model VRM 0.x (xem ghi chú trong `taoCho`)
+        gt[i * 4] = vrm0 ? -tam.x : tam.x;
         gt[i * 4 + 1] = tam.y;
-        gt[i * 4 + 2] = tam.z;
+        gt[i * 4 + 2] = vrm0 ? -tam.z : tam.z;
         gt[i * 4 + 3] = tam.w;
       }
       tracks.push(new THREE.QuaternionKeyframeTrack(`${c.dich.name}.quaternion`, thoiGian, gt));

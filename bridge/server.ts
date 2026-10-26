@@ -61,6 +61,23 @@ const wss = new WebSocketServer({ port: CONG, host: HOST });
 
 let sanKhau: WebSocket | null = null;
 const clients = new Set<WebSocket>();
+/**
+ * C0 (#28) — **client MCP (não) đang nối**.
+ *
+ * Hai nguồn, cố ý tách đôi:
+ *  - `naoWs` — tiến trình MCP stdio (`pnpm mcp` cho agy, `scripts/nao-demo.mjs`)
+ *    nối vào bridge bằng ws và tự xưng `?role=nao`. Đếm được chính xác.
+ *  - `naoHttpDen` — bản MCP HTTP chạy **trong chính tiến trình này**. Nó luôn
+ *    giữ sẵn một kết nối ws dù chưa có não nào gọi, nên đếm theo ws là nói dối;
+ *    thay vào đó `bridge/mcp.ts` báo mỗi lần có yêu cầu MCP thật, và ta coi là
+ *    "đang có não" trong `HAN_NAO_MS` kể từ lần cuối.
+ */
+const naoWs = new Set<WebSocket>();
+let naoHttpDen = 0;
+let henNao: NodeJS.Timeout | null = null;
+let soNaoDaBao = -1;
+/** Không nghe gì từ não HTTP quá lâu thì coi như nó đã tắt (vòng long-poll ~25 s). */
+const HAN_NAO_MS = Number(process.env.GEN_STAGE_BRAIN_TTL ?? 60000);
 /** Lệnh đang chờ trình duyệt trả lời, theo mã nội bộ của bridge. */
 const dangCho = new Map<string, Cho>();
 /** Kết nối đã qua cửa token (khi có bật token). */
@@ -77,7 +94,10 @@ function gio(): string {
 
 wss.on('connection', (ws, req) => {
   const q = new URLSearchParams((req.url ?? '/').split('?')[1] ?? '');
-  const vai = q.get('role') === 'stage' ? 'stage' : 'client';
+  const vaiTho = q.get('role');
+  const vai = vaiTho === 'stage' ? 'stage' : 'client';
+  /** C0 (#28) — client tự xưng là não (tiến trình MCP stdio). */
+  const laNao = vaiTho === 'nao';
 
   // Có token thì mọi kết nối phải xưng tên: hoặc `?token=` trên URL, hoặc khung
   // đầu tiên `{"token":"..."}`. Sai/thiếu là đóng ngay, không trả lời gì thêm.
@@ -123,6 +143,8 @@ wss.on('connection', (ws, req) => {
     sanKhau = ws;
     ghi('sân khấu đã nối. Client đang chờ:', clients.size);
     phatChoClient({ event: 'bridge.stageOnline', data: {} });
+    // sân khấu mới nối thì chưa biết gì — gửi lại tình trạng não ngay
+    baoNao(true);
 
     ws.on('message', (tho) => tuSanKhau(String(tho)));
     ws.on('close', () => {
@@ -135,17 +157,56 @@ wss.on('connection', (ws, req) => {
   }
 
   clients.add(ws);
-  ghi('client nối. Tổng:', clients.size);
+  if (laNao) {
+    naoWs.add(ws);
+    baoNao();
+  }
+  ghi('client nối. Tổng:', clients.size, laNao ? '(não)' : '');
   // lời chào chỉ gửi cho kết nối đã qua cửa — chưa xưng tên thì chưa biết gì
   if (daXac.has(ws)) chaoClient(ws);
 
   ws.on('message', (tho) => tuClient(ws, String(tho)));
   ws.on('close', () => {
     clients.delete(ws);
+    if (naoWs.delete(ws)) baoNao();
     ghi('client ngắt. Tổng:', clients.size);
   });
   ws.on('error', (e) => ghi('lỗi client:', e.message));
 });
+
+/** Số não đang nối = tiến trình MCP stdio + bản HTTP còn trong hạn. */
+function soNao(): number {
+  return naoWs.size + (naoHttpDen > Date.now() ? 1 : 0);
+}
+
+/**
+ * Báo số não cho **cả sân khấu lẫn client** mỗi khi con số đổi.
+ *
+ * Sân khấu cần để `stage.describe().brainConnected` nói đúng sự thật; client
+ * (và chính não) nhận kèm cho tiện gỡ lỗi. Tên bắt đầu bằng `bridge.` nên
+ * `bridge-client.ts` không đẩy ngược lên — không có vòng lặp sự kiện.
+ */
+function baoNao(buocPhai = false): void {
+  const n = soNao();
+  if (!buocPhai && n === soNaoDaBao) return;
+  soNaoDaBao = n;
+  const goi = { event: 'bridge.brain', data: { count: n, connected: n > 0 } };
+  phatChoClient(goi);
+  if (sanKhau?.readyState === WebSocket.OPEN) sanKhau.send(JSON.stringify(goi));
+  ghi('não đang nối:', n);
+}
+
+/** `bridge/mcp.ts` gọi mỗi khi có một yêu cầu MCP thật qua HTTP. */
+export function naoHttpVuaGoi(): void {
+  naoHttpDen = Date.now() + HAN_NAO_MS;
+  baoNao();
+  if (henNao) clearTimeout(henNao);
+  henNao = setTimeout(() => {
+    henNao = null;
+    baoNao();
+  }, HAN_NAO_MS + 100);
+  henNao.unref?.();
+}
 
 function chaoClient(ws: WebSocket): void {
   ws.send(
@@ -268,7 +329,14 @@ const svTts = batTts(HOST, CONG_TTS);
  * đợi, cùng timeout, cùng cửa token. Cổng khác nên bind lại cùng chính sách.
  */
 const noiMcp = noiBridgeWs({ url: `ws://${HOST}:${CONG}/`, token: TOKEN || undefined });
-const svMcp = batMcpHttp({ host: HOST, cong: CONG_MCP, noi: noiMcp, token: TOKEN || undefined });
+const svMcp = batMcpHttp({
+  host: HOST,
+  cong: CONG_MCP,
+  noi: noiMcp,
+  token: TOKEN || undefined,
+  // C0 (#28) — mỗi yêu cầu MCP HTTP là một dấu hiệu "não còn sống"
+  khiNaoGoi: naoHttpVuaGoi,
+});
 
 for (const tin of ['SIGINT', 'SIGTERM'] as const) {
   process.on(tin, () => {

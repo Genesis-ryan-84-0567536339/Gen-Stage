@@ -12,12 +12,16 @@ mkdir -p "$PUB/models" "$PUB/kenney" "$TMP"
 VRM_URL="https://raw.githubusercontent.com/pixiv/ChatVRM/main/public/AvatarSample_B.vrm"
 VRM_OUT="$PUB/models/avatar.vrm"
 
-# Nhân vật NAM cho `owner` (B1, Issue #18 mục 3): "Biz Dude" trong bộ 100 Avatars
-# R3 của Polygonal Mind / ToxSam — giấy phép **CC0 ghi ngay trong metadata VRM**
-# (licenseName: CC0, allowRedistribution: true, commercialUsage: allow,
-# creditNotation: unnecessary). Registry nguồn: github.com/ToxSam/open-source-avatars,
-# file nằm trên Arweave nên curl tải trực tiếp được, không cần đăng nhập.
-OWNER_URL="https://arweave.net/k-_vw28ADGy2jPwnq02Tc98wC0Ey10Ia3JVYQ8qiaxM"
+# Nhân vật NAM cho `owner` (C0, Issue #28 — THAY "Biz Dude" low-poly của B1):
+# VRoid **HairSample_Male** — nam, phong cách anime, CÙNG GU với `gen`
+# (AvatarSample_B cũng là VRoid). Giấy phép **CC0** ghi ở HAI nơi độc lập:
+#   1. metadata trong chính file VRM (`licenseName: "CC0"`, allowedUser: Everyone,
+#      commercialUssage: Allow),
+#   2. trang điều khoản chính thức của VRoid liệt kê ĐÍCH DANH tên này trong
+#      mục "CC0 license models" (vroid.pixiv.help, bài 4402614652569).
+# Vì là CC0 nên mirror (`madjin/vrm-samples`) không cần có file LICENSE riêng —
+# đây đúng là lý do B1 từng phải loại `AvatarSample_A` (bản đó KHÔNG CC0).
+OWNER_URL="https://raw.githubusercontent.com/madjin/vrm-samples/master/vroid/beta/HairSample_Male.vrm"
 OWNER_OUT="$PUB/models/owner.vrm"
 
 KENNEY_URL="https://kenney.nl/media/pages/assets/furniture-kit/440e0608a4-1677580847/kenney_furniture-kit.zip"
@@ -46,8 +50,8 @@ else
   fi
 fi
 
-# --- 1b. Nhân vật NAM cho owner (CC0, 100 Avatars R3) ---
-say "Tải nhân vật NAM cho owner (CC0)"
+# --- 1b. Nhân vật NAM anime cho owner (CC0, VRoid HairSample_Male) ---
+say "Tải nhân vật NAM anime cho owner (VRoid HairSample_Male, CC0)"
 if [ -s "$OWNER_OUT" ]; then
   echo "    đã có $OWNER_OUT, bỏ qua"
 else
@@ -63,7 +67,7 @@ else
     rm -f "$OWNER_OUT.part"
     echo "    !! Không tải được VRM nam. App sẽ tự dùng tạm models/avatar.vrm cho owner."
     echo "       Tải tay một VRM nam CC0 rồi lưu thành: $OWNER_OUT"
-    echo "       Nguồn: https://opensourceavatars.com (bộ 100 Avatars, CC0)"
+    echo "       Nguồn: https://github.com/madjin/vrm-samples (vroid/beta/HairSample_Male.vrm)"
   fi
 fi
 

@@ -169,6 +169,20 @@ export const DINH_NGHIA_EMOTE: Record<string, DinhNghiaEmote> = {
     nhan: 'Mệt',
     am: [{ ...vang(300, 500, 0.25), type: 'triangle' as const }],
   },
+  /**
+   * C0 (#28) — **chú ý**: Sếp vừa gọi, Gen ngẩng đầu, hơi nghiêng, mắt mở to.
+   * Ngắn (800 ms) là cố ý: nó phải xong TRƯỚC hạn 1,5 s chêm câu đệm, và
+   * không được chắn chỗ của câu não vừa gửi tới.
+   */
+  'chu-y': {
+    id: 'chu-y',
+    expression: 'surprised',
+    weightMat: 0.3,
+    body: 'chu-y',
+    durationMs: 800,
+    nhan: 'Chú ý',
+    am: [],
+  },
   'cham-chu': {
     id: 'cham-chu',
     expression: 'neutral',

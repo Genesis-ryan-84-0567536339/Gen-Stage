@@ -28,32 +28,58 @@ Quyền ghi trong metadata của chính file VRM (đọc trực tiếp từ file
 - `creditNotation`: `unnecessary` — không bắt buộc ghi credit
 - `allowAntisocialOrHateUsage`: `false` — **cấm** dùng cho nội dung phản xã hội / thù hận
 
-## 1b. Nhân vật NAM `owner` — "Biz Dude" (102_Bizdude, 100 Avatars R3) → `public/models/owner.vrm`
+## 1b. Nhân vật NAM `owner` — VRoid "HairSample_Male" → `public/models/owner.vrm`
 
-Thêm ở B1 (Issue #18 mục 3): Boss điều khiển một nhân vật NAM.
+B1 (Issue #18) dùng "Biz Dude" (CC0, 100 Avatars R3). **C0 (Issue #28) đổi**: Boss
+thử xong nói *"nhân vật nam nhìn kỳ"* — Biz Dude là model low-poly kiểu người
+thật, đứng cạnh `gen` (VRoid, anime) thì lệch gu, và chibi hoá càng làm lệch tỉ lệ.
 
 | Mục | Nội dung |
 | --- | --- |
-| Nguồn tải | `https://arweave.net/k-_vw28ADGy2jPwnq02Tc98wC0Ey10Ia3JVYQ8qiaxM` (tải bằng `pnpm assets`) |
-| Registry nguồn | https://github.com/ToxSam/open-source-avatars — `data/avatars/100avatars-r3.json`; trang gốc https://opensourceavatars.com |
-| Tác giả | dự án "100 Avatars" Round 3 — Polygonal Mind / ToxSam |
-| Định dạng | VRM 0.x (`VRM` 0.0), 52 xương humanoid, ~2,2 MB |
-| Giấy phép | **CC0 1.0 Universal** — ghi ngay trong `meta` của file VRM |
+| Nguồn tải | `https://raw.githubusercontent.com/madjin/vrm-samples/master/vroid/beta/HairSample_Male.vrm` (tải bằng `pnpm assets`, ~17,6 MB, HTTP 200 không cần đăng nhập) |
+| Tác giả | VRoid Project / pixiv Inc. (sample model của VRoid Studio) |
+| Định dạng | VRM 0.x (`VRM` 0.0), 54 xương humanoid, 14 vật liệu MToon (toon shading), blendshape đủ `a i u e o blink angry fun joy sorrow` |
+| Giấy phép | **CC0** |
 
-Quyền đọc trực tiếp từ metadata của chính file:
+Quyền đọc trực tiếp từ metadata của chính file (`extensions.VRM.meta`):
 
-- `licenseName`: `CC0` (`licenseUrl`: creativecommons.org/publicdomain/zero/1.0)
+- `title`: `HairSample_Male` · `licenseName`: **`CC0`**
 - `allowedUserName`: `Everyone` · `commercialUssageName`: `Allow`
-- `allowRedistribution`: `true` · `modification`: `ALLOW`
-- `creditNotation`: `UNNECESSARY`
+- `violentUssageName`: `Allow` · `sexualUssageName`: `Allow`
 
-**Ghi rõ điểm chưa đẹp**: Biz Dude là model *low-poly kiểu người thật*, không
-cùng gu anime với `avatar.vrm` (VRoid) của `gen` — hai nhân vật đứng cạnh nhau
-thấy lệch style. Đã tra và loại các bản VRoid `AvatarSample_A` (nam, anime,
-đúng gu) vì mirror duy nhất tải được (`madjin/vrm-samples`) **không có file
-LICENSE**, tức không có quyền phân phối lại rõ ràng — CLAUDE.md đòi "nguồn rõ".
-Boss muốn đổi sang một VRM nam anime có giấy phép rõ thì chỉ cần thay `OWNER_URL`
-trong `scripts/fetch-assets.sh` và mục này; code không phải sửa gì.
+**Vì sao lần này nhận, mà B1 lại loại `AvatarSample_A`** (cùng mirror
+`madjin/vrm-samples`, mirror đó **không có file LICENSE**):
+
+- `AvatarSample_A/B/C` **không phải CC0**. Trang điều khoản chính thức của VRoid
+  nói thẳng: *"The license to these sample models is not CC0."*, và cấm
+  *"Distributing a sample model or its VRM file to a third party by setting the
+  'Redistribution and alteration' conditions of use to 'Copyright Disclaimer
+  (CC0)'"*. Với loại này thì quyền phân phối lại phụ thuộc vào nguồn — mirror
+  không có LICENSE là không đủ rõ, nên B1 loại là đúng.
+- `HairSample_Male` thì **được chính VRoid liệt kê đích danh là CC0**:
+  bài <https://vroid.pixiv.help/hc/en-us/articles/4402614652569>, mục
+  *"▼CC0 license models … ・HairSample_Male ・HairSample_Female ・β Ver
+  AvatarSample_1–4"*. CC0 = từ bỏ bản quyền, **ai mirror cũng hợp lệ**, nên việc
+  repo mirror không có file LICENSE không còn là vấn đề. Giấy phép còn được ghi
+  lặp lại trong metadata của chính file (bảng trên), kiểm được offline.
+
+Điều khoản sample model của VRoid (để đối chiếu, trích nguyên văn):
+*"This model's .vroid and VRM files can be used by anyone in any kind of activity,
+be it for-profit or not."* · *"Import and use as an avatar or character on apps and
+platforms supporting the VRM format."* · *"There is no need to credit the original
+creator when using this sample model."* — nguồn:
+<https://vroid.pixiv.help/hc/en-us/articles/4402394424089> và
+<https://vroid.com/en/studio/guidelines>.
+
+Ứng viên đã so và loại (C0):
+
+| Ứng viên | Vì sao loại |
+| --- | --- |
+| `pixiv/ChatVRM` `public/` | chỉ có **đúng một** file VRM: `AvatarSample_B` (nữ) — không có bản nam nào |
+| `AvatarSample_A` / `AvatarSample_C` (nam, anime, đẹp) | `licenseName: "Other"`, VRoid nói rõ **không phải CC0**; tải chính thức phải qua VRoid Hub (đăng nhập + đồng ý ToS), `curl` không lấy được |
+| `Sakurada_Fumiriya.vrm` (nam anime, CC0 trong metadata) | CC0 **chỉ** ghi trong file, tên này **không** nằm trong danh sách CC0 trên trang VRoid → bằng chứng yếu hơn. Giữ làm dự phòng nếu Boss thích tạo hình này hơn. |
+| `ToxSam/open-source-avatars` (toàn bộ 100 Avatars R1–R3, toxsam, vipe-heroes…) | đã duyệt hết: low-poly / voxel / chibi PFP, **không có nam anime kiểu VRoid** |
+| `Seed-san` (VirtualCast, VRM Public License 1.0) | `creditNotation: "required"` (bắt buộc ghi công) và tạo hình trung tính giới tính |
 
 Thiếu file này (chưa chạy `pnpm assets`) thì `World.actorSpawn` tự rơi về
 `models/avatar.vrm` kèm cảnh báo console — cảnh vẫn dựng, vẫn điều khiển được.

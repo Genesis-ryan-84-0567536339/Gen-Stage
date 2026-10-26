@@ -395,6 +395,16 @@ export const CU_CHI_EMOTE: Record<string, HamCuChi> = {
     them(x.banTayP, (0.1 + Math.sin(t * 7) * 0.3) * w);
     them(x.head, 0.12 * w);
   },
+  // C0 (#28) — "Sếp gọi à?": ngẩng đầu (pitch âm), nghiêng nhẹ sang một bên,
+  // ngực hơi ưỡn, hai tay buông mở ra một chút. Không giơ tay: đây là phản xạ
+  // nửa giây, không phải màn chào.
+  'chu-y': (x, { t, w }) => {
+    them(x.head, -0.2 * w, 0.14 * w);
+    them(x.neck, -0.08 * w);
+    them(x.spine, -0.05 * w + Math.sin(t * 5) * 0.01 * w);
+    tay(x, 'trai', w * 0.5, 0.1, 0.16, 0.12);
+    tay(x, 'phai', w * 0.5, 0.1, 0.16, 0.12);
+  },
 };
 
 /* ------------------------------------------- cử chỉ nhịp khi nói (actor.say) */

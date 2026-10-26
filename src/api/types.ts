@@ -187,6 +187,14 @@ export interface ActorSnapshot {
   queued: number;
   /** Ai điều khiển: `owner` (Boss bằng phím) hay `agent`. */
   controlledBy: DieuKhienBoi;
+  /**
+   * C0 (#28) — **thân** đang quay về đâu: `"camera"` (tức là về phía Sếp đang
+   * xem), id một actor, hay `null` khi quay về một toạ độ/không rõ.
+   *
+   * Khác `lookingAt` (mắt + đầu) ở chỗ nó nói về **hướng người**. Não đọc cặp
+   * này để biết Gen đang "nói với ai".
+   */
+  facingTarget: string | null;
 }
 
 export interface PlaceSnapshot {
@@ -223,6 +231,20 @@ export interface StageState {
   lastEvents: StageEvent[];
   /** Ánh sáng cảnh hiện tại (preset của `scene.light`). */
   scene?: { light: string };
+  /**
+   * C0 (#28) — **máy quay ở đâu**: với nhân vật trong sân khấu, Sếp chính là
+   * người xem qua màn hình, tức là máy quay. Não cần toạ độ này để biết
+   * "quay về phía Sếp" nghĩa là quay về đâu.
+   */
+  camera?: { preset: string; pos: Vec3 };
+  /**
+   * C0 (#28) — **có não nối hay chưa**: bridge đếm số client MCP đang nối và
+   * báo xuống trình duyệt (`bridge.brain`). Không có bridge = `false`.
+   *
+   * Dùng để Gen biết lúc nào phải tự trả lời bằng não rule-based tối thiểu
+   * trong app (spec mục 3.2d) thay vì đứng im chờ một cái não không tồn tại.
+   */
+  brainConnected: boolean;
 }
 
 /* --------------------------------------------------------------- sân khấu */
@@ -309,6 +331,20 @@ export interface StageWorld {
   actorSteer(id: string, vx: number, vz: number, ms: number): Action;
   actorLookAt(id: string, target: string | null): void;
   actorTurnTo(id: string, target: string | Vec3): Action;
+  /**
+   * C0 (#28) — quay người về mục tiêu **KHÔNG chiếm thân**.
+   *
+   * Khác `actorTurnTo` đúng một điểm, nhưng là điểm sống còn: `actor.say` đã
+   * chiếm thân rồi, nên muốn Gen **giữ mặt về người nghe trong suốt câu nói**
+   * (kể cả khi Boss đổi `camera.preset` giữa chừng) thì phải có một đường quay
+   * không xếp hàng. Quay vẫn mượt, vẫn cập nhật `facing`.
+   */
+  actorFaceTo(id: string, target: string | Vec3): void;
+  /**
+   * C0 (#28) — bật/tắt dáng **đang lắng nghe**: gật đầu nhẹ theo nhịp, và
+   * nghiêng đầu khi câu của người nói là câu hỏi. Lớp vi mô, không chiếm thân.
+   */
+  actorNgheNgong(id: string, bat: boolean, cauHoi?: boolean): void;
   actorSit(id: string, seat: string): Action;
   actorStand(id: string): Action;
   actorPlay(id: string, clip: string, loop?: boolean, speed?: number): Action;

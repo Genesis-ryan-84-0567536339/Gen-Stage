@@ -1,0 +1,1696 @@
+{
+  "chay": "2026-10-26T00:14:24.367Z",
+  "cong": {
+    "ws": 8797,
+    "tts": 8798,
+    "mcp": 8799
+  },
+  "buoc": [
+    {
+      "nhan": "bridge bật ws + tts + mcp trên cổng riêng",
+      "ok": true,
+      "chiTiet": "ws 8797"
+    },
+    {
+      "nhan": "trình duyệt nối bridge",
+      "ok": true,
+      "chiTiet": "cổng ws 8797"
+    },
+    {
+      "nhan": "describe.brainConnected = false khi chưa có não MCP",
+      "ok": true,
+      "chiTiet": "brainConnected=false",
+      "so": {
+        "brainConnected": false
+      }
+    },
+    {
+      "nhan": "phản xạ ra lệnh lookAt + faceTo + emote trong ≤ 300 ms kể từ user.text",
+      "ok": true,
+      "chiTiet": "lookAt +4 ms · faceTo +4 ms · emote +5 ms",
+      "so": {
+        "msLookAt": 4,
+        "msFaceTo": 4,
+        "msEmote": 5
+      }
+    },
+    {
+      "nhan": "Gen đổi hướng nhìn (quan sát trên khung hình thật)",
+      "ok": true,
+      "chiTiet": "lookingAt \"ban-dieu-khien\" → \"owner\" sau 110 ms khung hình · facing đổi sau 618 ms",
+      "so": {
+        "msNhin": 110,
+        "msFacing": 618
+      }
+    },
+    {
+      "nhan": "Gen quay xong, mặt hướng về MÁY QUAY (chỗ Sếp đang xem), lệch < 25°",
+      "ok": true,
+      "chiTiet": "lệch đầu 97° → cuối 0.2°",
+      "so": {
+        "lechDau": 96.8,
+        "lechCuoi": 0.2
+      }
+    },
+    {
+      "nhan": "emote chu-y chạy",
+      "ok": true,
+      "chiTiet": "{\"actor\":\"gen\",\"emote\":\"chu-y\"}"
+    },
+    {
+      "nhan": "câu đệm phát ra bằng giọng, durationMs > 0",
+      "ok": true,
+      "chiTiet": "\"Dạ, Sếp?\" · 1872 ms · giọng nu",
+      "so": {
+        "text": "Dạ, Sếp?",
+        "durationMs": 1872
+      }
+    },
+    {
+      "nhan": "không có não → Gen vẫn trả lời bằng não rule-based",
+      "ok": true,
+      "chiTiet": "\"Em chưa có não, Sếp bật agy nhé.\""
+    },
+    {
+      "nhan": "Sếp vào 2,5 m → Gen đổi lookAt sang owner",
+      "ok": true,
+      "chiTiet": "trước=\"ban-dieu-khien\" → sau=\"owner\" · khoảng cách 1.67 m · 7 nhịp actor.steer",
+      "so": {
+        "nhinTruoc": "ban-dieu-khien",
+        "nhinSau": "owner",
+        "khoangCach": 1.67,
+        "soNhipSteer": 7,
+        "buDuongBangMoveTo": false
+      }
+    },
+    {
+      "nhan": "owner là model VRM 0.x (đã bù 180°) và chibi hoá như Gen",
+      "ok": true,
+      "chiTiet": "owner vrm0=true · tỉ lệ đầu/người owner=2.848 · gen=2.358",
+      "so": {
+        "owner": {
+          "daChibi": true,
+          "rawHeadY": 1.5018,
+          "rawNeckY": 1.4227,
+          "rawHipsY": 1.0083,
+          "caoTong": 1.6165,
+          "dauCao": 0.5677,
+          "tyLeDauNguoi": 2.848
+        },
+        "gen": {
+          "daChibi": true,
+          "rawHeadY": 1.2804,
+          "rawNeckY": 1.2224,
+          "rawHipsY": 0.8794,
+          "caoTong": 1.5681,
+          "dauCao": 0.665,
+          "tyLeDauNguoi": 2.358
+        }
+      }
+    },
+    {
+      "nhan": "Gen (VRM 1.0) cũng không ngược — hai model cùng quy ước hướng",
+      "ok": true,
+      "chiTiet": "gen mặt·facing = 1.000",
+      "so": {
+        "huongMatGen": [
+          -0.9787,
+          0.2054
+        ],
+        "huongGocGen": [
+          -0.9787,
+          0.2054
+        ]
+      }
+    },
+    {
+      "nhan": "KHÔNG đi ngược: hướng mặt mesh cùng chiều với facing của sân khấu",
+      "ok": true,
+      "chiTiet": "tích vô hướng mặt·facing = 1.000 (1 = cùng chiều, −1 = ngược)",
+      "so": {
+        "huongMat": [
+          0,
+          1
+        ],
+        "huongGoc": [
+          0,
+          1
+        ],
+        "cham": 1
+      }
+    },
+    {
+      "nhan": "KHÔNG đi lùi: mặt hướng về đúng phía đang đi (+Z)",
+      "ok": true,
+      "chiTiet": "tích vô hướng mặt·hướng đi = 1.000",
+      "so": {
+        "mauDi": [
+          {
+            "facing": 56,
+            "huongGoc": [
+              0.8284,
+              0.5602
+            ],
+            "huongMat": [
+              0.8284,
+              0.5602
+            ],
+            "vanToc": [
+              0,
+              0.5333
+            ]
+          },
+          {
+            "facing": 0,
+            "huongGoc": [
+              0,
+              1
+            ],
+            "huongMat": [
+              0,
+              1
+            ],
+            "vanToc": [
+              0,
+              1.6
+            ]
+          },
+          {
+            "facing": 0,
+            "huongGoc": [
+              0,
+              1
+            ],
+            "huongMat": [
+              0,
+              1
+            ],
+            "vanToc": [
+              0,
+              1.6
+            ]
+          },
+          {
+            "facing": 0,
+            "huongGoc": [
+              0,
+              1
+            ],
+            "huongMat": [
+              0,
+              1
+            ],
+            "vanToc": [
+              0,
+              1.6
+            ]
+          },
+          {
+            "facing": 0,
+            "huongGoc": [
+              0,
+              1
+            ],
+            "huongMat": [
+              0,
+              1
+            ],
+            "vanToc": [
+              0,
+              0
+            ]
+          },
+          {
+            "facing": 0,
+            "huongGoc": [
+              0,
+              1
+            ],
+            "huongMat": [
+              0,
+              1
+            ],
+            "vanToc": [
+              0,
+              0.5333
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "nhan": "sau khi đi, hai tay vẫn buông xuôi (thấp hơn vai) — cả Javis lẫn Gen",
+      "ok": true,
+      "chiTiet": "Javis vai 1.42 m · tay 0.98/0.97 m · Gen vai 1.23 m · tay 0.80 m",
+      "so": {
+        "owner": {
+          "vai": 1.4218,
+          "tayP": 0.9832,
+          "tayT": 0.9659
+        },
+        "gen": {
+          "vai": 1.2306,
+          "tayP": 0.7963,
+          "tayT": 0.7822
+        }
+      }
+    },
+    {
+      "nhan": "hai nhân vật cùng tỉ lệ chibi, chiều cao sát nhau",
+      "ok": true,
+      "chiTiet": "cao owner=1.99 m · gen=1.86 m",
+      "so": {
+        "caoOwner": 1.99,
+        "caoGen": 1.864
+      }
+    },
+    {
+      "nhan": "đổi camera.preset GIỮA LÚC Gen nói → mặt vẫn hướng máy quay (≤ 15°)",
+      "ok": true,
+      "chiTiet": "preset toan-canh → ban-dieu-khien · lệch 40.1° → 1.7° · facingTarget=camera",
+      "so": {
+        "truoc": {
+          "lech": 40.1,
+          "preset": "toan-canh"
+        },
+        "sau": {
+          "ms": 3500,
+          "preset": "ban-dieu-khien",
+          "state": "speaking",
+          "facingTarget": "camera",
+          "lookingAt": "camera",
+          "lech": 1.7
+        }
+      }
+    },
+    {
+      "nhan": "actor.say owner to gen → hai nhân vật quay vào nhau (≤ 15°)",
+      "ok": true,
+      "chiTiet": "Gen lệch 0° (nhìn owner) · Javis lệch 0° (nhìn gen)",
+      "so": {
+        "genLech": 0,
+        "ownerLech": 0,
+        "genNhin": "owner",
+        "ownerNhin": "gen",
+        "genHuong": "owner",
+        "ownerHuong": "gen"
+      }
+    },
+    {
+      "nhan": "não nối MCP stdio",
+      "ok": true,
+      "chiTiet": ""
+    },
+    {
+      "nhan": "describe.brainConnected = true khi có não MCP nối",
+      "ok": true,
+      "chiTiet": "brainConnected=true",
+      "so": {
+        "brainConnected": true
+      }
+    },
+    {
+      "nhan": "não im lặng (client ws role=nao) cũng tính vào brainConnected",
+      "ok": true,
+      "chiTiet": "brainConnected=true"
+    },
+    {
+      "nhan": "có não: câu đệm đang phát, não nói → câu đệm bị CẮT (và câu của não vẫn chạy)",
+      "ok": true,
+      "chiTiet": "đệm \"Dạ em đây\" hứa 1872 ms, thật 488 ms (não chen vào sau 483 ms) · câu não: chạy ok",
+      "so": {
+        "cauDem": "Dạ em đây",
+        "huaMs": 1872,
+        "thatMs": 488,
+        "msNaoChenVao": 483,
+        "cuaNao": "Dạ, em nghe Sếp đây ạ",
+        "naoOk": true
+      }
+    },
+    {
+      "nhan": "0 lỗi console",
+      "ok": true,
+      "chiTiet": ""
+    }
+  ],
+  "facingTheoThoiGian": [
+    {
+      "ms": 110,
+      "facing": 90,
+      "lech": 96.8,
+      "state": "emoting",
+      "lookingAt": "owner",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 181,
+      "facing": 90,
+      "lech": 96.8,
+      "state": "emoting",
+      "lookingAt": "owner",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 253,
+      "facing": 90,
+      "lech": 96.8,
+      "state": "emoting",
+      "lookingAt": "owner",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 321,
+      "facing": 90,
+      "lech": 96.8,
+      "state": "emoting",
+      "lookingAt": "owner",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 389,
+      "facing": 90,
+      "lech": 96.8,
+      "state": "emoting",
+      "lookingAt": "owner",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 455,
+      "facing": 90,
+      "lech": 96.8,
+      "state": "emoting",
+      "lookingAt": "owner",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 525,
+      "facing": 90,
+      "lech": 96.8,
+      "state": "emoting",
+      "lookingAt": "owner",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 618,
+      "facing": 25,
+      "lech": 31.8,
+      "state": "emoting",
+      "lookingAt": "owner",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 4627,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 4695,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 4761,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 4826,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 4893,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 4959,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 5024,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 5090,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 5156,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 5221,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 5296,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 5365,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 5431,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 5498,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 5569,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 5632,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 5699,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 5764,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 5828,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 5897,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 5962,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 6027,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 6104,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 6177,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 6244,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 6316,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 6382,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 6453,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 6538,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 6603,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 6669,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 6734,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 6802,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 6869,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "speaking",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 6935,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "idle",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 7010,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "idle",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 7100,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "idle",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 7166,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "idle",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 7239,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "idle",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 7302,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "idle",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 7372,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "idle",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 7437,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "idle",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 7505,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "idle",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 7572,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "idle",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 7635,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "idle",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 7703,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "idle",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 7769,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "idle",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 7836,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "idle",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 7905,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "idle",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 7971,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "idle",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 8041,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "idle",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 8105,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "idle",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 8170,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "idle",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 8234,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "idle",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 8305,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "idle",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 8370,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "idle",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 8441,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "idle",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 8507,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "idle",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 8575,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "idle",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 8648,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "idle",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 8716,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "idle",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    },
+    {
+      "ms": 8784,
+      "facing": 353,
+      "lech": 0.2,
+      "state": "idle",
+      "lookingAt": "camera",
+      "facingTarget": "camera"
+    }
+  ],
+  "cauDem": [
+    {
+      "text": "Dạ, Sếp?",
+      "durationMs": 1872,
+      "nguon": "phan-xa"
+    },
+    {
+      "text": "Em chưa có não, Sếp bật agy nhé.",
+      "durationMs": 3288,
+      "nguon": "phan-xa"
+    }
+  ],
+  "huongDi": [
+    {
+      "facing": 56,
+      "huongGoc": [
+        0.8284,
+        0.5602
+      ],
+      "huongMat": [
+        0.8284,
+        0.5602
+      ],
+      "vanToc": [
+        0,
+        0.5333
+      ]
+    },
+    {
+      "facing": 0,
+      "huongGoc": [
+        0,
+        1
+      ],
+      "huongMat": [
+        0,
+        1
+      ],
+      "vanToc": [
+        0,
+        1.6
+      ]
+    },
+    {
+      "facing": 0,
+      "huongGoc": [
+        0,
+        1
+      ],
+      "huongMat": [
+        0,
+        1
+      ],
+      "vanToc": [
+        0,
+        1.6
+      ]
+    },
+    {
+      "facing": 0,
+      "huongGoc": [
+        0,
+        1
+      ],
+      "huongMat": [
+        0,
+        1
+      ],
+      "vanToc": [
+        0,
+        1.6
+      ]
+    },
+    {
+      "facing": 0,
+      "huongGoc": [
+        0,
+        1
+      ],
+      "huongMat": [
+        0,
+        1
+      ],
+      "vanToc": [
+        0,
+        0
+      ]
+    },
+    {
+      "facing": 0,
+      "huongGoc": [
+        0,
+        1
+      ],
+      "huongMat": [
+        0,
+        1
+      ],
+      "vanToc": [
+        0,
+        0.5333
+      ]
+    }
+  ],
+  "doiGocMayGiuaCau": [
+    {
+      "ms": 0,
+      "preset": "ban-dieu-khien",
+      "state": "speaking",
+      "facingTarget": "camera",
+      "lookingAt": "camera",
+      "lech": 40.1
+    },
+    {
+      "ms": 250,
+      "preset": "ban-dieu-khien",
+      "state": "speaking",
+      "facingTarget": "camera",
+      "lookingAt": "camera",
+      "lech": 0.6
+    },
+    {
+      "ms": 500,
+      "preset": "ban-dieu-khien",
+      "state": "speaking",
+      "facingTarget": "camera",
+      "lookingAt": "camera",
+      "lech": 0.6
+    },
+    {
+      "ms": 750,
+      "preset": "ban-dieu-khien",
+      "state": "speaking",
+      "facingTarget": "camera",
+      "lookingAt": "camera",
+      "lech": 0.6
+    },
+    {
+      "ms": 1000,
+      "preset": "ban-dieu-khien",
+      "state": "speaking",
+      "facingTarget": "camera",
+      "lookingAt": "camera",
+      "lech": 0.6
+    },
+    {
+      "ms": 1250,
+      "preset": "ban-dieu-khien",
+      "state": "speaking",
+      "facingTarget": "camera",
+      "lookingAt": "camera",
+      "lech": 0.6
+    },
+    {
+      "ms": 1500,
+      "preset": "ban-dieu-khien",
+      "state": "speaking",
+      "facingTarget": "camera",
+      "lookingAt": "camera",
+      "lech": 0.6
+    },
+    {
+      "ms": 1750,
+      "preset": "ban-dieu-khien",
+      "state": "speaking",
+      "facingTarget": "camera",
+      "lookingAt": "camera",
+      "lech": 1.2
+    },
+    {
+      "ms": 2000,
+      "preset": "ban-dieu-khien",
+      "state": "speaking",
+      "facingTarget": "camera",
+      "lookingAt": "camera",
+      "lech": 1.2
+    },
+    {
+      "ms": 2250,
+      "preset": "ban-dieu-khien",
+      "state": "speaking",
+      "facingTarget": "camera",
+      "lookingAt": "camera",
+      "lech": 1.2
+    },
+    {
+      "ms": 2500,
+      "preset": "ban-dieu-khien",
+      "state": "speaking",
+      "facingTarget": "camera",
+      "lookingAt": "camera",
+      "lech": 1.2
+    },
+    {
+      "ms": 2750,
+      "preset": "ban-dieu-khien",
+      "state": "speaking",
+      "facingTarget": "camera",
+      "lookingAt": "camera",
+      "lech": 1.2
+    },
+    {
+      "ms": 3000,
+      "preset": "ban-dieu-khien",
+      "state": "speaking",
+      "facingTarget": "camera",
+      "lookingAt": "camera",
+      "lech": 1.7
+    },
+    {
+      "ms": 3250,
+      "preset": "ban-dieu-khien",
+      "state": "speaking",
+      "facingTarget": "camera",
+      "lookingAt": "camera",
+      "lech": 1.7
+    },
+    {
+      "ms": 3500,
+      "preset": "ban-dieu-khien",
+      "state": "speaking",
+      "facingTarget": "camera",
+      "lookingAt": "camera",
+      "lech": 1.7
+    },
+    {
+      "ms": 3750,
+      "preset": "ban-dieu-khien",
+      "state": "idle",
+      "facingTarget": "camera",
+      "lookingAt": "owner",
+      "lech": 1.7
+    }
+  ],
+  "nhinNhau": {
+    "genLech": 0,
+    "ownerLech": 0,
+    "genNhin": "owner",
+    "ownerNhin": "gen",
+    "genHuong": "owner",
+    "ownerHuong": "gen"
+  },
+  "brainConnected": {
+    "truocKhiCoNao": false,
+    "khiCoNao": true,
+    "sauKhiTatNao": false
+  },
+  "suKien": [
+    {
+      "t": 1792973682845,
+      "event": "bridge.connected",
+      "data": {
+        "url": "ws://localhost:8797/?role=stage"
+      }
+    },
+    {
+      "t": 1792973682921,
+      "event": "bridge.brain",
+      "data": {
+        "count": 0,
+        "connected": false
+      }
+    },
+    {
+      "t": 1792973682923,
+      "event": "scene.lightChanged",
+      "data": {
+        "preset": "am"
+      }
+    },
+    {
+      "t": 1792973684545,
+      "event": "user.text",
+      "data": {
+        "actor": "owner",
+        "text": "Gen ơi",
+        "to": "camera"
+      }
+    },
+    {
+      "t": 1792973685348,
+      "event": "actor.emoteDone",
+      "data": {
+        "actor": "gen",
+        "emote": "chu-y"
+      }
+    },
+    {
+      "t": 1792973686450,
+      "event": "cmd.queued",
+      "data": {
+        "cmd": "actor.say",
+        "actor": "gen",
+        "position": 1,
+        "dangChay": "actor.say"
+      }
+    },
+    {
+      "t": 1792973686503,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "owner",
+        "text": "Gen ơi",
+        "to": "camera"
+      }
+    },
+    {
+      "t": 1792973687975,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "gen",
+        "text": "Dạ, Sếp?",
+        "to": "camera"
+      }
+    },
+    {
+      "t": 1792973691324,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "gen",
+        "text": "Em chưa có não, Sếp bật agy nhé.",
+        "to": "camera"
+      }
+    },
+    {
+      "t": 1792973701259,
+      "event": "actor.steerDone",
+      "data": {
+        "actor": "owner",
+        "vx": 1.5663686715801681,
+        "vz": -0.32632680657920177,
+        "ms": 2500
+      }
+    },
+    {
+      "t": 1792973703688,
+      "event": "actor.steerDone",
+      "data": {
+        "actor": "owner",
+        "vx": 1.5663102120862364,
+        "vz": -0.3266072863767264,
+        "ms": 2500
+      }
+    },
+    {
+      "t": 1792973706128,
+      "event": "actor.steerDone",
+      "data": {
+        "actor": "owner",
+        "vx": 1.566713279092177,
+        "vz": -0.32466829398054753,
+        "ms": 2500
+      }
+    },
+    {
+      "t": 1792973708549,
+      "event": "actor.steerDone",
+      "data": {
+        "actor": "owner",
+        "vx": 1.5666642492377705,
+        "vz": -0.32490480168851493,
+        "ms": 2500
+      }
+    },
+    {
+      "t": 1792973710964,
+      "event": "actor.steerDone",
+      "data": {
+        "actor": "owner",
+        "vx": 1.5665937859781212,
+        "vz": -0.32524438463213595,
+        "ms": 2500
+      }
+    },
+    {
+      "t": 1792973713601,
+      "event": "actor.steerDone",
+      "data": {
+        "actor": "owner",
+        "vx": 1.566769434054874,
+        "vz": -0.32439719559726465,
+        "ms": 2500
+      }
+    },
+    {
+      "t": 1792973714560,
+      "event": "cmd.queued",
+      "data": {
+        "cmd": "actor.emote",
+        "actor": "gen",
+        "position": 1,
+        "dangChay": "actor.turnTo"
+      }
+    },
+    {
+      "t": 1792973717101,
+      "event": "actor.turned",
+      "data": {
+        "actor": "gen",
+        "target": "owner"
+      }
+    },
+    {
+      "t": 1792973719113,
+      "event": "actor.emoteDone",
+      "data": {
+        "actor": "gen",
+        "emote": "chao"
+      }
+    },
+    {
+      "t": 1792973720568,
+      "event": "actor.steerDone",
+      "data": {
+        "actor": "owner",
+        "vx": 0,
+        "vz": 1.6,
+        "ms": 1500
+      }
+    },
+    {
+      "t": 1792973722166,
+      "event": "actor.steerDone",
+      "data": {
+        "actor": "owner",
+        "vx": 0,
+        "vz": 1.6,
+        "ms": 1500
+      }
+    },
+    {
+      "t": 1792973723719,
+      "event": "actor.steerDone",
+      "data": {
+        "actor": "owner",
+        "vx": 0,
+        "vz": 1.6,
+        "ms": 1500
+      }
+    },
+    {
+      "t": 1792973725287,
+      "event": "actor.steerDone",
+      "data": {
+        "actor": "owner",
+        "vx": 0,
+        "vz": 1.6,
+        "ms": 1500
+      }
+    },
+    {
+      "t": 1792973726873,
+      "event": "actor.steerDone",
+      "data": {
+        "actor": "owner",
+        "vx": 0,
+        "vz": 1.6,
+        "ms": 1500
+      }
+    },
+    {
+      "t": 1792973728508,
+      "event": "actor.steerDone",
+      "data": {
+        "actor": "owner",
+        "vx": 0,
+        "vz": 1.6,
+        "ms": 1500
+      }
+    },
+    {
+      "t": 1792973737112,
+      "event": "actor.arrived",
+      "data": {
+        "actor": "owner",
+        "to": [
+          3.6,
+          0,
+          -1
+        ],
+        "pos": [
+          3.6,
+          0,
+          -1
+        ]
+      }
+    },
+    {
+      "t": 1792973737459,
+      "event": "actor.stopped",
+      "data": {
+        "actor": "owner",
+        "boHangDoi": 0
+      }
+    },
+    {
+      "t": 1792973737460,
+      "event": "actor.stopped",
+      "data": {
+        "actor": "gen",
+        "boHangDoi": 0
+      }
+    },
+    {
+      "t": 1792973738203,
+      "event": "actor.turned",
+      "data": {
+        "actor": "owner",
+        "target": [
+          3.6,
+          0,
+          6
+        ]
+      }
+    },
+    {
+      "t": 1792973738204,
+      "event": "actor.turned",
+      "data": {
+        "actor": "gen",
+        "target": [
+          4.8,
+          0,
+          6
+        ]
+      }
+    },
+    {
+      "t": 1792973739419,
+      "event": "scene.lightChanged",
+      "data": {
+        "preset": "toi"
+      }
+    },
+    {
+      "t": 1792973740341,
+      "event": "actor.stopped",
+      "data": {
+        "actor": "owner",
+        "boHangDoi": 0
+      }
+    },
+    {
+      "t": 1792973740342,
+      "event": "actor.stopped",
+      "data": {
+        "actor": "gen",
+        "boHangDoi": 0
+      }
+    },
+    {
+      "t": 1792973740342,
+      "event": "actor.turned",
+      "data": {
+        "actor": "owner",
+        "target": [
+          3.6,
+          0,
+          6
+        ]
+      }
+    },
+    {
+      "t": 1792973740343,
+      "event": "actor.turned",
+      "data": {
+        "actor": "gen",
+        "target": [
+          4.8,
+          0,
+          6
+        ]
+      }
+    },
+    {
+      "t": 1792973746466,
+      "event": "actor.stopped",
+      "data": {
+        "actor": "owner",
+        "boHangDoi": 0
+      }
+    },
+    {
+      "t": 1792973746469,
+      "event": "actor.stopped",
+      "data": {
+        "actor": "gen",
+        "boHangDoi": 0
+      }
+    },
+    {
+      "t": 1792973746471,
+      "event": "actor.turned",
+      "data": {
+        "actor": "owner",
+        "target": [
+          3.6,
+          0,
+          6
+        ]
+      }
+    },
+    {
+      "t": 1792973746473,
+      "event": "actor.turned",
+      "data": {
+        "actor": "gen",
+        "target": [
+          4.8,
+          0,
+          6
+        ]
+      }
+    },
+    {
+      "t": 1792973752938,
+      "event": "scene.lightChanged",
+      "data": {
+        "preset": "am"
+      }
+    },
+    {
+      "t": 1792973752944,
+      "event": "camera.moved",
+      "data": {
+        "preset": "toan-canh"
+      }
+    },
+    {
+      "t": 1792973755356,
+      "event": "camera.moved",
+      "data": {
+        "preset": "ban-dieu-khien"
+      }
+    },
+    {
+      "t": 1792973759134,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "gen",
+        "text": "Dạ Sếp, em đang theo dõi màn hình và sẽ báo ngay khi có kết quả ạ.",
+        "to": "camera"
+      }
+    },
+    {
+      "t": 1792973764939,
+      "event": "camera.moved",
+      "data": {
+        "preset": "toan-canh"
+      }
+    },
+    {
+      "t": 1792973766156,
+      "event": "user.text",
+      "data": {
+        "actor": "owner",
+        "text": "Gen ơi, qua đây anh nhờ chút",
+        "to": "gen"
+      }
+    },
+    {
+      "t": 1792973766957,
+      "event": "actor.emoteDone",
+      "data": {
+        "actor": "gen",
+        "emote": "chu-y"
+      }
+    },
+    {
+      "t": 1792973768089,
+      "event": "cmd.queued",
+      "data": {
+        "cmd": "actor.say",
+        "actor": "gen",
+        "position": 1,
+        "dangChay": "actor.say"
+      }
+    },
+    {
+      "t": 1792973769015,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "owner",
+        "text": "Gen ơi, qua đây anh nhờ chút",
+        "to": "gen"
+      }
+    },
+    {
+      "t": 1792973769541,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "gen",
+        "text": "Dạ, Sếp?",
+        "to": "owner"
+      }
+    },
+    {
+      "t": 1792973772831,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "gen",
+        "text": "Em chưa có não, Sếp bật agy nhé.",
+        "to": "owner"
+      }
+    },
+    {
+      "t": 1792973793910,
+      "event": "bridge.brain",
+      "data": {
+        "count": 1,
+        "connected": true
+      }
+    },
+    {
+      "t": 1792973794133,
+      "event": "bridge.brain",
+      "data": {
+        "count": 0,
+        "connected": false
+      }
+    },
+    {
+      "t": 1792973795596,
+      "event": "bridge.brain",
+      "data": {
+        "count": 1,
+        "connected": true
+      }
+    },
+    {
+      "t": 1792973795686,
+      "event": "user.text",
+      "data": {
+        "actor": "owner",
+        "text": "Chào Gen",
+        "to": "camera"
+      }
+    },
+    {
+      "t": 1792973796488,
+      "event": "actor.emoteDone",
+      "data": {
+        "actor": "gen",
+        "emote": "chu-y"
+      }
+    },
+    {
+      "t": 1792973797986,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "owner",
+        "text": "Chào Gen",
+        "to": "camera"
+      }
+    },
+    {
+      "t": 1792973798002,
+      "event": "cmd.queued",
+      "data": {
+        "cmd": "actor.say",
+        "actor": "gen",
+        "position": 1,
+        "dangChay": "actor.say"
+      }
+    },
+    {
+      "t": 1792973798002,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "gen",
+        "text": "Dạ em đây",
+        "to": "camera"
+      }
+    },
+    {
+      "t": 1792973800575,
+      "event": "actor.sayDone",
+      "data": {
+        "actor": "gen",
+        "text": "Dạ, em nghe Sếp đây ạ",
+        "to": "camera"
+      }
+    },
+    {
+      "t": 1792973810850,
+      "event": "bridge.brain",
+      "data": {
+        "count": 0,
+        "connected": false
+      }
+    }
+  ],
+  "loiConsole": [],
+  "tongKet": {
+    "soBuoc": 23,
+    "soOk": 23,
+    "thatBai": []
+  }
+}

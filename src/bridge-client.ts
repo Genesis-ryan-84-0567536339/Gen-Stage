@@ -9,6 +9,8 @@
  * để lần mở thường không có lỗi WebSocket nào trong console.
  */
 import type { Command } from './api/types';
+// C0 (#28) — bridge báo số client MCP đang nối; sân khấu đọc lại qua sổ này.
+import { datSoNao, xoaSoNao } from './behavior/so-nao';
 import type { Dispatcher } from './api/dispatcher';
 import type { EventBus } from './events';
 
@@ -70,6 +72,8 @@ export class BridgeClient {
       this.boNgheSuKien?.();
       this.boNgheSuKien = null;
       this.ws = null;
+      // mất bridge = mất đường tới não: `brainConnected` phải về false ngay
+      xoaSoNao();
       this.bus.emit('bridge.disconnected', { url: this.url });
       if (!this.dungHan) {
         this.henNoiLai = window.setTimeout(() => {
@@ -101,6 +105,19 @@ export class BridgeClient {
       this.guiVe({ ok: false, error: 'Gói JSON không đọc được' });
       return;
     }
+    /**
+     * C0 (#28) — bridge cũng **đẩy sự kiện xuống** sân khấu, không chỉ lệnh.
+     * Sự kiện duy nhất hiện có là `bridge.brain` (số client MCP đang nối).
+     * Tên bắt đầu bằng `bridge.` nên vòng gửi ngược ở `open` bỏ qua — không
+     * có vòng lặp.
+     */
+    const sk = goi as unknown as { event?: unknown; data?: Record<string, unknown> };
+    if (typeof sk.event === 'string') {
+      if (sk.event === 'bridge.brain') datSoNao(Number(sk.data?.count ?? 0));
+      this.bus.emit(sk.event, sk.data ?? {});
+      return;
+    }
+
     // gói không phải lệnh (vd xác nhận token) thì bỏ qua, không coi là lỗi
     if (!goi || typeof goi.cmd !== 'string') return;
     const kq = await this.dispatcher.runCommand(goi, 'bridge');

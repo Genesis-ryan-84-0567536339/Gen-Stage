@@ -35,6 +35,7 @@ node scripts/kiem-a2.mjs --chi-anh  # bản NHANH lúc đang làm (chỉ ảnh +
 node scripts/kiem-b1.mjs      # bằng chứng B1: bố cục 3 vùng + steer mượt + owner/gen vào docs/b1/ (CHẠY MỘT LẦN)
 node scripts/kiem-b3.mjs      # bằng chứng B3: Owner gõ → MCP → Gen diễn + nói, vào docs/b3/ (CHẠY MỘT LẦN)
 node scripts/kiem-nao.mjs     # bằng chứng DRIVER: Sếp gõ → driver → agy thật → Gen nói, đo độ trễ, vào docs/nao/ (CHẠY MỘT LẦN)
+node scripts/kiem-c0.mjs      # bằng chứng C0: phản xạ xã hội + nhân vật nam anime, vào docs/c0/ (CHẠY MỘT LẦN)
 bash scripts/fetch-anim.sh    # tải bộ chuyển động CC0 (Quaternius) về public/anim/ — chạy 1 lần sau khi clone
 ```
 
@@ -116,6 +117,8 @@ biết registry, **giao diện** không gọi thẳng vào sân khấu.
 | `src/bridge-client.ts` | Nối trình duyệt với bridge (mặc định bật, tắt bằng `?bridge=0`) |
 | `bridge/server.ts` | Bridge WebSocket Node — mặc định chỉ nghe `127.0.0.1`; mở ra ngoài phải có `--host` + `GEN_STAGE_TOKEN`. Bật luôn TTS (8788) và MCP HTTP (8789) |
 | `bridge/mcp.ts` | **B3** — MCP server: tool **sinh tự động** từ registry (`a.b` → `a_b`) + `stage_events` (long-poll). Hai cửa: stdio (`pnpm mcp`) và HTTP streamable `127.0.0.1:8789/mcp`. Cả hai nói với sân khấu bằng **vai client ws** của bridge |
+| `src/behavior/phan-xa.ts` | **C0** — PHẢN XẠ XÃ HỘI: máy trạng thái chạy trong trình duyệt, không chờ não. Mọi hành động đi qua dispatcher, nguồn `phan-xa`, ưu tiên thấp nhất |
+| `src/behavior/so-nao.ts` | **C0** — sổ "có mấy client MCP đang nối" (bridge ghi vào, `stage.describe` đọc ra) |
 | `src/ui/o-chat.ts` | **B3** — ô chat dưới màn hình: Enter = `actor.say` lên nhân vật `owner`, y như `Space` |
 | `skills/gen-stage-nao/SKILL.md` | **B3** — skill cho agy CLI: vòng `stage_events` → `stage_describe` → 1–3 lệnh → `actor_say` |
 | `scripts/nao-agy.mjs` | **DRIVER NÃO** — vòng lặp nằm ở đây, không ở agy: nghe `user.text` qua ws, phản xạ ≤300 ms, gộp câu 800 ms, hàng đợi 1 lượt, bơm một dòng vào agy đang ấm trong tmux |
@@ -180,6 +183,16 @@ biết registry, **giao diện** không gọi thẳng vào sân khấu.
   không LLM). Đã chạy thật **cả hai não**: agy CLI (8 tool call MCP, log
   `docs/b3/agy-tool-calls.json`) và nao-demo (16 tool call,
   `docs/b3/nao-demo-log.json`).
+
+- **C0 (xong, #28)**: `src/behavior/phan-xa.ts` — Sếp gõ là Gen **quay lại + đáp
+  trong ≤ 300 ms**, không chờ não; câu đệm ở mốc 1,5 s, bị cắt khi não nói;
+  Owner vào 2,5 m thì nhìn theo, > 4 s thì chào nhẹ một lần; não không nối thì
+  trả lời bằng **não rule-based tối thiểu trong app**. Thêm emote `chu-y`
+  (tổng 16), lệnh **`actor.faceTo`** (quay người không chiếm thân), tham số
+  **`actor.say { to }`** (nói với ai; mặc định `camera` = Sếp đang xem), và
+  `stage.describe` thêm **`brainConnected`**, **`facingTarget`**, **`camera`**.
+  Nhân vật nam đổi sang **VRoid HairSample_Male (CC0)** — nam, anime, cùng gu
+  với Gen; tên hiện là **Javis** (avatar của Sếp trong phòng).
 
 `src/api/commands/stubs.ts` giờ **rỗng**: cả A2 lẫn A3 đã thi công thật, không
 còn lệnh nào trả `ok:false` kiểu "chưa làm". File được giữ lại làm chỗ khai
@@ -370,3 +383,53 @@ lệnh mới cho các đợt sau — `stage.bootstrap` vẫn liệt kê đủ b�
   (trỏ 8799) vào cấu hình agy và **xoá ở cuối**, dùng session tmux riêng
   `gen-stage-nao-thu`, và giải phóng đúng 3 cổng 8797–8799 của mình trước khi
   bật — không bao giờ chạm 8787–8789 lẫn `gen-stage`/`gen-stage-nao` của Boss.
+## Quyết định C0 — phản xạ xã hội + nhân vật nam anime (26/10, Issue #28)
+
+- **Sếp KHÔNG phải nhân vật trong phòng.** Với Gen, Sếp là người xem qua màn
+  hình, tức là **máy quay**; người Boss lái bằng WASD là **Javis** (avatar).
+  Lẫn hai cái này là Gen quay lưng vào khán giả để nói với một avatar đứng im.
+  `actor.say` mặc định `to: "camera"`, `stage.describe` trả `camera.pos` +
+  `facingTarget` để não biết đường mà quay.
+- **Phản xạ là tuỷ sống, không phải não.** Chạy trong trình duyệt, không chờ
+  MCP; mọi lệnh vẫn qua dispatcher với nguồn `phan-xa` (nhật ký phân biệt
+  được). **Ưu tiên thấp nhất**: chỉ ra lệnh chiếm thân khi Gen rảnh.
+- **Cắt câu đệm KHÔNG dùng `actor.stop` / `interrupt: true`.** Hai cửa đó gọi
+  `catNgang`, mà `catNgang` **xoá sạch hàng đợi** → giết luôn câu của não vừa
+  xếp hàng sau câu đệm. Phản xạ gọi thẳng `world.actorInterrupt(gen)`: huỷ
+  đúng hành động đang chạy, dispatcher thấy `done` thì tự xả hàng đợi.
+- **`actor.turnTo` vô dụng khi đang nói** (chiếm thân → xếp hàng chạy sau khi
+  nói xong, đúng lúc hết cần). Vì thế có **`actor.faceTo`**: quay người không
+  chiếm thân, gọi được mỗi nhịp để giữ mặt về người nghe kể cả khi Boss đổi
+  `camera.preset` giữa câu.
+- **`xoayVe` không được khởi động lại khi mục tiêu chưa đổi.** `faceTo` gọi mỗi
+  nhịp mà lần nào cũng huỷ cú quay cũ thì đường nội suy ease-in-out cứ về mốc 0
+  — nhân vật nhích vài độ rồi đứng im (rõ nhất trên máy kiểm ~1 fps). Nay chỉ
+  quay lại khi mục tiêu lệch > 0,12 rad so với cú quay đang chạy.
+- **Gốc nhân vật là một `Group` BỌC NGOÀI `vrm.scene`, không phải chính nó.**
+  Model VRM 0.x cần `VRMUtils.rotateVRM0` (đặt `vrm.scene.rotation.y = π`),
+  nhưng cả sân khấu lại ghi `goc.rotation.y` để quay người → cú ghi đầu tiên
+  xoá sạch 180° đó và nhân vật **đi lùi suốt đời** (đúng cái Boss thấy). Tách
+  hai việc ra hai node: Group giữ *hướng đi*, `vrm.scene` giữ *bù trừ VRM0*.
+- **Delta chuyển động phải liên hợp 180° cho model VRM 0.x.** Bộ xương
+  normalized của `@pixiv/three-vrm` lấy trục theo hệ của chính file: VRM 1.0
+  nhìn +Z, VRM 0.x nhìn −Z. Đắp thẳng delta (đo trên bộ Quaternius, hệ +Z) lên
+  model VRM0 thì cánh tay nhận đúng góc nhưng **ngược dấu z** → hai tay giơ
+  thẳng lên trời và ở nguyên đó sau cú đi đầu tiên (đo thật: bàn tay y = 1,85 m
+  trong khi vai y = 1,42 m). `rotateVRM0` KHÔNG sửa chỗ này — nó chỉ xoay
+  `vrm.scene`. Liên hợp Ry(180°) = đổi dấu x và z của quaternion, làm ngay lúc
+  bake trong `chuyen-dong.ts`. Có bước kiểm số trong `kiem-c0.mjs`.
+- **`brainConnected` đếm hai nguồn khác nhau**: tiến trình MCP **stdio** tự
+  xưng `?role=nao` khi nối ws (đếm được chính xác), còn bản MCP **HTTP** chạy
+  trong chính bridge thì tính theo *yêu cầu MCP gần nhất* trong 60 s — nó luôn
+  giữ sẵn một kết nối ws dù chưa não nào gọi, đếm theo kết nối là nói dối.
+  Bridge đẩy `bridge.brain` **xuống** sân khấu (chiều ngược với mọi sự kiện
+  khác); không có bridge = `false`.
+- **Nhân vật nam: VRoid `HairSample_Male`, CC0.** B1 từng loại `AvatarSample_A`
+  vì mirror không có LICENSE — đúng, vì A/B/C **không phải CC0** (trang VRoid
+  nói thẳng "The license to these sample models is not CC0"). `HairSample_Male`
+  thì được VRoid liệt kê **đích danh** trong danh sách CC0, mà CC0 thì ai mirror
+  cũng hợp lệ — nên mirror thiếu LICENSE không còn là vấn đề. Chi tiết +
+  ứng viên đã loại: `assets/LICENSES.md` mục 1b.
+- **Máy kiểm chạy ~1 fps (swiftshader)**, nên: đo độ trễ phản xạ bằng **nhật ký
+  lệnh** chứ không bằng `facing` trên khung hình; và `actor.steer` 300 ms hết
+  hạn trước cả khung hình kế tiếp — script bằng chứng phải dùng nhịp 2,5 s.

@@ -168,6 +168,8 @@ export const EMOTES = [
   'boi-roi',
   'met',
   'cham-chu',
+  // C0 (#28) — phản xạ khi Sếp gọi: ngẩng đầu, hơi nghiêng
+  'chu-y',
 ] as const;
 
 export const PRESET_DEN = ['sang', 'toi', 'am'] as const;
