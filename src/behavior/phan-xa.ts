@@ -674,11 +674,14 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
       nghe(owner, false);
     }
 
-    /* 2. hết cú LIẾC tạm → quay mắt về đúng người nghe */
+    /* 2. hết cú LIẾC tạm → quay mắt về đúng người nghe.
+       I1 (#74): cú quay thân đi qua `quayVeNeuDuoc` — Nhi đang chạy việc của
+       não (Boss gõ lúc Nhi đang đi, mà Nam lại đứng xa > 3 m nên có cú liếc)
+       thì chỉ được đổi MẮT. */
     if (nhinTamDen !== 0 && now > nhinTamDen) {
       nhinTamDen = 0;
       nhinVe(gen, nguoiNgheCuaGen, g.lookingAt);
-      quayVe(gen, nguoiNgheCuaGen);
+      quayVeNeuDuoc(gen, nguoiNgheCuaGen, dangNoi);
     }
 
     /* 3. ĐANG NÓI → bám người nghe MỖI NHỊP.
