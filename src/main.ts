@@ -13,7 +13,7 @@ import { World } from './stage/world';
 import { dungGiaoDien } from './ui/index';
 import { batPhim } from './ui/phim';
 // B3 (#21) — ô chat dưới màn hình: cùng đường với Space, bắn `user.text`.
-import { batOChat } from './ui/o-chat';
+import { batOChat, type OChat } from './ui/o-chat';
 // C2 (#32) — lớp hiểu lệnh giọng: nghe `user.text`/`user.speech` trên bus.
 import { batHieuLenh } from './behavior/hieu-lenh';
 // C0 (#28) — phản xạ xã hội: Gen quay lại, nhìn, đáp ngay khi Sếp gọi, KHÔNG chờ não.
@@ -22,6 +22,9 @@ import { BridgeClient, coBatBridge, urlTts } from './bridge-client';
 // B2 (#20) — giọng tiếng Việt thật + nút mở khoá autoplay.
 import { lopTieng } from './audio/tts-client';
 import { ganNutTieng } from './audio/nut-tieng';
+// C1 (#31) — giữ phím V (hoặc nút 🎤) để nói; chữ nhận được đổ vào ô chat.
+import { batMic, type Mic } from './audio/mic';
+import { urlStt } from './bridge-client';
 import type { Command, Result, StageEvent } from './api/types';
 
 /** Cửa duy nhất cho test / bridge / agent. */
@@ -61,6 +64,14 @@ export interface CuaStage {
    * Đi đúng đường của ô chat → `actor.say` owner → sự kiện `user.text`.
    */
   guiChat(chu: string): Promise<boolean>;
+  /**
+   * C1 — giữ/nhả mic như Boss giữ/nhả phím V (bằng chứng `scripts/kiem-c1.mjs`).
+   * `micKet()` chờ xong cả vòng POST /stt → chữ vào ô chat.
+   */
+  micBat(): Promise<void>;
+  micKet(): Promise<void>;
+  /** C1 — số đo lượt mic gần nhất: RMS, byte gửi, chữ, độ tin, trễ. */
+  micDo(): Record<string, unknown>;
 }
 
 declare global {
@@ -115,7 +126,9 @@ function toast(chu: string): void {
 
 let sanSang = false;
 /** B3 — ô chat (gán sau khi giao diện dựng xong). */
-let oChat: { gui(chu: string): Promise<boolean> } | null = null;
+let oChat: OChat | null = null;
+/** C1 — lớp mic (null khi chưa dựng giao diện xong). */
+let mic: Mic | null = null;
 window.stage = {
   run: (cmd, args) => dispatcher.run(cmd, args, 'window.stage'),
   runCommand: (c) => dispatcher.runCommand(c, 'window.stage'),
@@ -132,6 +145,9 @@ window.stage = {
     return sanSang;
   },
   guiChat: (chu) => oChat?.gui(chu) ?? Promise.resolve(false),
+  micBat: () => mic?.batGhi() ?? Promise.resolve(),
+  micKet: () => mic?.ketGhi() ?? Promise.resolve(),
+  micDo: () => ({ ...(mic?.thongKe() ?? {}), dung: mic?.dung() ?? false }),
   feed: (screen, chunk) => {
     world.screenAppend(screen, chunk);
     bus.emit('screen.fed', { screen, chunk });
@@ -168,6 +184,10 @@ async function khoiDong(): Promise<void> {
 
   // B3 (#21) — chỗ Boss gõ cho Gen: cùng `actor.say` lên nhân vật owner.
   oChat = batOChat(dispatcher, toast);
+
+  // C1 (#31) — mic đi ĐÚNG cửa ô chat (`oChat.gui`), không có đường tắt vào
+  // dispatcher: Boss nói hay gõ đều ra một `actor.say` lên nhân vật owner.
+  mic = batMic({ urlStt: urlStt(), oChat, toast });
 
   // B2 (#20) — nút "🔊 Bật tiếng" (ẩn nếu Boss đã đồng ý ở phiên trước).
   if (tieng) {

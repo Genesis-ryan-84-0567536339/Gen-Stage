@@ -163,3 +163,18 @@ Không có file `.vrma` nào được dùng.
 | `vite` | 8.x | MIT |
 
 Sàn gỗ, tường pastel, cửa sổ phát sáng, bầu trời: tự sinh bằng code (canvas texture + vật liệu), không dùng asset ngoài.
+
+## C1 — nhận dạng giọng tiếng Việt (Issue #31)
+
+Không commit, tải bằng `bash scripts/fetch-stt.sh` vào `.cache/stt/`.
+
+| Thứ | Nguồn | Giấy phép |
+| --- | --- | --- |
+| PhoWhisper-small (model) | VinAI Research — `vinai/PhoWhisper-small` | BSD-3-Clause (theo thẻ model trên HuggingFace) |
+| Bản CTranslate2 của model trên | `quocphu/PhoWhisper-ct2-FasterWhisper` (HuggingFace, tải không cần đăng nhập) | BSD-3-Clause (theo model gốc) |
+| `faster-whisper` (thư viện python) | SYSTRAN/faster-whisper | MIT |
+| `ctranslate2` | OpenNMT | MIT |
+
+Đã so với whisper.cpp (MIT) và Vosk `vosk-model-vn-0.4` (Apache-2.0) nhưng
+**không dùng** — xem `docs/c1/so-sanh.md`. Không có thư viện copyleft nào vào
+bridge, cùng nguyên tắc với `bridge/tts.ts`.

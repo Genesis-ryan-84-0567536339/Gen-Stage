@@ -1,0 +1,206 @@
+{
+  "chay": "2026-10-26T00:27:31.378Z",
+  "nao": "nao-demo (rule-based, không LLM)",
+  "qua": "MCP stdio → bridge/mcp.ts",
+  "toolCalls": [
+    {
+      "tool": "stage_bootstrap",
+      "args": {},
+      "ok": true,
+      "msGoi": 21
+    },
+    {
+      "tool": "stage_events",
+      "args": {
+        "since": 0,
+        "waitMs": 0
+      },
+      "ok": true,
+      "msGoi": 2
+    },
+    {
+      "tool": "stage_events",
+      "args": {
+        "since": 2,
+        "waitMs": 25000
+      },
+      "ok": true,
+      "msGoi": 2826
+    },
+    {
+      "tool": "stage_events",
+      "args": {
+        "since": 3,
+        "waitMs": 25000
+      },
+      "ok": true,
+      "msGoi": 14284
+    },
+    {
+      "tool": "stage_describe",
+      "args": {},
+      "ok": true,
+      "msGoi": 13
+    },
+    {
+      "tool": "actor_emote",
+      "args": {
+        "actor": "gen",
+        "emote": "ra-lenh",
+        "interrupt": true
+      },
+      "ok": true,
+      "msGoi": 24,
+      "durationMs": 1600
+    },
+    {
+      "tool": "screen_stream",
+      "args": {
+        "screen": "main",
+        "kind": "code",
+        "chunks": "[\"// connector Baserow\\n\",\"import { connector } from \\\"@genesis/sdk\\\";\\n\",\"export default connector({\\n  ten: \\\"connector Baserow\\\",\\n\",\"  xacThuc: \\\"token\\\",\\n  bang: [\\\"ban-ghi\\\", \\\"truong\\\"],\\n});\\n\",\"✓ build xong, 0 lỗi\\n\"]"
+      },
+      "ok": true,
+      "msGoi": 17,
+      "durationMs": 3744
+    },
+    {
+      "tool": "module_build",
+      "args": {
+        "id": "connector-baserow-1",
+        "shape": "book",
+        "label": "connector Baserow",
+        "from": "main",
+        "durationMs": 2600
+      },
+      "ok": true,
+      "msGoi": 17,
+      "durationMs": 2600
+    },
+    {
+      "tool": "actor_emote",
+      "args": {
+        "actor": "gen",
+        "emote": "thanh-cong",
+        "interrupt": true
+      },
+      "ok": true,
+      "msGoi": 6,
+      "durationMs": 2000
+    },
+    {
+      "tool": "actor_say",
+      "args": {
+        "actor": "gen",
+        "text": "Xong rồi Sếp, connector Baserow đã kết tinh thành module. Em cất lên kệ nhé?",
+        "emotion": "vui"
+      },
+      "ok": true,
+      "msGoi": 4726,
+      "durationMs": 6168
+    },
+    {
+      "tool": "stage_describe",
+      "args": {},
+      "ok": true,
+      "msGoi": 4
+    }
+  ],
+  "luot": [
+    {
+      "luot": 1,
+      "text": "danh ơi dựng connector Baserow",
+      "seq": 4,
+      "kieu": "lam-viec",
+      "goi": [
+        {
+          "tool": "actor_emote",
+          "ok": true,
+          "durationMs": 1600
+        },
+        {
+          "tool": "screen_stream",
+          "ok": true,
+          "durationMs": 3744
+        },
+        {
+          "tool": "module_build",
+          "ok": true,
+          "durationMs": 2600
+        },
+        {
+          "tool": "actor_emote",
+          "ok": true,
+          "durationMs": 2000
+        },
+        {
+          "tool": "actor_say",
+          "ok": true,
+          "durationMs": 6168
+        }
+      ],
+      "viec": "connector Baserow",
+      "moduleId": "connector-baserow-1",
+      "genTruoc": {
+        "state": "idle",
+        "holding": null
+      },
+      "genSau": {
+        "state": "idle",
+        "holding": "connector-baserow-1",
+        "mood": "vui"
+      }
+    }
+  ],
+  "soTool": 42,
+  "tenTool": [
+    "stage_bootstrap",
+    "stage_describe",
+    "stage_reset",
+    "actor_spawn",
+    "actor_remove",
+    "actor_list",
+    "actor_moveTo",
+    "actor_steer",
+    "actor_lookAt",
+    "actor_turnTo",
+    "actor_sit",
+    "actor_stand",
+    "actor_play",
+    "actor_stop",
+    "actor_express",
+    "actor_say",
+    "actor_bubble",
+    "actor_hold",
+    "actor_emote",
+    "actor_idleStyle",
+    "actor_drop",
+    "prop_spawn",
+    "prop_remove",
+    "prop_list",
+    "prop_moveTo",
+    "prop_set",
+    "scene_light",
+    "camera_focus",
+    "camera_preset",
+    "script_run",
+    "script_stop",
+    "screen_spawn",
+    "screen_remove",
+    "screen_show",
+    "screen_stream",
+    "screen_clear",
+    "screen_focus",
+    "module_build",
+    "module_open",
+    "module_store",
+    "fx_play",
+    "stage_events"
+  ],
+  "huongDanAgent": "Hướng dẫn cho agent: bạn là Gen, nhân vật nữ trong phòng lab này. Bạn CHỈ điều khiển actor \"gen\"; actor \"owner\" là Sếp (Boss) tự lái, không bao giờ ra lệnh cho owner. Đọc stage_describe trước mỗi lượt để biết ai đang ở đâu, bận gì, cầm gì. Trả lời Sếp bằng tool actor_say với actor \"gen\", tiếng Việt, câu ngắn (tối đa 2 câu), gọi Sếp là \"Sếp\" và tự gọi là \"em\". Diễn xuất bằng actor_emote (chao, dong-y, suy-nghi, ra-lenh, thanh-cong, vui…), chạy việc trên màn hình hologram bằng screen_stream / screen_focus, và kết tinh kết quả thành vật thể bằng module_build rồi module_store khi Sếp nhờ làm một việc. Nghe Sếp bằng stage_events (waitMs 25000) và phản ứng với sự kiện user.text.",
+  "tongKet": {
+    "soLuot": 1,
+    "soToolCall": 11,
+    "soLoi": 0
+  }
+}

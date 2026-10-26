@@ -14,6 +14,7 @@
  *   WASD / ↑←↓→  LÁI nhân vật owner (giữ = đi liên tục, nhả = dừng êm)
  *   1…9, 0       10 emote đầu trong `EMOTES`
  *   Space        mở ô nhập nhanh để nói (Enter gửi, Esc huỷ)
+ *   V (giữ)      GIỮ ĐỂ NÓI — mic → bridge nhận dạng → ô chat (`src/audio/mic.ts`)
  *   C            xoay vòng `camera.preset`
  *   E            `module.build` một module mẫu
  *   R            `stage.reset`
@@ -273,6 +274,8 @@ function dungGoiY(): { goiY: HTMLElement; doiHienGoiY: () => void } {
     dong('W A S D', 'lái nhân vật (giữ để đi liên tục)') +
     dong('1 – 0', '10 emote đầu') +
     dong('Space', 'nói (Enter gửi)') +
+    // C1 (#31) — mic nằm ở `src/audio/mic.ts`, chỉ ghi vào bảng gợi ý ở đây
+    dong('V (giữ)', 'giữ để NÓI, nhả là nhận chữ') +
     dong('C', 'đổi góc máy') +
     dong('E', 'kết tinh module mẫu') +
     dong('R', 'dựng lại sân khấu') +

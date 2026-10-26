@@ -15,6 +15,16 @@ import type { ActorSnapshot, StageState } from '../api/types';
 export interface OChat {
   /** Gửi một câu như Boss vừa gõ (script bằng chứng dùng). */
   gui(chu: string): Promise<boolean>;
+  /**
+   * C1 (#31) — đổ chữ mic nhận được vào ô nhập cho Boss xem/sửa.
+   *
+   * `tuGuiSauMs` khác `null` thì tự gửi sau bấy nhiêu ms (tin cậy cao);
+   * `null` thì đứng chờ Boss bấm Enter. Boss sửa một ký tự là **huỷ** hẹn
+   * giờ — đang sửa mà câu tự bay đi thì tệ hơn phải bấm thêm Enter.
+   */
+  datNhap(chu: string, tuGuiSauMs: number | null): void;
+  /** Con trỏ đang ở trong ô chat không (phím V là chữ "v", không phải mic). */
+  dangGoChu(): boolean;
   /** Actor đang nói hộ Boss. */
   actor(): string;
   thao(): void;
@@ -50,8 +60,20 @@ export function batOChat(
     return kq.ok;
   }
 
+  /* ----------------------------- C1: chữ mic nhận được, chờ Boss sửa 1,5 s */
+
+  let henTuGui = 0;
+  function huyHen(): void {
+    if (henTuGui) {
+      clearTimeout(henTuGui);
+      henTuGui = 0;
+      hop.classList.remove('cho-sua');
+    }
+  }
+
   hop.addEventListener('submit', (e) => {
     e.preventDefault();
+    huyHen();
     const chu = o.value;
     o.value = '';
     void gui(chu);
@@ -60,9 +82,13 @@ export function batOChat(
   o.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       e.preventDefault();
+      huyHen();
+      o.value = '';
       o.blur();
     }
   });
+  // C1 — Boss chạm vào chữ mic nhận được thì thôi tự gửi, chờ Boss bấm Enter.
+  o.addEventListener('input', huyHen);
 
   /** Ai là người Boss lái — đọc qua dispatcher, không hard-code id. */
   void dispatcher.run('stage.describe', {}, 'o-chat').then((kq) => {
@@ -78,6 +104,26 @@ export function batOChat(
   return {
     gui,
     actor: () => actorId,
-    thao: () => hop.remove(),
+    dangGoChu: () => document.activeElement === o,
+    datNhap(chu, tuGuiSauMs) {
+      huyHen();
+      o.value = chu;
+      o.focus();
+      // con trỏ về cuối để Boss gõ tiếp / xoá được ngay
+      o.setSelectionRange(chu.length, chu.length);
+      if (tuGuiSauMs === null) return;
+      hop.classList.add('cho-sua');
+      henTuGui = window.setTimeout(() => {
+        henTuGui = 0;
+        hop.classList.remove('cho-sua');
+        const c = o.value;
+        o.value = '';
+        void gui(c);
+      }, tuGuiSauMs);
+    },
+    thao: () => {
+      huyHen();
+      hop.remove();
+    },
   };
 }
