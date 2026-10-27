@@ -385,7 +385,14 @@ tức một CHUỖI có đầu có cuối. J2 thêm một tầng dữ liệu tr�
 | Lệnh | Chiếm thân | Việc |
 | --- | --- | --- |
 | `actor.activities` | không | Liệt kê **BẢNG HOẠT ĐỘNG** (`src/behavior/hoat-dong.ts`): `name`, `label`, `desc`, `steps`, `prop`, `estimatedMs` |
-| `actor.activity { actor?, name }` | theo từng bước (xem dưới) | Làm trọn một hoạt động. Bắn `actor.activityStart` → `actor.activityDone { steps, errors? }`, hoặc `actor.activityCancelled { steps }` khi bị cắt |
+| `actor.activity { actor?, name }` | theo từng bước (xem dưới) | Làm trọn một hoạt động. Bắn `actor.activityStart` → `actor.activityDone { steps, errors? }`, hoặc `actor.activityCancelled { steps }` + `actor.activityCleaned { dropped, stood }` khi bị cắt |
+
+`estimatedMs`/`durationMs` của hai lệnh này là **ƯỚC LƯỢNG THÔ, KHÔNG phải lời
+hứa** (khác mọi lệnh khác trong spec, và nói rõ ở đây để agent không lên lịch
+theo nó): nó tính theo quãng đường thật giữa các place, nhưng đường đi bị nội
+thất chắn (`truotVaCham`) và việc phản xạ có chêm gì vào khe giữa hai bước hay
+không thì chỉ biết được lúc đang chạy. Muốn biết đã xong chưa thì **nghe sự
+kiện**, đừng đếm giờ.
 
 `stage.describe().actors[].activity` = id hoạt động đang làm, `null` khi không
 làm gì. Nó được ghép vào snapshot ở **tầng lệnh**, đúng chỗ `busy`/`queued`
@@ -410,6 +417,20 @@ Bốn giao kèo, mỗi cái có test giữ (`src/api/__tests__/j2-hoat-dong.test
    **thật sự** rảnh (`ctx.hangDoi()`), không bắn lúc bước cuối vừa bắt đầu.
 3. **Cắt bằng `world.actorInterrupt`, KHÔNG `actor.stop`/`catNgang`** (xem mục
    3.2d/3.2e): `catNgang` xoá sạch hàng đợi → giết luôn lệnh não vừa xếp hàng.
+   Ngược lại thì **`Dispatcher.catNgang` LUÔN cắt chuỗi hoạt động**
+   (`huyHoatDong`), nên `interrupt: true` của não cũng thắng — một chỗ lo cho
+   mọi đường vào.
+5. **Bị cắt thì phải DỌN**: `actor.drop` + trả prop về chỗ trong bảng, và
+   `actor.stand` nếu đang ngồi. Bỏ bước này là hoạt động kế tiếp mất prop
+   (`actorHold` ném lỗi khi tay đã có đồ) và tự sinh hoạt chết hẳn (ngồi mãi
+   thì `state !== 'idle'`). `activityCancelled` bắn ngay (lời hứa ≤300 ms là về
+   việc *dừng*), `activityCleaned` bắn sau khi dọn xong.
+6. **Mỗi bước chờ thân TRỐNG rồi mới gửi**, không xếp hàng: lệnh đã vào hàng
+   đợi thì không rút lại được, nên xếp hàng là sau `activityCancelled` nhân vật
+   còn đi thêm một chặng.
+7. **Chỉ chọn hoạt động mà chỗ còn RẢNH** (`hoatDongDienDuoc`): ghế phải trống
+   (`occupiedBy`), và chỗ đứng không có nhân vật khác trong 1 m. Sân khấu không
+   né người (`choDung()` trả thẳng `standAt`), nên việc này phải làm ở tầng chọn.
 4. **Prop dựng bằng hình khối đơn giản của A1** (`HINH_PROP`), dựng một lần
    rồi dùng mãi: Kenney Furniture Kit CC0 không có cốc/bình tưới, và asset
    không được commit.
