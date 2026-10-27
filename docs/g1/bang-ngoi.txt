@@ -1,0 +1,11 @@
+G1 (#56) — NGỒI trên nội thất đã hạ về cỡ chibi (Firefox thật, sàn y = 0)
+
+ghế     mặt ghế  hông    hông−ghế  đầu gối  ĐẾ GIÀY
+------- -------- ------- --------- -------- --------
+ghe-1     0.2585  0.3433    0.0848   0.2885   0.0022
+ghe-2     0.2585  0.3433    0.0848   0.2885   0.0022
+sofa      0.2585  0.3433    0.0848   0.2885   0.0022
+
+Mặt bàn làm việc: 0.586 m — màn hình may-tinh đáy 0.586 m (E2: phải trùng).
+Đạt = |đế giày| ≤ 0,02 m · hông−ghế trong 0…0,15 m · mặt ghế 0,24–0,30 m
+(0,30–0,32 m Boss nhắm là BẤT KHẢ với cẳng chân chibi 0,25 m).

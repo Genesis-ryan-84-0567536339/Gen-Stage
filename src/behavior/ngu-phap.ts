@@ -608,7 +608,11 @@ export const BANG_MAU_CAU: MauCau[] = [
     viDu: 'Gen, dựng module connector Baserow',
     tao: (s) => ({
       cmd: 'module.build',
-      args: { id: maTuTen(s.ten), shape: 'book', label: s.ten, from: 'main' },
+      // H1 vòng 2 (review PR #72 mục 3) — **KHÔNG gửi `from: 'main'`**: sân
+      // khấu chưa bao giờ có màn hình tên `main`, nên câu của Sếp lần nào cũng
+      // đi qua nhánh fallback và ghi một `module.fallback`. Bỏ trống `from` =
+      // kết tinh từ màn hình đầu tiên đang sống.
+      args: { id: maTuTen(s.ten), shape: 'book', label: s.ten },
     }),
     nhacLai: (s) => `kết tinh ${s.ten}`,
   },

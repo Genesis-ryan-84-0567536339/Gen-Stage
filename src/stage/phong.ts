@@ -638,11 +638,82 @@ function remCuaSo(): THREE.Group {
   return g;
 }
 
+/**
+ * PHÔNG TRỜI ẤM phía trên tường — G1 (#56), thay chỗ tấm trần vừa bỏ.
+ *
+ * Bỏ trần xong thì mọi góc máy chếch lên nhìn thẳng vào `scene.background`
+ * (xám xanh 0xdce6ea): phòng ấm mà "nóc" lạnh ngắt, lộ ngay là cảnh hở. Một
+ * ống trụ hở hai đầu bao quanh nhà, dán đúng texture `troiChieu()` của khu
+ * vườn (xanh nhạt trên, cam ấm dưới) là đủ: ĐỨNG TỪ TRONG NHÀ nhìn lên chỉ
+ * thấy trời chiều liền mạch với trời ngoài cửa sổ.
+ *
+ * Rẻ như không: 1 lượt vẽ, `MeshBasicMaterial` (không nhận đèn), `fog: false`
+ * (không thì sương kéo nó về lại màu xám), không đổ/nhận bóng.
+ */
+function phongTroi(): THREE.Mesh {
+  // MỘT texture dùng chung với sân vườn (xem `troiChieu()`), nên muốn trời lặp
+  // 4 vòng quanh ống trụ thì **nhân UV của hình khối**, không đụng
+  // `tex.repeat` — đổi `repeat` là đổi luôn tấm trời của sân vườn.
+  const tex = troiChieu();
+  /*
+   * Băng trời phải KÉO XUỐNG DƯỚI CHÂN TƯỜNG, không bắt đầu ở mép tường.
+   * Tia nhìn chếch nhẹ lên từ trong nhà vượt qua mép tường 2,8 m rồi đi
+   * **gần như ngang** suốt 30 m tới ống trụ, nên nó chạm ống ở cao độ rất
+   * thấp: bản thử bắt đầu từ y = 2,6 để lộ một dải nền xám xanh ngay trên
+   * mép tường (thấy rõ ở ảnh ngửa máy). Đáy −2 m nằm dưới cả mặt cỏ sân vườn
+   * (−0,02 m) nên không còn khe nào; phần dưới bị nhà và sân vườn che hết.
+   */
+  const cao = 42;
+  const day = -2;
+  const hinh = new THREE.CylinderGeometry(30, 30, cao, 24, 1, true);
+  const uv = hinh.getAttribute('uv');
+  for (let i = 0; i < uv.count; i += 1) uv.setX(i, uv.getX(i) * 4);
+  uv.needsUpdate = true;
+  const m = new THREE.Mesh(
+    hinh,
+    new THREE.MeshBasicMaterial({
+      map: tex,
+      side: THREE.BackSide,
+      toneMapped: false,
+      fog: false,
+      // hơi ghì lại cho khỏi cháy trắng ở khung `toan-canh` (luma p95 ≤ 235)
+      color: 0xe8e2d6,
+    }),
+  );
+  m.name = 'PhongTroi';
+  m.position.y = day + cao / 2;
+  m.castShadow = false;
+  m.receiveShadow = false;
+  m.userData.khongGop = true;
+  return m;
+}
+
 /* --------------------------------------------------------------------- cảnh */
 
 export type Phong = {
   nhom: THREE.Group;
   dungKenney: boolean;
+  /**
+   * Cao độ MẶT TRÊN của từng khối, đo lúc dựng (m).
+   *
+   * Phải trả ra ngoài vì `gopTinh()` gộp mesh tĩnh xong thì nhóm
+   * `khoi:<id>` rỗng — đo lại bằng `Box3` trên cảnh sẽ ra `null`. Đó chính là
+   * lý do màn hình `may-tinh` lơ lửng sau khi G1 hạ bàn về cỡ chibi: E2 đo
+   * mặt bàn không ra nên rơi về cao độ ghi cứng 0,97 m của bàn CŨ.
+   */
+  noc: Map<string, number>;
+  /**
+   * Cao độ **ĐÁY** của từng khối, đo lúc dựng (m) — review PR #70 đề nghị.
+   *
+   * Cùng lý do với `noc`: `gopTinh()` dọn sạch nhóm `khoi:<id>` (53/60 nhóm
+   * rỗng trên cảnh thật), nên không ai chấm được "khối nào lơ lửng" bằng số —
+   * reviewer phải đọc code và nhìn ảnh, mà gối sofa treo 16 cm thì chỉ mắt
+   * Boss bắt được. Phơi ra để script chấm thẳng: đáy ≈ 0 với đồ đứng sàn,
+   * đáy ≈ mặt ngồi với đồ khai `trenGhe`, v.v.
+   */
+  day: Map<string, number>;
+  /** Mặt ngồi thật của ghế/sofa, đo lúc dựng (m) — nguồn cho `trenGhe`. */
+  matNgoi: Map<string, number>;
   /** Số mesh trước/sau khi gộp tĩnh — bằng chứng hiệu năng cho PR. */
   gop: { truoc: number; sau: number };
 };
@@ -754,18 +825,23 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
     nhom.add(be);
   }
 
-  /* --- trần + chân tường GỖ + phào viền trần --- */
-  const tran = new THREE.Mesh(
-    new THREE.PlaneGeometry(KICH_THUOC_PHONG, KICH_THUOC_SAU),
-    new THREE.MeshStandardMaterial({ color: 0xf7f1e4, roughness: 0.95 }),
-  );
-  tran.rotation.x = Math.PI / 2;
-  tran.position.y = CAO_TUONG;
-  tran.userData.khongGop = true;
-  nhom.add(tran);
-
+  /*
+   * --- chân tường GỖ (KHÔNG còn trần, KHÔNG còn phào viền trần) ---
+   *
+   * G1 (#56) — Boss 26/10 xem bản main trên Firefox: **"không cần làm trần nhà
+   * vì nhìn rất vướng"**. Tấm trần `PlaneGeometry` ở y = 2,8 chiếm hơn một
+   * phần ba khung hình ở `toan-canh` và cắt ngang mọi góc máy chếch lên.
+   * Theo `level-design` (blockout): khuôn hình một căn phòng bằng **tường +
+   * phông nền**, mái che chỉ thêm khi người chơi thật sự cần cảm giác kín.
+   *
+   * Bỏ trần KHÔNG làm cảnh sáng lên: `HemisphereLight` không bị hình học chặn
+   * (nó không đổ bóng), và mặt trời là `DirectionalLight` đặt NGOÀI cửa sổ nam
+   * chứ không chiếu qua chỗ trần. Thứ duy nhất đổi là nhìn lên thấy gì — nên
+   * phải có `phongTroi()` bên dưới, không thì lộ nền xám của `scene.background`.
+   *
+   * Tường vẫn cao `CAO_TUONG` = 2,8 m, chân tường gỗ giữ nguyên.
+   */
   const matChanTuong = new THREE.MeshStandardMaterial({ color: 0x8a6a44, roughness: 0.55 });
-  const matPhao = new THREE.MeshStandardMaterial({ color: 0xf2e9d8, roughness: 0.8 });
   for (const [dai, x, z, ry] of [
     [KICH_THUOC_PHONG, 0, -nuaZ + 0.03, 0],
     [KICH_THUOC_PHONG, 0, nuaZ - 0.03, 0],
@@ -776,11 +852,9 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
     chan.position.set(x, 0.065, z);
     chan.rotation.y = ry;
     nhom.add(chan);
-    const phao = new THREE.Mesh(new THREE.BoxGeometry(dai, 0.1, 0.07), matPhao);
-    phao.position.set(x, CAO_TUONG - 0.05, z);
-    phao.rotation.y = ry;
-    nhom.add(phao);
   }
+
+  nhom.add(phongTroi());
 
   /*
    * DÃY BẾP LIỀN MẠCH THEO CHỮ L (F1 #56; nối tiếp PR #51 vòng 2).
@@ -893,6 +967,10 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
 
   /** Cao độ mặt trên THẬT của từng khối đã dựng — cho `tren` (đo, không đoán). */
   const nocKhoi = new Map<string, number>();
+  /** Cao độ ĐÁY thật của từng khối — bằng chứng "không món nào lơ lửng". */
+  const dayKhoi = new Map<string, number>();
+  /** Mặt ngồi thật của ghế/sofa — cho `trenGhe` (và `actor.sit`). */
+  const matNgoiKhoi = new Map<string, number>();
 
   /** Thảm dùng CHUNG một texture hoa văn (Boss: không mỗi vật một canvas). */
   let matThamChung: THREE.MeshStandardMaterial | null = null;
@@ -955,7 +1033,12 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
 
     const lx = k.lech?.[0] ?? 0;
     const lz = k.lech?.[1] ?? 0;
-    const y = k.tren !== undefined ? (nocKhoi.get(k.tren) ?? 0) : (k.datY ?? 0);
+    const y =
+      k.trenGhe !== undefined
+        ? (matNgoiKhoi.get(k.trenGhe) ?? 0)
+        : k.tren !== undefined
+          ? (nocKhoi.get(k.tren) ?? 0)
+          : (k.datY ?? 0);
     g.position.set(k.tai[0] + lx, y, k.tai[1] + lz);
     g.rotation.y = (k.quay * Math.PI) / 180;
     g.name = `khoi:${k.id}`;
@@ -964,29 +1047,40 @@ export async function dungPhong(scene: THREE.Scene): Promise<Phong> {
     g.updateMatrixWorld(true);
     const bb = new THREE.Box3().setFromObject(g);
     if (Number.isFinite(bb.max.y)) nocKhoi.set(k.id, bb.max.y);
+    if (Number.isFinite(bb.min.y)) dayKhoi.set(k.id, bb.min.y);
+    /*
+     * Mặt ngồi đo NGAY ĐÂY (không để vòng ngoài) để khối bày lên nó
+     * (`trenGhe`) đọc được trong cùng lượt dựng — gối sofa cần đúng cái này.
+     */
+    if (k.id === 'ghe-1' || k.id === 'ghe-2' || k.id === 'sofa') {
+      const caoGhe = bb.max.y - bb.min.y;
+      const matGhe = caoGhe > 0.01 ? Math.min(caoGhe * 0.55, 0.52) : 0;
+      if (matGhe > 0) matNgoiKhoi.set(k.id, bb.min.y + matGhe);
+    }
     return g;
   }
 
   for (const k of KHOI_CANH) {
-    const g = dungKhoi(k);
-    // Ghế: `actor.sit` cần hình học THẬT — đo cao độ mặt ghế trên chính model
-    // vừa dựng rồi ghi vào `noi-dung.ts` (chỉ cho 2 place được theo dõi).
-    if (k.id === 'ghe-1' || k.id === 'ghe-2' || k.id === 'sofa') {
-      /*
-       * Mặt ngồi ≈ 55 % chiều cao TOÀN BỘ ghế (ghế tựa thật: cao 0,85–0,9 m,
-       * mặt ngồi 0,45–0,48 m), kẹp ≤ 0,52 m. Bản D1 lấy thẳng `min(max.y,
-       * 0.55)` — đúng khi ghế bị chuẩn hoá cao 0,46 m (sai cỡ, thấy rõ ở ảnh
-       * thử D1b: ghế ăn bé như ghế búp bê), sai khi ghế đúng cỡ.
-       */
-      const bb = new THREE.Box3().setFromObject(g);
-      const caoGhe = bb.max.y - bb.min.y;
-      const matGhe = caoGhe > 0.01 ? Math.min(caoGhe * 0.55, 0.52) : 0;
-      if (matGhe > 0) datSeatY(k.id, matGhe);
-    }
+    dungKhoi(k);
   }
+  /*
+   * Ghế: `actor.sit` cần hình học THẬT. Mặt ngồi đã đo trong `dungKhoi` (một
+   * nguồn duy nhất, vì `trenGhe` cũng đọc đúng số đó) — ở đây chỉ ghi sang
+   * `noi-dung.ts`. Mặt ngồi ≈ 55 % chiều cao TOÀN BỘ ghế (ghế tựa thật: cao
+   * 0,85–0,9 m, mặt ngồi 0,45–0,48 m), kẹp ≤ 0,52 m; bản D1 lấy thẳng
+   * `min(max.y, 0.55)` nên sai khi ghế đúng cỡ.
+   */
+  for (const [id, y] of matNgoiKhoi) datSeatY(id, y);
 
   const gop = gopTinh(nhom);
-  return { nhom, dungKenney: kho.co, gop };
+  return {
+    nhom,
+    dungKenney: kho.co,
+    gop,
+    noc: nocKhoi,
+    day: dayKhoi,
+    matNgoi: matNgoiKhoi,
+  };
 }
 
 /** PointLight dựng gọn một dòng (bảng bố cục không quản ánh sáng). */

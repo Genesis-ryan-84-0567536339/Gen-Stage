@@ -1,0 +1,76 @@
+{
+  "khi": "2026-10-26T14:14:56.117Z",
+  "nhan": "truoc",
+  "trinhDuyet": "firefox (playwright) — GPU thật, headless:false",
+  "banDo": "vite preview (BẢN BUILD)",
+  "moc": {
+    "lumaLechToiDa": 2,
+    "fpsToiThieu": 24,
+    "nha": {
+      "hx": 7,
+      "hz": 5,
+      "yMin": 0,
+      "yMax": 2.8
+    }
+  },
+  "so": {
+    "luma": {
+      "truoc": {
+        "n": 1296000,
+        "p5": 103.8,
+        "p50": 121.6,
+        "p95": 204.9,
+        "p99": 214.8,
+        "max": 254.8
+      },
+      "sau": {
+        "n": 1296000,
+        "p5": 109.5,
+        "p50": 127.6,
+        "p95": 206,
+        "p99": 215.8,
+        "max": 254.8
+      },
+      "lechP95Pc": 0.54
+    },
+    "lumaSauR": {
+      "n": 1296000,
+      "p5": 52.5,
+      "p50": 127.6,
+      "p95": 206,
+      "p99": 215.2,
+      "max": 252,
+      "lechP95Pc": 0.54
+    },
+    "fps": "khung đếm được  261 trong 10.05s\n…đã bỏ          0.5s khởi động → 260 khung\nFPS trung bình  31.6\nFPS 1% xấu nhất 12.7  (khung 79 ms)\nlượt vẽ nhà     36\nlượt vẽ VRM     0\ntam giác        16301\nshadow map      1024\npixel ratio     1\n(bấm để đo lại)",
+    "hieuNang": {
+      "calls": 381,
+      "triangles": 228485,
+      "callsNha": 43,
+      "callsVrm": 338,
+      "mesh": 188,
+      "vatLieu": 91
+    }
+  },
+  "dat": {
+    "2-scene-light-sang-khong-doi-luma": {
+      "dat": true,
+      "p95Truoc": 204.9,
+      "p95Sau": 206,
+      "lechPc": 0.54
+    },
+    "2b-phim-R-khong-doi-luma": {
+      "dat": true,
+      "p95Truoc": 204.9,
+      "p95SauR": 206,
+      "lechPc": 0.54
+    },
+    "5-fps-tren-ban-build": {
+      "dat": true,
+      "the": "khung đếm được  261 trong 10.05s\n…đã bỏ          0.5s khởi động → 260 khung\nFPS trung bình  31.6\nFPS 1% xấu nhất 12.7  (khung 79 ms)\nlượt vẽ nhà     36\nlượt vẽ VRM     0\ntam giác        16301\nshadow map      1024\npixel ratio     1\n(bấm để đo lại)",
+      "fps": 261,
+      "calls": 381
+    }
+  },
+  "loiConsole": []
+}

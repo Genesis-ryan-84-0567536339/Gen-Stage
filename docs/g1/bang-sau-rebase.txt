@@ -1,0 +1,47 @@
+G1 sau khi rebase lên main (ac9d65b) — KIỂM LÁI
+Firefox thật (firefox-1543, headless:false, GPU thật), bản build, cổng riêng 5461, ?bridge=0.
+MỘT lượt mở duy nhất. Câu hỏi: H1 ghi x/z mỗi khung (lái), G1 ghi y mỗi khung
+(cắm đế giày xuống sàn) — hai cái đó có đạp nhau không.
+
+1) GIỮ PHÍM 3 s (phím THẬT qua src/ui/phim.ts → actor.steer), lái +X vì ở
+   z = 3,5 trục X là trục dài và trống (x −4,49 → +0,148; W/−Z từ phòng khách
+   tì vào cụm sofa sau ~0,5 s nên không đo được độ mượt — đã thử 3 lượt,
+   chỉ 16–26/125 khung đi tự do).
+   Sổ TỪNG KHUNG của sân khấu, đọc MỘT lần ở cuối (bài học F2: gọi doXuong mỗi
+   100 ms tự nó kéo FPS rồi lại kết luận về độ mượt).
+
+   số khung                    118  (118 khung đi tự do, 0 khung bị hộp chắn)
+   đỉnh |v|                    1.6000 m/s   (= TOC_DO_STEER 1,6 · mốc F2 ≥ 1,5)  ĐẠT
+   tụt bậc giữa 2 khung        0.0000 m/s   (mốc F2 ≤ 0,25)                      ĐẠT
+   số khung |v| GIẢM           0 / 118                                        ĐẠT
+   số khung đi lùi             0                                                ĐẠT
+   đoạn ổn định (≥99 % đỉnh)   96 khung · |v| 1.5892 … 1.6000
+   dao động trên đoạn đó       0.675 %   (mốc ≤ 5 %)                          ĐẠT
+
+   Ghi chú thước: lấy mốc "≥90 % đỉnh" thì ra 9,5 %, nhưng đó là gộp cả đường
+   TĂNG TỐC (lerp 0,15 s tiệm cận 1,6 m/s) vào rồi gọi là dao động — trong khi
+   |v| không hề giảm một khung nào.
+
+2) ĐẾ GIÀY suốt đường đi — QUÉT ĐỈNH MESH trong world space qua
+   __THREE_DEVTOOLS__ (độc lập với deChan/deGiayY/mocDe của PR). Mốc |y| ≤ 0,01 m.
+
+   giữ W, 30 mẫu/100 ms      -0.0002 … +0.0005   mẫu xấu 0   ĐẠT
+   moveTo ban-an   21 mẫu   -0.0002 … +0.0005   at=ban-an   ĐẠT
+   moveTo sofa     17 mẫu   -0.0002 … +0.0004   at=sofa   ĐẠT
+
+3) KHÔNG XUYÊN HỘP — mesh TĨNH gần hông nhất, xét ở tầm hông ±12 cm
+   (bán kính người chibi ~0,12 m; gần hơn thế là thân đã lọt vào trong khối):
+
+   sau khi giữ phím   1.402 m
+   tại ban-an         1.0655 m
+   tại sofa           1.0692 m
+
+4) CAMERA theo-owner: hông chiếu ra (719, 539) trong khung
+   1440×900 — vẫn bám giữa khung hình.  ĐẠT
+
+5) console: 0 dòng lỗi.  ĐẠT
+
+KẾT LUẬN: y của G1 và x/z của H1 KHÔNG đạp nhau. Đế giày giữ 0,0000 m
+(sai số lớn nhất 0,5 mm) trên cả 68 mẫu dọc đường đi — lúc giữ phím, lúc
+moveTo tới ban-an và sofa — trong khi tốc độ lái vẫn đúng 1,6 m/s và không
+giảm một khung nào.

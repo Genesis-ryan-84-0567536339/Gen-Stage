@@ -73,32 +73,52 @@ export async function dungGiaoDien(
   }
 
   const nutDongMo = document.getElementById('bang-dong-mo')!;
-  const dongMo = (mo?: boolean) => {
+  /** H1 — khoá nhớ lựa chọn mở/thu của Boss (chỉ ghi khi Boss tự bấm). */
+  const KHOA_BANG = 'gen-stage:bang-mo';
+  const dongMo = (mo?: boolean, nhoLai = false) => {
     const dangThuGon = mo === undefined ? !bang.classList.contains('thu-gon') : !mo;
     bang.classList.toggle('thu-gon', dangThuGon);
     nutDongMo.textContent = dangThuGon ? '‹' : '›';
     nutDongMo.setAttribute('aria-label', dangThuGon ? 'Mở bảng lệnh' : 'Thu gọn bảng');
+    if (nhoLai) {
+      try {
+        localStorage.setItem(KHOA_BANG, dangThuGon ? '0' : '1');
+      } catch {
+        /* chế độ riêng tư: không nhớ được thì thôi */
+      }
+    }
   };
-  nutDongMo.addEventListener('click', () => dongMo());
+  nutDongMo.addEventListener('click', () => dongMo(undefined, true));
 
   /**
-   * Màn hẹp = **mặc định thu gọn**, chỉ còn nút kéo ra (E1 #48, dòng 13).
+   * **Mặc định THU GỌN ở MỌI cỡ màn** — H1, theo Cửa 2 vòng 28/10 mục 5:
+   * *"bảng lệnh đè 27,1 % khung 3D ở 1440, và ở góc `toan-canh` nó che mất nửa
+   * người Nhi"*. Trước H1 chỉ màn hẹp mới thu; desktop tự mở bảng ra, nên thứ
+   * đầu tiên Boss thấy khi mở trang là hơn một phần tư căn nhà bị tấm kính
+   * phủ. Nay bảng chỉ mở khi **Boss tự kéo ra** (nút `›`), và lựa chọn đó
+   * được nhớ bằng `localStorage` cho lần sau.
    *
-   * Ba chỗ cùng giữ lời hứa này, cố ý không dồn vào một:
+   * Bốn chỗ cùng giữ lời hứa này, cố ý không dồn vào một:
    *  - `index.html` khai sẵn `class="thu-gon"` → không loé bảng lúc chờ JS;
    *  - `src/style.css` kẹp `--bang-rong` ≤ 86vw/340px → mở hết vẫn thấy 3D;
-   *  - hàm này mở bảng ra khi màn đủ rộng, và **thu lại khi màn hẹp đi**
-   *    (quay ngang → dọc, hoặc Boss kéo nhỏ cửa sổ trên desktop).
-   *
-   * Ngưỡng 900 px chứ không 760: ở 760–900 px tấm kính 390 px vẫn che gần nửa
-   * khung hình (Boss 25/10).
+   *  - hàm này **không bao giờ tự mở**, chỉ khôi phục lựa chọn đã nhớ;
+   *  - và **thu lại khi màn hẹp đi** (quay ngang → dọc, hoặc kéo nhỏ cửa sổ),
+   *    kể cả khi Boss đã nhớ là "mở": ở 760–900 px tấm kính 390 px vẫn che gần
+   *    nửa khung hình (Boss 25/10).
    */
   const HEP = window.matchMedia('(max-width: 899px)');
-  const theoManHinh = () => dongMo(!HEP.matches);
-  theoManHinh();
-  // `change` của matchMedia chỉ bắn khi VƯỢT ngưỡng, nên không rung mỗi pixel
-  // và không bao giờ ghi đè cú bấm của Boss trong cùng một cỡ màn.
-  HEP.addEventListener('change', theoManHinh);
+  let daNhoMo = false;
+  try {
+    daNhoMo = localStorage.getItem(KHOA_BANG) === '1';
+  } catch {
+    /* chế độ riêng tư */
+  }
+  dongMo(daNhoMo && !HEP.matches);
+  // `change` của matchMedia chỉ bắn khi VƯỢT ngưỡng, nên không rung mỗi pixel.
+  // Hẹp đi thì THU; rộng ra thì **giữ nguyên** (không tự mở thay Boss).
+  HEP.addEventListener('change', () => {
+    if (HEP.matches) dongMo(false);
+  });
 
   return { bangLenh, oKichBan, nhatKyView, moThe, dongMo };
 }
