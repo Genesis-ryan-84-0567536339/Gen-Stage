@@ -22,6 +22,25 @@ import type {
 import { Registry } from './registry';
 import { kiemThamSo } from './validate';
 import type { NhatKy } from '../log';
+/**
+ * J2 (#79, review PR #83 lỗi 2) — **cắt chuỗi hoạt động ở ĐÚNG MỘT CHỖ.**
+ *
+ * `interrupt: true` đi nhánh `catNgang` và **không bắn `cmd.queued`**, mà
+ * `cmd.queued` lại là cửa duy nhất `tu-sinh-hoat.ts` nghe được "não vừa xen
+ * vào". Reviewer đâm thử: giữa `di-dao`, não gửi
+ * `actor.moveTo { to: 'bep', interrupt: true }` → lệnh `ok: true` nhưng
+ * **không có `activityCancelled` nào**, chuỗi chạy tiếp và Nhi kết thúc ở
+ * `buc-trung-tam` **chứ không ở bếp** — hoạt động đè lệnh não, trái hẳn luật
+ * ưu tiên của Issue #79.
+ *
+ * Vá ở `tu-sinh-hoat` thì phải đoán qua sự kiện và sẽ hở lần nữa với đường vào
+ * tiếp theo. Gọi ở đây là **một chỗ lo cho mọi đường vào**: `actor.stop`,
+ * `actor.remove`, `interrupt: true`, bridge, MCP, phím, kịch bản.
+ *
+ * `hoat-dong.ts` là dữ liệu + sổ thuần, **không import gì** (cùng dạng
+ * `so-nao.ts`/`so-giong.ts`), nên import này không kéo tầng sân khấu vào lõi.
+ */
+import { huyHoatDong } from '../behavior/hoat-dong';
 
 interface ViecCho {
   cmd: string;
@@ -317,6 +336,10 @@ export class Dispatcher {
 
   /** Cắt hành động đang chạy + bỏ sạch hàng đợi của actor. */
   catNgang(actor: string): number {
+    // J2 (#79) — cắt cả CHUỖI hoạt động, không chỉ bước đang chạy (xem import).
+    // Gọi TRƯỚC khi dọn hàng đợi: `cat()` chỉ bật cờ + `actorInterrupt` (đồng
+    // bộ, không gửi lệnh nào), nên nó không tự chen vào hàng đợi đang bị xoá.
+    huyHoatDong(actor);
     const hien = this.dangChay.get(actor);
     // handler còn treo trong `await` cũng phải biết là mình đã bị cắt
     if (hien) hien.daHuy = true;

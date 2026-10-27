@@ -42,7 +42,7 @@ import type { EventBusLike, Result, StageState, StageWorld } from '../api/types'
 import { NGUON_PHAN_XA } from './phan-xa';
 import {
   BANG_HOAT_DONG,
-  dangGuiBuoc,
+  hoatDongDienDuoc,
   huyHoatDong,
   layHoatDong,
   type HoatDong,
@@ -176,14 +176,30 @@ export function batTuSinhHoat(ts: ThamSoTuSinhHoat): MayTuSinhHoat {
     tRanhTu = now;
   }
 
-  /** Bảng trừ hoạt động vừa làm (không lặp lại cái vừa xong). */
-  function ungVien(): readonly HoatDong[] {
-    const ds = BANG_HOAT_DONG.filter((h) => h.id !== lanTruoc);
-    return ds.length ? ds : BANG_HOAT_DONG;
+  /**
+   * Bảng ứng viên: trừ hoạt động vừa làm, **và trừ hoạt động đang có người
+   * chắn chỗ** (Issue #79 đòi điều kiện "place rảnh"; review #83 mục b).
+   *
+   * `VUNG_GIUA` (`buc-trung-tam`) chính là nơi Nam spawn, và 4/12 hoạt động đi
+   * đúng vào ô đó. `World.choDung()` trả thẳng `standAt` **không né ai**, nên
+   * việc phải làm ở đây: đang có người thì **chọn việc khác**, thay vì dựng
+   * thêm cơ chế né người trong sân khấu. Hết ứng viên thì nhịp sau thử lại —
+   * không ép Nhi chen vào chỗ Nam đứng.
+   */
+  function ungVien(st: StageState, gen: string): readonly HoatDong[] {
+    const canh = { places: st.places, actors: st.actors, ai: gen };
+    const ds = BANG_HOAT_DONG.filter(
+      (h) => h.id !== lanTruoc && hoatDongDienDuoc(h, canh),
+    );
+    if (ds.length) return ds;
+    // Chỉ còn đúng cái vừa làm là diễn được → thà lặp lại hơn là đứng im.
+    return BANG_HOAT_DONG.filter((h) => hoatDongDienDuoc(h, canh));
   }
 
-  function batDauMot(gen: string, now: number): void {
-    const h = chon(ungVien());
+  function batDauMot(st: StageState, gen: string, now: number): boolean {
+    const ds = ungVien(st, gen);
+    if (ds.length === 0) return false; // mọi chỗ đều có người — nhịp sau thử lại
+    const h = chon(ds);
     lanTruoc = h.id;
     dangChay = true;
     soLuot++;
@@ -198,6 +214,7 @@ export function batTuSinhHoat(ts: ThamSoTuSinhHoat): MayTuSinhHoat {
           tXongLuot = bayGio();
         }
       });
+    return true;
   }
 
   function nhip(): void {
@@ -230,7 +247,7 @@ export function batTuSinhHoat(ts: ThamSoTuSinhHoat): MayTuSinhHoat {
     /* 3. Đủ rảnh + đã nghỉ đủ sau lượt trước → tự sinh một hoạt động. */
     if (now - tRanhTu < so.ranhMs) return;
     if (tXongLuot !== 0 && now - tXongLuot < so.nghiGiuaMs) return;
-    batDauMot(gen, now);
+    batDauMot(st, gen, now);
   }
 
   /* ---------------------------------------------------------- người nghe bus */
@@ -258,9 +275,11 @@ export function batTuSinhHoat(ts: ThamSoTuSinhHoat): MayTuSinhHoat {
     bus.on('cmd.queued', (e) => {
       const gen = genId ?? doc().gen;
       if (e.data.actor !== gen) return;
-      // Bước của CHÍNH hoạt động xếp hàng sau một cú chêm của phản xạ — không
-      // phải ai xen vào (xem `dangGuiBuoc` trong `hoat-dong.ts`).
-      if (dangGuiBuoc(String(gen))) return;
+      /*
+       * (Không còn phải lọc bước của chính chuỗi nữa: từ review #83, mỗi bước
+       * **chờ thân trống rồi mới gửi** nên không bước nào của hoạt động còn
+       * nằm trong hàng đợi — xem `choTrong()` trong `commands/hoat-dong.ts`.)
+       */
       /*
        * **Phản xạ xếp hàng thì KHÔNG nhường chỗ.** C0 chêm `actor.turnTo` +
        * `actor.emote chao` vào đúng khe giữa hai bước (Nhi vừa rảnh), và nếu

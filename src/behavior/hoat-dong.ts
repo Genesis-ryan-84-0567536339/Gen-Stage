@@ -253,32 +253,59 @@ export function timHoatDong(id: string): HoatDong | undefined {
  * gọi ngược tầng — đúng cái "ba tầng, không được gọi ngược" của CLAUDE.md.
  * Cùng mẫu với `so-nao.ts` (C0) và `so-giong.ts` (C1).
  *
- * **`huy()` là cửa duy nhất để cắt.** Phản xạ / máy tự sinh hoạt gọi
- * `huyHoatDong(actor)` chứ KHÔNG `dispatcher.catNgang` — `catNgang` xoá sạch
- * hàng đợi, tức giết luôn lệnh não vừa xếp hàng (đúng cái ta đang nhường chỗ
- * cho; xem mục C0/I1 trong CLAUDE.md). `huy()` chỉ bật cờ dừng chuỗi + gọi
- * `world.actorInterrupt` cho bước đang chạy, nên dispatcher thấy `done` rồi
- * tự xả hàng đợi.
+ * **`huy()` là cửa duy nhất để cắt.** Phản xạ / máy tự sinh hoạt /
+ * `Dispatcher.catNgang` gọi `huyHoatDong(actor)` chứ KHÔNG tự `catNgang` thêm
+ * lần nữa — `catNgang` xoá sạch hàng đợi, tức giết luôn lệnh não vừa xếp hàng
+ * (đúng cái ta đang nhường chỗ cho; xem mục C0/I1 trong CLAUDE.md).
+ *
+ * ## Khoá sổ là TOKEN, không phải tên hoạt động (review PR #83 lỗi 1)
+ *
+ * Bản đầu `xoaHoatDong(actor, id)` so bằng **tên**. Chuỗi vừa bị cắt vẫn còn
+ * một `.then()` đang chạy; nếu lượt mới **trùng tên** kịp `datHoatDong` trước
+ * cái `.then()` đó thì nó **xoá mất đăng ký của lượt MỚI**. Reviewer đâm thử
+ * `di-dao → huỷ → di-dao` và đo được:
+ *
+ * ```
+ * sổ: null · huyHoatDong trả: null
+ * sự kiện: activityStart | activityCancelled | activityStart | activityDone
+ * ```
+ *
+ * tức lượt hai chạy trọn tới cùng trong khi `stage.describe().activity` báo
+ * `null` (nói dối với não) và Boss gõ thì **không cắt được gì** — đúng lại lỗi
+ * vòng 2, vào bằng một cửa khác. Token tăng dần thì không có hai lượt nào
+ * trùng khoá, đúng quy ước sẵn có trong CLAUDE.md: *"nhận diện hành động bằng
+ * token, không bằng tên lệnh"* (cùng lý do `Dispatcher.DangChay.token` tồn tại).
  */
 interface DangLam {
+  /** Mã riêng của LƯỢT CHẠY này — không bao giờ trùng, kể cả cùng tên. */
+  token: number;
   id: string;
   huy: () => void;
 }
 
 const soDangLam = new Map<string, DangLam>();
+let demToken = 0;
 
-export function datHoatDong(actor: string, id: string, huy: () => void): void {
-  soDangLam.set(actor, { id, huy });
+/** Ghi lượt chạy mới vào sổ. Trả **token** để sau này xoá đúng lượt của mình. */
+export function datHoatDong(actor: string, id: string, huy: () => void): number {
+  const token = ++demToken;
+  soDangLam.set(actor, { token, id, huy });
+  return token;
 }
 
-/** Chỉ xoá khi đúng hoạt động đó còn là hoạt động hiện tại (so theo id). */
-export function xoaHoatDong(actor: string, id: string): void {
-  if (soDangLam.get(actor)?.id === id) soDangLam.delete(actor);
+/** Chỉ xoá khi đúng LƯỢT đó còn là lượt hiện tại (so theo token, không theo tên). */
+export function xoaHoatDong(actor: string, token: number): void {
+  if (soDangLam.get(actor)?.token === token) soDangLam.delete(actor);
 }
 
 /** Hoạt động actor đang làm (`null` = không làm gì) — `stage.describe` đọc. */
 export function layHoatDong(actor: string): string | null {
   return soDangLam.get(actor)?.id ?? null;
+}
+
+/** Token của lượt đang chạy (test/chẩn đoán). */
+export function layTokenHoatDong(actor: string): number | null {
+  return soDangLam.get(actor)?.token ?? null;
 }
 
 /** Cắt hoạt động đang chạy. Trả về id vừa cắt, `null` nếu không có gì để cắt. */
@@ -293,31 +320,52 @@ export function huyHoatDong(actor: string): string | null {
 /** Dọn sổ (test + `stage.reset`). */
 export function donSoHoatDong(): void {
   soDangLam.clear();
-  dangGui.clear();
+}
+
+/* ============================================ ĐIỀU KIỆN "PLACE CÒN RẢNH" */
+
+/**
+ * Người khác đứng gần hơn ngần này (m) thì coi như chỗ đó **đã có người**.
+ *
+ * Issue #79 đòi "điều kiện (place rảnh…)" và review PR #83 mục (b) chỉ đúng
+ * chỗ hở: `VUNG_GIUA` (`buc-trung-tam`) chính là nơi Nam spawn, mà
+ * `World.choDung()` trả thẳng `standAt` **không né ai** và `World.actorSit`
+ * không kiểm ghế có người ngồi chưa. Nên việc chọn phải làm ở tầng trên: một
+ * hoạt động đi vào chỗ đang có người thì **đừng chọn nó**, thay vì dựng thêm
+ * cơ chế né người trong sân khấu.
+ */
+export const KHE_NGUOI = 1;
+
+/** Đúng những gì phép kiểm cần — khai tại chỗ để file này không phụ thuộc gì. */
+export interface CanhChonHoatDong {
+  places: ReadonlyArray<{ id: string; pos: readonly number[]; occupiedBy: string | null }>;
+  actors: ReadonlyArray<{ id: string; pos: readonly number[] }>;
+  /** Nhân vật sắp diễn — chính nó đứng đó thì không tính là "có người". */
+  ai: string;
 }
 
 /**
- * **Cờ "đang gửi một bước của hoạt động"** — hẹp đúng một lời gọi
- * `ctx.run(...)`, bật/tắt ĐỒNG BỘ quanh nó.
+ * Hoạt động này **diễn được** trên sân khấu hiện tại không?
  *
- * Vì sao cần: máy tự sinh hoạt nghe `cmd.queued` của Nhi để biết "não vừa xen
- * vào, nhường chỗ ngay". Nhưng giữa hai bước của hoạt động có một khe Nhi
- * đang rảnh, và phản xạ được phép chêm đúng vào khe đó (nhánh "Boss lại gần →
- * chào nhẹ"); bước kế tiếp của ta khi ấy **xếp hàng sau cú chào** và bắn
- * `cmd.queued` — máy tự sinh hoạt sẽ tự cắt chính mình, không ai xen vào cả.
- *
- * `cmd.queued` được dispatcher bắn **đồng bộ** trong `run()`, trước `await`
- * đầu tiên (xem `Dispatcher.run`, nhánh xếp hàng), nên bật cờ quanh lời gọi là
- * đủ để người nghe phân biệt. Cùng mẫu cờ `tuGui` của `phan-xa.ts`.
+ * Hai điều kiện, cả hai đều đọc từ `stage.describe()`:
+ *  - mọi ghế `actor.sit` phải trống (`occupiedBy` rỗng hoặc chính mình),
+ *  - mọi chỗ `actor.moveTo` phải không có nhân vật khác đứng trong `KHE_NGUOI`.
  */
-const dangGui = new Set<string>();
-
-export function batGuiBuoc(actor: string): void {
-  dangGui.add(actor);
-}
-export function tatGuiBuoc(actor: string): void {
-  dangGui.delete(actor);
-}
-export function dangGuiBuoc(actor: string): boolean {
-  return dangGui.has(actor);
+export function hoatDongDienDuoc(h: HoatDong, c: CanhChonHoatDong): boolean {
+  const place = (id: string) => c.places.find((p) => p.id === id);
+  const xa = (a: readonly number[], b: readonly number[]) =>
+    Math.hypot((a[0] ?? 0) - (b[0] ?? 0), (a[2] ?? 0) - (b[2] ?? 0));
+  for (const b of h.buoc) {
+    if (b.cmd === 'actor.sit' && typeof b.args?.seat === 'string') {
+      const p = place(b.args.seat);
+      if (p && p.occupiedBy !== null && p.occupiedBy !== c.ai) return false;
+    }
+    if (b.cmd === 'actor.moveTo' && typeof b.args?.to === 'string') {
+      const p = place(b.args.to);
+      if (!p) continue;
+      const nguoiKhac = c.actors.filter((a) => a.id !== c.ai);
+      if (nguoiKhac.some((a) => xa(a.pos, p.pos) < KHE_NGUOI)) return false;
+    }
+  }
+  return true;
 }

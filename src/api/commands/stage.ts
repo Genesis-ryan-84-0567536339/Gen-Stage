@@ -100,8 +100,11 @@ export const LENH_STAGE: CommandSpec[] = [
     params: [],
     example: { cmd: 'stage.reset' },
     async handler(_a, ctx) {
+      // J2 (#79) — dọn sổ TRƯỚC `catNgang`: từ review #83, `catNgang` tự gọi
+      // `huyHoatDong` (và kéo theo cả phần dọn thả đồ/đứng dậy), mà `reset`
+      // thì xoá sạch sân khấu — dọn một cái sắp bị xoá là lệnh chạy vô ích.
+      donSoHoatDong();
       for (const id of ctx.world.actorIds()) ctx.catNgang(id);
-      donSoHoatDong(); // J2 (#79) — sổ hoạt động là trạng thái tầng lệnh, reset cũng phải dọn
       await ctx.world.reset();
       ctx.bus.emit('stage.reset', {});
       return ngay({ reset: true, actors: ctx.world.actorIds() });

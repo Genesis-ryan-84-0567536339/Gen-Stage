@@ -30,7 +30,10 @@ import {
   TEN_HOAT_DONG,
   VUNG_GIUA,
   donSoHoatDong,
+  hoatDongDienDuoc,
   layHoatDong,
+  layTokenHoatDong,
+  timHoatDong,
 } from '../../behavior/hoat-dong';
 import { MAC_DINH_TU_SINH, batTuSinhHoat } from '../../behavior/tu-sinh-hoat';
 import { PLACES, timPlace } from '../../stage/noi-dung';
@@ -257,6 +260,185 @@ describe('J2 actor.activity — chạy trọn gói qua dispatcher', () => {
     await new Promise<void>((r) => setTimeout(r, NHIP_MS * 4));
     expect(layHoatDong('gen')).toBeNull();
     expect(sau).toBeLessThan(BANG_HOAT_DONG.find((h) => h.id === 'di-dao')!.buoc.length);
+  });
+});
+
+/* ======================= 2b. BỐN LỖI CHẶN CỦA REVIEW PR #83 (lượt 2) */
+
+/** Chờ một sự kiện của Nhi, có hạn — test nào cũng cần nên để riêng. */
+function choSuKien(bus: EventBus, ten: string): Promise<Record<string, unknown>> {
+  return new Promise((ok) => {
+    const bo = bus.on(ten, (e) => {
+      if (e.data.actor !== 'gen') return;
+      bo();
+      ok(e.data);
+    });
+  });
+}
+
+describe('J2 review #83 — bốn lỗi chặn', () => {
+  it('LỖI 1 — cắt rồi gọi lại CÙNG TÊN: lượt 2 vẫn cắt được (sổ khoá theo token)', async () => {
+    const { bus, dispatcher } = dung();
+    const moc: string[] = [];
+    for (const ten of ['actor.activityStart', 'actor.activityCancelled', 'actor.activityDone']) {
+      bus.on(ten, (e) => moc.push(`${e.event.replace('actor.activity', '')}`));
+    }
+    await dispatcher.run('actor.activity', { actor: 'gen', name: 'di-dao' });
+    const token1 = layTokenHoatDong('gen');
+    // Boss gõ → cắt lượt 1
+    expect(dispatcher.world.describe().actors.length).toBeGreaterThan(0);
+    const { huyHoatDong } = await import('../../behavior/hoat-dong');
+    expect(huyHoatDong('gen')).toBe('di-dao');
+    // lượt 2 TRÙNG TÊN, mở ngay khi `.then()` của lượt 1 còn đang chạy
+    await dispatcher.run('actor.activity', { actor: 'gen', name: 'di-dao' });
+    const token2 = layTokenHoatDong('gen');
+    expect(token2, 'token phải là mã riêng mỗi lượt').not.toBe(token1);
+    // ĐÂY là chỗ bản cũ sai: `.then()` của lượt 1 xoá mất đăng ký của lượt 2
+    await new Promise<void>((r) => setTimeout(r, NHIP_MS * 3));
+    expect(layHoatDong('gen'), 'lượt 2 KHÔNG được vô hình trong sổ').toBe('di-dao');
+    expect(huyHoatDong('gen'), 'lượt 2 phải cắt được').toBe('di-dao');
+    await new Promise<void>((r) => setTimeout(r, NHIP_MS * 3));
+    expect(moc.filter((x) => x === 'Done'), 'không lượt nào được "chạy trọn"').toEqual([]);
+  });
+
+  it('LỖI 2 — lệnh não `interrupt: true` cắt được chuỗi, và lệnh não THẮNG', async () => {
+    const { world, bus, dispatcher } = dung();
+    const cat = choSuKien(bus, 'actor.activityCancelled');
+    await dispatcher.run('actor.activity', { actor: 'gen', name: 'di-dao' });
+    expect(layHoatDong('gen')).toBe('di-dao');
+    // não: đường `catNgang`, KHÔNG bắn `cmd.queued` → bản cũ mù hoàn toàn
+    const kq = await dispatcher.run(
+      'actor.moveTo',
+      { actor: 'gen', to: 'bep', interrupt: true },
+      'bridge',
+    );
+    expect(kq.ok, kq.ok ? '' : kq.error).toBe(true);
+    expect(await cat).toMatchObject({ activity: 'di-dao' });
+    expect(layHoatDong('gen')).toBeNull();
+    // và Nhi phải tới ĐÚNG chỗ não bảo, không phải chặng cuối của vòng dạo
+    await new Promise<void>((r) => setTimeout(r, NHIP_MS * 6));
+    const g = world.describe().actors.find((a) => a.id === 'gen')!;
+    expect(g.nearest.place).toBe('bep');
+  });
+
+  it('LỖI 3a — cắt lúc đang CẦM ĐỒ thì thả ra, prop về chỗ cũ', async () => {
+    const { world, bus, dispatcher } = dung();
+    const don = choSuKien(bus, 'actor.activityCleaned');
+    await dispatcher.run('actor.activity', { actor: 'gen', name: 'tuoi-cay' });
+    // chờ tới khi đã cầm bình tưới
+    for (let i = 0; i < 40; i++) {
+      if (world.describe().actors.find((a) => a.id === 'gen')?.holding === 'binh-tuoi') break;
+      await new Promise<void>((r) => setTimeout(r, 5));
+    }
+    expect(world.describe().actors.find((a) => a.id === 'gen')?.holding).toBe('binh-tuoi');
+    const { huyHoatDong } = await import('../../behavior/hoat-dong');
+    huyHoatDong('gen');
+    expect(await don).toMatchObject({ dropped: true });
+    const g = world.describe().actors.find((a) => a.id === 'gen')!;
+    expect(g.holding, 'cắt rồi thì tay phải trống').toBeNull();
+    const prop = world.describe().props.find((x) => x.id === 'binh-tuoi');
+    expect(prop?.at ?? null, 'prop trả về chỗ trong bảng').toBe(
+      timHoatDong('tuoi-cay')!.prop!.at,
+    );
+  });
+
+  it('LỖI 3b — cắt lúc đang NGỒI thì đứng dậy (không thì tự sinh hoạt chết hẳn)', async () => {
+    const { world, bus, dispatcher } = dung();
+    const don = choSuKien(bus, 'actor.activityCleaned');
+    await dispatcher.run('actor.activity', { actor: 'gen', name: 'go-may-tinh' });
+    for (let i = 0; i < 60; i++) {
+      if (world.describe().actors.find((a) => a.id === 'gen')?.state === 'sitting') break;
+      await new Promise<void>((r) => setTimeout(r, 5));
+    }
+    expect(world.describe().actors.find((a) => a.id === 'gen')?.state).toBe('sitting');
+    const { huyHoatDong } = await import('../../behavior/hoat-dong');
+    huyHoatDong('gen');
+    expect(await don).toMatchObject({ stood: true });
+    await new Promise<void>((r) => setTimeout(r, NHIP_MS * 4));
+    expect(world.describe().actors.find((a) => a.id === 'gen')?.state).toBe('idle');
+  });
+
+  it('LỖI 3c — sau `activityCancelled` KHÔNG còn bước nào của chuỗi chạy nữa', async () => {
+    const { world, bus, dispatcher } = dung();
+    const cat = choSuKien(bus, 'actor.activityCancelled');
+    await dispatcher.run('actor.activity', { actor: 'gen', name: 'di-dao' });
+    await new Promise<void>((r) => setTimeout(r, NHIP_MS));
+    const { huyHoatDong } = await import('../../behavior/hoat-dong');
+    huyHoatDong('gen');
+    await cat;
+    await new Promise<void>((r) => setTimeout(r, NHIP_MS * 2));
+    world.lichSu.length = 0;
+    await new Promise<void>((r) => setTimeout(r, NHIP_MS * 8));
+    const buocSau = world.lichSu.filter((x) => x.startsWith('moveTo'));
+    expect(buocSau, 'không `moveTo` nào của chuỗi được chạy sau cú cắt').toEqual([]);
+  });
+
+  it('`actor.stop` của Boss cũng dọn: thả đồ + đứng dậy', async () => {
+    const { world, bus, dispatcher } = dung();
+    const don = choSuKien(bus, 'actor.activityCleaned');
+    await dispatcher.run('actor.activity', { actor: 'gen', name: 'uong-nuoc-ghe-an' });
+    for (let i = 0; i < 80; i++) {
+      const g = world.describe().actors.find((a) => a.id === 'gen');
+      if (g?.state === 'sitting' && g.holding !== null) break;
+      await new Promise<void>((r) => setTimeout(r, 5));
+    }
+    await dispatcher.run('actor.stop', { actor: 'gen' });
+    const kq = await don;
+    expect(kq).toMatchObject({ dropped: true, stood: true });
+    await new Promise<void>((r) => setTimeout(r, NHIP_MS * 4));
+    const g = world.describe().actors.find((a) => a.id === 'gen')!;
+    expect(g.holding).toBeNull();
+    expect(g.state).toBe('idle');
+  });
+});
+
+/* ============================== 2c. ĐIỀU KIỆN "PLACE RẢNH" (#79, review b) */
+
+describe('J2 điều kiện place rảnh', () => {
+  it('ghế đã có người ngồi → hoạt động dùng ghế đó không diễn được', () => {
+    const canh = {
+      places: [
+        { id: 'ghe-2', pos: [3, 0, -3.5] as const, occupiedBy: 'owner' },
+        { id: 'ban-dieu-khien', pos: [3, 0, -4.5] as const, occupiedBy: null },
+      ],
+      actors: [{ id: 'gen', pos: [0, 0, 0] as const }],
+      ai: 'gen',
+    };
+    expect(hoatDongDienDuoc(timHoatDong('go-may-tinh')!, canh)).toBe(false);
+    const trong = { ...canh, places: canh.places.map((p) => ({ ...p, occupiedBy: null })) };
+    expect(hoatDongDienDuoc(timHoatDong('go-may-tinh')!, trong)).toBe(true);
+  });
+
+  it('Nam đứng ĐÚNG vùng giữa → hoạt động vùng giữa bị loại', () => {
+    const giua = timPlace(VUNG_GIUA)!.pos;
+    const canh = {
+      places: [{ id: VUNG_GIUA, pos: giua, occupiedBy: null }],
+      actors: [
+        { id: 'gen', pos: [0, 0, 0] as const },
+        { id: 'owner', pos: giua },
+      ],
+      ai: 'gen',
+    };
+    expect(hoatDongDienDuoc(timHoatDong('nhay-theo-nhac')!, canh)).toBe(false);
+    // Nam dịch ra 2 m thì lại diễn được
+    const xa = {
+      ...canh,
+      actors: [
+        { id: 'gen', pos: [0, 0, 0] as const },
+        { id: 'owner', pos: [giua[0] + 2, 0, giua[2]] as const },
+      ],
+    };
+    expect(hoatDongDienDuoc(timHoatDong('nhay-theo-nhac')!, xa)).toBe(true);
+  });
+
+  it('chính mình đứng/ngồi ở đó thì KHÔNG tính là có người', () => {
+    const giua = timPlace(VUNG_GIUA)!.pos;
+    const canh = {
+      places: [{ id: VUNG_GIUA, pos: giua, occupiedBy: 'gen' }],
+      actors: [{ id: 'gen', pos: giua }],
+      ai: 'gen',
+    };
+    expect(hoatDongDienDuoc(timHoatDong('nhay-theo-nhac')!, canh)).toBe(true);
   });
 });
 
