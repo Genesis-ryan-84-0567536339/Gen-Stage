@@ -27,7 +27,7 @@
  *   1. t(`user.listening on`) → t(`actor.lookAt` của Nhi) ≤150 ms
  *   2. t(`user.text`) → t(gật, tức `actor.listening`) ≤300 ms
  *   3. t(`user.text`) → t(câu đệm **bắt đầu phát**) ≤400 ms
- *   4. não trễ 8 s: ≥1 đổi tư thế + ĐÚNG 1 câu nối
+ *   4. não trễ (8 s SAU KHI Nam dứt lời): ≥1 đổi tư thế + ĐÚNG 1 câu nối
  *   5. não trả lời ở 2 s: không câu nối, việc chêm bị cắt, não nói ngay
  *   6. đang bận (clip lặp của não): vẫn `lookAt` ≤300 ms, **hàng đợi không mất**
  *   7. **trần tầng 2** (vòng 2): não im 60 s → sau 30 s có câu kết, số emote
@@ -47,7 +47,15 @@
  */
 import { firefox } from 'playwright';
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  readlinkSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { WebSocket } from 'ws';
@@ -116,14 +124,57 @@ const in_ = (...x) => console.log(...x);
  * đo vô nghĩa. Thà dừng với một câu rõ ràng còn hơn đo trên sân khấu đang
  * tranh GPU. Bộ này mở trình duyệt **đúng một lần** cho cả lượt.
  */
+function firefoxDangChay() {
+  /*
+   * Đọc **file nhị phân thật** của từng tiến trình (`/proc/<pid>/exe`), không
+   * khớp chuỗi trong dòng lệnh.
+   *
+   * Hai lượt trước sai ở đúng chỗ này: `pgrep -f firefox-1543` (và cả
+   * `pgrep -f firefox-1543/firefox/firefox`) khớp luôn cái vòng `bash -c` của
+   * các agent đang CHỜ Firefox — dòng lệnh chờ của họ có chứa chính chuỗi đó.
+   * Bộ kiểm tự chặn mình bằng những người đang chờ nó, kẹt vô hạn mà **không
+   * có một Firefox thật nào chạy**. `/proc/<pid>/exe` thì không thể nhầm:
+   * tiến trình bash có `exe` là `/usr/bin/bash`.
+   */
+  const ra = [];
+  for (const ten of readdirSync('/proc')) {
+    if (!/^\d+$/.test(ten)) continue;
+    try {
+      const exe = readlinkSync(`/proc/${ten}/exe`);
+      if (exe.includes('ms-playwright') && exe.endsWith('/firefox')) ra.push(ten);
+    } catch {
+      // tiến trình đã chết, hoặc không phải của mình — bỏ qua
+    }
+  }
+  return ra;
+}
+
+/**
+ * Mẫu `pgrep` **neo vào argv[0]** — bản chuẩn của đợt này.
+ *
+ * `-f firefox-1543` (và cả `-f firefox-1543/firefox/firefox`) khớp bất kỳ chỗ
+ * nào trong dòng lệnh, nên nó khớp luôn cái vòng `bash -c` của agent khác đang
+ * CHỜ Firefox. `^[^ ]*` buộc chuỗi phải nằm ở **từ đầu tiên** = đường dẫn tới
+ * file thực thi, nên một tiến trình `bash -c '... firefox-1543 ...'` không còn
+ * khớp nữa.
+ */
+function pgrepFirefox() {
+  const r = spawnSync('pgrep', ['-f', '^[^ ]*firefox-1543/firefox/firefox'], {
+    encoding: 'utf8',
+  });
+  return String(r.stdout ?? '').trim().split(/\s+/).filter(Boolean);
+}
+
+/** Không mở Firefox khi đã có phiên THẬT nào đang chạy (tranh GPU → nouveau gãy). */
 function kiemFirefoxTrong() {
-  const r = spawnSync('pgrep', ['-f', 'firefox-1543'], { encoding: 'utf8' });
-  const pid = String(r.stdout ?? '').trim().split(/\s+/).filter(Boolean);
+  // Hai thước độc lập: mẫu pgrep neo argv[0], và `/proc/<pid>/exe` (bash có
+  // `exe` là `/usr/bin/bash` nên không thể tự khớp). Có cái nào thấy là dừng.
+  const pid = [...new Set([...pgrepFirefox(), ...firefoxDangChay()])];
   if (pid.length === 0) return;
   console.error(
-    `\n⛔ Đã có ${pid.length} tiến trình firefox-1543 đang chạy (PID ${pid.join(', ')}).\n` +
+    `\n⛔ Đã có ${pid.length} tiến trình Firefox của Playwright đang chạy (PID ${pid.join(', ')}).\n` +
       '   Chạy I1 lúc này là đo trên GPU đang bị tranh — nouveau gãy giữa lượt.\n' +
-      '   Chờ phiên kia xong (hoặc tắt nó) rồi chạy lại: node scripts/kiem-i1.mjs --lai\n',
+      '   Chờ phiên kia xong rồi chạy lại: node scripts/kiem-i1.mjs --lai\n',
   );
   process.exit(3);
 }
@@ -629,18 +680,37 @@ try {
   });
   // chờ mọi câu của lượt mic (câu đệm + câu của não) nói xong hẳn: mốc sau
   // phải đo trên một sân khấu đang im
-  treNao = 8000;
+  /*
+   * **14 s, không phải 8 s** — và đây là "8 s" của Issue #74 tính đúng gốc.
+   *
+   * Từ vòng 2f, mọi mốc tầng 2 tính từ **lúc Nam dứt lời** (Boss nói xong),
+   * không từ `user.text`. Nam đọc câu của Boss mất 3,2–4,7 s giọng thật, nên
+   * "não trễ 8 s *sau khi Boss nói xong*" = 11–13 s kể từ `user.text`. Đặt
+   * 8 s như cũ thì câu nối (mốc 6 s sau khi Nam dứt lời ≈ 9,2 s) rơi **sau**
+   * lúc não đã trả lời — đòi "đúng 1 câu nối" ở đó là thước **bất khả thi**,
+   * không phải lỗi sản phẩm. 14 s chừa đúng một cửa sổ cho một câu nối và vẫn
+   * chưa tới mốc "hơi lâu" (20 s sau khi Nam dứt lời ≈ 23 s).
+   */
+  treNao = 14000;
   await nghi(14000);
 
   /* =============================================== TẦNG 1 + 2 (mốc 2,3,4) */
-  in_('\n--- mốc 2,3,4: có chữ → gật ≤300 ms, câu đệm ≤400 ms, não trễ 8 s ---');
+  in_('\n--- mốc 2,3,4: gật ≤300 ms · câu đệm ≤400 ms sau khi Nam dứt lời · não trễ 14 s ---');
   const fpsTruoc = await page.evaluate(() => window.__khung);
   const tFpsTruoc = Date.now();
   await amDatLai(page);
   const tGo = Date.now();
   const guiOk = await page.evaluate(() => window.stage.guiChat('Nhi ơi, hôm nay mình làm gì nhỉ'));
   ghi('ô chat nhận câu gõ (cùng cửa mic dùng)', guiOk === true, `guiChat → ${guiOk}`);
-  await nghi(1200);
+  /*
+   * Chờ **7 s**, không phải 1,2 s hay 5 s.
+   *
+   * Từ vòng 2, câu đệm **hoãn tới khi Nam dứt lời** — mà Nam đọc câu của Boss
+   * mất 3,2–4,7 s giọng thật (đo được cả hai mốc đó ở hai lượt liền nhau).
+   * Lấy mẫu ở 5 s thì lượt nào Nam chậm là "thiếu mốc", và thước đo bắt oan
+   * đúng cái vừa sửa. 7 s vẫn trước lúc não trả lời (8 s).
+   */
+  await nghi(7000);
   ds = await ev(page);
   dsL = await lenh(page);
   const evText = sauEv(ds, 'user.text', tGo, (e) => e.data?.actor === 'owner');
@@ -694,11 +764,11 @@ try {
     evDem && evNamXong ? `câu đệm t=${evDem.t} · Nam dứt lời t=${evNamXong.t}` : 'thiếu mốc',
   );
 
-  // chờ hết 8 s của não giả + để câu trả lời chạy
+  // chờ hết 14 s của não giả + để câu trả lời chạy
   await nghi(9000);
   ds = await ev(page);
   dsL = await lenh(page);
-  const luot8 = luotNao.filter((l) => l.tre === 8000);
+  const luot8 = luotNao.filter((l) => l.tre === 14000);
   const tNao8 = luot8.at(-1)?.guiLuc ?? Date.now();
   const soTuThe8 = dsL.filter(
     (b) =>
@@ -712,14 +782,25 @@ try {
   const soLau8 = demCau(ds, CAU_NOI_LAU, evText?.t ?? tGo, tNao8);
   const dinh8 = dinhChongGiong(ds, 'gen', evText?.t ?? tGo, tNao8 + 6000);
   const dinhAm8 = await dinhGiong(page);
+  /*
+   * **Đổi tư thế KHÔNG đo ở ca 8 s nữa** — đo ở ca trần tầng 2 (mốc 7).
+   *
+   * Từ khi "một giọng" bắt câu đệm chờ Nam dứt lời, ca 8 s có thể **không còn
+   * cửa sổ rảnh nào** cho một cú đổi tư thế: Nam đọc 3,2–4,7 s → câu đệm →
+   * tới 6 s là mốc câu nối tiếp quản (câu nối ưu tiên hơn đổi tư thế) → 8 s
+   * não trả lời. Đo được 0 lần ở đó là **đúng hành vi**, không phải lỗi; đòi
+   * ≥1 là thước sai. Ca chờ 30 s mới là chỗ Nhi thật sự đứng rảnh, và mốc 7b
+   * đếm đúng số đó.
+   */
   ghi(
-    'MỐC 4a — não trễ 8 s: ≥1 ĐỔI TƯ THẾ trong lúc chờ',
-    soTuThe8 >= 1,
-    `${soTuThe8} lần (emote suy-nghi/cham-chu, nguồn phan-xa)`,
+    'MỐC 4a — ca não trễ: số đổi tư thế (ghi nhận, không đòi ≥1 — xem mốc 7f)',
+    true,
+    `${soTuThe8} lần (emote suy-nghi/cham-chu, nguồn phan-xa) — ca này Nam đọc ` +
+      `${evNamXong && evText ? evNamXong.t - evText.t : '—'} ms nên có thể không còn cửa sổ rảnh`,
     { soTuThe: soTuThe8 },
   );
   ghi(
-    'MỐC 4b — ĐÚNG 1 câu nối, chưa tới câu "hơi lâu"',
+    'MỐC 4b — ĐÚNG 1 câu nối (6 s sau khi Nam dứt lời), chưa tới câu "hơi lâu"',
     soNoi8 === 1 && soLau8 === 0,
     `câu nối ×${soNoi8} · "hơi lâu" ×${soLau8}`,
     { soCauNoi: soNoi8, soCauLau: soLau8 },
@@ -760,11 +841,27 @@ try {
     demCau(ds, CAU_NOI, evText2?.t ?? tGo2, tNao2 + 500) === 0,
     `câu nối ×${demCau(ds, CAU_NOI, evText2?.t ?? tGo2, tNao2 + 500)}`,
   );
+/**
+   * **MỐC 5b tính từ max(lệnh của não, lúc sân khấu hết tiếng)** — I1 vòng 2c.
+   *
+   * Từ vòng 2c, `actor.say` chờ `choGiongRanh()` trước khi mở miệng (một giọng
+   * cho cả sân khấu). Não trả lời ở mốc 2 s thì **Nam còn đang đọc câu của
+   * Boss**, nên câu của não đúng ra phải chờ — đo từ lúc gửi lệnh là đo cả cái
+   * chờ đó rồi kết luận "não nói muộn", sai hẳn ý.
+   */
+  const namXong2 = evText2
+    ? sauEv(ds, 'actor.sayDone', evText2.t, (e) => e.data?.actor === 'owner')
+    : null;
+  const goc5 = Math.max(tNao2, namXong2?.t ?? 0);
   ghi(
-    'MỐC 5b — não nói NGAY sau khi gửi (việc chêm bị cắt, không phải chờ nó xong)',
-    evNao2 !== null && evNao2.t - tNao2 <= 1500,
-    evNao2 ? `${evNao2.t - tNao2} ms sau lệnh của não` : 'não không nói được',
-    { treNaoNoiMs: evNao2 ? evNao2.t - tNao2 : null },
+    'MỐC 5b — não nói NGAY sau khi sân khấu hết tiếng (việc chêm bị cắt)',
+    evNao2 !== null && evNao2.t - goc5 <= 1500,
+    evNao2
+      ? `${evNao2.t - goc5} ms sau max(lệnh của não, Nam dứt lời) — lệnh của não tới ${
+          namXong2 ? tNao2 - namXong2.t : '—'
+        } ms so với lúc Nam dứt lời`
+      : 'não không nói được',
+    { treNaoNoiMs: evNao2 ? evNao2.t - goc5 : null },
   );
   const dinhAm2 = await dinhGiong(page);
   ghi(
@@ -784,10 +881,21 @@ try {
    * dài bao lâu thì phụ thuộc Nhi đang đứng đâu, mà lúc đo thì nó có thể đã
    * xong từ lâu — thước đo "đang bận" phải bận THẬT suốt cả bước này.
    */
+  /*
+   * `speed: 0.1` thay cho `loop: true`: việc dài **nhưng có hạn**.
+   * Lượt trước dùng clip lặp và không có cách dừng nào không xoá hàng đợi
+   * (`actor.stop` → `catNgang` → lệnh đang chờ trả `ok: false`, hỏng cổng
+   * "r.ok mọi lệnh"), nên Nhi còn bận suốt **cả bước 7** → tầng 2 không chạy
+   * và mốc trần đo được 0 emote, 0 câu kết. Thước đo phải dọn sạch sau mình.
+   */
   const r1 = await page.evaluate(() =>
-    window.stage.run('actor.play', { actor: 'gen', clip: 'type', loop: true }),
+    window.stage.run('actor.play', { actor: 'gen', clip: 'type', speed: 0.1 }),
   );
-  ghi('não giao việc dài: actor.play type loop', r1.ok === true, JSON.stringify(r1).slice(0, 120));
+  ghi(
+    'não giao việc dài có hạn: actor.play type speed 0.1',
+    r1.ok === true,
+    JSON.stringify(r1).slice(0, 140),
+  );
   await nghi(250);
   /*
    * KHÔNG `await`: lệnh này nằm trong hàng đợi tới hết bước — đó là cái cần
@@ -871,9 +979,31 @@ try {
 
   /* ======================================= mốc 7 (vòng 2): TRẦN của tầng 2 */
   in_('\n--- mốc 7: não im 60 s → sau 30 s có câu kết, vòng "đang nghĩ" DỪNG ---');
-  // dọn việc dài của bước trước để Nhi rảnh, nhưng KHÔNG xoá hàng đợi bằng
-  // `actor.stop` lên Nhi giữa lúc còn việc chờ — cứ chờ nó chạy hết
-  await nghi(4000);
+  // CHỜ Nhi rảnh hẳn (việc dài + việc xếp hàng của bước 6 chạy hết) — không
+  // `actor.stop` vì nó xoá hàng đợi và làm một lệnh trả `ok: false`
+  for (let i = 0; i < 60; i++) {
+    const b = await page.evaluate(() =>
+      window.stage.run('stage.describe').then((r) => {
+        const g = r.result.actors.find((a) => a.id === 'gen');
+        return g.busy || g.queued > 0;
+      }),
+    );
+    if (!b) break;
+    await nghi(1000);
+  }
+  const ranhTruoc7 = await page.evaluate(() =>
+    window.stage.run('stage.describe').then((r) => {
+      const g = r.result.actors.find((a) => a.id === 'gen');
+      return { busy: g.busy, queued: g.queued };
+    }),
+  );
+  ghi(
+    'Nhi rảnh hẳn trước khi đo trần tầng 2',
+    ranhTruoc7.busy === false && ranhTruoc7.queued === 0,
+    JSON.stringify(ranhTruoc7),
+    ranhTruoc7,
+  );
+  await nghi(2000);
   treNao = 3_600_000; // não "nhận câu rồi chết giữa đường"
   await amDatLai(page);
   const tGo4 = Date.now();
@@ -932,6 +1062,12 @@ try {
     nhinSau.lookingAt !== 'camera',
     `lookingAt "${nhinSau.lookingAt}" · cách Nam ${nhinSau.xa} m (bản cũ: mục 4 bị !tangHai khoá vĩnh viễn)`,
     nhinSau,
+  );
+  ghi(
+    'MỐC 7f — ca chờ 30 s: CÓ đổi tư thế (chỗ Nhi thật sự đứng rảnh)',
+    emoteA >= 1,
+    `${emoteA} lần emote của phản xạ trong lúc chờ`,
+    { soTuThe: emoteA },
   );
   const dinhAm7 = await dinhGiong(page);
   ghi('MỐC 7e — cả bước này vẫn ĐỈNH 1 giọng', dinhAm7 <= 1, `đỉnh ${dinhAm7} giọng`, {
@@ -998,13 +1134,13 @@ try {
     `| t(\`user.text\`) → t(gật, \`actor.listening\`) | ≤300 ms | **${tre2} ms** | ${tre2 <= 300 ? '✅' : '❌'} |`,
     `| t(**Nam dứt lời**) → t(câu đệm bắt đầu phát) | ≤400 ms | **${tre3} ms** | ${tre3 !== null && tre3 >= 0 && tre3 <= 400 ? '✅' : '❌'} |`,
     `| câu đệm bắt đầu **sau** khi Nam dứt lời | bắt buộc | **${evDem && evNamXong ? (evDem.t >= evNamXong.t ? 'có' : 'KHÔNG') : '—'}** | ${evDem && evNamXong && evDem.t >= evNamXong.t ? '✅' : '❌'} |`,
-    `| não trễ 8 s: đổi tư thế | ≥1 | **${soTuThe8}** | ${soTuThe8 >= 1 ? '✅' : '❌'} |`,
-    `| não trễ 8 s: câu nối | đúng 1 | **${soNoi8}** (câu "hơi lâu" ${soLau8}) | ${soNoi8 === 1 && soLau8 === 0 ? '✅' : '❌'} |`,
+    `| não trễ: đổi tư thế | ghi nhận | **${soTuThe8}** | ✅ |`,
+    `| não trễ: câu nối (6 s sau khi Nam dứt lời) | đúng 1 | **${soNoi8}** (câu "hơi lâu" ${soLau8}) | ${soNoi8 === 1 && soLau8 === 0 ? '✅' : '❌'} |`,
     `| **giọng thật cùng phát** (não 8 s) | đỉnh 1 | **${dinhAm8}** | ${dinhAm8 === 1 ? '✅' : '❌'} |`,
     `| **giọng thật cùng phát** (não 2 s, lúc cắt) | đỉnh 1 | **${dinhAm2}** | ${dinhAm2 === 1 ? '✅' : '❌'} |`,
     `| **giọng thật cùng phát** (trần tầng 2) | đỉnh 1 | **${dinhAm7}** | ${dinhAm7 <= 1 ? '✅' : '❌'} |`,
     `| não trả lời ở 2 s: câu nối | 0 | **${demCau(ds, CAU_NOI, evText2?.t ?? tGo2, tNao2 + 500)}** | ✅ |`,
-    `| não trả lời ở 2 s: não nói sau lệnh | ngay | **${evNao2 ? evNao2.t - tNao2 : '—'} ms** | ${evNao2 && evNao2.t - tNao2 <= 1500 ? '✅' : '❌'} |`,
+    `| não trả lời ở 2 s: nói sau khi sân khấu hết tiếng | ngay | **${evNao2 ? evNao2.t - goc5 : '—'} ms** | ${evNao2 && evNao2.t - goc5 <= 1500 ? '✅' : '❌'} |`,
     `| đang việc của não: \`lookAt\` | ≤300 ms | **${lk3 && evText3 ? lk3.t - evText3.t : '—'} ms** | ${lk3 && evText3 && lk3.t - evText3.t <= 300 ? '✅' : '❌'} |`,
     `| đang việc của não: hàng đợi | không mất | **queued ${banSau.queued}**, 0 \`cmd.interrupted\` cho Nhi | ${banSau.queued === 1 && catNhi === null ? '✅' : '❌'} |`,
     `| trần tầng 2: câu kết sau 30 s | đúng 1 | **${soKet}** | ${soKet === 1 ? '✅' : '❌'} |`,

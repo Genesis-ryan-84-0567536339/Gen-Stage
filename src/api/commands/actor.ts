@@ -548,7 +548,20 @@ export const LENH_ACTOR: CommandSpec[] = [
        */
       const nguoiNoi = ctx.world.describe().actors.find((x) => x.id === id);
       if (nguoiNoi?.controlledBy === 'owner') {
-        ctx.bus.emit('user.text', { actor: id, text: chu, to: nghe });
+        /**
+         * I1 vòng 2 (#74) — **`sePhat`: câu này SẮP được phát ra bằng giọng.**
+         *
+         * `user.text` bắn ở **đầu câu**, còn `actor.sayStart` chỉ bắn sau
+         * `await chuanBiGiong` (300–900 ms thật). Trong khoảng giữa đó, phản
+         * xạ đọc sổ "ai đang nói" và thấy **trống** → nó chêm câu đệm vào, rồi
+         * Nam mở miệng chồng lên: đúng hai giọng mà review PR #75 đo được, và
+         * vòng sửa đầu KHÔNG bịt được vì chỉ nghe `sayStart`.
+         *
+         * Cờ này là lời cam kết "người nói này sắp có tiếng", để phản xạ chặn
+         * ngay từ mốc `user.text`. Chỉ `actor.say` đặt được nó — không ai khác
+         * biết chắc sẽ có giọng.
+         */
+        ctx.bus.emit('user.text', { actor: id, text: chu, to: nghe, sePhat: true });
         /**
          * C1 (#31) — câu này Boss **nói** chứ không gõ thì bắn thêm
          * `user.speech { text, confidence, durationMs }` (spec mục 3.5). Mic
@@ -613,6 +626,23 @@ export const LENH_ACTOR: CommandSpec[] = [
        * Trả `ok: true` kèm `huy: true`: lệnh không lỗi, nó bị nhường chỗ —
        * nhật ký phải phân biệt được hai thứ đó.
        */
+      if (ctx.daHuy?.() === true) {
+        return ngay({ actor: id, text: chu, to: nghe, huy: true });
+      }
+      /**
+       * I1 vòng 2 (#74) — **chờ sân khấu hết tiếng rồi mới mở miệng.**
+       *
+       * Khoá nằm ở lớp tiếng (`choGiongRanh`), nhưng phải chờ **ở đây**, chứ
+       * không chỉ chờ lúc phát audio: `world.actorSay` dựng bong bóng chữ +
+       * nhép miệng ngay, nên nếu chỉ khoá phần audio thì bong bóng hiện trước
+       * giọng vài giây — lệch còn khó chịu hơn chồng giọng.
+       *
+       * Đây là chỗ duy nhất mọi câu đi qua (phản xạ, não, lớp hiểu lệnh), nên
+       * lời hứa "một giọng" của Issue #74 giữ được cho **mọi** nguồn, không
+       * phải chỉ cho tuỷ sống.
+       */
+      await lopTieng()?.choGiongRanh();
+      // chờ xong có thể đã bị cắt (não gửi câu mới) → đọc lại cửa huỷ
       if (ctx.daHuy?.() === true) {
         return ngay({ actor: id, text: chu, to: nghe, huy: true });
       }

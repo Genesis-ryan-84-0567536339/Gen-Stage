@@ -1123,9 +1123,146 @@ lệnh để tăng trải nghiệm chân thực trong quá trình nó suy nghĩ"
   worktree trỏ vào **đúng những thư mục đã bị loại** (`public/models`,
   `public/kenney`, …) nên `git status` sạch mà không che `public/favicon.svg`
   trong tương lai; bỏ dòng FPS khỏi bảng bằng chứng (1–2 fps trên llvmpipe
-  không nói được gì về mượt — Cửa 1); `scripts/kiem-i1.mjs` **từ chối chạy** khi
-  `pgrep -f firefox-1543` còn tiến trình nào (nouveau gãy khi nhiều phiên tranh
-  GPU, mà lượt gãy giữa đường thì số đo vô nghĩa).
+  không nói được gì về mượt — Cửa 1); `scripts/kiem-i1.mjs` **từ chối chạy** khi còn
+  phiên Firefox nào của Playwright (nouveau gãy khi nhiều phiên tranh GPU, mà
+  lượt gãy giữa đường thì số đo vô nghĩa) — **mẫu kiểm đúng xem mục vòng 2c**,
+  không phải `pgrep -f firefox-1543`.
+
+#### Vòng 2b — sau khi tự đo lại (cùng Issue #74)
+
+- **Gốc THẬT của "đỉnh 2 giọng" là cửa sổ `user.text` → `actor.sayStart`.** Bịt
+  bằng sổ "ai đang nói" lấy từ `sayStart` là **chưa đủ**: `actor.say` bắn
+  `user.text` ở đầu câu nhưng `sayStart` chỉ bắn sau `await chuanBiGiong`
+  (300–900 ms thật). Trong khoảng đó sổ còn trống nên Nhi vẫn chêm câu đệm rồi
+  Nam mở miệng chồng lên — tự đo lại sau vòng sửa đầu vẫn ra **đỉnh 2 giọng**.
+  `actor.say` nay gắn cờ **`sePhat: true`** vào `user.text` ("người này sắp có
+  tiếng"), phản xạ chặn từ chính mốc đó, kèm trần `tranSePhatMs` = 12 s làm dây
+  an toàn cho ca câu bị `daHuy` giữa lúc tải giọng (không có `sayDone` nào tới).
+- **Thoát tầng 2 phải VÔ ĐIỀU KIỆN; câu kết chỉ là cố gắng hết sức.** Bản đầu
+  chỉ thoát khi nói được `CAU_HET_CHO`, mà ở mốc 30 s Nhi có thể đang chạy việc
+  dài của não ⇒ `noiChem` trả `false` ⇒ tầng 2 sống tiếp vĩnh viễn, đúng họ lỗi
+  mà cái trần sinh ra để diệt. Nay cố nói trong 3 s rồi thoát bất chấp.
+- **Thước đo phải dọn sạch sau mình.** Bước "Nhi đang bận" dùng clip **lặp** và
+  không có cách dừng nào không xoá hàng đợi (`actor.stop` → `catNgang` → một
+  lệnh trả `ok: false`, hỏng cổng "r.ok mọi lệnh"), nên Nhi còn bận suốt **cả
+  bước đo trần** → đo được 0 emote, 0 câu kết và chấm oan. Đổi sang việc dài
+  **có hạn** (`speed: 0.1`) + chờ `busy === false && queued === 0` trước bước sau.
+- **Đổi lời hứa thì phải đổi cả cửa sổ lấy mẫu.** Câu đệm giờ hoãn tới khi Nam
+  dứt lời (2–3 s), mà script còn lấy mẫu ở 1,2 s → "thiếu mốc" và chấm sai
+  chính cái vừa sửa.
+
+#### Vòng 2c — "một giọng" là tính chất của SÂN KHẤU, không của phản xạ
+
+Tự đo lại lần nữa (34/36): tầng 2 đã có trần, câu đệm đã chờ Nam dứt lời
+(119 ms sau `actor.sayDone`, **đúng thứ tự**), nhưng móc
+`AudioBufferSourceNode` **vẫn** ra đỉnh 2 giọng. Hai nguyên nhân còn lại, cả
+hai đều **không** nằm trong tầm của lớp phản xạ:
+
+- **`actor.sayDone` bắn theo ƯỚC LƯỢNG, không theo audio thật.** `durationMs`
+  của hành động lấy từ `uocThoiLuongNoi`, có thể ngắn hơn `buf.duration` — nên
+  Nhi mở miệng 119 ms sau `sayDone` mà đuôi giọng Nam còn đang chạy. Thước
+  thật là `LopTieng.aiConGiong()` (đọc `dangPhat`, khoá theo `buf.duration`).
+- **Lớp tiếng nối hàng đợi theo TỪNG ACTOR** (`vaoHangDoi(actorId, …)`), nên
+  hai nhân vật khác nhau phát cùng lúc được. Mà câu của **não** cũng đi đường
+  đó: não trả lời ở mốc 2 s trong khi Nam còn đọc câu của Boss ⇒ chồng giọng,
+  và không cờ nào của phản xạ chặn được vì phản xạ không gửi câu đó.
+
+Nên chốt dời về **lớp tiếng** — chỗ duy nhất mọi câu đi qua (phản xạ, não, lớp
+hiểu lệnh): `khoaGiong` là một hàng đợi **toàn sân khấu**, cộng `choGiongRanh()`
+mà **`actor.say` await TRƯỚC `world.actorSay`**. Phải chờ ở `actor.say` chứ
+không chỉ khoá phần audio: `world.actorSay` dựng bong bóng chữ + nhép miệng
+ngay, khoá riêng audio thì bong bóng hiện trước giọng vài giây — lệch còn khó
+chịu hơn chồng giọng.
+
+Hệ quả cần biết: câu trả lời của não **chờ Nam đọc xong** mới phát. Đó là điều
+đúng (người ta không trả lời khi người khác còn đang nói), nhưng nó đổi nghĩa
+thước "não nói ngay sau khi gửi lệnh" → phải tính từ **max(lệnh của não, lúc
+sân khấu hết tiếng)**.
+
+- **Mẫu kiểm "Firefox phải trống" đúng là neo argv[0]**:
+  `pgrep -f '^[^ ]*firefox-1543/firefox/firefox'`. Mẫu không neo khớp luôn vòng
+  `bash -c` của agent khác đang chờ Firefox → bộ kiểm tự chặn mình bằng người
+  đang chờ nó. Giữ thêm thước thứ hai độc lập (`/proc/<pid>/exe`, vì tiến trình
+  bash có `exe` là `/usr/bin/bash` nên không thể tự khớp).
+
+- **Khoá toàn sân khấu PHẢI có trần.** Lượt bằng chứng đầu có `khoaGiong` treo
+  **2 phút** ở mốc 2: một `phatNgay` không bao giờ giải quyết (vd `AudioContext`
+  kẹt `suspended` nên `resume()` không settle) giữ khoá vĩnh viễn — và vì khoá
+  là **toàn** sân khấu, một câu hỏng làm **mọi** nhân vật câm, nặng hơn hẳn bản
+  cũ (hỏng theo từng người). `TRAN_KHOA_MS` = 8 s: chuỗi khoá đi tiếp theo cái
+  nào xong trước (việc thật hay trần), việc thật vẫn chạy tới cùng nên audio
+  không bị cắt — nó chỉ mất quyền chặn câu sau mãi mãi. Quy tắc chung: **thêm
+  một khoá dùng chung thì phải thêm trần cho nó trong cùng một lần sửa.**
+
+- **Trần của `choGiongRanh` phải CHẶT (1,5 s), khác trần của chuỗi khoá (8 s).**
+  Bên gọi là `actor.say`, mà nó **đang giữ chỗ actor** trong dispatcher suốt
+  lúc chờ. Đo thật trên Firefox (lượt 31/36) với trần 8 s: câu đệm của Nhi ngồi
+  trong `choGiongRanh` **4 giây**, bị `catNhe` của não huỷ (`huy: true`), rồi
+  câu của não vào đúng chỗ đó lại chờ tiếp — **cả lượt không ai nói gì**, mà
+  `r.ok` vẫn **157/157** vì không lệnh nào *lỗi*, chúng chỉ bị nhường chỗ. Bài
+  học hai phần: (1) việc duy nhất hàm đó cần che là **cái đuôi audio** (vài
+  trăm ms) vì phản xạ đã không gửi câu khi còn người khác đang nói — nên trần
+  phải nhỏ hơn mọi khoảng có thể nuốt trọn một lượt; (2) **`r.ok` 100 % không
+  chứng minh là có tiếng**: phải đo `actor.sayStart`, vì đường "bị huỷ" cố ý
+  trả `ok: true`.
+
+#### Vòng 2d — cổng "một giọng" phải là TRẠNG THÁI, không phải chuỗi promise
+
+Hai lượt đo liền nhau (31/36 rồi 33/36) đóng đinh chuyện này:
+
+- **Chuỗi promise tự đầu độc.** `khoaGiong` nối mọi câu vào một `Promise`. Một
+  `phatNgay` không bao giờ giải quyết (AudioContext kẹt `suspended` ở lượt đầu
+  phiên) nằm lại trong chuỗi ⇒ **mọi** câu về sau phải chờ hết trần: lượt đầu
+  mất trọn một lượt hội thoại, lượt sau câu đệm trễ **1545 ms** — đúng bằng
+  trần 1,5 s, tức là *lần nào cũng* chờ hết trần. Và vì câu đệm ngốn 1,5 s,
+  tầng 2 không còn chỗ: 0 đổi tư thế, 0 câu nối.
+- **Thay bằng trạng thái quan sát được**: cổng đọc `dangPhat` (có thêm
+  `giuCho`), và `phatNgay` **luôn** xoá bản ghi của mình trong `dai + 400 ms`
+  bằng một `setTimeout` riêng — trạng thái tự lành, không có gì để đầu độc.
+- **Kiểm-rồi-claim không được có `await` ở giữa.** Bản đầu `await
+  choGiongRanh()` rồi mới `giuCho.add()`: hai actor cùng `phat()` trong một
+  tick thì **cả hai** qua cổng trước khi ai kịp giữ chỗ (test đơn vị ra
+  `['owner','gen']`). `choVaGiuCho` kiểm và claim liền nhau, chỉ `await` khi
+  thật sự phải chờ. Đây là lỗi kinh điển của mọi cái cổng; viết test hai-actor
+  **trước** khi tin cái cổng.
+
+#### Vòng 2e — `actor.sayDone` là ƯỚC LƯỢNG, lớp tiếng mới là sự thật
+
+- **Cổng "một giọng" của phản xạ phải hỏi LỚP TIẾNG, không chỉ sổ sự kiện.**
+  `actor.sayDone` bắn theo `uocThoiLuongNoi`, có thể sớm hơn `buf.duration` cả
+  trăm ms — đo thật: Nhi mở miệng **119 ms** sau `sayDone` của Nam mà móc
+  `AudioBufferSourceNode` vẫn ra **đỉnh 2 giọng**. `aiKhacDangNoi` nay hỏi thêm
+  `lopTieng().aiConGiong()` (tiêm được để test).
+- **Cảnh giác với một mốc "đạt" không giải thích được.** Lượt giữa đo ra "đỉnh
+  1" và dễ tưởng là xong — thật ra chỉ vì **chuỗi khoá bị đầu độc** làm Nhi trễ
+  1,5 s, tình cờ che đúng cái đuôi audio. Sửa cái đầu độc thì "đỉnh 2" hiện
+  lại ngay. Một con số xanh mà không có cơ chế giải thích nó thì chưa phải bằng
+  chứng.
+- **Đổi lời hứa thì phải đổi cả thước đo.** Từ khi câu đệm chờ Nam dứt lời, ca
+  "não trễ 8 s" có thể **không còn cửa sổ rảnh nào** cho một cú đổi tư thế (Nam
+  đọc 3,2–4,7 s → câu đệm → 6 s là mốc câu nối tiếp quản → 8 s não trả lời):
+  đo 0 lần ở đó là **đúng hành vi**. Dời phép đo "đổi tư thế" sang ca chờ 30 s,
+  chỗ Nhi thật sự đứng rảnh. Và cửa sổ lấy mẫu mốc 3 phải ≥7 s vì Nam đọc tới
+  4,7 s.
+
+#### Vòng 2f — gốc đồng hồ tầng 2, và luật "mọi dấu hiệu phải tự hết hạn"
+
+- **Gốc đồng hồ của tầng 1/2 là LÚC NAM DỨT LỜI, không phải `user.text`.**
+  `user.text` bắn ở **đầu** câu của Nam, mà Nam đọc câu của Boss mất 3,2–4,7 s
+  giọng thật. Hệ quả đo được ba lượt liền: câu đệm (mốc 200 ms) bị luật "quá
+  hạn câu nối thì thôi" ăn mất vì tới lúc Nhi được nói thì `troi` đã gần 6 s;
+  và câu nối (mốc 6 s) rơi vào lúc não đã trả lời ⇒ "không có câu đệm" + "0 câu
+  nối". **Không phải máy trạng thái sai, mà gốc đồng hồ sai.** Gốc đúng là lúc
+  **Boss nói xong** — đó mới là lúc Boss bắt đầu *chờ*. `actor.sayDone` của Nam
+  nay đặt lại `tOwnerNoi`, `choNao`, `tTuThe`, `tranDen`, `soCauNoi`.
+- **Mọi dấu hiệu trong một cổng dùng chung đều phải TỰ HẾT HẠN.** `giuCho` là
+  `Set`, xoá trong `finally` của `await phatNgay(...)` — mà `phatNgay` treo
+  vĩnh viễn ở `await a.resume()` khi AudioContext kẹt `suspended`, nên
+  `finally` không bao giờ chạy ⇒ Nhi **câm suốt 60 s** của bước đo trần (0 câu
+  kết, 0 đổi tư thế). Đổi sang `Map<actor, hạn>` với hạn = `dai + 600 ms`.
+  Đúng cái bẫy đã bịt cho `dangPhat` bằng `donMuon` mà lại bỏ sót một chỗ —
+  nên viết thành luật: **thêm một dấu hiệu vào cổng dùng chung thì thêm hạn cho
+  nó trong cùng lần sửa**, và `huy`/`huyHet` phải dọn nó.
 
 ## Quyết định J2 — bảng hoạt động + tự sinh hoạt khi rảnh (27/10, Issue #79)
 
@@ -1254,3 +1391,4 @@ kế đầy đủ: `docs/spec/actor-api.md` mục **3.2f**. Bằng chứng Firef
   **+18552 ms** thay vì ≥19 s. Mốc nào cũng phải bấm theo **trạng thái đọc
   được** (`waitForFunction` tới khi `doXuong().state === 'idle'`), không theo
   một con số chờ cho chắc.
+

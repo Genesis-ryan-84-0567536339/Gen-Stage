@@ -36,7 +36,7 @@
  */
 import { firefox } from 'playwright';
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readlinkSync, rmSync, writeFileSync } from 'node:fs';
 
 const THU_MUC = 'docs/j2';
 mkdirSync(THU_MUC, { recursive: true });
@@ -88,29 +88,53 @@ const MOI_TRUONG_FF = { ...process.env, LIBGL_ALWAYS_SOFTWARE: '1', MOZ_ENABLE_W
 const in_ = (...x) => console.log(...x);
 
 /**
- * **Từ chối chạy khi đã có phiên Firefox khác** (I1b, review PR #75).
+ * Tiến trình Firefox của Playwright đang chạy, đọc **file nhị phân thật**
+ * (`/proc/<pid>/exe`) — thước I1b (#74) dựng, J2 dùng lại nguyên.
+ *
+ * Không khớp chuỗi trong dòng lệnh: `pgrep -f firefox-1543` (và cả
+ * `pgrep -f firefox-1543/firefox/firefox`) khớp luôn cái vòng `bash -c` của
+ * các agent đang **CHỜ** Firefox, nên bộ kiểm tự chặn mình bằng chính những
+ * người đang chờ nó — kẹt vô hạn mà **không có một Firefox thật nào chạy**
+ * (J2 mất hẳn một lượt vì chuyện này). `/proc/<pid>/exe` của bash là
+ * `/usr/bin/bash`, không thể nhầm.
+ */
+function firefoxDangChay() {
+  const ra = [];
+  for (const ten of readdirSync('/proc')) {
+    if (!/^\d+$/.test(ten)) continue;
+    try {
+      const exe = readlinkSync(`/proc/${ten}/exe`);
+      if (exe.includes('ms-playwright') && exe.endsWith('/firefox')) ra.push(ten);
+    } catch {
+      // tiến trình đã chết, hoặc không phải của mình — bỏ qua
+    }
+  }
+  return ra;
+}
+
+/** Thước thứ hai, độc lập: mẫu `pgrep` **neo vào argv[0]**. */
+function pgrepFirefox() {
+  const r = spawnSync('pgrep', ['-f', '^[^ ]*firefox-1543/firefox/firefox'], {
+    encoding: 'utf8',
+  });
+  return String(r.stdout ?? '').trim().split(/\s+/).filter(Boolean);
+}
+
+/**
+ * **Từ chối chạy khi đã có phiên Firefox nào của Playwright.**
  *
  * Nhiều phiên tranh GPU là nouveau gãy giữa lượt ("Exiting due to channel
  * error", cạm bẫy F2 #56), mà lượt gãy giữa đường thì số đo vô nghĩa — và bộ
- * này mở trình duyệt **đúng một lần** cho cả lượt nên không có đường cứu.
- *
- * **Mẫu khớp phải NEO ĐẦU dòng lệnh**, không chỉ "đường binary cho cụ thể
- * hơn": đo thật 27/10 trên máy Boss, `pgrep -f firefox-1543/firefox/firefox`
- * đếm được **10 tiến trình** trong khi KHÔNG có Firefox nào chạy — cả 10 là
- * vòng `bash -c` chờ của chính mình và của các worktree khác, vì chuỗi mẫu
- * nằm ngay trong dòng lệnh của chúng. Mấy phiên thành ra chờ nhau vĩnh viễn.
- * `^[^ ]*firefox-1543/firefox/firefox` thì chỉ khớp tiến trình mà **argv[0]**
- * là chính cái binary — `[^ ]*` (không phải `.*`) là phần quan trọng: `.*`
- * vẫn nhảy qua cả `/bin/bash -c …` để tới chuỗi mẫu nằm giữa dòng lệnh.
+ * này mở trình duyệt **đúng một lần** cho cả lượt nên không có đường cứu. Hai
+ * thước độc lập, có cái nào thấy là dừng.
  */
 function kiemFirefoxTrong() {
-  const r = spawnSync('pgrep', ['-f', '^[^ ]*firefox-1543/firefox/firefox'], { encoding: 'utf8' });
-  const pid = String(r.stdout ?? '').trim().split(/\s+/).filter(Boolean);
+  const pid = [...new Set([...pgrepFirefox(), ...firefoxDangChay()])];
   if (pid.length === 0) return;
   console.error(
-    `\n⛔ Đã có ${pid.length} tiến trình firefox-1543 đang chạy (PID ${pid.join(', ')}).\n` +
+    `\n⛔ Đã có ${pid.length} tiến trình Firefox của Playwright đang chạy (PID ${pid.join(', ')}).\n` +
       '   Chạy J2 lúc này là đo trên GPU đang bị tranh — nouveau gãy giữa lượt.\n' +
-      '   Chờ phiên kia xong (hoặc tắt nó) rồi chạy lại: node scripts/kiem-j2.mjs --lai\n',
+      '   Chờ phiên kia xong rồi chạy lại: node scripts/kiem-j2.mjs --lai\n',
   );
   process.exit(3);
 }

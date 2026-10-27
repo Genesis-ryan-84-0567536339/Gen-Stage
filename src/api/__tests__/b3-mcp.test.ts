@@ -187,10 +187,13 @@ describe('Owner nói → sự kiện user.text (vòng hội thoại B3)', () => 
     expect(kq.ok).toBe(true);
     expect(thay).toHaveLength(1);
     // C0 (#28) — `user.text` mang thêm `to` (nói với ai; mặc định `camera` = Sếp)
+    // I1 vòng 2 (#74) — thêm `sePhat`: câu này SẮP phát ra bằng giọng, để phản
+    // xạ khỏi chêm câu đệm vào cửa sổ `user.text` → `actor.sayStart`.
     expect(thay[0]!.data).toEqual({
       actor: 'owner',
       text: 'Gen, dựng connector Baserow',
       to: 'camera',
+      sePhat: true,
     });
   });
 

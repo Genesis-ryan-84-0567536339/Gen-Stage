@@ -95,11 +95,14 @@ async function dung(opts: { treNaoMs?: number; ganNhau?: boolean } = {}) {
     opts.treNaoMs === undefined
       ? null
       : naoGia({ bus, dispatcher, treMs: opts.treNaoMs, gio });
+  /** Lớp tiếng giả: test đặt tay "ai còn giọng đang phát". */
+  const conGiong = new Set<string>();
   const may = batPhanXa({
     dispatcher,
     bus,
     bayGio: gio,
     chonCauDem: (ds) => ds[0]!,
+    aiConGiong: () => [...conGiong],
     so: { nhipMs: 1_000_000 }, // test gọi `nhip()` tay
   });
   return {
@@ -109,6 +112,7 @@ async function dung(opts: { treNaoMs?: number; ganNhau?: boolean } = {}) {
     may,
     nao,
     gio,
+    conGiong,
     /** Đẩy đồng hồ `ms` rồi quét **từng nhịp 100 ms** như bản thật. */
     async tien(ms: number) {
       const buoc = MAC_DINH.nhipMs;
@@ -546,15 +550,29 @@ describe('I1 vòng 2 — một giọng duy nhất XUYÊN NHÂN VẬT (Nam + Nhi)
     expect(cacCau(t.world)).toEqual([]);
     expect(t.may.trangThai().tangHai).toBe(true);
 
-    // Nam nói xong → câu đệm phát NGAY nhịp sau, KHÔNG bị bỏ lặng lẽ
+    /*
+     * Nam nói xong → đồng hồ tầng 2 **đặt lại từ đây** (vòng 2f), nên câu đệm
+     * phát sau `choNaoMs` tính từ lúc Nam dứt lời, không phải từ `user.text`.
+     */
     namNoiXong(t, chu);
     await nhipMicro();
-    await t.tien(MAC_DINH.nhipMs);
+    await t.tien(MAC_DINH.choNaoMs + MAC_DINH.nhipMs * 2);
     expect(cacCau(t.world)).toEqual([CAU_DEM[0]]);
     t.may.dung();
   });
 
-  it('Nam nói DÀI quá mốc câu nối → bỏ câu đệm, câu nối tiếp quản (không nói cả hai)', async () => {
+  /**
+   * **Vòng 2f đổi hành vi ở đây, và đổi theo hướng đúng hơn.**
+   *
+   * Bản trước: Nam đọc quá mốc câu nối (6 s) thì câu đệm "hết nghĩa" và câu
+   * nối tiếp quản. Nhưng gốc đồng hồ khi đó là `user.text` — tức tính từ lúc
+   * Boss **bắt đầu** nói. Đo thật thì Nam đọc 3,2–4,7 s, nên gần như lượt nào
+   * câu đệm cũng bị ăn mất, và câu nối lại rơi vào lúc não đã trả lời.
+   * Gốc đúng là **lúc Boss nói xong**: đó mới là lúc Boss bắt đầu chờ. Vậy dù
+   * Nam đọc bao lâu, cái Nhi nói đầu tiên vẫn là **câu đệm**, rồi 6 s sau mới
+   * tới câu nối.
+   */
+  it('Nam đọc rất dài → đồng hồ tính lại từ lúc Nam dứt lời: câu đệm trước, câu nối sau 6 s', async () => {
     const t = await dung();
     datSoNao(1);
     const chu = 'Nhi ơi, anh kể dài lắm';
@@ -565,9 +583,13 @@ describe('I1 vòng 2 — một giọng duy nhất XUYÊN NHÂN VẬT (Nam + Nhi)
 
     namNoiXong(t, chu);
     await nhipMicro();
-    await t.tien(MAC_DINH.nhipMs);
-    // "Dạ, Sếp?" lúc này đã hết nghĩa — chỉ câu nối là đúng cái đang xảy ra
-    expect(cacCau(t.world)).toEqual([CAU_NOI]);
+    await t.tien(MAC_DINH.choNaoMs + MAC_DINH.nhipMs * 2);
+    expect(cacCau(t.world)).toEqual([CAU_DEM[0]]);
+
+    // 6 s SAU KHI NAM DỨT LỜI mới tới câu nối
+    await choHanhDong();
+    await t.tien(MAC_DINH.cauNoiMs);
+    expect(cacCau(t.world)).toEqual([CAU_DEM[0], CAU_NOI]);
     t.may.dung();
   });
 
@@ -810,6 +832,127 @@ describe('I1 vòng 2 — người đang NGỒI chỉ quay đầu/mắt', () => {
     t.world.lichSu.length = 0;
     await t.dispatcher.run('actor.say', { actor: 'gen', text: 'Dạ em đây ạ' }, 'bridge');
     expect(co(t.world, 'faceTo:gen')).toBe(false);
+    t.may.dung();
+  });
+});
+
+/* ===== VÒNG 2b — cửa sổ user.text → sayStart (gốc thật của chồng giọng) ===== */
+
+describe('I1 vòng 2b — cờ sePhat bịt cửa sổ user.text → actor.sayStart', () => {
+  beforeEach(() => xoaSoNao());
+
+  /**
+   * Gốc THẬT của "đỉnh 2 giọng" mà review PR #75 đo được, và vòng sửa đầu
+   * **không** bịt được: `actor.say` bắn `user.text` ở đầu câu nhưng
+   * `actor.sayStart` chỉ bắn sau `await chuanBiGiong` (300–900 ms thật trên
+   * trình duyệt). Trong khoảng đó sổ "ai đang nói" còn TRỐNG, nên Nhi chêm
+   * câu đệm vào rồi Nam mở miệng chồng lên. `sePhat` là lời cam kết "người
+   * này sắp có tiếng", chặn ngay từ mốc `user.text`.
+   */
+  it('user.text { sePhat: true } → Nhi im suốt cửa sổ tải giọng của Nam', async () => {
+    const t = await dung();
+    datSoNao(1);
+    t.bus.emit('user.text', { actor: 'owner', text: 'Nhi ơi', to: 'camera', sePhat: true });
+    await nhipMicro();
+    expect(t.may.trangThai().aiDangNoi).toContain('owner');
+    t.world.lichSu.length = 0;
+
+    // cửa sổ tải giọng: CHƯA có `actor.sayStart` nào, nhưng Nhi vẫn phải im
+    await t.tien(MAC_DINH.choNaoMs + MAC_DINH.nhipMs * 5);
+    expect(cacCau(t.world)).toEqual([]);
+    // gật thì vẫn tức thì
+    expect(t.world.lichSu.some((x) => x.startsWith('ngheNgong:gen:true'))).toBe(false);
+
+    // Nam mở miệng rồi dứt lời → câu đệm phát
+    t.bus.emit('actor.sayStart', { actor: 'owner', text: 'Nhi ơi', to: 'camera' });
+    await t.tien(MAC_DINH.nhipMs * 2);
+    expect(cacCau(t.world)).toEqual([]);
+    t.bus.emit('actor.sayDone', { actor: 'owner', text: 'Nhi ơi', to: 'camera' });
+    await nhipMicro();
+    // vòng 2f: mốc câu đệm tính từ lúc Nam dứt lời
+    await t.tien(MAC_DINH.choNaoMs + MAC_DINH.nhipMs * 2);
+    expect(cacCau(t.world)).toEqual([CAU_DEM[0]]);
+    t.may.dung();
+  });
+
+  it('sePhat có TRẦN: câu bị huỷ giữa lúc tải giọng không làm Nhi im vĩnh viễn', async () => {
+    const t = await dung();
+    datSoNao(1);
+    t.bus.emit('user.text', { actor: 'owner', text: 'Nhi ơi', to: 'camera', sePhat: true });
+    await nhipMicro();
+    // KHÔNG bao giờ có sayStart/sayDone (câu bị `daHuy` trong cửa sổ tải giọng)
+    await t.tien(MAC_DINH.tranSePhatMs + MAC_DINH.nhipMs * 3);
+    expect(t.may.trangThai().aiDangNoi).not.toContain('owner');
+    // hết trần thì Nhi nói lại được (câu nối, vì câu đệm đã hết nghĩa)
+    expect(cacCau(t.world)).toContain(CAU_NOI);
+    t.may.dung();
+  });
+
+  it('user.text KHÔNG có sePhat (không ai đọc to) → câu đệm vẫn đúng mốc 200 ms', async () => {
+    const t = await dung();
+    datSoNao(1);
+    t.bus.emit('user.text', { actor: 'owner', text: 'Nhi ơi' });
+    await nhipMicro();
+    await t.tien(MAC_DINH.choNaoMs + MAC_DINH.nhipMs * 2);
+    expect(cacCau(t.world)).toEqual([CAU_DEM[0]]);
+    t.may.dung();
+  });
+
+  it('TRẦN tầng 2 thoát VÔ ĐIỀU KIỆN dù không nói được câu kết', async () => {
+    const t = await dung();
+    datSoNao(1);
+    // Nhi làm một việc dài của não suốt cả lượt → `noiChem` luôn trả false
+    void t.dispatcher.run('actor.play', { actor: 'gen', clip: 'type', loop: true }, 'bridge');
+    await nhipMicro();
+    t.bus.emit('user.text', { actor: 'owner', text: 'Nhi ơi' });
+    await nhipMicro();
+    expect(t.may.trangThai().tangHai).toBe(true);
+
+    // chỉ đẩy ĐỒNG HỒ GIẢ (sân khấu giả không chạy clip thật), không chờ thật
+    for (let i = 0; i < 340; i++) {
+      t.bus.emit('actor.sayStart', { actor: 'owner', text: 'giữ Nhi im', to: 'camera' });
+      await t.tien(MAC_DINH.nhipMs);
+    }
+    // qua trần 30 s + grace 3 s: phải thoát, dù chưa nói được câu nào
+    expect(t.may.trangThai().tangHai).toBe(false);
+    expect(cacCau(t.world)).not.toContain(CAU_HET_CHO);
+    t.may.dung();
+  });
+});
+
+/* ===== VÒNG 2e — đuôi audio: sayDone là ƯỚC LƯỢNG, lớp tiếng mới là sự thật ==== */
+
+describe('I1 vòng 2e — Nhi chờ cả ĐUÔI audio của người khác', () => {
+  beforeEach(() => xoaSoNao());
+
+  /**
+   * `actor.sayDone` bắn theo `uocThoiLuongNoi`, có thể sớm hơn `buf.duration`
+   * cả trăm ms. Đo thật: Nhi mở miệng **119 ms** sau `sayDone` của Nam mà móc
+   * `AudioBufferSourceNode` vẫn ra **đỉnh 2 giọng**. Lượt sau thấy "đỉnh 1"
+   * chỉ vì chuỗi khoá bị đầu độc làm Nhi trễ 1,5 s — may, không phải thiết kế.
+   */
+  it('sayDone của Nam đã bắn nhưng audio còn chạy → Nhi vẫn im', async () => {
+    const t = await dung();
+    datSoNao(1);
+    const chu = 'Nhi ơi';
+    t.bus.emit('user.text', { actor: 'owner', text: chu, to: 'camera', sePhat: true });
+    t.bus.emit('actor.sayStart', { actor: 'owner', text: chu, to: 'camera' });
+    t.conGiong.add('owner'); // lớp tiếng: giọng Nam đang phát
+    await nhipMicro();
+
+    // Nam "nói xong" theo sổ sự kiện, NHƯNG đuôi audio còn chạy
+    t.bus.emit('actor.sayDone', { actor: 'owner', text: chu, to: 'camera' });
+    await nhipMicro();
+    expect(t.may.trangThai().aiDangNoi).not.toContain('owner');
+    t.world.lichSu.length = 0;
+
+    await t.tien(MAC_DINH.nhipMs * 4);
+    expect(cacCau(t.world)).toEqual([]); // vẫn im vì lớp tiếng còn báo có giọng
+
+    // đuôi audio tắt → câu đệm phát
+    t.conGiong.delete('owner');
+    await t.tien(MAC_DINH.nhipMs);
+    expect(cacCau(t.world)).toEqual([CAU_DEM[0]]);
     t.may.dung();
   });
 });
