@@ -1570,3 +1570,24 @@ kế đầy đủ: `docs/spec/actor-api.md` mục **3.2f**. Bằng chứng Firef
 - **Và `minY` ba mẫu mỗi hoạt động chỉ chứng minh "ba lúc tôi nhìn thì chạm".**
   Reviewer lấy mẫu dày và thấy **−0,0226 m** / **−0,0233 m** ở hai ca ngồi
   sofa. Nay lấy mẫu **mỗi 300 ms suốt cả phiên** ngay trong trang.
+- **Vòng 3, lượt đo 1: ba lỗi nữa của DỤNG CỤ ĐO, và một lỗi THẬT chưa thuộc J2.**
+  (1) Lấy mẫu `minY` mỗi **300 ms** làm **sập trang** ở phút thứ 5,5 ("sân
+  khấu ngắt kết nối" → `Target page has been closed`): `doXuong().tuThe.minY`
+  gọi `Box3.setFromObject(root, true)`, quét toàn bộ đỉnh mesh có biến dạng
+  xương — đúng cạm bẫy F2 (#56) *dụng cụ đo làm hỏng cái cần đo*. Hạ về 1 s.
+  (2) Script **không ghi `bang.md` khi hỏng giữa đường**, nên cả bộ số của 12
+  hoạt động và MỐC 4 (đã đo xong, đã ĐẠT) mất trắng vì một cú `page.screenshot`
+  cuối. Nay nhánh lỗi cũng ghi bảng "những mục đã đo xong".
+  (3) Thước "kết thúc về idle" vẫn chấm sai 2/12 vì Nam spawn ĐÚNG ở
+  `VUNG_GIUA`: Nhi vừa rảnh là phản xạ chào nhẹ chiếm thân. Nay **đẩy Nam ra
+  `cua` trước khi đo 12 hoạt động** (tách hai hệ thống để đo từng cái một;
+  phần chạy cùng nhau thì MỐC 4 đo riêng), và điều kiện đạt đổi sang "không
+  còn **dư âm của chính hoạt động**" (`holding` null, không ngồi lại) thay vì
+  "sân khấu đứng im" — phản xạ có quyền diễn ngay sau đó.
+  (4) **Chồng giọng vẫn còn: đỉnh 3 giọng trên 6 lượt phát** dù đã gộp đủ 12
+  commit của I1. Hoạt động **không nói câu nào** nên gần như chắc không phải
+  J2 — nhưng "gần như chắc" không phải bằng chứng, nên bộ đo nay có **mẫu ĐỐI
+  CHỨNG**: đúng 3 câu đó, `actor.stop` cho Nhi trước, **không hoạt động nào
+  chạy**. Hai đỉnh bằng nhau ⇒ khoanh được vùng sang lớp tiếng/I1 bằng số,
+  không phải bằng suy luận. **Một bộ bằng chứng chỉ ra "có lỗi" mà không
+  khoanh được vùng thì người sửa vẫn phải đo lại từ đầu.**

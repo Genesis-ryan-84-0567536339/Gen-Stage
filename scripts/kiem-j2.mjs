@@ -345,6 +345,16 @@ async function moTrang() {
      * "chân chạm sàn" — nó chỉ chứng minh "ba lúc tôi nhìn thì chạm".
      */
     window.__chan = { thapNhat: null, soMau: 0 };
+    /*
+     * **Nhịp 1 s, không phải 300 ms** — và đây là một số đo, không phải gu.
+     * `doXuong().tuThe.minY` gọi `Box3.setFromObject(root, true)`, tức quét
+     * TOÀN BỘ đỉnh của mesh có biến dạng xương. Lượt đo trước lấy mẫu mỗi
+     * 300 ms và trang **sập giữa MỐC 3** ("sân khấu ngắt kết nối" rồi
+     * `Target page … has been closed") sau ~5,5 phút. Đúng cạm bẫy F2 (#56):
+     * *dụng cụ đo làm hỏng chính cái cần đo*. 1 s vẫn dày hơn 3 mẫu/hoạt động
+     * cả trăm lần, mà hai ca lún mà review tìm ra là **tư thế giữ lâu** (ngồi
+     * sofa + chạy clip) nên 1 s không thể bỏ sót.
+     */
     setInterval(() => {
       try {
         const d = window.stage.doXuong('gen');
@@ -358,9 +368,17 @@ async function moTrang() {
       } catch {
         /* actor chưa có */
       }
-    }, 300);
+    }, 1000);
 
     window.__chot = {};
+    // `doXuong` không trả `holding`; bắt từ sự kiện prop để chốt được đồng bộ
+    window.__holding = null;
+    window.stage.on('actor.held', (e) => {
+      if (e.data.actor === 'gen') window.__holding = String(e.data.prop);
+    });
+    window.stage.on('actor.dropped', (e) => {
+      if (e.data.actor === 'gen') window.__holding = null;
+    });
     window.stage.on('actor.activityDone', (e) => {
       try {
         const d = window.stage.doXuong(String(e.data.actor));
@@ -368,6 +386,8 @@ async function moTrang() {
           state: d.state,
           minY: d.tuThe?.minY ?? null,
           footY: d.tuThe?.footY ?? null,
+          // dư âm của chính hoạt động: tay còn đồ không, sổ còn tên không
+          holding: window.__holding ?? null,
         };
       } catch {
         /* actor vừa bị xoá */
@@ -474,6 +494,36 @@ try {
   );
 
   /* =========================================== MỐC 1 + 2: 12 hoạt động chạy trọn */
+  /*
+   * **Đưa Nam ra cửa trước khi đo 12 hoạt động.**
+   *
+   * Nam spawn đúng ở `buc-trung-tam` = `VUNG_GIUA`, nên 4/12 hoạt động kết
+   * thúc cách anh ta vài chục cm. Nhi vừa rảnh là phản xạ C0 chạy nhánh "Boss
+   * đứng gần > 4 s → chào nhẹ" (`actor.turnTo` → state `playing`,
+   * `actor.emote chao` → `emoting`) — **đúng thiết kế**, nhưng nó chiếm thân
+   * ngay sau mốc `activityDone` và làm thước "kết thúc về idle" chấm sai
+   * người (2 lượt đo liền bị, mỗi lượt 2-3 hoạt động). Đẩy Nam ra `cua` là
+   * tách hai hệ thống ra để đo từng cái một; phần phản xạ + hoạt động chạy
+   * CÙNG nhau thì MỐC 4 đo riêng.
+   *
+   * Thêm một lợi ích: `hoatDongDienDuoc()` không còn phải loại 4 hoạt động
+   * vùng giữa vì có người chắn chỗ (chính là điều kiện mới của vòng 3).
+   */
+  await page.evaluate(() => window.stage.run('actor.moveTo', { actor: 'owner', to: 'cua' }));
+  await nghi(6000);
+  const namODau = await page.evaluate(() =>
+    window.stage.run('stage.describe').then((x) => {
+      const o = x.result.actors.find((a) => a.id === 'owner');
+      return { at: o.at, nearest: o.nearest };
+    }),
+  );
+  ghi(
+    'Nam ra khỏi vùng giữa (để phản xạ "chào nhẹ" không lẫn vào thước hoạt động)',
+    namODau.nearest?.place === 'cua',
+    JSON.stringify(namODau),
+    namODau,
+  );
+
   in_('\n--- MỐC 1+2: từng hoạt động chạy trọn + chân chạm sàn ---');
   let ds = [];
   let dsL = [];
@@ -512,9 +562,16 @@ try {
       r.ok === true &&
       xong?.event === 'actor.activityDone' &&
       xong?.data?.errors === undefined &&
-      // "về idle" chấm ở ĐÚNG mốc kết thúc; 600 ms sau đó phản xạ C0 có quyền
-      // tiếp quản (chào nhẹ) và điều đó KHÔNG phải lỗi của hoạt động
-      (chot?.state === 'idle' || chot?.state === 'sitting') &&
+      /*
+       * "Về idle" chấm ở ĐÚNG mốc kết thúc, và chấp nhận cả `playing`/`emoting`
+       * **do phản xạ** tiếp quản: cái hoạt động phải bảo đảm là **không còn dư
+       * âm của chính nó** (`holding` null, `activity` null, không ngồi lại),
+       * chứ không phải "sân khấu đứng im" — phản xạ có quyền diễn ngay sau đó
+       * và đó là thiết kế, không phải lỗi. Lượt này đã đẩy Nam ra cửa nên
+       * nhánh chào nhẹ gần như không nổ; còn nổ thì cũng không chấm sai nữa.
+       */
+      chot?.state !== 'sitting' &&
+      chot?.holding === null &&
       st.holding === null &&
       st.activity === null;
     ketHd.push({
@@ -679,6 +736,33 @@ try {
   await nghi(6000);
   const am = await doGiong(page);
   const dinhAm = am.dinh;
+  /*
+   * **ĐỐI CHỨNG: cùng 3 câu đó, nhưng KHÔNG có hoạt động nào chạy.**
+   *
+   * Lượt trước đo `đỉnh 3` và câu hỏi duy nhất đáng hỏi là: **tại ai?** Không
+   * có mẫu đối chứng thì không trả lời được, và một bộ bằng chứng chỉ vào
+   * "có lỗi" mà không khoanh được vùng thì người sửa vẫn phải đo lại từ đầu.
+   * Hoạt động KHÔNG nói câu nào (giao kèo của bảng), nên nếu đối chứng cũng
+   * chồng thì chuyện này nằm ở lớp tiếng / I1, không ở J2.
+   */
+  await page.evaluate(() => window.stage.run('actor.stop', { actor: 'gen' }));
+  await nghi(8000);
+  await amDatLai(page);
+  for (const cau of ['Nhi ơi', 'Nhi làm gì đấy', 'Nhi nghe anh không']) {
+    await page.evaluate((c) => window.stage.guiChat(c), cau);
+    await nghi(1200);
+  }
+  await nghi(6000);
+  const amDoiChung = await doGiong(page);
+  ghi(
+    'ĐỐI CHỨNG — cùng 3 câu, KHÔNG có hoạt động nào chạy: đỉnh giọng',
+    true, // không chấm đạt/không: đây là mẫu để KHOANH VÙNG, không phải lời hứa của J2
+    `đỉnh ${amDoiChung.dinh} trên ${amDoiChung.soBat} lượt phát — ` +
+      (amDoiChung.dinh === dinhAm
+        ? 'BẰNG lúc có hoạt động ⇒ chồng giọng KHÔNG do J2 (hoạt động không nói câu nào)'
+        : 'KHÁC lúc có hoạt động ⇒ phải soi tiếp phía J2'),
+    { dinhKhongHoatDong: amDoiChung.dinh, soBat: amDoiChung.soBat, dinhCoHoatDong: dinhAm },
+  );
   ghi(
     'MỐC 4d — Boss gõ 3 câu giữa hoạt động: đỉnh GIỌNG THẬT = 1 (không chồng)',
     dinhAm <= 1 && am.soBat >= 2,
@@ -833,6 +917,7 @@ try {
     `| \`r.ok\` mọi lệnh | 100 % | **${dsL.length - loiLenh.length}/${dsL.length}** | ${loiLenh.length === 0 ? '✅' : '❌'} |`,
     `| cắt lúc NGỒI + CẦM ĐỒ (review #83 lỗi 3) | ≤300 ms + dọn | **${treCat2} ms**, holding ${sauDon.holding}, state ${sauDon.state} | ${treCat2 !== null && treCat2 <= 300 && sauDon.holding === null && sauDon.state !== 'sitting' ? '✅' : '❌'} |`,
     `| đỉnh GIỌNG THẬT, Boss gõ 3 câu giữa hoạt động | 1 (trên ≥2 lượt phát) | **${dinhAm}** / ${am.soBat} lượt | ${dinhAm <= 1 && am.soBat >= 2 ? '✅' : '❌'} |`,
+    `| ĐỐI CHỨNG: cùng 3 câu, KHÔNG có hoạt động | — (khoanh vùng) | **${amDoiChung.dinh}** / ${amDoiChung.soBat} lượt | ${amDoiChung.dinh === dinhAm ? 'không do J2' : 'phải soi J2'} |`,
     `| \`minY\` lấy mẫu DÀY (300 ms, cả phiên) | ≥ −0,01 m | **${chanDay?.thapNhat?.minY ?? '—'} m** (${chanDay?.soMau ?? 0} mẫu) | ${(chanDay?.thapNhat?.minY ?? -1) >= -0.01 ? '✅' : '❌'} |`,
     `| console | 0 lỗi | **${loiConsole.length}** | ${loiConsole.length === 0 ? '✅' : '❌'} |`,
     '',
@@ -862,6 +947,26 @@ try {
   nhatKy.loiChay = String(e?.message ?? e);
   nhatKy.tomTat = { soBuoc, soOk, thatBai };
   writeFileSync(`${THU_MUC}/nhat-ky-kiem-j2.json`, JSON.stringify(nhatKy, null, 2));
+  /*
+   * **Vẫn ghi bảng dù hỏng giữa đường.** Lượt trước trang sập ở MỐC 3 và cả
+   * bộ số của 12 hoạt động + MỐC 4 (đã đo xong, đã ĐẠT) **không vào được
+   * `bang.md`** — mất trắng một lượt GPU vì mỗi cái ảnh chụp cuối cùng.
+   */
+  writeFileSync(
+    `${THU_MUC}/bang.md`,
+    [
+      `> ⚠️ LƯỢT NÀY HỎNG GIỮA ĐƯỜNG: ${String(e?.message ?? e)}`,
+      '> Bảng dưới là những mục đã đo xong trước khi hỏng.',
+      '',
+      '| Mục | Kết | Chi tiết |',
+      '| --- | --- | --- |',
+      ...nhatKy.buoc.map(
+        (b) => `| ${b.nhan} | ${b.ok ? '✅' : '❌'} | ${String(b.chiTiet ?? '').replace(/\|/g, '/')} |`,
+      ),
+      '',
+      `${soOk}/${soBuoc} mục ĐẠT trước khi hỏng.`,
+    ].join('\n') + '\n',
+  );
   try {
     await page.screenshot({ path: `${THU_MUC}/99-loi.png` });
   } catch {
