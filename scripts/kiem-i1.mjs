@@ -27,7 +27,7 @@
  *   1. t(`user.listening on`) → t(`actor.lookAt` của Nhi) ≤150 ms
  *   2. t(`user.text`) → t(gật, tức `actor.listening`) ≤300 ms
  *   3. t(`user.text`) → t(câu đệm **bắt đầu phát**) ≤400 ms
- *   4. não trễ 8 s: ≥1 đổi tư thế + ĐÚNG 1 câu nối
+ *   4. não trễ (8 s SAU KHI Nam dứt lời): ≥1 đổi tư thế + ĐÚNG 1 câu nối
  *   5. não trả lời ở 2 s: không câu nối, việc chêm bị cắt, não nói ngay
  *   6. đang bận (clip lặp của não): vẫn `lookAt` ≤300 ms, **hàng đợi không mất**
  *   7. **trần tầng 2** (vòng 2): não im 60 s → sau 30 s có câu kết, số emote
@@ -680,11 +680,22 @@ try {
   });
   // chờ mọi câu của lượt mic (câu đệm + câu của não) nói xong hẳn: mốc sau
   // phải đo trên một sân khấu đang im
-  treNao = 8000;
+  /*
+   * **14 s, không phải 8 s** — và đây là "8 s" của Issue #74 tính đúng gốc.
+   *
+   * Từ vòng 2f, mọi mốc tầng 2 tính từ **lúc Nam dứt lời** (Boss nói xong),
+   * không từ `user.text`. Nam đọc câu của Boss mất 3,2–4,7 s giọng thật, nên
+   * "não trễ 8 s *sau khi Boss nói xong*" = 11–13 s kể từ `user.text`. Đặt
+   * 8 s như cũ thì câu nối (mốc 6 s sau khi Nam dứt lời ≈ 9,2 s) rơi **sau**
+   * lúc não đã trả lời — đòi "đúng 1 câu nối" ở đó là thước **bất khả thi**,
+   * không phải lỗi sản phẩm. 14 s chừa đúng một cửa sổ cho một câu nối và vẫn
+   * chưa tới mốc "hơi lâu" (20 s sau khi Nam dứt lời ≈ 23 s).
+   */
+  treNao = 14000;
   await nghi(14000);
 
   /* =============================================== TẦNG 1 + 2 (mốc 2,3,4) */
-  in_('\n--- mốc 2,3,4: có chữ → gật ≤300 ms, câu đệm ≤400 ms, não trễ 8 s ---');
+  in_('\n--- mốc 2,3,4: gật ≤300 ms · câu đệm ≤400 ms sau khi Nam dứt lời · não trễ 14 s ---');
   const fpsTruoc = await page.evaluate(() => window.__khung);
   const tFpsTruoc = Date.now();
   await amDatLai(page);
@@ -753,11 +764,11 @@ try {
     evDem && evNamXong ? `câu đệm t=${evDem.t} · Nam dứt lời t=${evNamXong.t}` : 'thiếu mốc',
   );
 
-  // chờ hết 8 s của não giả + để câu trả lời chạy
+  // chờ hết 14 s của não giả + để câu trả lời chạy
   await nghi(9000);
   ds = await ev(page);
   dsL = await lenh(page);
-  const luot8 = luotNao.filter((l) => l.tre === 8000);
+  const luot8 = luotNao.filter((l) => l.tre === 14000);
   const tNao8 = luot8.at(-1)?.guiLuc ?? Date.now();
   const soTuThe8 = dsL.filter(
     (b) =>
@@ -782,14 +793,14 @@ try {
    * đếm đúng số đó.
    */
   ghi(
-    'MỐC 4a — ca 8 s: số đổi tư thế (ghi nhận, không đòi ≥1 — xem mốc 7f)',
+    'MỐC 4a — ca não trễ: số đổi tư thế (ghi nhận, không đòi ≥1 — xem mốc 7f)',
     true,
     `${soTuThe8} lần (emote suy-nghi/cham-chu, nguồn phan-xa) — ca này Nam đọc ` +
       `${evNamXong && evText ? evNamXong.t - evText.t : '—'} ms nên có thể không còn cửa sổ rảnh`,
     { soTuThe: soTuThe8 },
   );
   ghi(
-    'MỐC 4b — ĐÚNG 1 câu nối, chưa tới câu "hơi lâu"',
+    'MỐC 4b — ĐÚNG 1 câu nối (6 s sau khi Nam dứt lời), chưa tới câu "hơi lâu"',
     soNoi8 === 1 && soLau8 === 0,
     `câu nối ×${soNoi8} · "hơi lâu" ×${soLau8}`,
     { soCauNoi: soNoi8, soCauLau: soLau8 },
@@ -1123,8 +1134,8 @@ try {
     `| t(\`user.text\`) → t(gật, \`actor.listening\`) | ≤300 ms | **${tre2} ms** | ${tre2 <= 300 ? '✅' : '❌'} |`,
     `| t(**Nam dứt lời**) → t(câu đệm bắt đầu phát) | ≤400 ms | **${tre3} ms** | ${tre3 !== null && tre3 >= 0 && tre3 <= 400 ? '✅' : '❌'} |`,
     `| câu đệm bắt đầu **sau** khi Nam dứt lời | bắt buộc | **${evDem && evNamXong ? (evDem.t >= evNamXong.t ? 'có' : 'KHÔNG') : '—'}** | ${evDem && evNamXong && evDem.t >= evNamXong.t ? '✅' : '❌'} |`,
-    `| não trễ 8 s: đổi tư thế | ≥1 | **${soTuThe8}** | ${soTuThe8 >= 1 ? '✅' : '❌'} |`,
-    `| não trễ 8 s: câu nối | đúng 1 | **${soNoi8}** (câu "hơi lâu" ${soLau8}) | ${soNoi8 === 1 && soLau8 === 0 ? '✅' : '❌'} |`,
+    `| não trễ: đổi tư thế | ghi nhận | **${soTuThe8}** | ✅ |`,
+    `| não trễ: câu nối (6 s sau khi Nam dứt lời) | đúng 1 | **${soNoi8}** (câu "hơi lâu" ${soLau8}) | ${soNoi8 === 1 && soLau8 === 0 ? '✅' : '❌'} |`,
     `| **giọng thật cùng phát** (não 8 s) | đỉnh 1 | **${dinhAm8}** | ${dinhAm8 === 1 ? '✅' : '❌'} |`,
     `| **giọng thật cùng phát** (não 2 s, lúc cắt) | đỉnh 1 | **${dinhAm2}** | ${dinhAm2 === 1 ? '✅' : '❌'} |`,
     `| **giọng thật cùng phát** (trần tầng 2) | đỉnh 1 | **${dinhAm7}** | ${dinhAm7 <= 1 ? '✅' : '❌'} |`,
