@@ -179,10 +179,19 @@ describe('kẹp phòng + va chạm (bo-cuc.ts, D1 — căn nhà 14×10 m)', () =
   });
 
   it('TRƯỢT dọc vật cản: đi chéo vào mép bàn ăn vẫn nhích được theo trục còn lại', () => {
-    // bàn ăn ở [3.5, 2.5], chan [0.6,0.6] → mép x = 2.9. Từ phía -x đẩy chéo vào.
-    const z0 = 2.5;
-    const [x, z] = truotVaCham(2.2, z0, 3.2, z0 + 0.3);
-    expect(x).toBeCloseTo(2.2, 5); // trục X bị bàn chặn
+    /*
+     * Toạ độ DÒ TỪ BẢNG, không viết tay (G1 #56): bản cũ ghi cứng "bàn ăn ở
+     * [3.5, 2.5], chan [0.6,0.6]" trong khi F1 đã dời bàn về [4, 2] — test vẫn
+     * xanh vì tình cờ trúng một cái ghế, rồi đỏ ngay khi G1 thu nhỏ nội thất
+     * cho vừa người chibi. Đo từ chính dòng bố cục thì đổi cỡ bao nhiêu cũng
+     * còn đúng.
+     */
+    const ban = KHOI_CANH.find((k) => k.id === 'ban-an')!;
+    const z0 = ban.tai[1] + 0.4; // lệch khỏi 2 ghế ngang hai bên bàn
+    let x0 = ban.tai[0] - ban.chan![0] - 0.05;
+    while (biChan(x0, z0)) x0 -= 0.05; // lùi ra tới chỗ trống THẬT
+    const [x, z] = truotVaCham(x0, z0, ban.tai[0], z0 + 0.3);
+    expect(x).toBeCloseTo(x0, 5); // trục X bị bàn chặn
     expect(z).toBeGreaterThan(z0); // trục Z vẫn đi được → men theo mép
   });
 
@@ -267,10 +276,47 @@ describe('bảng bố cục D1b — nhà đầy đặn (Issue #48)', () => {
     }
   });
 
-  it('đồ bày trên bàn có `tren` hoặc `datY`, không món nào lơ lửng vô cớ', () => {
+  it('đồ bày trên bàn có `tren`/`trenGhe`/`datY`, không món nào lơ lửng vô cớ', () => {
     for (const k of KHOI_CANH) {
-      if (k.lech) expect(k.tren !== undefined || k.datY !== undefined, k.id).toBe(true);
+      if (k.lech) {
+        expect(
+          k.tren !== undefined || k.trenGhe !== undefined || k.datY !== undefined,
+          k.id,
+        ).toBe(true);
+      }
       if (k.datY !== undefined) expect(k.datY, k.id).toBeGreaterThan(0);
+    }
+  });
+
+  /**
+   * Review PR #70 (CHẶN 2): gối sofa khai `datY: 0.42` — số của sofa CŨ cao
+   * 0,9 m. G1 hạ sofa về `cao: 0.47` (mặt ngồi 0,2585 m) nên gối treo **16 cm**
+   * trên không khí, qua được cả hai lượt kiểm vì không mốc nào đo đáy khối.
+   * Đồ bày lên món khác phải ĐO (`tren` = nóc, `trenGhe` = mặt ngồi).
+   */
+  it('gối sofa neo vào MẶT NGỒI sofa, không phải cao độ ghi tay', () => {
+    const goi = KHOI_CANH.filter((k) => /^goi-/.test(k.id));
+    expect(goi.length).toBeGreaterThanOrEqual(2);
+    for (const k of goi) {
+      expect(k.trenGhe, k.id).toBe('sofa');
+      expect(k.datY, k.id).toBeUndefined();
+    }
+  });
+
+  it('khối đỡ của `tren`/`trenGhe` phải đứng TRƯỚC trong bảng', () => {
+    const daDung = new Set<string>();
+    for (const k of KHOI_CANH) {
+      for (const do_ of [k.tren, k.trenGhe]) {
+        if (do_ !== undefined) expect(daDung.has(do_), `${k.id} → ${do_}`).toBe(true);
+      }
+      daDung.add(k.id);
+    }
+  });
+
+  it('`trenGhe` chỉ trỏ vào ghế/sofa có đo mặt ngồi thật', () => {
+    const coMatNgoi = new Set(['ghe-1', 'ghe-2', 'sofa']);
+    for (const k of KHOI_CANH) {
+      if (k.trenGhe !== undefined) expect(coMatNgoi.has(k.trenGhe), k.id).toBe(true);
     }
   });
 

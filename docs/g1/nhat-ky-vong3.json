@@ -1,0 +1,8120 @@
+{
+ "khi": "2026-10-26T23:52:20.061Z",
+ "che": "preview",
+ "moc": {
+  "leDung": 0.01,
+  "leNgoi": 0.02,
+  "lechToc": 0.07
+ },
+ "tai": false,
+ "de": {
+  "dung/owner": {
+   "deGiayThat": 0,
+   "deDuoiMatCa": 0,
+   "xuongChanY": 0.0333,
+   "soXuongChan": 4,
+   "soDinh": 18145,
+   "soNhan": 1021,
+   "cum": "actor:owner",
+   "pr": {
+    "deGiayY": -0.0001,
+    "deGiayMoc": 0,
+    "deChan": 0.0333,
+    "deChanTuThe": 0.0334,
+    "soMocDe": 4
+   }
+  },
+  "dung/gen": {
+   "deGiayThat": 0,
+   "deDuoiMatCa": 0,
+   "xuongChanY": 0.049,
+   "soXuongChan": 4,
+   "soDinh": 23679,
+   "soNhan": 758,
+   "cum": "actor:gen",
+   "pr": {
+    "deGiayY": 0.0013,
+    "deGiayMoc": 0,
+    "deChan": 0.049,
+    "deChanTuThe": 0.0477,
+    "soMocDe": 4
+   }
+  },
+  "di/owner/mau": [
+   0,
+   0.0003,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "ngoi-ghe-1/owner": {
+   "deGiayThat": -0.0072,
+   "deDuoiMatCa": -0.0072,
+   "xuongChanY": 0.0859,
+   "soXuongChan": 4,
+   "soDinh": 18145,
+   "soNhan": 1301,
+   "cum": "actor:owner",
+   "pr": {
+    "deGiayY": -0.0074,
+    "deGiayMoc": -0.0074,
+    "deChan": 0.0333,
+    "deChanTuThe": 0.0934,
+    "soMocDe": 4
+   }
+  },
+  "dung-len-sau-ghe-1/owner": {
+   "deGiayThat": 0,
+   "deDuoiMatCa": 0,
+   "xuongChanY": 0.0334,
+   "soXuongChan": 4,
+   "soDinh": 18145,
+   "soNhan": 1016,
+   "cum": "actor:owner",
+   "pr": {
+    "deGiayY": 0.0002,
+    "deGiayMoc": 0,
+    "deChan": 0.0333,
+    "deChanTuThe": 0.0332,
+    "soMocDe": 4
+   }
+  },
+  "ngoi-ghe-2/owner": {
+   "deGiayThat": -0.0072,
+   "deDuoiMatCa": -0.0072,
+   "xuongChanY": 0.0859,
+   "soXuongChan": 4,
+   "soDinh": 18145,
+   "soNhan": 1301,
+   "cum": "actor:owner",
+   "pr": {
+    "deGiayY": -0.0074,
+    "deGiayMoc": -0.0074,
+    "deChan": 0.0333,
+    "deChanTuThe": 0.0934,
+    "soMocDe": 4
+   }
+  },
+  "dung-len-sau-ghe-2/owner": {
+   "deGiayThat": 0,
+   "deDuoiMatCa": 0,
+   "xuongChanY": 0.0334,
+   "soXuongChan": 4,
+   "soDinh": 18145,
+   "soNhan": 1016,
+   "cum": "actor:owner",
+   "pr": {
+    "deGiayY": 0.0001,
+    "deGiayMoc": 0,
+    "deChan": 0.0333,
+    "deChanTuThe": 0.0333,
+    "soMocDe": 4
+   }
+  },
+  "ngoi-sofa/owner": {
+   "deGiayThat": -0.0072,
+   "deDuoiMatCa": -0.0072,
+   "xuongChanY": 0.0859,
+   "soXuongChan": 4,
+   "soDinh": 18145,
+   "soNhan": 1301,
+   "cum": "actor:owner",
+   "pr": {
+    "deGiayY": -0.0074,
+    "deGiayMoc": -0.0074,
+    "deChan": 0.0333,
+    "deChanTuThe": 0.0934,
+    "soMocDe": 4
+   }
+  },
+  "dung-len-sau-sofa/owner": {
+   "deGiayThat": 0,
+   "deDuoiMatCa": 0,
+   "xuongChanY": 0.0334,
+   "soXuongChan": 4,
+   "soDinh": 18145,
+   "soNhan": 1017,
+   "cum": "actor:owner",
+   "pr": {
+    "deGiayY": 0.0005,
+    "deGiayMoc": 0,
+    "deChan": 0.0333,
+    "deChanTuThe": 0.0329,
+    "soMocDe": 4
+   }
+  }
+ },
+ "toc": {
+  "rat-vui/luot-1": {
+   "ds": [
+    {
+     "t": 1,
+     "lechToc": 0.0034,
+     "xaDauNhat": 0.8184,
+     "lechVay": 0.0058,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0922,
+      1.0445,
+      -2.8158
+     ],
+     "ngonTocTheoDau": [
+      0.019,
+      -0.3346,
+      -0.1695
+     ]
+    },
+    {
+     "t": 102,
+     "lechToc": 0.0194,
+     "xaDauNhat": 0.8042,
+     "lechVay": 0.0096,
+     "soHamCat": 6,
+     "dauChuoi": [
+      3.0926,
+      1.0416,
+      -2.8108
+     ],
+     "ngonTocTheoDau": [
+      -0.0342,
+      -0.3276,
+      -0.1666
+     ]
+    },
+    {
+     "t": 218,
+     "lechToc": 0.0164,
+     "xaDauNhat": 0.8054,
+     "lechVay": 0.0455,
+     "soHamCat": 10,
+     "dauChuoi": [
+      3.1056,
+      1.0343,
+      -2.795
+     ],
+     "ngonTocTheoDau": [
+      0.0008,
+      -0.3298,
+      -0.1669
+     ]
+    },
+    {
+     "t": 313,
+     "lechToc": 0.0355,
+     "xaDauNhat": 0.8343,
+     "lechVay": 0.0446,
+     "soHamCat": 6,
+     "dauChuoi": [
+      3.1335,
+      1.0478,
+      -2.7954
+     ],
+     "ngonTocTheoDau": [
+      0.0837,
+      -0.3278,
+      -0.1793
+     ]
+    },
+    {
+     "t": 402,
+     "lechToc": 0.038,
+     "xaDauNhat": 0.8416,
+     "lechVay": 0.0399,
+     "soHamCat": 24,
+     "dauChuoi": [
+      3.1606,
+      1.0782,
+      -2.795
+     ],
+     "ngonTocTheoDau": [
+      0.1242,
+      -0.3138,
+      -0.1878
+     ]
+    },
+    {
+     "t": 521,
+     "lechToc": 0.038,
+     "xaDauNhat": 0.8416,
+     "lechVay": 0.0399,
+     "soHamCat": 24,
+     "dauChuoi": [
+      3.1606,
+      1.0782,
+      -2.795
+     ],
+     "ngonTocTheoDau": [
+      0.1242,
+      -0.3138,
+      -0.1878
+     ]
+    },
+    {
+     "t": 619,
+     "lechToc": 0.036,
+     "xaDauNhat": 0.8107,
+     "lechVay": 0.0359,
+     "soHamCat": 11,
+     "dauChuoi": [
+      3.2046,
+      1.0887,
+      -2.7509
+     ],
+     "ngonTocTheoDau": [
+      -0.0256,
+      -0.3296,
+      -0.1706
+     ]
+    },
+    {
+     "t": 719,
+     "lechToc": 0.0461,
+     "xaDauNhat": 0.7863,
+     "lechVay": 0.064,
+     "soHamCat": 11,
+     "dauChuoi": [
+      3.1877,
+      1.0646,
+      -2.7345
+     ],
+     "ngonTocTheoDau": [
+      -0.0766,
+      -0.3142,
+      -0.16
+     ]
+    },
+    {
+     "t": 824,
+     "lechToc": 0.0423,
+     "xaDauNhat": 0.7801,
+     "lechVay": 0.0597,
+     "soHamCat": 15,
+     "dauChuoi": [
+      3.1567,
+      1.0646,
+      -2.7135
+     ],
+     "ngonTocTheoDau": [
+      -0.0855,
+      -0.3069,
+      -0.1633
+     ]
+    },
+    {
+     "t": 921,
+     "lechToc": 0.0271,
+     "xaDauNhat": 0.7948,
+     "lechVay": 0.0353,
+     "soHamCat": 11,
+     "dauChuoi": [
+      3.1289,
+      1.0733,
+      -2.6892
+     ],
+     "ngonTocTheoDau": [
+      -0.0458,
+      -0.3188,
+      -0.1712
+     ]
+    },
+    {
+     "t": 1001,
+     "lechToc": 0.012,
+     "xaDauNhat": 0.8115,
+     "lechVay": 0.0253,
+     "soHamCat": 10,
+     "dauChuoi": [
+      3.1162,
+      1.0742,
+      -2.6786
+     ],
+     "ngonTocTheoDau": [
+      0.0041,
+      -0.3305,
+      -0.1716
+     ]
+    },
+    {
+     "t": 1102,
+     "lechToc": 0.0153,
+     "xaDauNhat": 0.8171,
+     "lechVay": 0.0294,
+     "soHamCat": 25,
+     "dauChuoi": [
+      3.1048,
+      1.0788,
+      -2.6928
+     ],
+     "ngonTocTheoDau": [
+      0.0651,
+      -0.3325,
+      -0.1607
+     ]
+    },
+    {
+     "t": 1202,
+     "lechToc": 0.0252,
+     "xaDauNhat": 0.8184,
+     "lechVay": 0.0519,
+     "soHamCat": 9,
+     "dauChuoi": [
+      3.0896,
+      1.0681,
+      -2.7341
+     ],
+     "ngonTocTheoDau": [
+      0.1158,
+      -0.3201,
+      -0.1588
+     ]
+    },
+    {
+     "t": 1301,
+     "lechToc": 0.0287,
+     "xaDauNhat": 0.8261,
+     "lechVay": 0.0618,
+     "soHamCat": 7,
+     "dauChuoi": [
+      3.0983,
+      1.0664,
+      -2.7602
+     ],
+     "ngonTocTheoDau": [
+      0.1146,
+      -0.3198,
+      -0.1683
+     ]
+    },
+    {
+     "t": 1406,
+     "lechToc": 0.0311,
+     "xaDauNhat": 0.838,
+     "lechVay": 0.0375,
+     "soHamCat": 6,
+     "dauChuoi": [
+      3.14,
+      1.1033,
+      -2.7667
+     ],
+     "ngonTocTheoDau": [
+      0.096,
+      -0.3229,
+      -0.1855
+     ]
+    },
+    {
+     "t": 1504,
+     "lechToc": 0.0145,
+     "xaDauNhat": 0.8363,
+     "lechVay": 0.0408,
+     "soHamCat": 4,
+     "dauChuoi": [
+      3.1812,
+      1.1064,
+      -2.7529
+     ],
+     "ngonTocTheoDau": [
+      0.0509,
+      -0.3303,
+      -0.1888
+     ]
+    },
+    {
+     "t": 1604,
+     "lechToc": 0.0275,
+     "xaDauNhat": 0.807,
+     "lechVay": 0.0365,
+     "soHamCat": 12,
+     "dauChuoi": [
+      3.1996,
+      1.0929,
+      -2.7413
+     ],
+     "ngonTocTheoDau": [
+      -0.017,
+      -0.3311,
+      -0.1649
+     ]
+    },
+    {
+     "t": 1707,
+     "lechToc": 0.0423,
+     "xaDauNhat": 0.7858,
+     "lechVay": 0.0591,
+     "soHamCat": 11,
+     "dauChuoi": [
+      3.1819,
+      1.0582,
+      -2.7442
+     ],
+     "ngonTocTheoDau": [
+      -0.056,
+      -0.3225,
+      -0.1514
+     ]
+    },
+    {
+     "t": 1807,
+     "lechToc": 0.0444,
+     "xaDauNhat": 0.7774,
+     "lechVay": 0.0579,
+     "soHamCat": 11,
+     "dauChuoi": [
+      3.1462,
+      1.0448,
+      -2.7448
+     ],
+     "ngonTocTheoDau": [
+      -0.0729,
+      -0.3139,
+      -0.1532
+     ]
+    },
+    {
+     "t": 1901,
+     "lechToc": 0.0391,
+     "xaDauNhat": 0.7828,
+     "lechVay": 0.0351,
+     "soHamCat": 17,
+     "dauChuoi": [
+      3.1187,
+      1.0488,
+      -2.7366
+     ],
+     "ngonTocTheoDau": [
+      -0.0583,
+      -0.3182,
+      -0.1561
+     ]
+    },
+    {
+     "t": 2001,
+     "lechToc": 0.0207,
+     "xaDauNhat": 0.8011,
+     "lechVay": 0.0261,
+     "soHamCat": 6,
+     "dauChuoi": [
+      3.1048,
+      1.0492,
+      -2.7263
+     ],
+     "ngonTocTheoDau": [
+      -0.0133,
+      -0.3304,
+      -0.1606
+     ]
+    }
+   ],
+   "khung": [
+    34.2,
+    16.1,
+    33.2,
+    17.1,
+    33.2,
+    17.1,
+    16.1,
+    33.2,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    33.2,
+    17.1,
+    132.7,
+    17.1,
+    33.2,
+    17.1,
+    16.1,
+    34.2,
+    16.1,
+    33.2,
+    17.1,
+    33.2,
+    33.2,
+    17.1,
+    17.1,
+    33.2,
+    16.1,
+    34.2,
+    16.1,
+    33.2,
+    17.1,
+    33.2,
+    33.2,
+    17.1,
+    17,
+    33.3,
+    16.1,
+    34.1,
+    16.2,
+    17.1,
+    33.2,
+    17,
+    33.2,
+    16.1,
+    34.1,
+    16.2,
+    17.1,
+    33.2,
+    16.1,
+    34.2,
+    16.1,
+    33.2,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    33.2,
+    17.1,
+    16.1,
+    33.2,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    17.1,
+    49.3,
+    17.1,
+    17.1,
+    16.1,
+    33.2,
+    17.1
+   ],
+   "buocSpring": 1,
+   "dangNen": "nhay",
+   "clipThat": true,
+   "trangThai": "emoting",
+   "ketQua": {
+    "ok": true,
+    "result": {
+     "actor": "gen",
+     "emote": "rat-vui",
+     "started": true,
+     "durationMs": 2200
+    }
+   },
+   "spring": {
+    "soKhop": 58,
+    "cungMin": 0.7478539514796879,
+    "cungMax": 2.668868446837421,
+    "hamMin": 0,
+    "hamMax": 0.4,
+    "daiMin": 0.04154744174887155,
+    "daiMax": 0.14827046926874562,
+    "lucTrenDai": 0.30000000000000004
+   },
+   "soKhopHam": 58,
+   "mocDaOnDinh": true,
+   "dichDauChuoiMax": 0.0632,
+   "dichNgonTheoDauMax": 0.1516
+  },
+  "rat-vui/luot-2": {
+   "ds": [
+    {
+     "t": 1,
+     "lechToc": 0.0037,
+     "xaDauNhat": 0.8225,
+     "lechVay": 0.0068,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0899,
+      1.0541,
+      -2.7908
+     ],
+     "ngonTocTheoDau": [
+      0.0184,
+      -0.334,
+      -0.1749
+     ]
+    },
+    {
+     "t": 102,
+     "lechToc": 0.0153,
+     "xaDauNhat": 0.8132,
+     "lechVay": 0.01,
+     "soHamCat": 6,
+     "dauChuoi": [
+      3.0906,
+      1.0515,
+      -2.7855
+     ],
+     "ngonTocTheoDau": [
+      -0.0347,
+      -0.3261,
+      -0.1782
+     ]
+    },
+    {
+     "t": 218,
+     "lechToc": 0.0143,
+     "xaDauNhat": 0.8075,
+     "lechVay": 0.0477,
+     "soHamCat": 23,
+     "dauChuoi": [
+      3.1057,
+      1.0396,
+      -2.7787
+     ],
+     "ngonTocTheoDau": [
+      -0.0072,
+      -0.3272,
+      -0.1738
+     ]
+    },
+    {
+     "t": 315,
+     "lechToc": 0.0352,
+     "xaDauNhat": 0.8356,
+     "lechVay": 0.0456,
+     "soHamCat": 5,
+     "dauChuoi": [
+      3.1344,
+      1.0519,
+      -2.7842
+     ],
+     "ngonTocTheoDau": [
+      0.0813,
+      -0.3276,
+      -0.182
+     ]
+    },
+    {
+     "t": 417,
+     "lechToc": 0.0374,
+     "xaDauNhat": 0.8424,
+     "lechVay": 0.0395,
+     "soHamCat": 24,
+     "dauChuoi": [
+      3.1682,
+      1.0854,
+      -2.7822
+     ],
+     "ngonTocTheoDau": [
+      0.1243,
+      -0.3122,
+      -0.1912
+     ]
+    },
+    {
+     "t": 533,
+     "lechToc": 0.0374,
+     "xaDauNhat": 0.8424,
+     "lechVay": 0.0395,
+     "soHamCat": 24,
+     "dauChuoi": [
+      3.1682,
+      1.0854,
+      -2.7822
+     ],
+     "ngonTocTheoDau": [
+      0.1243,
+      -0.3122,
+      -0.1912
+     ]
+    },
+    {
+     "t": 601,
+     "lechToc": 0.0218,
+     "xaDauNhat": 0.8217,
+     "lechVay": 0.0366,
+     "soHamCat": 16,
+     "dauChuoi": [
+      3.2079,
+      1.0922,
+      -2.7435
+     ],
+     "ngonTocTheoDau": [
+      0.0151,
+      -0.3329,
+      -0.1765
+     ]
+    },
+    {
+     "t": 702,
+     "lechToc": 0.0453,
+     "xaDauNhat": 0.7991,
+     "lechVay": 0.0502,
+     "soHamCat": 12,
+     "dauChuoi": [
+      3.1952,
+      1.0759,
+      -2.7367
+     ],
+     "ngonTocTheoDau": [
+      -0.0515,
+      -0.3239,
+      -0.164
+     ]
+    },
+    {
+     "t": 809,
+     "lechToc": 0.0457,
+     "xaDauNhat": 0.7761,
+     "lechVay": 0.0611,
+     "soHamCat": 23,
+     "dauChuoi": [
+      3.1589,
+      1.0636,
+      -2.7151
+     ],
+     "ngonTocTheoDau": [
+      -0.088,
+      -0.3059,
+      -0.1599
+     ]
+    },
+    {
+     "t": 902,
+     "lechToc": 0.0376,
+     "xaDauNhat": 0.7842,
+     "lechVay": 0.0437,
+     "soHamCat": 15,
+     "dauChuoi": [
+      3.1386,
+      1.0705,
+      -2.6994
+     ],
+     "ngonTocTheoDau": [
+      -0.0663,
+      -0.3137,
+      -0.1636
+     ]
+    },
+    {
+     "t": 1000,
+     "lechToc": 0.0151,
+     "xaDauNhat": 0.8067,
+     "lechVay": 0.0248,
+     "soHamCat": 8,
+     "dauChuoi": [
+      3.1196,
+      1.0741,
+      -2.6831
+     ],
+     "ngonTocTheoDau": [
+      -0.0066,
+      -0.3293,
+      -0.169
+     ]
+    },
+    {
+     "t": 1102,
+     "lechToc": 0.0122,
+     "xaDauNhat": 0.8161,
+     "lechVay": 0.0256,
+     "soHamCat": 19,
+     "dauChuoi": [
+      3.1058,
+      1.0777,
+      -2.6963
+     ],
+     "ngonTocTheoDau": [
+      0.0638,
+      -0.3329,
+      -0.1593
+     ]
+    },
+    {
+     "t": 1201,
+     "lechToc": 0.0252,
+     "xaDauNhat": 0.8197,
+     "lechVay": 0.0478,
+     "soHamCat": 11,
+     "dauChuoi": [
+      3.0913,
+      1.0682,
+      -2.7391
+     ],
+     "ngonTocTheoDau": [
+      0.1081,
+      -0.3235,
+      -0.1587
+     ]
+    },
+    {
+     "t": 1301,
+     "lechToc": 0.0285,
+     "xaDauNhat": 0.8239,
+     "lechVay": 0.058,
+     "soHamCat": 11,
+     "dauChuoi": [
+      3.0994,
+      1.064,
+      -2.773
+     ],
+     "ngonTocTheoDau": [
+      0.1151,
+      -0.3199,
+      -0.1654
+     ]
+    },
+    {
+     "t": 1401,
+     "lechToc": 0.031,
+     "xaDauNhat": 0.8344,
+     "lechVay": 0.0382,
+     "soHamCat": 9,
+     "dauChuoi": [
+      3.1306,
+      1.0951,
+      -2.783
+     ],
+     "ngonTocTheoDau": [
+      0.1026,
+      -0.3221,
+      -0.1799
+     ]
+    },
+    {
+     "t": 1510,
+     "lechToc": 0.0122,
+     "xaDauNhat": 0.8322,
+     "lechVay": 0.0407,
+     "soHamCat": 11,
+     "dauChuoi": [
+      3.1829,
+      1.1013,
+      -2.7703
+     ],
+     "ngonTocTheoDau": [
+      0.0469,
+      -0.3311,
+      -0.1845
+     ]
+    },
+    {
+     "t": 1601,
+     "lechToc": 0.0269,
+     "xaDauNhat": 0.8076,
+     "lechVay": 0.0376,
+     "soHamCat": 12,
+     "dauChuoi": [
+      3.1988,
+      1.0891,
+      -2.7615
+     ],
+     "ngonTocTheoDau": [
+      -0.0143,
+      -0.3317,
+      -0.1647
+     ]
+    },
+    {
+     "t": 1701,
+     "lechToc": 0.0428,
+     "xaDauNhat": 0.7842,
+     "lechVay": 0.0513,
+     "soHamCat": 10,
+     "dauChuoi": [
+      3.1834,
+      1.0581,
+      -2.7645
+     ],
+     "ngonTocTheoDau": [
+      -0.0584,
+      -0.3216,
+      -0.1506
+     ]
+    },
+    {
+     "t": 1801,
+     "lechToc": 0.0435,
+     "xaDauNhat": 0.7784,
+     "lechVay": 0.0561,
+     "soHamCat": 11,
+     "dauChuoi": [
+      3.1494,
+      1.04,
+      -2.765
+     ],
+     "ngonTocTheoDau": [
+      -0.0719,
+      -0.3155,
+      -0.1514
+     ]
+    },
+    {
+     "t": 1902,
+     "lechToc": 0.0413,
+     "xaDauNhat": 0.7806,
+     "lechVay": 0.0326,
+     "soHamCat": 12,
+     "dauChuoi": [
+      3.12,
+      1.0449,
+      -2.7548
+     ],
+     "ngonTocTheoDau": [
+      -0.0593,
+      -0.3172,
+      -0.1555
+     ]
+    },
+    {
+     "t": 2001,
+     "lechToc": 0.026,
+     "xaDauNhat": 0.7958,
+     "lechVay": 0.0274,
+     "soHamCat": 5,
+     "dauChuoi": [
+      3.1062,
+      1.0457,
+      -2.743
+     ],
+     "ngonTocTheoDau": [
+      -0.0201,
+      -0.3284,
+      -0.1586
+     ]
+    }
+   ],
+   "khung": [
+    33.2,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    16.1,
+    50.3,
+    17.2,
+    33.2,
+    17,
+    33.3,
+    16.1,
+    33.2,
+    17.1,
+    33.2,
+    17.1,
+    133.7,
+    16.1,
+    33.2,
+    17.1,
+    17.1,
+    33.2,
+    16.1,
+    34.2,
+    16.1,
+    33.2,
+    17.1,
+    33.2,
+    33.2,
+    17.1,
+    17.1,
+    33.2,
+    16.1,
+    34.2,
+    16.1,
+    33.2,
+    17.1,
+    33.2,
+    33.2,
+    17.1,
+    17,
+    33.3,
+    16.1,
+    33.2,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    16.1,
+    34.2,
+    16.1,
+    33.2,
+    17.1,
+    33.2,
+    33.2,
+    17.1,
+    17.1,
+    16.1,
+    33.2,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    33.2,
+    17.1,
+    16.1,
+    34.2,
+    16.1,
+    33.2,
+    17.1,
+    33.1,
+    33.2,
+    17.1,
+    17.1
+   ],
+   "buocSpring": 1,
+   "dangNen": "nhay",
+   "clipThat": true,
+   "trangThai": "emoting",
+   "ketQua": {
+    "ok": true,
+    "result": {
+     "actor": "gen",
+     "emote": "rat-vui",
+     "started": true,
+     "durationMs": 2200
+    }
+   },
+   "spring": {
+    "soKhop": 58,
+    "cungMin": 0.7478539514796879,
+    "cungMax": 2.668868446837421,
+    "hamMin": 0,
+    "hamMax": 0.4,
+    "daiMin": 0.04154744174887155,
+    "daiMax": 0.14827046926874562,
+    "lucTrenDai": 0.30000000000000004
+   },
+   "soKhopHam": 58,
+   "mocDaOnDinh": true,
+   "dichDauChuoiMax": 0.0559,
+   "dichNgonTheoDauMax": 0.1121
+  },
+  "rat-vui/luot-3": {
+   "ds": [
+    {
+     "t": 3,
+     "lechToc": 0.0042,
+     "xaDauNhat": 0.8221,
+     "lechVay": 0.0066,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0899,
+      1.0534,
+      -2.7924
+     ],
+     "ngonTocTheoDau": [
+      0.0183,
+      -0.334,
+      -0.1745
+     ]
+    },
+    {
+     "t": 100,
+     "lechToc": 0.0156,
+     "xaDauNhat": 0.8138,
+     "lechVay": 0.0098,
+     "soHamCat": 6,
+     "dauChuoi": [
+      3.0903,
+      1.0513,
+      -2.787
+     ],
+     "ngonTocTheoDau": [
+      -0.0329,
+      -0.3265,
+      -0.1783
+     ]
+    },
+    {
+     "t": 219,
+     "lechToc": 0.0121,
+     "xaDauNhat": 0.8109,
+     "lechVay": 0.0458,
+     "soHamCat": 8,
+     "dauChuoi": [
+      3.1039,
+      1.0402,
+      -2.7796
+     ],
+     "ngonTocTheoDau": [
+      -0.0017,
+      -0.3287,
+      -0.1745
+     ]
+    },
+    {
+     "t": 301,
+     "lechToc": 0.0328,
+     "xaDauNhat": 0.8323,
+     "lechVay": 0.0545,
+     "soHamCat": 9,
+     "dauChuoi": [
+      3.1279,
+      1.0444,
+      -2.7841
+     ],
+     "ngonTocTheoDau": [
+      0.0674,
+      -0.3296,
+      -0.1809
+     ]
+    },
+    {
+     "t": 414,
+     "lechToc": 0.0366,
+     "xaDauNhat": 0.8439,
+     "lechVay": 0.0395,
+     "soHamCat": 12,
+     "dauChuoi": [
+      3.1654,
+      1.0845,
+      -2.7836
+     ],
+     "ngonTocTheoDau": [
+      0.1189,
+      -0.3145,
+      -0.1922
+     ]
+    },
+    {
+     "t": 529,
+     "lechToc": 0.0366,
+     "xaDauNhat": 0.8439,
+     "lechVay": 0.0395,
+     "soHamCat": 12,
+     "dauChuoi": [
+      3.1654,
+      1.0845,
+      -2.7836
+     ],
+     "ngonTocTheoDau": [
+      0.1189,
+      -0.3145,
+      -0.1922
+     ]
+    },
+    {
+     "t": 602,
+     "lechToc": 0.0299,
+     "xaDauNhat": 0.8197,
+     "lechVay": 0.0363,
+     "soHamCat": 10,
+     "dauChuoi": [
+      3.2072,
+      1.0918,
+      -2.7438
+     ],
+     "ngonTocTheoDau": [
+      -0.0037,
+      -0.3317,
+      -0.1775
+     ]
+    },
+    {
+     "t": 701,
+     "lechToc": 0.0445,
+     "xaDauNhat": 0.7906,
+     "lechVay": 0.059,
+     "soHamCat": 12,
+     "dauChuoi": [
+      3.1921,
+      1.0697,
+      -2.7326
+     ],
+     "ngonTocTheoDau": [
+      -0.0689,
+      -0.3176,
+      -0.1612
+     ]
+    },
+    {
+     "t": 802,
+     "lechToc": 0.0425,
+     "xaDauNhat": 0.7826,
+     "lechVay": 0.0642,
+     "soHamCat": 14,
+     "dauChuoi": [
+      3.1627,
+      1.0624,
+      -2.716
+     ],
+     "ngonTocTheoDau": [
+      -0.0827,
+      -0.309,
+      -0.1633
+     ]
+    },
+    {
+     "t": 901,
+     "lechToc": 0.0335,
+     "xaDauNhat": 0.7883,
+     "lechVay": 0.0438,
+     "soHamCat": 18,
+     "dauChuoi": [
+      3.1383,
+      1.0705,
+      -2.6984
+     ],
+     "ngonTocTheoDau": [
+      -0.0648,
+      -0.314,
+      -0.1675
+     ]
+    },
+    {
+     "t": 1003,
+     "lechToc": 0.0124,
+     "xaDauNhat": 0.8123,
+     "lechVay": 0.0259,
+     "soHamCat": 8,
+     "dauChuoi": [
+      3.1165,
+      1.074,
+      -2.6815
+     ],
+     "ngonTocTheoDau": [
+      0.0052,
+      -0.3312,
+      -0.1709
+     ]
+    },
+    {
+     "t": 1112,
+     "lechToc": 0.0163,
+     "xaDauNhat": 0.8192,
+     "lechVay": 0.0287,
+     "soHamCat": 16,
+     "dauChuoi": [
+      3.1015,
+      1.0776,
+      -2.7032
+     ],
+     "ngonTocTheoDau": [
+      0.078,
+      -0.3307,
+      -0.1609
+     ]
+    },
+    {
+     "t": 1201,
+     "lechToc": 0.0252,
+     "xaDauNhat": 0.8187,
+     "lechVay": 0.0487,
+     "soHamCat": 11,
+     "dauChuoi": [
+      3.0899,
+      1.0678,
+      -2.74
+     ],
+     "ngonTocTheoDau": [
+      0.1099,
+      -0.3224,
+      -0.1585
+     ]
+    },
+    {
+     "t": 1301,
+     "lechToc": 0.0282,
+     "xaDauNhat": 0.8261,
+     "lechVay": 0.0592,
+     "soHamCat": 9,
+     "dauChuoi": [
+      3.0981,
+      1.0638,
+      -2.7701
+     ],
+     "ngonTocTheoDau": [
+      0.113,
+      -0.3207,
+      -0.1677
+     ]
+    },
+    {
+     "t": 1401,
+     "lechToc": 0.0311,
+     "xaDauNhat": 0.8345,
+     "lechVay": 0.0381,
+     "soHamCat": 9,
+     "dauChuoi": [
+      3.131,
+      1.0963,
+      -2.7808
+     ],
+     "ngonTocTheoDau": [
+      0.1017,
+      -0.3224,
+      -0.1799
+     ]
+    },
+    {
+     "t": 1502,
+     "lechToc": 0.0179,
+     "xaDauNhat": 0.8361,
+     "lechVay": 0.0409,
+     "soHamCat": 8,
+     "dauChuoi": [
+      3.1766,
+      1.1039,
+      -2.771
+     ],
+     "ngonTocTheoDau": [
+      0.0601,
+      -0.3295,
+      -0.1872
+     ]
+    },
+    {
+     "t": 1601,
+     "lechToc": 0.0209,
+     "xaDauNhat": 0.8159,
+     "lechVay": 0.0386,
+     "soHamCat": 8,
+     "dauChuoi": [
+      3.1987,
+      1.0942,
+      -2.7601
+     ],
+     "ngonTocTheoDau": [
+      0.0035,
+      -0.3329,
+      -0.1713
+     ]
+    },
+    {
+     "t": 1702,
+     "lechToc": 0.042,
+     "xaDauNhat": 0.7798,
+     "lechVay": 0.0529,
+     "soHamCat": 8,
+     "dauChuoi": [
+      3.1833,
+      1.0574,
+      -2.7626
+     ],
+     "ngonTocTheoDau": [
+      -0.0628,
+      -0.3192,
+      -0.1492
+     ]
+    },
+    {
+     "t": 1801,
+     "lechToc": 0.0437,
+     "xaDauNhat": 0.7781,
+     "lechVay": 0.0575,
+     "soHamCat": 17,
+     "dauChuoi": [
+      3.1527,
+      1.0399,
+      -2.7637
+     ],
+     "ngonTocTheoDau": [
+      -0.0662,
+      -0.318,
+      -0.1484
+     ]
+    },
+    {
+     "t": 1901,
+     "lechToc": 0.0432,
+     "xaDauNhat": 0.7786,
+     "lechVay": 0.0364,
+     "soHamCat": 13,
+     "dauChuoi": [
+      3.1232,
+      1.0442,
+      -2.7561
+     ],
+     "ngonTocTheoDau": [
+      -0.0624,
+      -0.3163,
+      -0.1539
+     ]
+    },
+    {
+     "t": 2002,
+     "lechToc": 0.0281,
+     "xaDauNhat": 0.7938,
+     "lechVay": 0.0263,
+     "soHamCat": 11,
+     "dauChuoi": [
+      3.1061,
+      1.046,
+      -2.7427
+     ],
+     "ngonTocTheoDau": [
+      -0.0258,
+      -0.3272,
+      -0.1581
+     ]
+    }
+   ],
+   "khung": [
+    33.2,
+    16.1,
+    34.1,
+    16.2,
+    33.2,
+    17.1,
+    17,
+    33.2,
+    16.1,
+    34.1,
+    16.2,
+    33.2,
+    33.2,
+    17.1,
+    17.1,
+    33.2,
+    16.1,
+    117.7,
+    16.1,
+    33.2,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    17,
+    33.3,
+    33.2,
+    16.1,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    33.2,
+    17.1,
+    16.1,
+    34.2,
+    16.1,
+    33.2,
+    17.1,
+    33.2,
+    33.2,
+    34.2,
+    16.1,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    16.1,
+    34.2,
+    33.2,
+    16.1,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    33.2,
+    33.2,
+    17.1,
+    16.1,
+    50.3,
+    17.1,
+    16.1,
+    34.2,
+    16.1,
+    33.2,
+    34.2,
+    33.2,
+    16.1,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    33.2,
+    33.2,
+    17.1
+   ],
+   "buocSpring": 2,
+   "dangNen": "nhay",
+   "clipThat": true,
+   "trangThai": "emoting",
+   "ketQua": {
+    "ok": true,
+    "result": {
+     "actor": "gen",
+     "emote": "rat-vui",
+     "started": true,
+     "durationMs": 2200
+    }
+   },
+   "spring": {
+    "soKhop": 58,
+    "cungMin": 0.7478539514796879,
+    "cungMax": 2.668868446837421,
+    "hamMin": 0,
+    "hamMax": 0.4,
+    "daiMin": 0.04154744174887155,
+    "daiMax": 0.14827046926874562,
+    "lucTrenDai": 0.30000000000000004
+   },
+   "soKhopHam": 58,
+   "mocDaOnDinh": true,
+   "dichDauChuoiMax": 0.0582,
+   "dichNgonTheoDauMax": 0.1247
+  },
+  "buon/luot-1": {
+   "ds": [
+    {
+     "t": 3,
+     "lechToc": 0.0045,
+     "xaDauNhat": 0.8218,
+     "lechVay": 0.0065,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0899,
+      1.0526,
+      -2.7942
+     ],
+     "ngonTocTheoDau": [
+      0.0182,
+      -0.3341,
+      -0.174
+     ]
+    },
+    {
+     "t": 101,
+     "lechToc": 0.002,
+     "xaDauNhat": 0.82,
+     "lechVay": 0.0064,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0901,
+      1.0521,
+      -2.7927
+     ],
+     "ngonTocTheoDau": [
+      0.0184,
+      -0.3344,
+      -0.1717
+     ]
+    },
+    {
+     "t": 202,
+     "lechToc": 0.0167,
+     "xaDauNhat": 0.8052,
+     "lechVay": 0.0058,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0906,
+      1.0402,
+      -2.8003
+     ],
+     "ngonTocTheoDau": [
+      0.0161,
+      -0.3353,
+      -0.1544
+     ]
+    },
+    {
+     "t": 318,
+     "lechToc": 0.0331,
+     "xaDauNhat": 0.7888,
+     "lechVay": 0.0075,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0914,
+      1.0154,
+      -2.8193
+     ],
+     "ngonTocTheoDau": [
+      0.0134,
+      -0.3351,
+      -0.1363
+     ]
+    },
+    {
+     "t": 415,
+     "lechToc": 0.045,
+     "xaDauNhat": 0.7769,
+     "lechVay": 0.0132,
+     "soHamCat": 1,
+     "dauChuoi": [
+      3.092,
+      0.9902,
+      -2.836
+     ],
+     "ngonTocTheoDau": [
+      0.0115,
+      -0.3341,
+      -0.1238
+     ]
+    },
+    {
+     "t": 534,
+     "lechToc": 0.045,
+     "xaDauNhat": 0.7769,
+     "lechVay": 0.0132,
+     "soHamCat": 1,
+     "dauChuoi": [
+      3.092,
+      0.9902,
+      -2.836
+     ],
+     "ngonTocTheoDau": [
+      0.0115,
+      -0.3341,
+      -0.1238
+     ]
+    },
+    {
+     "t": 610,
+     "lechToc": 0.0482,
+     "xaDauNhat": 0.7736,
+     "lechVay": 0.0255,
+     "soHamCat": 6,
+     "dauChuoi": [
+      3.0918,
+      0.9358,
+      -2.8584
+     ],
+     "ngonTocTheoDau": [
+      0.0102,
+      -0.3342,
+      -0.1195
+     ]
+    },
+    {
+     "t": 701,
+     "lechToc": 0.0628,
+     "xaDauNhat": 0.759,
+     "lechVay": 0.0293,
+     "soHamCat": 4,
+     "dauChuoi": [
+      3.0918,
+      0.9209,
+      -2.86
+     ],
+     "ngonTocTheoDau": [
+      0.008,
+      -0.3319,
+      -0.1054
+     ]
+    },
+    {
+     "t": 801,
+     "lechToc": 0.0558,
+     "xaDauNhat": 0.766,
+     "lechVay": 0.0303,
+     "soHamCat": 4,
+     "dauChuoi": [
+      3.0917,
+      0.9095,
+      -2.8613
+     ],
+     "ngonTocTheoDau": [
+      0.008,
+      -0.333,
+      -0.1125
+     ]
+    },
+    {
+     "t": 902,
+     "lechToc": 0.0422,
+     "xaDauNhat": 0.7796,
+     "lechVay": 0.0287,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0915,
+      0.9084,
+      -2.8596
+     ],
+     "ngonTocTheoDau": [
+      0.0091,
+      -0.3349,
+      -0.1257
+     ]
+    },
+    {
+     "t": 1000,
+     "lechToc": 0.0362,
+     "xaDauNhat": 0.7857,
+     "lechVay": 0.0277,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0913,
+      0.9122,
+      -2.8586
+     ],
+     "ngonTocTheoDau": [
+      0.0091,
+      -0.3353,
+      -0.1323
+     ]
+    },
+    {
+     "t": 1101,
+     "lechToc": 0.0332,
+     "xaDauNhat": 0.7886,
+     "lechVay": 0.0268,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0911,
+      0.9159,
+      -2.8581
+     ],
+     "ngonTocTheoDau": [
+      0.0096,
+      -0.3355,
+      -0.1353
+     ]
+    },
+    {
+     "t": 1202,
+     "lechToc": 0.032,
+     "xaDauNhat": 0.7898,
+     "lechVay": 0.0269,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0914,
+      0.9177,
+      -2.8596
+     ],
+     "ngonTocTheoDau": [
+      0.0104,
+      -0.3355,
+      -0.1367
+     ]
+    },
+    {
+     "t": 1316,
+     "lechToc": 0.0309,
+     "xaDauNhat": 0.7909,
+     "lechVay": 0.0288,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0921,
+      0.9166,
+      -2.8649
+     ],
+     "ngonTocTheoDau": [
+      0.0116,
+      -0.3356,
+      -0.1377
+     ]
+    },
+    {
+     "t": 1402,
+     "lechToc": 0.0314,
+     "xaDauNhat": 0.7904,
+     "lechVay": 0.0311,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0927,
+      0.9137,
+      -2.87
+     ],
+     "ngonTocTheoDau": [
+      0.0121,
+      -0.3356,
+      -0.1369
+     ]
+    },
+    {
+     "t": 1501,
+     "lechToc": 0.0301,
+     "xaDauNhat": 0.7918,
+     "lechVay": 0.0325,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0935,
+      0.9095,
+      -2.8766
+     ],
+     "ngonTocTheoDau": [
+      0.0128,
+      -0.3357,
+      -0.1384
+     ]
+    },
+    {
+     "t": 1601,
+     "lechToc": 0.0218,
+     "xaDauNhat": 0.8,
+     "lechVay": 0.0311,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0943,
+      0.9112,
+      -2.8828
+     ],
+     "ngonTocTheoDau": [
+      0.0148,
+      -0.336,
+      -0.1472
+     ]
+    },
+    {
+     "t": 1703,
+     "lechToc": 0.0151,
+     "xaDauNhat": 0.8103,
+     "lechVay": 0.0253,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0948,
+      0.9277,
+      -2.8854
+     ],
+     "ngonTocTheoDau": [
+      0.0171,
+      -0.3357,
+      -0.159
+     ]
+    },
+    {
+     "t": 1800,
+     "lechToc": 0.0171,
+     "xaDauNhat": 0.8145,
+     "lechVay": 0.02,
+     "soHamCat": 12,
+     "dauChuoi": [
+      3.0945,
+      0.946,
+      -2.8819
+     ],
+     "ngonTocTheoDau": [
+      0.0178,
+      -0.3354,
+      -0.1641
+     ]
+    },
+    {
+     "t": 1902,
+     "lechToc": 0.0176,
+     "xaDauNhat": 0.8185,
+     "lechVay": 0.012,
+     "soHamCat": 1,
+     "dauChuoi": [
+      3.0937,
+      0.9768,
+      -2.8697
+     ],
+     "ngonTocTheoDau": [
+      0.0185,
+      -0.3349,
+      -0.1692
+     ]
+    },
+    {
+     "t": 2001,
+     "lechToc": 0.0171,
+     "xaDauNhat": 0.8192,
+     "lechVay": 0.0068,
+     "soHamCat": 2,
+     "dauChuoi": [
+      3.0928,
+      1.0006,
+      -2.8559
+     ],
+     "ngonTocTheoDau": [
+      0.0185,
+      -0.3347,
+      -0.1701
+     ]
+    }
+   ],
+   "khung": [
+    34.2,
+    16.1,
+    33.2,
+    34.2,
+    16.1,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    16.1,
+    34.2,
+    16.1,
+    17.1,
+    33.2,
+    17,
+    33.3,
+    16.1,
+    133.8,
+    17.1,
+    33.2,
+    16.1,
+    17.1,
+    17.1,
+    33.2,
+    16.1,
+    34.2,
+    16.1,
+    33.2,
+    34.2,
+    16.1,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    16.1,
+    34.1,
+    33.2,
+    16.1,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    16.1,
+    34.1,
+    16.1,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    16.1,
+    34.1,
+    16.2,
+    33.2,
+    17.1,
+    17,
+    33.2,
+    16.1,
+    34.1,
+    16.1,
+    33.2,
+    34.2,
+    16.1,
+    17.1,
+    16.1,
+    34.2,
+    16.1,
+    33.2,
+    34.1,
+    16.1,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    16.1,
+    34.2,
+    16.1
+   ],
+   "buocSpring": 1,
+   "dangNen": "idle",
+   "clipThat": true,
+   "trangThai": "emoting",
+   "ketQua": {
+    "ok": true,
+    "result": {
+     "actor": "gen",
+     "emote": "buon",
+     "started": true,
+     "durationMs": 2200
+    }
+   },
+   "spring": {
+    "soKhop": 58,
+    "cungMin": 0.7478539514796879,
+    "cungMax": 2.668868446837421,
+    "hamMin": 0,
+    "hamMax": 0.4,
+    "daiMin": 0.04154744174887155,
+    "daiMax": 0.14827046926874562,
+    "lucTrenDai": 0.30000000000000004
+   },
+   "soKhopHam": 58,
+   "mocDaOnDinh": true,
+   "dichDauChuoiMax": 0.0588,
+   "dichNgonTheoDauMax": 0.0183
+  },
+  "buon/luot-2": {
+   "ds": [
+    {
+     "t": 2,
+     "lechToc": 0.0153,
+     "xaDauNhat": 0.8065,
+     "lechVay": 0.0034,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0917,
+      1.0318,
+      -2.8282
+     ],
+     "ngonTocTheoDau": [
+      0.0169,
+      -0.3356,
+      -0.1552
+     ]
+    },
+    {
+     "t": 102,
+     "lechToc": 0.0211,
+     "xaDauNhat": 0.8008,
+     "lechVay": 0.006,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0906,
+      1.0308,
+      -2.8213
+     ],
+     "ngonTocTheoDau": [
+      0.0158,
+      -0.3357,
+      -0.1486
+     ]
+    },
+    {
+     "t": 201,
+     "lechToc": 0.0306,
+     "xaDauNhat": 0.7912,
+     "lechVay": 0.0086,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0897,
+      1.0241,
+      -2.8188
+     ],
+     "ngonTocTheoDau": [
+      0.0136,
+      -0.3353,
+      -0.1385
+     ]
+    },
+    {
+     "t": 301,
+     "lechToc": 0.0335,
+     "xaDauNhat": 0.7883,
+     "lechVay": 0.0103,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0893,
+      1.0138,
+      -2.8228
+     ],
+     "ngonTocTheoDau": [
+      0.0121,
+      -0.335,
+      -0.136
+     ]
+    },
+    {
+     "t": 402,
+     "lechToc": 0.0417,
+     "xaDauNhat": 0.7802,
+     "lechVay": 0.0103,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0893,
+      0.9912,
+      -2.833
+     ],
+     "ngonTocTheoDau": [
+      0.0103,
+      -0.3344,
+      -0.1274
+     ]
+    },
+    {
+     "t": 518,
+     "lechToc": 0.0417,
+     "xaDauNhat": 0.7802,
+     "lechVay": 0.0103,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0893,
+      0.9912,
+      -2.833
+     ],
+     "ngonTocTheoDau": [
+      0.0103,
+      -0.3344,
+      -0.1274
+     ]
+    },
+    {
+     "t": 601,
+     "lechToc": 0.0367,
+     "xaDauNhat": 0.7852,
+     "lechVay": 0.0218,
+     "soHamCat": 6,
+     "dauChuoi": [
+      3.0909,
+      0.9478,
+      -2.8552
+     ],
+     "ngonTocTheoDau": [
+      0.0111,
+      -0.3354,
+      -0.1313
+     ]
+    },
+    {
+     "t": 701,
+     "lechToc": 0.0488,
+     "xaDauNhat": 0.773,
+     "lechVay": 0.029,
+     "soHamCat": 4,
+     "dauChuoi": [
+      3.092,
+      0.9279,
+      -2.8646
+     ],
+     "ngonTocTheoDau": [
+      0.0092,
+      -0.3338,
+      -0.1198
+     ]
+    },
+    {
+     "t": 801,
+     "lechToc": 0.0424,
+     "xaDauNhat": 0.7794,
+     "lechVay": 0.0331,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0931,
+      0.9109,
+      -2.8734
+     ],
+     "ngonTocTheoDau": [
+      0.0107,
+      -0.3348,
+      -0.1255
+     ]
+    },
+    {
+     "t": 901,
+     "lechToc": 0.0387,
+     "xaDauNhat": 0.7831,
+     "lechVay": 0.0344,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0936,
+      0.904,
+      -2.877
+     ],
+     "ngonTocTheoDau": [
+      0.0118,
+      -0.3353,
+      -0.1287
+     ]
+    },
+    {
+     "t": 1001,
+     "lechToc": 0.0411,
+     "xaDauNhat": 0.7808,
+     "lechVay": 0.0348,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0935,
+      0.9022,
+      -2.8767
+     ],
+     "ngonTocTheoDau": [
+      0.0113,
+      -0.3352,
+      -0.1261
+     ]
+    },
+    {
+     "t": 1116,
+     "lechToc": 0.0445,
+     "xaDauNhat": 0.7774,
+     "lechVay": 0.0344,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0929,
+      0.9008,
+      -2.874
+     ],
+     "ngonTocTheoDau": [
+      0.0103,
+      -0.3348,
+      -0.1227
+     ]
+    },
+    {
+     "t": 1215,
+     "lechToc": 0.0455,
+     "xaDauNhat": 0.7763,
+     "lechVay": 0.0332,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0924,
+      0.9014,
+      -2.8704
+     ],
+     "ngonTocTheoDau": [
+      0.0097,
+      -0.3347,
+      -0.1217
+     ]
+    },
+    {
+     "t": 1301,
+     "lechToc": 0.0452,
+     "xaDauNhat": 0.7766,
+     "lechVay": 0.0319,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.092,
+      0.9029,
+      -2.867
+     ],
+     "ngonTocTheoDau": [
+      0.0094,
+      -0.3347,
+      -0.122
+     ]
+    },
+    {
+     "t": 1418,
+     "lechToc": 0.0421,
+     "xaDauNhat": 0.7797,
+     "lechVay": 0.0292,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0914,
+      0.9076,
+      -2.861
+     ],
+     "ngonTocTheoDau": [
+      0.0089,
+      -0.3349,
+      -0.1257
+     ]
+    },
+    {
+     "t": 1502,
+     "lechToc": 0.0327,
+     "xaDauNhat": 0.7891,
+     "lechVay": 0.0259,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0915,
+      0.912,
+      -2.8604
+     ],
+     "ngonTocTheoDau": [
+      0.0098,
+      -0.3355,
+      -0.136
+     ]
+    },
+    {
+     "t": 1626,
+     "lechToc": 0.0174,
+     "xaDauNhat": 0.8107,
+     "lechVay": 0.0183,
+     "soHamCat": 2,
+     "dauChuoi": [
+      3.0918,
+      0.932,
+      -2.8581
+     ],
+     "ngonTocTheoDau": [
+      0.0131,
+      -0.3353,
+      -0.1606
+     ]
+    },
+    {
+     "t": 1718,
+     "lechToc": 0.018,
+     "xaDauNhat": 0.8231,
+     "lechVay": 0.0119,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0919,
+      0.9562,
+      -2.8526
+     ],
+     "ngonTocTheoDau": [
+      0.0164,
+      -0.3339,
+      -0.1758
+     ]
+    },
+    {
+     "t": 1802,
+     "lechToc": 0.0187,
+     "xaDauNhat": 0.8292,
+     "lechVay": 0.0068,
+     "soHamCat": 18,
+     "dauChuoi": [
+      3.0923,
+      0.9784,
+      -2.8471
+     ],
+     "ngonTocTheoDau": [
+      0.0185,
+      -0.3328,
+      -0.1836
+     ]
+    },
+    {
+     "t": 1901,
+     "lechToc": 0.0171,
+     "xaDauNhat": 0.836,
+     "lechVay": 0.005,
+     "soHamCat": 2,
+     "dauChuoi": [
+      3.0927,
+      1.0018,
+      -2.8381
+     ],
+     "ngonTocTheoDau": [
+      0.0215,
+      -0.3312,
+      -0.1924
+     ]
+    },
+    {
+     "t": 2001,
+     "lechToc": 0.0148,
+     "xaDauNhat": 0.8366,
+     "lechVay": 0.0055,
+     "soHamCat": 4,
+     "dauChuoi": [
+      3.093,
+      1.0232,
+      -2.8264
+     ],
+     "ngonTocTheoDau": [
+      0.0227,
+      -0.3312,
+      -0.1928
+     ]
+    }
+   ],
+   "khung": [
+    33.2,
+    16.1,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    33.2,
+    17.1,
+    16.1,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    17,
+    33.2,
+    16.1,
+    17.1,
+    116.7,
+    17.1,
+    33.2,
+    16.1,
+    34.2,
+    16.1,
+    34.1,
+    33.3,
+    16.1,
+    17.1,
+    16.1,
+    34.2,
+    16.1,
+    33.2,
+    34.2,
+    16.1,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    33.1,
+    17.1,
+    16.1,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    16.1,
+    34.2,
+    16.1,
+    33.2,
+    17.1,
+    17.1,
+    49.3,
+    17.1,
+    17.1,
+    33.2,
+    16.1,
+    34.2,
+    16.2,
+    33.2,
+    34.1,
+    16.1,
+    17.1,
+    33.2,
+    17,
+    33.2,
+    16.1,
+    34.2,
+    16.1,
+    33.2,
+    17.1,
+    33.2,
+    33.2,
+    17.1,
+    16.1,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    17.1
+   ],
+   "buocSpring": 1,
+   "dangNen": "idle",
+   "clipThat": true,
+   "trangThai": "emoting",
+   "ketQua": {
+    "ok": true,
+    "result": {
+     "actor": "gen",
+     "emote": "buon",
+     "started": true,
+     "durationMs": 2200
+    }
+   },
+   "spring": {
+    "soKhop": 58,
+    "cungMin": 0.7478539514796879,
+    "cungMax": 2.668868446837421,
+    "hamMin": 0,
+    "hamMax": 0.4,
+    "daiMin": 0.04154744174887155,
+    "daiMax": 0.14827046926874562,
+    "lucTrenDai": 0.30000000000000004
+   },
+   "soKhopHam": 58,
+   "mocDaOnDinh": true,
+   "dichDauChuoiMax": 0.0488,
+   "dichNgonTheoDauMax": 0.0248
+  },
+  "buon/luot-3": {
+   "ds": [
+    {
+     "t": 1,
+     "lechToc": 0.0022,
+     "xaDauNhat": 0.8196,
+     "lechVay": 0.0047,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0917,
+      1.0466,
+      -2.8113
+     ],
+     "ngonTocTheoDau": [
+      0.0188,
+      -0.3344,
+      -0.1711
+     ]
+    },
+    {
+     "t": 110,
+     "lechToc": 0.0112,
+     "xaDauNhat": 0.8106,
+     "lechVay": 0.0052,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.092,
+      1.0389,
+      -2.8177
+     ],
+     "ngonTocTheoDau": [
+      0.0178,
+      -0.3353,
+      -0.1602
+     ]
+    },
+    {
+     "t": 200,
+     "lechToc": 0.0218,
+     "xaDauNhat": 0.8001,
+     "lechVay": 0.0059,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.092,
+      1.0294,
+      -2.8243
+     ],
+     "ngonTocTheoDau": [
+      0.016,
+      -0.3355,
+      -0.1482
+     ]
+    },
+    {
+     "t": 301,
+     "lechToc": 0.0397,
+     "xaDauNhat": 0.7821,
+     "lechVay": 0.0111,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0919,
+      1.0039,
+      -2.8411
+     ],
+     "ngonTocTheoDau": [
+      0.0127,
+      -0.3347,
+      -0.1291
+     ]
+    },
+    {
+     "t": 402,
+     "lechToc": 0.0504,
+     "xaDauNhat": 0.7715,
+     "lechVay": 0.0177,
+     "soHamCat": 1,
+     "dauChuoi": [
+      3.0918,
+      0.9795,
+      -2.8543
+     ],
+     "ngonTocTheoDau": [
+      0.0108,
+      -0.3335,
+      -0.1182
+     ]
+    },
+    {
+     "t": 517,
+     "lechToc": 0.0504,
+     "xaDauNhat": 0.7715,
+     "lechVay": 0.0177,
+     "soHamCat": 1,
+     "dauChuoi": [
+      3.0918,
+      0.9795,
+      -2.8543
+     ],
+     "ngonTocTheoDau": [
+      0.0108,
+      -0.3335,
+      -0.1182
+     ]
+    },
+    {
+     "t": 605,
+     "lechToc": 0.0499,
+     "xaDauNhat": 0.7719,
+     "lechVay": 0.0321,
+     "soHamCat": 13,
+     "dauChuoi": [
+      3.0911,
+      0.9256,
+      -2.8697
+     ],
+     "ngonTocTheoDau": [
+      0.0095,
+      -0.3344,
+      -0.1165
+     ]
+    },
+    {
+     "t": 701,
+     "lechToc": 0.0625,
+     "xaDauNhat": 0.7594,
+     "lechVay": 0.0347,
+     "soHamCat": 7,
+     "dauChuoi": [
+      3.0912,
+      0.9134,
+      -2.8718
+     ],
+     "ngonTocTheoDau": [
+      0.0072,
+      -0.332,
+      -0.1058
+     ]
+    },
+    {
+     "t": 817,
+     "lechToc": 0.0439,
+     "xaDauNhat": 0.7779,
+     "lechVay": 0.0362,
+     "soHamCat": 5,
+     "dauChuoi": [
+      3.0915,
+      0.8978,
+      -2.8754
+     ],
+     "ngonTocTheoDau": [
+      0.0081,
+      -0.3345,
+      -0.1243
+     ]
+    },
+    {
+     "t": 900,
+     "lechToc": 0.0364,
+     "xaDauNhat": 0.7854,
+     "lechVay": 0.0351,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0916,
+      0.8993,
+      -2.8757
+     ],
+     "ngonTocTheoDau": [
+      0.0089,
+      -0.3353,
+      -0.132
+     ]
+    },
+    {
+     "t": 1003,
+     "lechToc": 0.0335,
+     "xaDauNhat": 0.7883,
+     "lechVay": 0.0347,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0917,
+      0.9022,
+      -2.8761
+     ],
+     "ngonTocTheoDau": [
+      0.0098,
+      -0.3355,
+      -0.1349
+     ]
+    },
+    {
+     "t": 1107,
+     "lechToc": 0.0322,
+     "xaDauNhat": 0.7896,
+     "lechVay": 0.0358,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0923,
+      0.9028,
+      -2.8798
+     ],
+     "ngonTocTheoDau": [
+      0.011,
+      -0.3356,
+      -0.1363
+     ]
+    },
+    {
+     "t": 1206,
+     "lechToc": 0.0323,
+     "xaDauNhat": 0.7895,
+     "lechVay": 0.0377,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.093,
+      0.9006,
+      -2.8842
+     ],
+     "ngonTocTheoDau": [
+      0.0118,
+      -0.3357,
+      -0.1359
+     ]
+    },
+    {
+     "t": 1311,
+     "lechToc": 0.0352,
+     "xaDauNhat": 0.7866,
+     "lechVay": 0.0402,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0935,
+      0.8964,
+      -2.8887
+     ],
+     "ngonTocTheoDau": [
+      0.012,
+      -0.3356,
+      -0.1325
+     ]
+    },
+    {
+     "t": 1407,
+     "lechToc": 0.0392,
+     "xaDauNhat": 0.7827,
+     "lechVay": 0.0421,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0938,
+      0.8919,
+      -2.8914
+     ],
+     "ngonTocTheoDau": [
+      0.0117,
+      -0.3353,
+      -0.1282
+     ]
+    },
+    {
+     "t": 1506,
+     "lechToc": 0.0372,
+     "xaDauNhat": 0.7846,
+     "lechVay": 0.0412,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0942,
+      0.889,
+      -2.8945
+     ],
+     "ngonTocTheoDau": [
+      0.0119,
+      -0.3354,
+      -0.1304
+     ]
+    },
+    {
+     "t": 1604,
+     "lechToc": 0.0261,
+     "xaDauNhat": 0.7957,
+     "lechVay": 0.0357,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0943,
+      0.8982,
+      -2.8949
+     ],
+     "ngonTocTheoDau": [
+      0.0134,
+      -0.3361,
+      -0.1422
+     ]
+    },
+    {
+     "t": 1702,
+     "lechToc": 0.019,
+     "xaDauNhat": 0.8028,
+     "lechVay": 0.0299,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0941,
+      0.9128,
+      -2.8921
+     ],
+     "ngonTocTheoDau": [
+      0.0146,
+      -0.3361,
+      -0.1502
+     ]
+    },
+    {
+     "t": 1811,
+     "lechToc": 0.0222,
+     "xaDauNhat": 0.8121,
+     "lechVay": 0.0178,
+     "soHamCat": 17,
+     "dauChuoi": [
+      3.0935,
+      0.9484,
+      -2.8805
+     ],
+     "ngonTocTheoDau": [
+      0.016,
+      -0.3355,
+      -0.1614
+     ]
+    },
+    {
+     "t": 1901,
+     "lechToc": 0.022,
+     "xaDauNhat": 0.8175,
+     "lechVay": 0.0118,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.093,
+      0.9702,
+      -2.8697
+     ],
+     "ngonTocTheoDau": [
+      0.0168,
+      -0.3349,
+      -0.1682
+     ]
+    },
+    {
+     "t": 2002,
+     "lechToc": 0.0207,
+     "xaDauNhat": 0.8233,
+     "lechVay": 0.0108,
+     "soHamCat": 2,
+     "dauChuoi": [
+      3.0922,
+      1.0003,
+      -2.8519
+     ],
+     "ngonTocTheoDau": [
+      0.0176,
+      -0.334,
+      -0.1758
+     ]
+    }
+   ],
+   "khung": [
+    32.8,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    33.2,
+    17,
+    16.2,
+    33.2,
+    17.1,
+    33.2,
+    17.1,
+    16.1,
+    33.2,
+    17.1,
+    33.2,
+    17.1,
+    133.8,
+    16.1,
+    33.2,
+    34.2,
+    16.1,
+    17.1,
+    16.1,
+    50.4,
+    17.1,
+    33.2,
+    33.5,
+    16.5,
+    49.5,
+    17.1,
+    17.1,
+    33.2,
+    16.1,
+    34.2,
+    16.1,
+    33.2,
+    17.1,
+    17.1,
+    33.2,
+    16.1,
+    34.2,
+    16.1,
+    33.2,
+    17.2,
+    33.3,
+    33.2,
+    17.1,
+    16.1,
+    34.1,
+    16.2,
+    33.2,
+    17.1,
+    33.2,
+    33.2,
+    33.2,
+    17.1,
+    17.1,
+    16.1,
+    33.2,
+    17.1,
+    33.2,
+    17.1,
+    16.1,
+    34.1,
+    16.2,
+    33.2,
+    17.1,
+    33.1,
+    33.2,
+    17.1,
+    17.1,
+    33.2,
+    16.1,
+    34.1,
+    16.2
+   ],
+   "buocSpring": 1,
+   "dangNen": "idle",
+   "clipThat": true,
+   "trangThai": "emoting",
+   "ketQua": {
+    "ok": true,
+    "result": {
+     "actor": "gen",
+     "emote": "buon",
+     "started": true,
+     "durationMs": 2200
+    }
+   },
+   "spring": {
+    "soKhop": 58,
+    "cungMin": 0.7478539514796879,
+    "cungMax": 2.668868446837421,
+    "hamMin": 0,
+    "hamMax": 0.4,
+    "daiMin": 0.04154744174887155,
+    "daiMax": 0.14827046926874562,
+    "lucTrenDai": 0.30000000000000004
+   },
+   "soKhopHam": 58,
+   "mocDaOnDinh": true,
+   "dichDauChuoiMax": 0.0561,
+   "dichNgonTheoDauMax": 0.0194
+  },
+  "ngac-nhien/luot-1": {
+   "ds": [
+    {
+     "t": 3,
+     "lechToc": 0.0084,
+     "xaDauNhat": 0.8135,
+     "lechVay": 0.0082,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.09,
+      1.0463,
+      -2.7959
+     ],
+     "ngonTocTheoDau": [
+      0.0176,
+      -0.3351,
+      -0.1636
+     ]
+    },
+    {
+     "t": 101,
+     "lechToc": 0.0405,
+     "xaDauNhat": 0.8364,
+     "lechVay": 0.0212,
+     "soHamCat": 26,
+     "dauChuoi": [
+      3.1057,
+      1.1119,
+      -2.7652
+     ],
+     "ngonTocTheoDau": [
+      0.0094,
+      -0.3303,
+      -0.1953
+     ]
+    },
+    {
+     "t": 224,
+     "lechToc": 0.0351,
+     "xaDauNhat": 0.8559,
+     "lechVay": 0.0371,
+     "soHamCat": 27,
+     "dauChuoi": [
+      3.1257,
+      1.174,
+      -2.6782
+     ],
+     "ngonTocTheoDau": [
+      0.0057,
+      -0.3229,
+      -0.2236
+     ]
+    },
+    {
+     "t": 325,
+     "lechToc": 0.0514,
+     "xaDauNhat": 0.8732,
+     "lechVay": 0.0304,
+     "soHamCat": 16,
+     "dauChuoi": [
+      3.1239,
+      1.1527,
+      -2.6389
+     ],
+     "ngonTocTheoDau": [
+      0.0154,
+      -0.3059,
+      -0.2584
+     ]
+    },
+    {
+     "t": 405,
+     "lechToc": 0.0276,
+     "xaDauNhat": 0.8431,
+     "lechVay": 0.0224,
+     "soHamCat": 25,
+     "dauChuoi": [
+      3.1111,
+      1.1295,
+      -2.6681
+     ],
+     "ngonTocTheoDau": [
+      0.0245,
+      -0.3262,
+      -0.2067
+     ]
+    },
+    {
+     "t": 536,
+     "lechToc": 0.0276,
+     "xaDauNhat": 0.8431,
+     "lechVay": 0.0224,
+     "soHamCat": 25,
+     "dauChuoi": [
+      3.1111,
+      1.1295,
+      -2.6681
+     ],
+     "ngonTocTheoDau": [
+      0.0245,
+      -0.3262,
+      -0.2067
+     ]
+    },
+    {
+     "t": 604,
+     "lechToc": 0.0132,
+     "xaDauNhat": 0.8297,
+     "lechVay": 0.018,
+     "soHamCat": 20,
+     "dauChuoi": [
+      3.0931,
+      1.0938,
+      -2.7446
+     ],
+     "ngonTocTheoDau": [
+      0.0245,
+      -0.3327,
+      -0.1835
+     ]
+    },
+    {
+     "t": 702,
+     "lechToc": 0.0256,
+     "xaDauNhat": 0.8474,
+     "lechVay": 0.0851,
+     "soHamCat": 28,
+     "dauChuoi": [
+      3.1423,
+      1.152,
+      -2.5365
+     ],
+     "ngonTocTheoDau": [
+      0.014,
+      -0.3271,
+      -0.2098
+     ]
+    },
+    {
+     "t": 801,
+     "lechToc": 0.022,
+     "xaDauNhat": 0.828,
+     "lechVay": 0.0843,
+     "soHamCat": 17,
+     "dauChuoi": [
+      3.1467,
+      1.1375,
+      -2.5204
+     ],
+     "ngonTocTheoDau": [
+      -0.0123,
+      -0.3233,
+      -0.1993
+     ]
+    },
+    {
+     "t": 917,
+     "lechToc": 0.0409,
+     "xaDauNhat": 0.8628,
+     "lechVay": 0.0822,
+     "soHamCat": 3,
+     "dauChuoi": [
+      3.1453,
+      1.1388,
+      -2.5275
+     ],
+     "ngonTocTheoDau": [
+      0.0264,
+      -0.3215,
+      -0.2295
+     ]
+    },
+    {
+     "t": 1002,
+     "lechToc": 0.032,
+     "xaDauNhat": 0.8539,
+     "lechVay": 0.0784,
+     "soHamCat": 2,
+     "dauChuoi": [
+      3.1448,
+      1.1368,
+      -2.5343
+     ],
+     "ngonTocTheoDau": [
+      0.0175,
+      -0.3254,
+      -0.2176
+     ]
+    },
+    {
+     "t": 1103,
+     "lechToc": 0.03,
+     "xaDauNhat": 0.8518,
+     "lechVay": 0.0722,
+     "soHamCat": 1,
+     "dauChuoi": [
+      3.1445,
+      1.136,
+      -2.5511
+     ],
+     "ngonTocTheoDau": [
+      0.0197,
+      -0.3265,
+      -0.214
+     ]
+    },
+    {
+     "t": 1201,
+     "lechToc": 0.0277,
+     "xaDauNhat": 0.8495,
+     "lechVay": 0.0673,
+     "soHamCat": 2,
+     "dauChuoi": [
+      3.1442,
+      1.1353,
+      -2.5654
+     ],
+     "ngonTocTheoDau": [
+      0.0194,
+      -0.3273,
+      -0.2109
+     ]
+    },
+    {
+     "t": 1317,
+     "lechToc": 0.0268,
+     "xaDauNhat": 0.8486,
+     "lechVay": 0.0613,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.1442,
+      1.1351,
+      -2.5876
+     ],
+     "ngonTocTheoDau": [
+      0.0193,
+      -0.3276,
+      -0.2097
+     ]
+    },
+    {
+     "t": 1402,
+     "lechToc": 0.0282,
+     "xaDauNhat": 0.8501,
+     "lechVay": 0.0595,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.1444,
+      1.136,
+      -2.5969
+     ],
+     "ngonTocTheoDau": [
+      0.0193,
+      -0.3271,
+      -0.2117
+     ]
+    },
+    {
+     "t": 1503,
+     "lechToc": 0.0483,
+     "xaDauNhat": 0.8354,
+     "lechVay": 0.0321,
+     "soHamCat": 27,
+     "dauChuoi": [
+      3.1413,
+      1.1277,
+      -2.61
+     ],
+     "ngonTocTheoDau": [
+      0.0281,
+      -0.3318,
+      -0.19
+     ]
+    },
+    {
+     "t": 1602,
+     "lechToc": 0.0464,
+     "xaDauNhat": 0.829,
+     "lechVay": 0.0156,
+     "soHamCat": 29,
+     "dauChuoi": [
+      3.1246,
+      1.1098,
+      -2.6884
+     ],
+     "ngonTocTheoDau": [
+      0.0301,
+      -0.3331,
+      -0.1813
+     ]
+    },
+    {
+     "t": 1718,
+     "lechToc": 0.0118,
+     "xaDauNhat": 0.81,
+     "lechVay": 0.0056,
+     "soHamCat": 11,
+     "dauChuoi": [
+      3.0936,
+      1.0549,
+      -2.7879
+     ],
+     "ngonTocTheoDau": [
+      0.0284,
+      -0.3347,
+      -0.1591
+     ]
+    },
+    {
+     "t": 1803,
+     "lechToc": 0.0034,
+     "xaDauNhat": 0.8231,
+     "lechVay": 0.0051,
+     "soHamCat": 4,
+     "dauChuoi": [
+      3.0898,
+      1.0496,
+      -2.8019
+     ],
+     "ngonTocTheoDau": [
+      0.0176,
+      -0.3339,
+      -0.1757
+     ]
+    },
+    {
+     "t": 1901,
+     "lechToc": 0.002,
+     "xaDauNhat": 0.8198,
+     "lechVay": 0.0046,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0905,
+      1.0497,
+      -2.8031
+     ],
+     "ngonTocTheoDau": [
+      0.018,
+      -0.3343,
+      -0.1716
+     ]
+    },
+    {
+     "t": 2002,
+     "lechToc": 0.0015,
+     "xaDauNhat": 0.8203,
+     "lechVay": 0.0037,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0911,
+      1.0483,
+      -2.8075
+     ],
+     "ngonTocTheoDau": [
+      0.0189,
+      -0.3343,
+      -0.172
+     ]
+    }
+   ],
+   "khung": [
+    33.2,
+    17.1,
+    33.2,
+    17,
+    33.1,
+    16.3,
+    50.4,
+    16.2,
+    34.2,
+    50.1,
+    51.6,
+    16.1,
+    33.2,
+    133.7,
+    17.1,
+    33.1,
+    17.1,
+    33.2,
+    16.1,
+    34.2,
+    16.1,
+    33.2,
+    34.2,
+    16.1,
+    17.1,
+    16.1,
+    34.2,
+    16.2,
+    33.2,
+    17.1,
+    33.2,
+    33.2,
+    17.1,
+    33.2,
+    33.2,
+    17.1,
+    17,
+    33.2,
+    16.1,
+    34.1,
+    16.2,
+    17.1,
+    33.2,
+    17,
+    33.3,
+    16.1,
+    33.2,
+    17.1,
+    33.2,
+    17.1,
+    17,
+    33.3,
+    16.1,
+    50.3,
+    17.1,
+    33.2,
+    16.1,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    16.1,
+    34.2,
+    16.1,
+    17.1,
+    33.2,
+    17.1,
+    33.3,
+    16.1,
+    34.2,
+    16.1
+   ],
+   "buocSpring": 1,
+   "dangNen": "giat",
+   "clipThat": true,
+   "trangThai": "emoting",
+   "ketQua": {
+    "ok": true,
+    "result": {
+     "actor": "gen",
+     "emote": "ngac-nhien",
+     "started": true,
+     "durationMs": 1400
+    }
+   },
+   "spring": {
+    "soKhop": 58,
+    "cungMin": 0.7478539514796879,
+    "cungMax": 2.668868446837421,
+    "hamMin": 0,
+    "hamMax": 0.4,
+    "daiMin": 0.04154744174887155,
+    "daiMax": 0.14827046926874562,
+    "lucTrenDai": 0.30000000000000004
+   },
+   "soKhopHam": 58,
+   "mocDaOnDinh": true,
+   "dichDauChuoiMax": 0.2216,
+   "dichNgonTheoDauMax": 0.0563
+  },
+  "ngac-nhien/luot-2": {
+   "ds": [
+    {
+     "t": 3,
+     "lechToc": 0.0032,
+     "xaDauNhat": 0.8186,
+     "lechVay": 0.0026,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0904,
+      1.0444,
+      -2.8156
+     ],
+     "ngonTocTheoDau": [
+      0.0181,
+      -0.3345,
+      -0.17
+     ]
+    },
+    {
+     "t": 120,
+     "lechToc": 0.0357,
+     "xaDauNhat": 0.8539,
+     "lechVay": 0.0202,
+     "soHamCat": 29,
+     "dauChuoi": [
+      3.1141,
+      1.1263,
+      -2.7679
+     ],
+     "ngonTocTheoDau": [
+      0.0011,
+      -0.3231,
+      -0.2217
+     ]
+    },
+    {
+     "t": 202,
+     "lechToc": 0.0492,
+     "xaDauNhat": 0.871,
+     "lechVay": 0.0267,
+     "soHamCat": 22,
+     "dauChuoi": [
+      3.126,
+      1.1598,
+      -2.714
+     ],
+     "ngonTocTheoDau": [
+      0.0034,
+      -0.3151,
+      -0.2459
+     ]
+    },
+    {
+     "t": 300,
+     "lechToc": 0.0532,
+     "xaDauNhat": 0.875,
+     "lechVay": 0.0229,
+     "soHamCat": 13,
+     "dauChuoi": [
+      3.1261,
+      1.1513,
+      -2.6713
+     ],
+     "ngonTocTheoDau": [
+      0.0107,
+      -0.3018,
+      -0.2646
+     ]
+    },
+    {
+     "t": 402,
+     "lechToc": 0.0319,
+     "xaDauNhat": 0.8434,
+     "lechVay": 0.0154,
+     "soHamCat": 23,
+     "dauChuoi": [
+      3.1115,
+      1.1245,
+      -2.6968
+     ],
+     "ngonTocTheoDau": [
+      0.0196,
+      -0.3242,
+      -0.2106
+     ]
+    },
+    {
+     "t": 516,
+     "lechToc": 0.0319,
+     "xaDauNhat": 0.8434,
+     "lechVay": 0.0154,
+     "soHamCat": 23,
+     "dauChuoi": [
+      3.1115,
+      1.1245,
+      -2.6968
+     ],
+     "ngonTocTheoDau": [
+      0.0196,
+      -0.3242,
+      -0.2106
+     ]
+    },
+    {
+     "t": 601,
+     "lechToc": 0.0161,
+     "xaDauNhat": 0.8379,
+     "lechVay": 0.0118,
+     "soHamCat": 3,
+     "dauChuoi": [
+      3.0921,
+      1.0798,
+      -2.7676
+     ],
+     "ngonTocTheoDau": [
+      0.0208,
+      -0.3301,
+      -0.1961
+     ]
+    },
+    {
+     "t": 702,
+     "lechToc": 0.0315,
+     "xaDauNhat": 0.8533,
+     "lechVay": 0.0756,
+     "soHamCat": 24,
+     "dauChuoi": [
+      3.1434,
+      1.1511,
+      -2.5527
+     ],
+     "ngonTocTheoDau": [
+      0.0104,
+      -0.3238,
+      -0.2199
+     ]
+    },
+    {
+     "t": 804,
+     "lechToc": 0.0353,
+     "xaDauNhat": 0.8318,
+     "lechVay": 0.0757,
+     "soHamCat": 16,
+     "dauChuoi": [
+      3.1465,
+      1.1449,
+      -2.5444
+     ],
+     "ngonTocTheoDau": [
+      0.002,
+      -0.3199,
+      -0.2082
+     ]
+    },
+    {
+     "t": 900,
+     "lechToc": 0.0302,
+     "xaDauNhat": 0.8501,
+     "lechVay": 0.076,
+     "soHamCat": 10,
+     "dauChuoi": [
+      3.1459,
+      1.1441,
+      -2.5442
+     ],
+     "ngonTocTheoDau": [
+      0.0119,
+      -0.3249,
+      -0.2157
+     ]
+    },
+    {
+     "t": 1020,
+     "lechToc": 0.0307,
+     "xaDauNhat": 0.8526,
+     "lechVay": 0.0721,
+     "soHamCat": 2,
+     "dauChuoi": [
+      3.1451,
+      1.14,
+      -2.5511
+     ],
+     "ngonTocTheoDau": [
+      0.0197,
+      -0.3262,
+      -0.2151
+     ]
+    },
+    {
+     "t": 1101,
+     "lechToc": 0.029,
+     "xaDauNhat": 0.8508,
+     "lechVay": 0.0694,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.1447,
+      1.1385,
+      -2.5587
+     ],
+     "ngonTocTheoDau": [
+      0.02,
+      -0.3269,
+      -0.2126
+     ]
+    },
+    {
+     "t": 1201,
+     "lechToc": 0.0267,
+     "xaDauNhat": 0.8486,
+     "lechVay": 0.0653,
+     "soHamCat": 1,
+     "dauChuoi": [
+      3.1445,
+      1.1372,
+      -2.5722
+     ],
+     "ngonTocTheoDau": [
+      0.0196,
+      -0.3276,
+      -0.2096
+     ]
+    },
+    {
+     "t": 1316,
+     "lechToc": 0.0261,
+     "xaDauNhat": 0.8479,
+     "lechVay": 0.0608,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.1443,
+      1.136,
+      -2.5908
+     ],
+     "ngonTocTheoDau": [
+      0.0196,
+      -0.3278,
+      -0.2087
+     ]
+    },
+    {
+     "t": 1402,
+     "lechToc": 0.0274,
+     "xaDauNhat": 0.8492,
+     "lechVay": 0.0601,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.1445,
+      1.1365,
+      -2.5969
+     ],
+     "ngonTocTheoDau": [
+      0.0196,
+      -0.3274,
+      -0.2104
+     ]
+    },
+    {
+     "t": 1502,
+     "lechToc": 0.0425,
+     "xaDauNhat": 0.8279,
+     "lechVay": 0.0325,
+     "soHamCat": 27,
+     "dauChuoi": [
+      3.1376,
+      1.1239,
+      -2.6185
+     ],
+     "ngonTocTheoDau": [
+      0.0338,
+      -0.3335,
+      -0.1789
+     ]
+    },
+    {
+     "t": 1601,
+     "lechToc": 0.0393,
+     "xaDauNhat": 0.8162,
+     "lechVay": 0.013,
+     "soHamCat": 28,
+     "dauChuoi": [
+      3.1158,
+      1.0968,
+      -2.7084
+     ],
+     "ngonTocTheoDau": [
+      0.036,
+      -0.3348,
+      -0.1641
+     ]
+    },
+    {
+     "t": 1701,
+     "lechToc": 0.0144,
+     "xaDauNhat": 0.8074,
+     "lechVay": 0.0072,
+     "soHamCat": 14,
+     "dauChuoi": [
+      3.0922,
+      1.0565,
+      -2.7822
+     ],
+     "ngonTocTheoDau": [
+      0.0298,
+      -0.3345,
+      -0.1565
+     ]
+    },
+    {
+     "t": 1801,
+     "lechToc": 0.0068,
+     "xaDauNhat": 0.825,
+     "lechVay": 0.0072,
+     "soHamCat": 6,
+     "dauChuoi": [
+      3.0893,
+      1.0535,
+      -2.7924
+     ],
+     "ngonTocTheoDau": [
+      0.0197,
+      -0.3337,
+      -0.1777
+     ]
+    },
+    {
+     "t": 1904,
+     "lechToc": 0.0028,
+     "xaDauNhat": 0.8211,
+     "lechVay": 0.0073,
+     "soHamCat": 1,
+     "dauChuoi": [
+      3.0904,
+      1.0551,
+      -2.7894
+     ],
+     "ngonTocTheoDau": [
+      0.0191,
+      -0.3342,
+      -0.173
+     ]
+    },
+    {
+     "t": 2001,
+     "lechToc": 0.0022,
+     "xaDauNhat": 0.8218,
+     "lechVay": 0.0085,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.091,
+      1.0546,
+      -2.7912
+     ],
+     "ngonTocTheoDau": [
+      0.0192,
+      -0.3341,
+      -0.1738
+     ]
+    }
+   ],
+   "khung": [
+    16.2,
+    17.1,
+    33.2,
+    17,
+    33.2,
+    16.1,
+    34.1,
+    16.1,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    16.1,
+    34.1,
+    33.2,
+    16.1,
+    17.1,
+    133.8,
+    16.1,
+    33.2,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    33.2,
+    17.1,
+    16.1,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    33.2,
+    17.1,
+    16.1,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    33.2,
+    17.1,
+    16.1,
+    33.2,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    17,
+    33.3,
+    16.1,
+    33.2,
+    17.1,
+    17.1,
+    33.2,
+    16.1,
+    34.2,
+    16.1,
+    33.2,
+    17.1,
+    33.2,
+    33.2,
+    17.1,
+    17.1,
+    16.1,
+    33.2,
+    17.1,
+    33.2,
+    17.1,
+    16.1,
+    34.2,
+    16.1,
+    33.2,
+    17.1,
+    33.2,
+    17.1,
+    16.1,
+    34.2,
+    16.1
+   ],
+   "buocSpring": 1,
+   "dangNen": "giat",
+   "clipThat": true,
+   "trangThai": "emoting",
+   "ketQua": {
+    "ok": true,
+    "result": {
+     "actor": "gen",
+     "emote": "ngac-nhien",
+     "started": true,
+     "durationMs": 1400
+    }
+   },
+   "spring": {
+    "soKhop": 58,
+    "cungMin": 0.7478539514796879,
+    "cungMax": 2.668868446837421,
+    "hamMin": 0,
+    "hamMax": 0.4,
+    "daiMin": 0.04154744174887155,
+    "daiMax": 0.14827046926874562,
+    "lucTrenDai": 0.30000000000000004
+   },
+   "soKhopHam": 58,
+   "mocDaOnDinh": true,
+   "dichDauChuoiMax": 0.2322,
+   "dichNgonTheoDauMax": 0.0591
+  },
+  "ngac-nhien/luot-3": {
+   "ds": [
+    {
+     "t": 2,
+     "lechToc": 0.0016,
+     "xaDauNhat": 0.8211,
+     "lechVay": 0.0055,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0902,
+      1.0519,
+      -2.7972
+     ],
+     "ngonTocTheoDau": [
+      0.0188,
+      -0.3342,
+      -0.1731
+     ]
+    },
+    {
+     "t": 101,
+     "lechToc": 0.0346,
+     "xaDauNhat": 0.84,
+     "lechVay": 0.0194,
+     "soHamCat": 28,
+     "dauChuoi": [
+      3.1062,
+      1.1077,
+      -2.7753
+     ],
+     "ngonTocTheoDau": [
+      0.0125,
+      -0.3297,
+      -0.1992
+     ]
+    },
+    {
+     "t": 201,
+     "lechToc": 0.0489,
+     "xaDauNhat": 0.8707,
+     "lechVay": 0.0297,
+     "soHamCat": 26,
+     "dauChuoi": [
+      3.1225,
+      1.1554,
+      -2.7163
+     ],
+     "ngonTocTheoDau": [
+      0.0058,
+      -0.3157,
+      -0.2448
+     ]
+    },
+    {
+     "t": 303,
+     "lechToc": 0.0498,
+     "xaDauNhat": 0.8716,
+     "lechVay": 0.0253,
+     "soHamCat": 10,
+     "dauChuoi": [
+      3.1253,
+      1.1511,
+      -2.6571
+     ],
+     "ngonTocTheoDau": [
+      0.0108,
+      -0.2987,
+      -0.2658
+     ]
+    },
+    {
+     "t": 402,
+     "lechToc": 0.0309,
+     "xaDauNhat": 0.834,
+     "lechVay": 0.0166,
+     "soHamCat": 20,
+     "dauChuoi": [
+      3.1116,
+      1.1279,
+      -2.6874
+     ],
+     "ngonTocTheoDau": [
+      0.0204,
+      -0.3262,
+      -0.1992
+     ]
+    },
+    {
+     "t": 519,
+     "lechToc": 0.0309,
+     "xaDauNhat": 0.834,
+     "lechVay": 0.0166,
+     "soHamCat": 20,
+     "dauChuoi": [
+      3.1116,
+      1.1279,
+      -2.6874
+     ],
+     "ngonTocTheoDau": [
+      0.0204,
+      -0.3262,
+      -0.1992
+     ]
+    },
+    {
+     "t": 615,
+     "lechToc": 0.0091,
+     "xaDauNhat": 0.83,
+     "lechVay": 0.0233,
+     "soHamCat": 28,
+     "dauChuoi": [
+      3.1078,
+      1.1139,
+      -2.7077
+     ],
+     "ngonTocTheoDau": [
+      0.0225,
+      -0.3328,
+      -0.1838
+     ]
+    },
+    {
+     "t": 722,
+     "lechToc": 0.0325,
+     "xaDauNhat": 0.8369,
+     "lechVay": 0.0735,
+     "soHamCat": 28,
+     "dauChuoi": [
+      3.1451,
+      1.1311,
+      -2.5187
+     ],
+     "ngonTocTheoDau": [
+      -0.0117,
+      -0.3249,
+      -0.2045
+     ]
+    },
+    {
+     "t": 821,
+     "lechToc": 0.0258,
+     "xaDauNhat": 0.8177,
+     "lechVay": 0.0721,
+     "soHamCat": 16,
+     "dauChuoi": [
+      3.1444,
+      1.1422,
+      -2.5435
+     ],
+     "ngonTocTheoDau": [
+      -0.0162,
+      -0.3187,
+      -0.1975
+     ]
+    },
+    {
+     "t": 901,
+     "lechToc": 0.0298,
+     "xaDauNhat": 0.8454,
+     "lechVay": 0.0709,
+     "soHamCat": 7,
+     "dauChuoi": [
+      3.1459,
+      1.1448,
+      -2.5542
+     ],
+     "ngonTocTheoDau": [
+      0.0069,
+      -0.3245,
+      -0.2125
+     ]
+    },
+    {
+     "t": 1007,
+     "lechToc": 0.0297,
+     "xaDauNhat": 0.8515,
+     "lechVay": 0.0662,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.1452,
+      1.1417,
+      -2.5633
+     ],
+     "ngonTocTheoDau": [
+      0.0184,
+      -0.3264,
+      -0.214
+     ]
+    },
+    {
+     "t": 1108,
+     "lechToc": 0.0272,
+     "xaDauNhat": 0.8491,
+     "lechVay": 0.0609,
+     "soHamCat": 2,
+     "dauChuoi": [
+      3.1448,
+      1.14,
+      -2.5789
+     ],
+     "ngonTocTheoDau": [
+      0.0195,
+      -0.3275,
+      -0.2103
+     ]
+    },
+    {
+     "t": 1200,
+     "lechToc": 0.0254,
+     "xaDauNhat": 0.8472,
+     "lechVay": 0.0571,
+     "soHamCat": 1,
+     "dauChuoi": [
+      3.1446,
+      1.1388,
+      -2.5921
+     ],
+     "ngonTocTheoDau": [
+      0.0193,
+      -0.328,
+      -0.2078
+     ]
+    },
+    {
+     "t": 1302,
+     "lechToc": 0.024,
+     "xaDauNhat": 0.8458,
+     "lechVay": 0.0524,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.1445,
+      1.1371,
+      -2.6097
+     ],
+     "ngonTocTheoDau": [
+      0.0193,
+      -0.3285,
+      -0.2059
+     ]
+    },
+    {
+     "t": 1401,
+     "lechToc": 0.0252,
+     "xaDauNhat": 0.847,
+     "lechVay": 0.0506,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.1448,
+      1.1373,
+      -2.6203
+     ],
+     "ngonTocTheoDau": [
+      0.0193,
+      -0.3281,
+      -0.2075
+     ]
+    },
+    {
+     "t": 1503,
+     "lechToc": 0.0429,
+     "xaDauNhat": 0.8291,
+     "lechVay": 0.0212,
+     "soHamCat": 24,
+     "dauChuoi": [
+      3.1313,
+      1.1179,
+      -2.6678
+     ],
+     "ngonTocTheoDau": [
+      0.0294,
+      -0.3332,
+      -0.1813
+     ]
+    },
+    {
+     "t": 1600,
+     "lechToc": 0.0405,
+     "xaDauNhat": 0.8165,
+     "lechVay": 0.0098,
+     "soHamCat": 28,
+     "dauChuoi": [
+      3.1156,
+      1.0942,
+      -2.7319
+     ],
+     "ngonTocTheoDau": [
+      0.0326,
+      -0.3351,
+      -0.1644
+     ]
+    },
+    {
+     "t": 1702,
+     "lechToc": 0.0216,
+     "xaDauNhat": 0.8002,
+     "lechVay": 0.0076,
+     "soHamCat": 6,
+     "dauChuoi": [
+      3.0891,
+      1.0545,
+      -2.7884
+     ],
+     "ngonTocTheoDau": [
+      0.0282,
+      -0.3347,
+      -0.1484
+     ]
+    },
+    {
+     "t": 1801,
+     "lechToc": 0.0035,
+     "xaDauNhat": 0.8246,
+     "lechVay": 0.0074,
+     "soHamCat": 2,
+     "dauChuoi": [
+      3.09,
+      1.0558,
+      -2.7871
+     ],
+     "ngonTocTheoDau": [
+      0.0179,
+      -0.3335,
+      -0.178
+     ]
+    },
+    {
+     "t": 1901,
+     "lechToc": 0.0011,
+     "xaDauNhat": 0.8229,
+     "lechVay": 0.0092,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.091,
+      1.0552,
+      -2.7895
+     ],
+     "ngonTocTheoDau": [
+      0.0195,
+      -0.334,
+      -0.1751
+     ]
+    },
+    {
+     "t": 2001,
+     "lechToc": 0.0007,
+     "xaDauNhat": 0.8212,
+     "lechVay": 0.0101,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0918,
+      1.053,
+      -2.7941
+     ],
+     "ngonTocTheoDau": [
+      0.0195,
+      -0.3342,
+      -0.173
+     ]
+    }
+   ],
+   "khung": [
+    16.1,
+    17.1,
+    50.3,
+    16.1,
+    17.1,
+    16.1,
+    34.2,
+    16.1,
+    33.2,
+    17.1,
+    17.1,
+    33.2,
+    16.1,
+    34.1,
+    16.1,
+    33.2,
+    17.1,
+    133.8,
+    16.1,
+    33.2,
+    17.1,
+    17.1,
+    33.2,
+    16.1,
+    34.2,
+    16.1,
+    33.2,
+    17.1,
+    33.2,
+    17.1,
+    50.2,
+    16.1,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    33.2,
+    17.1,
+    16.1,
+    17.1,
+    33.3,
+    16.1,
+    34.2,
+    16.1,
+    17.1,
+    33.2,
+    17.1,
+    33.2,
+    33.2,
+    17.1,
+    16.1,
+    33.2,
+    17.1,
+    33.2,
+    33.2,
+    17.1,
+    17.1,
+    16.1,
+    33.2,
+    17.1,
+    33.2,
+    33.2,
+    17.1,
+    17.1,
+    33.2,
+    16.1,
+    34.1,
+    33.3,
+    33.2,
+    16.1,
+    17.1,
+    33.2,
+    33.2,
+    17.1,
+    17.1,
+    33.1,
+    33.2
+   ],
+   "buocSpring": 2,
+   "dangNen": "giat",
+   "clipThat": true,
+   "trangThai": "emoting",
+   "ketQua": {
+    "ok": true,
+    "result": {
+     "actor": "gen",
+     "emote": "ngac-nhien",
+     "started": true,
+     "durationMs": 1400
+    }
+   },
+   "spring": {
+    "soKhop": 58,
+    "cungMin": 0.7478539514796879,
+    "cungMax": 2.668868446837421,
+    "hamMin": 0,
+    "hamMax": 0.4,
+    "daiMin": 0.04154744174887155,
+    "daiMax": 0.14827046926874562,
+    "lucTrenDai": 0.30000000000000004
+   },
+   "soKhopHam": 58,
+   "mocDaOnDinh": true,
+   "dichDauChuoiMax": 0.1934,
+   "dichNgonTheoDauMax": 0.0727
+  }
+ },
+ "dat": {
+  "de/dung/owner": {
+   "dat": true,
+   "deGiayThat": 0,
+   "deDuoiMatCa": 0,
+   "xuongChanY": 0.0333,
+   "soXuongChan": 4,
+   "soDinh": 18145,
+   "soNhan": 1021,
+   "cum": "actor:owner",
+   "pr": {
+    "deGiayY": -0.0001,
+    "deGiayMoc": 0,
+    "deChan": 0.0333,
+    "deChanTuThe": 0.0334,
+    "soMocDe": 4
+   }
+  },
+  "de/dung/gen": {
+   "dat": true,
+   "deGiayThat": 0,
+   "deDuoiMatCa": 0,
+   "xuongChanY": 0.049,
+   "soXuongChan": 4,
+   "soDinh": 23679,
+   "soNhan": 758,
+   "cum": "actor:gen",
+   "pr": {
+    "deGiayY": 0.0013,
+    "deGiayMoc": 0,
+    "deChan": 0.049,
+    "deChanTuThe": 0.0477,
+    "soMocDe": 4
+   }
+  },
+  "de/di/owner": {
+   "dat": true,
+   "soMau": 12,
+   "min": 0,
+   "max": 0.0003,
+   "xau": []
+  },
+  "de/ngoi/ghe-1": {
+   "dat": true,
+   "deGiayThat": -0.0072,
+   "deDuoiMatCa": -0.0072,
+   "xuongChanY": 0.0859,
+   "soXuongChan": 4,
+   "soDinh": 18145,
+   "soNhan": 1301,
+   "cum": "actor:owner",
+   "pr": {
+    "deGiayY": -0.0074,
+    "deGiayMoc": -0.0074,
+    "deChan": 0.0333,
+    "deChanTuThe": 0.0934,
+    "soMocDe": 4
+   },
+   "seatY": 0.2585
+  },
+  "de/dung-len/ghe-1": {
+   "dat": true,
+   "deGiayThat": 0,
+   "deDuoiMatCa": 0,
+   "xuongChanY": 0.0334,
+   "soXuongChan": 4,
+   "soDinh": 18145,
+   "soNhan": 1016,
+   "cum": "actor:owner",
+   "pr": {
+    "deGiayY": 0.0002,
+    "deGiayMoc": 0,
+    "deChan": 0.0333,
+    "deChanTuThe": 0.0332,
+    "soMocDe": 4
+   }
+  },
+  "de/ngoi/ghe-2": {
+   "dat": true,
+   "deGiayThat": -0.0072,
+   "deDuoiMatCa": -0.0072,
+   "xuongChanY": 0.0859,
+   "soXuongChan": 4,
+   "soDinh": 18145,
+   "soNhan": 1301,
+   "cum": "actor:owner",
+   "pr": {
+    "deGiayY": -0.0074,
+    "deGiayMoc": -0.0074,
+    "deChan": 0.0333,
+    "deChanTuThe": 0.0934,
+    "soMocDe": 4
+   },
+   "seatY": 0.2585
+  },
+  "de/dung-len/ghe-2": {
+   "dat": true,
+   "deGiayThat": 0,
+   "deDuoiMatCa": 0,
+   "xuongChanY": 0.0334,
+   "soXuongChan": 4,
+   "soDinh": 18145,
+   "soNhan": 1016,
+   "cum": "actor:owner",
+   "pr": {
+    "deGiayY": 0.0001,
+    "deGiayMoc": 0,
+    "deChan": 0.0333,
+    "deChanTuThe": 0.0333,
+    "soMocDe": 4
+   }
+  },
+  "de/ngoi/sofa": {
+   "dat": true,
+   "deGiayThat": -0.0072,
+   "deDuoiMatCa": -0.0072,
+   "xuongChanY": 0.0859,
+   "soXuongChan": 4,
+   "soDinh": 18145,
+   "soNhan": 1301,
+   "cum": "actor:owner",
+   "pr": {
+    "deGiayY": -0.0074,
+    "deGiayMoc": -0.0074,
+    "deChan": 0.0333,
+    "deChanTuThe": 0.0934,
+    "soMocDe": 4
+   },
+   "seatY": 0.2585
+  },
+  "de/dung-len/sofa": {
+   "dat": true,
+   "deGiayThat": 0,
+   "deDuoiMatCa": 0,
+   "xuongChanY": 0.0334,
+   "soXuongChan": 4,
+   "soDinh": 18145,
+   "soNhan": 1017,
+   "cum": "actor:owner",
+   "pr": {
+    "deGiayY": 0.0005,
+    "deGiayMoc": 0,
+    "deChan": 0.0333,
+    "deChanTuThe": 0.0329,
+    "soMocDe": 4
+   }
+  },
+  "khoi/goi-1-nam-tren-mat-ngoi-sofa": {
+   "dat": true,
+   "day": 0.2585,
+   "matNgoiSofa": 0.2585,
+   "lech": 0
+  },
+  "khoi/goi-2-nam-tren-mat-ngoi-sofa": {
+   "dat": true,
+   "day": 0.2585,
+   "matNgoiSofa": 0.2585,
+   "lech": 0
+  },
+  "khoi/khong-khoi-nao-duoi-san": {
+   "dat": true,
+   "duoiSan": []
+  },
+  "toc/rat-vui/moc-da-on-dinh": {
+   "dat": true,
+   "mocDaOnDinh": true
+  },
+  "toc/rat-vui/dang-dien-that": {
+   "dat": true,
+   "dangNen": "nhay",
+   "clipThat": true,
+   "trangThai": "emoting"
+  },
+  "toc/rat-vui/luot-1": {
+   "dat": true,
+   "dinhLechToc": 0.0461,
+   "moc": 0.07,
+   "dichDauChuoiMax": 0.0632,
+   "dichNgonTheoDauMax": 0.1516,
+   "khungDaiNhatMs": 132.7,
+   "buocSpringToiDa": 1,
+   "mau": [
+    {
+     "t": 1,
+     "lechToc": 0.0034,
+     "xaDauNhat": 0.8184,
+     "lechVay": 0.0058,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0922,
+      1.0445,
+      -2.8158
+     ],
+     "ngonTocTheoDau": [
+      0.019,
+      -0.3346,
+      -0.1695
+     ]
+    },
+    {
+     "t": 102,
+     "lechToc": 0.0194,
+     "xaDauNhat": 0.8042,
+     "lechVay": 0.0096,
+     "soHamCat": 6,
+     "dauChuoi": [
+      3.0926,
+      1.0416,
+      -2.8108
+     ],
+     "ngonTocTheoDau": [
+      -0.0342,
+      -0.3276,
+      -0.1666
+     ]
+    },
+    {
+     "t": 218,
+     "lechToc": 0.0164,
+     "xaDauNhat": 0.8054,
+     "lechVay": 0.0455,
+     "soHamCat": 10,
+     "dauChuoi": [
+      3.1056,
+      1.0343,
+      -2.795
+     ],
+     "ngonTocTheoDau": [
+      0.0008,
+      -0.3298,
+      -0.1669
+     ]
+    },
+    {
+     "t": 313,
+     "lechToc": 0.0355,
+     "xaDauNhat": 0.8343,
+     "lechVay": 0.0446,
+     "soHamCat": 6,
+     "dauChuoi": [
+      3.1335,
+      1.0478,
+      -2.7954
+     ],
+     "ngonTocTheoDau": [
+      0.0837,
+      -0.3278,
+      -0.1793
+     ]
+    },
+    {
+     "t": 402,
+     "lechToc": 0.038,
+     "xaDauNhat": 0.8416,
+     "lechVay": 0.0399,
+     "soHamCat": 24,
+     "dauChuoi": [
+      3.1606,
+      1.0782,
+      -2.795
+     ],
+     "ngonTocTheoDau": [
+      0.1242,
+      -0.3138,
+      -0.1878
+     ]
+    },
+    {
+     "t": 521,
+     "lechToc": 0.038,
+     "xaDauNhat": 0.8416,
+     "lechVay": 0.0399,
+     "soHamCat": 24,
+     "dauChuoi": [
+      3.1606,
+      1.0782,
+      -2.795
+     ],
+     "ngonTocTheoDau": [
+      0.1242,
+      -0.3138,
+      -0.1878
+     ]
+    },
+    {
+     "t": 619,
+     "lechToc": 0.036,
+     "xaDauNhat": 0.8107,
+     "lechVay": 0.0359,
+     "soHamCat": 11,
+     "dauChuoi": [
+      3.2046,
+      1.0887,
+      -2.7509
+     ],
+     "ngonTocTheoDau": [
+      -0.0256,
+      -0.3296,
+      -0.1706
+     ]
+    },
+    {
+     "t": 719,
+     "lechToc": 0.0461,
+     "xaDauNhat": 0.7863,
+     "lechVay": 0.064,
+     "soHamCat": 11,
+     "dauChuoi": [
+      3.1877,
+      1.0646,
+      -2.7345
+     ],
+     "ngonTocTheoDau": [
+      -0.0766,
+      -0.3142,
+      -0.16
+     ]
+    },
+    {
+     "t": 824,
+     "lechToc": 0.0423,
+     "xaDauNhat": 0.7801,
+     "lechVay": 0.0597,
+     "soHamCat": 15,
+     "dauChuoi": [
+      3.1567,
+      1.0646,
+      -2.7135
+     ],
+     "ngonTocTheoDau": [
+      -0.0855,
+      -0.3069,
+      -0.1633
+     ]
+    },
+    {
+     "t": 921,
+     "lechToc": 0.0271,
+     "xaDauNhat": 0.7948,
+     "lechVay": 0.0353,
+     "soHamCat": 11,
+     "dauChuoi": [
+      3.1289,
+      1.0733,
+      -2.6892
+     ],
+     "ngonTocTheoDau": [
+      -0.0458,
+      -0.3188,
+      -0.1712
+     ]
+    },
+    {
+     "t": 1001,
+     "lechToc": 0.012,
+     "xaDauNhat": 0.8115,
+     "lechVay": 0.0253,
+     "soHamCat": 10,
+     "dauChuoi": [
+      3.1162,
+      1.0742,
+      -2.6786
+     ],
+     "ngonTocTheoDau": [
+      0.0041,
+      -0.3305,
+      -0.1716
+     ]
+    },
+    {
+     "t": 1102,
+     "lechToc": 0.0153,
+     "xaDauNhat": 0.8171,
+     "lechVay": 0.0294,
+     "soHamCat": 25,
+     "dauChuoi": [
+      3.1048,
+      1.0788,
+      -2.6928
+     ],
+     "ngonTocTheoDau": [
+      0.0651,
+      -0.3325,
+      -0.1607
+     ]
+    },
+    {
+     "t": 1202,
+     "lechToc": 0.0252,
+     "xaDauNhat": 0.8184,
+     "lechVay": 0.0519,
+     "soHamCat": 9,
+     "dauChuoi": [
+      3.0896,
+      1.0681,
+      -2.7341
+     ],
+     "ngonTocTheoDau": [
+      0.1158,
+      -0.3201,
+      -0.1588
+     ]
+    },
+    {
+     "t": 1301,
+     "lechToc": 0.0287,
+     "xaDauNhat": 0.8261,
+     "lechVay": 0.0618,
+     "soHamCat": 7,
+     "dauChuoi": [
+      3.0983,
+      1.0664,
+      -2.7602
+     ],
+     "ngonTocTheoDau": [
+      0.1146,
+      -0.3198,
+      -0.1683
+     ]
+    },
+    {
+     "t": 1406,
+     "lechToc": 0.0311,
+     "xaDauNhat": 0.838,
+     "lechVay": 0.0375,
+     "soHamCat": 6,
+     "dauChuoi": [
+      3.14,
+      1.1033,
+      -2.7667
+     ],
+     "ngonTocTheoDau": [
+      0.096,
+      -0.3229,
+      -0.1855
+     ]
+    },
+    {
+     "t": 1504,
+     "lechToc": 0.0145,
+     "xaDauNhat": 0.8363,
+     "lechVay": 0.0408,
+     "soHamCat": 4,
+     "dauChuoi": [
+      3.1812,
+      1.1064,
+      -2.7529
+     ],
+     "ngonTocTheoDau": [
+      0.0509,
+      -0.3303,
+      -0.1888
+     ]
+    },
+    {
+     "t": 1604,
+     "lechToc": 0.0275,
+     "xaDauNhat": 0.807,
+     "lechVay": 0.0365,
+     "soHamCat": 12,
+     "dauChuoi": [
+      3.1996,
+      1.0929,
+      -2.7413
+     ],
+     "ngonTocTheoDau": [
+      -0.017,
+      -0.3311,
+      -0.1649
+     ]
+    },
+    {
+     "t": 1707,
+     "lechToc": 0.0423,
+     "xaDauNhat": 0.7858,
+     "lechVay": 0.0591,
+     "soHamCat": 11,
+     "dauChuoi": [
+      3.1819,
+      1.0582,
+      -2.7442
+     ],
+     "ngonTocTheoDau": [
+      -0.056,
+      -0.3225,
+      -0.1514
+     ]
+    },
+    {
+     "t": 1807,
+     "lechToc": 0.0444,
+     "xaDauNhat": 0.7774,
+     "lechVay": 0.0579,
+     "soHamCat": 11,
+     "dauChuoi": [
+      3.1462,
+      1.0448,
+      -2.7448
+     ],
+     "ngonTocTheoDau": [
+      -0.0729,
+      -0.3139,
+      -0.1532
+     ]
+    },
+    {
+     "t": 1901,
+     "lechToc": 0.0391,
+     "xaDauNhat": 0.7828,
+     "lechVay": 0.0351,
+     "soHamCat": 17,
+     "dauChuoi": [
+      3.1187,
+      1.0488,
+      -2.7366
+     ],
+     "ngonTocTheoDau": [
+      -0.0583,
+      -0.3182,
+      -0.1561
+     ]
+    },
+    {
+     "t": 2001,
+     "lechToc": 0.0207,
+     "xaDauNhat": 0.8011,
+     "lechVay": 0.0261,
+     "soHamCat": 6,
+     "dauChuoi": [
+      3.1048,
+      1.0492,
+      -2.7263
+     ],
+     "ngonTocTheoDau": [
+      -0.0133,
+      -0.3304,
+      -0.1606
+     ]
+    }
+   ]
+  },
+  "toc/rat-vui/luot-2": {
+   "dat": true,
+   "dinhLechToc": 0.0457,
+   "moc": 0.07,
+   "dichDauChuoiMax": 0.0559,
+   "dichNgonTheoDauMax": 0.1121,
+   "khungDaiNhatMs": 133.7,
+   "buocSpringToiDa": 1,
+   "mau": [
+    {
+     "t": 1,
+     "lechToc": 0.0037,
+     "xaDauNhat": 0.8225,
+     "lechVay": 0.0068,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0899,
+      1.0541,
+      -2.7908
+     ],
+     "ngonTocTheoDau": [
+      0.0184,
+      -0.334,
+      -0.1749
+     ]
+    },
+    {
+     "t": 102,
+     "lechToc": 0.0153,
+     "xaDauNhat": 0.8132,
+     "lechVay": 0.01,
+     "soHamCat": 6,
+     "dauChuoi": [
+      3.0906,
+      1.0515,
+      -2.7855
+     ],
+     "ngonTocTheoDau": [
+      -0.0347,
+      -0.3261,
+      -0.1782
+     ]
+    },
+    {
+     "t": 218,
+     "lechToc": 0.0143,
+     "xaDauNhat": 0.8075,
+     "lechVay": 0.0477,
+     "soHamCat": 23,
+     "dauChuoi": [
+      3.1057,
+      1.0396,
+      -2.7787
+     ],
+     "ngonTocTheoDau": [
+      -0.0072,
+      -0.3272,
+      -0.1738
+     ]
+    },
+    {
+     "t": 315,
+     "lechToc": 0.0352,
+     "xaDauNhat": 0.8356,
+     "lechVay": 0.0456,
+     "soHamCat": 5,
+     "dauChuoi": [
+      3.1344,
+      1.0519,
+      -2.7842
+     ],
+     "ngonTocTheoDau": [
+      0.0813,
+      -0.3276,
+      -0.182
+     ]
+    },
+    {
+     "t": 417,
+     "lechToc": 0.0374,
+     "xaDauNhat": 0.8424,
+     "lechVay": 0.0395,
+     "soHamCat": 24,
+     "dauChuoi": [
+      3.1682,
+      1.0854,
+      -2.7822
+     ],
+     "ngonTocTheoDau": [
+      0.1243,
+      -0.3122,
+      -0.1912
+     ]
+    },
+    {
+     "t": 533,
+     "lechToc": 0.0374,
+     "xaDauNhat": 0.8424,
+     "lechVay": 0.0395,
+     "soHamCat": 24,
+     "dauChuoi": [
+      3.1682,
+      1.0854,
+      -2.7822
+     ],
+     "ngonTocTheoDau": [
+      0.1243,
+      -0.3122,
+      -0.1912
+     ]
+    },
+    {
+     "t": 601,
+     "lechToc": 0.0218,
+     "xaDauNhat": 0.8217,
+     "lechVay": 0.0366,
+     "soHamCat": 16,
+     "dauChuoi": [
+      3.2079,
+      1.0922,
+      -2.7435
+     ],
+     "ngonTocTheoDau": [
+      0.0151,
+      -0.3329,
+      -0.1765
+     ]
+    },
+    {
+     "t": 702,
+     "lechToc": 0.0453,
+     "xaDauNhat": 0.7991,
+     "lechVay": 0.0502,
+     "soHamCat": 12,
+     "dauChuoi": [
+      3.1952,
+      1.0759,
+      -2.7367
+     ],
+     "ngonTocTheoDau": [
+      -0.0515,
+      -0.3239,
+      -0.164
+     ]
+    },
+    {
+     "t": 809,
+     "lechToc": 0.0457,
+     "xaDauNhat": 0.7761,
+     "lechVay": 0.0611,
+     "soHamCat": 23,
+     "dauChuoi": [
+      3.1589,
+      1.0636,
+      -2.7151
+     ],
+     "ngonTocTheoDau": [
+      -0.088,
+      -0.3059,
+      -0.1599
+     ]
+    },
+    {
+     "t": 902,
+     "lechToc": 0.0376,
+     "xaDauNhat": 0.7842,
+     "lechVay": 0.0437,
+     "soHamCat": 15,
+     "dauChuoi": [
+      3.1386,
+      1.0705,
+      -2.6994
+     ],
+     "ngonTocTheoDau": [
+      -0.0663,
+      -0.3137,
+      -0.1636
+     ]
+    },
+    {
+     "t": 1000,
+     "lechToc": 0.0151,
+     "xaDauNhat": 0.8067,
+     "lechVay": 0.0248,
+     "soHamCat": 8,
+     "dauChuoi": [
+      3.1196,
+      1.0741,
+      -2.6831
+     ],
+     "ngonTocTheoDau": [
+      -0.0066,
+      -0.3293,
+      -0.169
+     ]
+    },
+    {
+     "t": 1102,
+     "lechToc": 0.0122,
+     "xaDauNhat": 0.8161,
+     "lechVay": 0.0256,
+     "soHamCat": 19,
+     "dauChuoi": [
+      3.1058,
+      1.0777,
+      -2.6963
+     ],
+     "ngonTocTheoDau": [
+      0.0638,
+      -0.3329,
+      -0.1593
+     ]
+    },
+    {
+     "t": 1201,
+     "lechToc": 0.0252,
+     "xaDauNhat": 0.8197,
+     "lechVay": 0.0478,
+     "soHamCat": 11,
+     "dauChuoi": [
+      3.0913,
+      1.0682,
+      -2.7391
+     ],
+     "ngonTocTheoDau": [
+      0.1081,
+      -0.3235,
+      -0.1587
+     ]
+    },
+    {
+     "t": 1301,
+     "lechToc": 0.0285,
+     "xaDauNhat": 0.8239,
+     "lechVay": 0.058,
+     "soHamCat": 11,
+     "dauChuoi": [
+      3.0994,
+      1.064,
+      -2.773
+     ],
+     "ngonTocTheoDau": [
+      0.1151,
+      -0.3199,
+      -0.1654
+     ]
+    },
+    {
+     "t": 1401,
+     "lechToc": 0.031,
+     "xaDauNhat": 0.8344,
+     "lechVay": 0.0382,
+     "soHamCat": 9,
+     "dauChuoi": [
+      3.1306,
+      1.0951,
+      -2.783
+     ],
+     "ngonTocTheoDau": [
+      0.1026,
+      -0.3221,
+      -0.1799
+     ]
+    },
+    {
+     "t": 1510,
+     "lechToc": 0.0122,
+     "xaDauNhat": 0.8322,
+     "lechVay": 0.0407,
+     "soHamCat": 11,
+     "dauChuoi": [
+      3.1829,
+      1.1013,
+      -2.7703
+     ],
+     "ngonTocTheoDau": [
+      0.0469,
+      -0.3311,
+      -0.1845
+     ]
+    },
+    {
+     "t": 1601,
+     "lechToc": 0.0269,
+     "xaDauNhat": 0.8076,
+     "lechVay": 0.0376,
+     "soHamCat": 12,
+     "dauChuoi": [
+      3.1988,
+      1.0891,
+      -2.7615
+     ],
+     "ngonTocTheoDau": [
+      -0.0143,
+      -0.3317,
+      -0.1647
+     ]
+    },
+    {
+     "t": 1701,
+     "lechToc": 0.0428,
+     "xaDauNhat": 0.7842,
+     "lechVay": 0.0513,
+     "soHamCat": 10,
+     "dauChuoi": [
+      3.1834,
+      1.0581,
+      -2.7645
+     ],
+     "ngonTocTheoDau": [
+      -0.0584,
+      -0.3216,
+      -0.1506
+     ]
+    },
+    {
+     "t": 1801,
+     "lechToc": 0.0435,
+     "xaDauNhat": 0.7784,
+     "lechVay": 0.0561,
+     "soHamCat": 11,
+     "dauChuoi": [
+      3.1494,
+      1.04,
+      -2.765
+     ],
+     "ngonTocTheoDau": [
+      -0.0719,
+      -0.3155,
+      -0.1514
+     ]
+    },
+    {
+     "t": 1902,
+     "lechToc": 0.0413,
+     "xaDauNhat": 0.7806,
+     "lechVay": 0.0326,
+     "soHamCat": 12,
+     "dauChuoi": [
+      3.12,
+      1.0449,
+      -2.7548
+     ],
+     "ngonTocTheoDau": [
+      -0.0593,
+      -0.3172,
+      -0.1555
+     ]
+    },
+    {
+     "t": 2001,
+     "lechToc": 0.026,
+     "xaDauNhat": 0.7958,
+     "lechVay": 0.0274,
+     "soHamCat": 5,
+     "dauChuoi": [
+      3.1062,
+      1.0457,
+      -2.743
+     ],
+     "ngonTocTheoDau": [
+      -0.0201,
+      -0.3284,
+      -0.1586
+     ]
+    }
+   ]
+  },
+  "toc/rat-vui/luot-3": {
+   "dat": true,
+   "dinhLechToc": 0.0445,
+   "moc": 0.07,
+   "dichDauChuoiMax": 0.0582,
+   "dichNgonTheoDauMax": 0.1247,
+   "khungDaiNhatMs": 117.7,
+   "buocSpringToiDa": 2,
+   "mau": [
+    {
+     "t": 3,
+     "lechToc": 0.0042,
+     "xaDauNhat": 0.8221,
+     "lechVay": 0.0066,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0899,
+      1.0534,
+      -2.7924
+     ],
+     "ngonTocTheoDau": [
+      0.0183,
+      -0.334,
+      -0.1745
+     ]
+    },
+    {
+     "t": 100,
+     "lechToc": 0.0156,
+     "xaDauNhat": 0.8138,
+     "lechVay": 0.0098,
+     "soHamCat": 6,
+     "dauChuoi": [
+      3.0903,
+      1.0513,
+      -2.787
+     ],
+     "ngonTocTheoDau": [
+      -0.0329,
+      -0.3265,
+      -0.1783
+     ]
+    },
+    {
+     "t": 219,
+     "lechToc": 0.0121,
+     "xaDauNhat": 0.8109,
+     "lechVay": 0.0458,
+     "soHamCat": 8,
+     "dauChuoi": [
+      3.1039,
+      1.0402,
+      -2.7796
+     ],
+     "ngonTocTheoDau": [
+      -0.0017,
+      -0.3287,
+      -0.1745
+     ]
+    },
+    {
+     "t": 301,
+     "lechToc": 0.0328,
+     "xaDauNhat": 0.8323,
+     "lechVay": 0.0545,
+     "soHamCat": 9,
+     "dauChuoi": [
+      3.1279,
+      1.0444,
+      -2.7841
+     ],
+     "ngonTocTheoDau": [
+      0.0674,
+      -0.3296,
+      -0.1809
+     ]
+    },
+    {
+     "t": 414,
+     "lechToc": 0.0366,
+     "xaDauNhat": 0.8439,
+     "lechVay": 0.0395,
+     "soHamCat": 12,
+     "dauChuoi": [
+      3.1654,
+      1.0845,
+      -2.7836
+     ],
+     "ngonTocTheoDau": [
+      0.1189,
+      -0.3145,
+      -0.1922
+     ]
+    },
+    {
+     "t": 529,
+     "lechToc": 0.0366,
+     "xaDauNhat": 0.8439,
+     "lechVay": 0.0395,
+     "soHamCat": 12,
+     "dauChuoi": [
+      3.1654,
+      1.0845,
+      -2.7836
+     ],
+     "ngonTocTheoDau": [
+      0.1189,
+      -0.3145,
+      -0.1922
+     ]
+    },
+    {
+     "t": 602,
+     "lechToc": 0.0299,
+     "xaDauNhat": 0.8197,
+     "lechVay": 0.0363,
+     "soHamCat": 10,
+     "dauChuoi": [
+      3.2072,
+      1.0918,
+      -2.7438
+     ],
+     "ngonTocTheoDau": [
+      -0.0037,
+      -0.3317,
+      -0.1775
+     ]
+    },
+    {
+     "t": 701,
+     "lechToc": 0.0445,
+     "xaDauNhat": 0.7906,
+     "lechVay": 0.059,
+     "soHamCat": 12,
+     "dauChuoi": [
+      3.1921,
+      1.0697,
+      -2.7326
+     ],
+     "ngonTocTheoDau": [
+      -0.0689,
+      -0.3176,
+      -0.1612
+     ]
+    },
+    {
+     "t": 802,
+     "lechToc": 0.0425,
+     "xaDauNhat": 0.7826,
+     "lechVay": 0.0642,
+     "soHamCat": 14,
+     "dauChuoi": [
+      3.1627,
+      1.0624,
+      -2.716
+     ],
+     "ngonTocTheoDau": [
+      -0.0827,
+      -0.309,
+      -0.1633
+     ]
+    },
+    {
+     "t": 901,
+     "lechToc": 0.0335,
+     "xaDauNhat": 0.7883,
+     "lechVay": 0.0438,
+     "soHamCat": 18,
+     "dauChuoi": [
+      3.1383,
+      1.0705,
+      -2.6984
+     ],
+     "ngonTocTheoDau": [
+      -0.0648,
+      -0.314,
+      -0.1675
+     ]
+    },
+    {
+     "t": 1003,
+     "lechToc": 0.0124,
+     "xaDauNhat": 0.8123,
+     "lechVay": 0.0259,
+     "soHamCat": 8,
+     "dauChuoi": [
+      3.1165,
+      1.074,
+      -2.6815
+     ],
+     "ngonTocTheoDau": [
+      0.0052,
+      -0.3312,
+      -0.1709
+     ]
+    },
+    {
+     "t": 1112,
+     "lechToc": 0.0163,
+     "xaDauNhat": 0.8192,
+     "lechVay": 0.0287,
+     "soHamCat": 16,
+     "dauChuoi": [
+      3.1015,
+      1.0776,
+      -2.7032
+     ],
+     "ngonTocTheoDau": [
+      0.078,
+      -0.3307,
+      -0.1609
+     ]
+    },
+    {
+     "t": 1201,
+     "lechToc": 0.0252,
+     "xaDauNhat": 0.8187,
+     "lechVay": 0.0487,
+     "soHamCat": 11,
+     "dauChuoi": [
+      3.0899,
+      1.0678,
+      -2.74
+     ],
+     "ngonTocTheoDau": [
+      0.1099,
+      -0.3224,
+      -0.1585
+     ]
+    },
+    {
+     "t": 1301,
+     "lechToc": 0.0282,
+     "xaDauNhat": 0.8261,
+     "lechVay": 0.0592,
+     "soHamCat": 9,
+     "dauChuoi": [
+      3.0981,
+      1.0638,
+      -2.7701
+     ],
+     "ngonTocTheoDau": [
+      0.113,
+      -0.3207,
+      -0.1677
+     ]
+    },
+    {
+     "t": 1401,
+     "lechToc": 0.0311,
+     "xaDauNhat": 0.8345,
+     "lechVay": 0.0381,
+     "soHamCat": 9,
+     "dauChuoi": [
+      3.131,
+      1.0963,
+      -2.7808
+     ],
+     "ngonTocTheoDau": [
+      0.1017,
+      -0.3224,
+      -0.1799
+     ]
+    },
+    {
+     "t": 1502,
+     "lechToc": 0.0179,
+     "xaDauNhat": 0.8361,
+     "lechVay": 0.0409,
+     "soHamCat": 8,
+     "dauChuoi": [
+      3.1766,
+      1.1039,
+      -2.771
+     ],
+     "ngonTocTheoDau": [
+      0.0601,
+      -0.3295,
+      -0.1872
+     ]
+    },
+    {
+     "t": 1601,
+     "lechToc": 0.0209,
+     "xaDauNhat": 0.8159,
+     "lechVay": 0.0386,
+     "soHamCat": 8,
+     "dauChuoi": [
+      3.1987,
+      1.0942,
+      -2.7601
+     ],
+     "ngonTocTheoDau": [
+      0.0035,
+      -0.3329,
+      -0.1713
+     ]
+    },
+    {
+     "t": 1702,
+     "lechToc": 0.042,
+     "xaDauNhat": 0.7798,
+     "lechVay": 0.0529,
+     "soHamCat": 8,
+     "dauChuoi": [
+      3.1833,
+      1.0574,
+      -2.7626
+     ],
+     "ngonTocTheoDau": [
+      -0.0628,
+      -0.3192,
+      -0.1492
+     ]
+    },
+    {
+     "t": 1801,
+     "lechToc": 0.0437,
+     "xaDauNhat": 0.7781,
+     "lechVay": 0.0575,
+     "soHamCat": 17,
+     "dauChuoi": [
+      3.1527,
+      1.0399,
+      -2.7637
+     ],
+     "ngonTocTheoDau": [
+      -0.0662,
+      -0.318,
+      -0.1484
+     ]
+    },
+    {
+     "t": 1901,
+     "lechToc": 0.0432,
+     "xaDauNhat": 0.7786,
+     "lechVay": 0.0364,
+     "soHamCat": 13,
+     "dauChuoi": [
+      3.1232,
+      1.0442,
+      -2.7561
+     ],
+     "ngonTocTheoDau": [
+      -0.0624,
+      -0.3163,
+      -0.1539
+     ]
+    },
+    {
+     "t": 2002,
+     "lechToc": 0.0281,
+     "xaDauNhat": 0.7938,
+     "lechVay": 0.0263,
+     "soHamCat": 11,
+     "dauChuoi": [
+      3.1061,
+      1.046,
+      -2.7427
+     ],
+     "ngonTocTheoDau": [
+      -0.0258,
+      -0.3272,
+      -0.1581
+     ]
+    }
+   ]
+  },
+  "toc/buon/moc-da-on-dinh": {
+   "dat": true,
+   "mocDaOnDinh": true
+  },
+  "toc/buon/dang-dien-that": {
+   "dat": true,
+   "dangNen": "idle",
+   "clipThat": true,
+   "trangThai": "emoting"
+  },
+  "toc/buon/luot-1": {
+   "dat": true,
+   "dinhLechToc": 0.0628,
+   "moc": 0.07,
+   "dichDauChuoiMax": 0.0588,
+   "dichNgonTheoDauMax": 0.0183,
+   "khungDaiNhatMs": 133.8,
+   "buocSpringToiDa": 1,
+   "mau": [
+    {
+     "t": 3,
+     "lechToc": 0.0045,
+     "xaDauNhat": 0.8218,
+     "lechVay": 0.0065,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0899,
+      1.0526,
+      -2.7942
+     ],
+     "ngonTocTheoDau": [
+      0.0182,
+      -0.3341,
+      -0.174
+     ]
+    },
+    {
+     "t": 101,
+     "lechToc": 0.002,
+     "xaDauNhat": 0.82,
+     "lechVay": 0.0064,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0901,
+      1.0521,
+      -2.7927
+     ],
+     "ngonTocTheoDau": [
+      0.0184,
+      -0.3344,
+      -0.1717
+     ]
+    },
+    {
+     "t": 202,
+     "lechToc": 0.0167,
+     "xaDauNhat": 0.8052,
+     "lechVay": 0.0058,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0906,
+      1.0402,
+      -2.8003
+     ],
+     "ngonTocTheoDau": [
+      0.0161,
+      -0.3353,
+      -0.1544
+     ]
+    },
+    {
+     "t": 318,
+     "lechToc": 0.0331,
+     "xaDauNhat": 0.7888,
+     "lechVay": 0.0075,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0914,
+      1.0154,
+      -2.8193
+     ],
+     "ngonTocTheoDau": [
+      0.0134,
+      -0.3351,
+      -0.1363
+     ]
+    },
+    {
+     "t": 415,
+     "lechToc": 0.045,
+     "xaDauNhat": 0.7769,
+     "lechVay": 0.0132,
+     "soHamCat": 1,
+     "dauChuoi": [
+      3.092,
+      0.9902,
+      -2.836
+     ],
+     "ngonTocTheoDau": [
+      0.0115,
+      -0.3341,
+      -0.1238
+     ]
+    },
+    {
+     "t": 534,
+     "lechToc": 0.045,
+     "xaDauNhat": 0.7769,
+     "lechVay": 0.0132,
+     "soHamCat": 1,
+     "dauChuoi": [
+      3.092,
+      0.9902,
+      -2.836
+     ],
+     "ngonTocTheoDau": [
+      0.0115,
+      -0.3341,
+      -0.1238
+     ]
+    },
+    {
+     "t": 610,
+     "lechToc": 0.0482,
+     "xaDauNhat": 0.7736,
+     "lechVay": 0.0255,
+     "soHamCat": 6,
+     "dauChuoi": [
+      3.0918,
+      0.9358,
+      -2.8584
+     ],
+     "ngonTocTheoDau": [
+      0.0102,
+      -0.3342,
+      -0.1195
+     ]
+    },
+    {
+     "t": 701,
+     "lechToc": 0.0628,
+     "xaDauNhat": 0.759,
+     "lechVay": 0.0293,
+     "soHamCat": 4,
+     "dauChuoi": [
+      3.0918,
+      0.9209,
+      -2.86
+     ],
+     "ngonTocTheoDau": [
+      0.008,
+      -0.3319,
+      -0.1054
+     ]
+    },
+    {
+     "t": 801,
+     "lechToc": 0.0558,
+     "xaDauNhat": 0.766,
+     "lechVay": 0.0303,
+     "soHamCat": 4,
+     "dauChuoi": [
+      3.0917,
+      0.9095,
+      -2.8613
+     ],
+     "ngonTocTheoDau": [
+      0.008,
+      -0.333,
+      -0.1125
+     ]
+    },
+    {
+     "t": 902,
+     "lechToc": 0.0422,
+     "xaDauNhat": 0.7796,
+     "lechVay": 0.0287,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0915,
+      0.9084,
+      -2.8596
+     ],
+     "ngonTocTheoDau": [
+      0.0091,
+      -0.3349,
+      -0.1257
+     ]
+    },
+    {
+     "t": 1000,
+     "lechToc": 0.0362,
+     "xaDauNhat": 0.7857,
+     "lechVay": 0.0277,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0913,
+      0.9122,
+      -2.8586
+     ],
+     "ngonTocTheoDau": [
+      0.0091,
+      -0.3353,
+      -0.1323
+     ]
+    },
+    {
+     "t": 1101,
+     "lechToc": 0.0332,
+     "xaDauNhat": 0.7886,
+     "lechVay": 0.0268,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0911,
+      0.9159,
+      -2.8581
+     ],
+     "ngonTocTheoDau": [
+      0.0096,
+      -0.3355,
+      -0.1353
+     ]
+    },
+    {
+     "t": 1202,
+     "lechToc": 0.032,
+     "xaDauNhat": 0.7898,
+     "lechVay": 0.0269,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0914,
+      0.9177,
+      -2.8596
+     ],
+     "ngonTocTheoDau": [
+      0.0104,
+      -0.3355,
+      -0.1367
+     ]
+    },
+    {
+     "t": 1316,
+     "lechToc": 0.0309,
+     "xaDauNhat": 0.7909,
+     "lechVay": 0.0288,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0921,
+      0.9166,
+      -2.8649
+     ],
+     "ngonTocTheoDau": [
+      0.0116,
+      -0.3356,
+      -0.1377
+     ]
+    },
+    {
+     "t": 1402,
+     "lechToc": 0.0314,
+     "xaDauNhat": 0.7904,
+     "lechVay": 0.0311,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0927,
+      0.9137,
+      -2.87
+     ],
+     "ngonTocTheoDau": [
+      0.0121,
+      -0.3356,
+      -0.1369
+     ]
+    },
+    {
+     "t": 1501,
+     "lechToc": 0.0301,
+     "xaDauNhat": 0.7918,
+     "lechVay": 0.0325,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0935,
+      0.9095,
+      -2.8766
+     ],
+     "ngonTocTheoDau": [
+      0.0128,
+      -0.3357,
+      -0.1384
+     ]
+    },
+    {
+     "t": 1601,
+     "lechToc": 0.0218,
+     "xaDauNhat": 0.8,
+     "lechVay": 0.0311,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0943,
+      0.9112,
+      -2.8828
+     ],
+     "ngonTocTheoDau": [
+      0.0148,
+      -0.336,
+      -0.1472
+     ]
+    },
+    {
+     "t": 1703,
+     "lechToc": 0.0151,
+     "xaDauNhat": 0.8103,
+     "lechVay": 0.0253,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0948,
+      0.9277,
+      -2.8854
+     ],
+     "ngonTocTheoDau": [
+      0.0171,
+      -0.3357,
+      -0.159
+     ]
+    },
+    {
+     "t": 1800,
+     "lechToc": 0.0171,
+     "xaDauNhat": 0.8145,
+     "lechVay": 0.02,
+     "soHamCat": 12,
+     "dauChuoi": [
+      3.0945,
+      0.946,
+      -2.8819
+     ],
+     "ngonTocTheoDau": [
+      0.0178,
+      -0.3354,
+      -0.1641
+     ]
+    },
+    {
+     "t": 1902,
+     "lechToc": 0.0176,
+     "xaDauNhat": 0.8185,
+     "lechVay": 0.012,
+     "soHamCat": 1,
+     "dauChuoi": [
+      3.0937,
+      0.9768,
+      -2.8697
+     ],
+     "ngonTocTheoDau": [
+      0.0185,
+      -0.3349,
+      -0.1692
+     ]
+    },
+    {
+     "t": 2001,
+     "lechToc": 0.0171,
+     "xaDauNhat": 0.8192,
+     "lechVay": 0.0068,
+     "soHamCat": 2,
+     "dauChuoi": [
+      3.0928,
+      1.0006,
+      -2.8559
+     ],
+     "ngonTocTheoDau": [
+      0.0185,
+      -0.3347,
+      -0.1701
+     ]
+    }
+   ]
+  },
+  "toc/buon/luot-2": {
+   "dat": true,
+   "dinhLechToc": 0.0488,
+   "moc": 0.07,
+   "dichDauChuoiMax": 0.0488,
+   "dichNgonTheoDauMax": 0.0248,
+   "khungDaiNhatMs": 116.7,
+   "buocSpringToiDa": 1,
+   "mau": [
+    {
+     "t": 2,
+     "lechToc": 0.0153,
+     "xaDauNhat": 0.8065,
+     "lechVay": 0.0034,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0917,
+      1.0318,
+      -2.8282
+     ],
+     "ngonTocTheoDau": [
+      0.0169,
+      -0.3356,
+      -0.1552
+     ]
+    },
+    {
+     "t": 102,
+     "lechToc": 0.0211,
+     "xaDauNhat": 0.8008,
+     "lechVay": 0.006,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0906,
+      1.0308,
+      -2.8213
+     ],
+     "ngonTocTheoDau": [
+      0.0158,
+      -0.3357,
+      -0.1486
+     ]
+    },
+    {
+     "t": 201,
+     "lechToc": 0.0306,
+     "xaDauNhat": 0.7912,
+     "lechVay": 0.0086,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0897,
+      1.0241,
+      -2.8188
+     ],
+     "ngonTocTheoDau": [
+      0.0136,
+      -0.3353,
+      -0.1385
+     ]
+    },
+    {
+     "t": 301,
+     "lechToc": 0.0335,
+     "xaDauNhat": 0.7883,
+     "lechVay": 0.0103,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0893,
+      1.0138,
+      -2.8228
+     ],
+     "ngonTocTheoDau": [
+      0.0121,
+      -0.335,
+      -0.136
+     ]
+    },
+    {
+     "t": 402,
+     "lechToc": 0.0417,
+     "xaDauNhat": 0.7802,
+     "lechVay": 0.0103,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0893,
+      0.9912,
+      -2.833
+     ],
+     "ngonTocTheoDau": [
+      0.0103,
+      -0.3344,
+      -0.1274
+     ]
+    },
+    {
+     "t": 518,
+     "lechToc": 0.0417,
+     "xaDauNhat": 0.7802,
+     "lechVay": 0.0103,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0893,
+      0.9912,
+      -2.833
+     ],
+     "ngonTocTheoDau": [
+      0.0103,
+      -0.3344,
+      -0.1274
+     ]
+    },
+    {
+     "t": 601,
+     "lechToc": 0.0367,
+     "xaDauNhat": 0.7852,
+     "lechVay": 0.0218,
+     "soHamCat": 6,
+     "dauChuoi": [
+      3.0909,
+      0.9478,
+      -2.8552
+     ],
+     "ngonTocTheoDau": [
+      0.0111,
+      -0.3354,
+      -0.1313
+     ]
+    },
+    {
+     "t": 701,
+     "lechToc": 0.0488,
+     "xaDauNhat": 0.773,
+     "lechVay": 0.029,
+     "soHamCat": 4,
+     "dauChuoi": [
+      3.092,
+      0.9279,
+      -2.8646
+     ],
+     "ngonTocTheoDau": [
+      0.0092,
+      -0.3338,
+      -0.1198
+     ]
+    },
+    {
+     "t": 801,
+     "lechToc": 0.0424,
+     "xaDauNhat": 0.7794,
+     "lechVay": 0.0331,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0931,
+      0.9109,
+      -2.8734
+     ],
+     "ngonTocTheoDau": [
+      0.0107,
+      -0.3348,
+      -0.1255
+     ]
+    },
+    {
+     "t": 901,
+     "lechToc": 0.0387,
+     "xaDauNhat": 0.7831,
+     "lechVay": 0.0344,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0936,
+      0.904,
+      -2.877
+     ],
+     "ngonTocTheoDau": [
+      0.0118,
+      -0.3353,
+      -0.1287
+     ]
+    },
+    {
+     "t": 1001,
+     "lechToc": 0.0411,
+     "xaDauNhat": 0.7808,
+     "lechVay": 0.0348,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0935,
+      0.9022,
+      -2.8767
+     ],
+     "ngonTocTheoDau": [
+      0.0113,
+      -0.3352,
+      -0.1261
+     ]
+    },
+    {
+     "t": 1116,
+     "lechToc": 0.0445,
+     "xaDauNhat": 0.7774,
+     "lechVay": 0.0344,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0929,
+      0.9008,
+      -2.874
+     ],
+     "ngonTocTheoDau": [
+      0.0103,
+      -0.3348,
+      -0.1227
+     ]
+    },
+    {
+     "t": 1215,
+     "lechToc": 0.0455,
+     "xaDauNhat": 0.7763,
+     "lechVay": 0.0332,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0924,
+      0.9014,
+      -2.8704
+     ],
+     "ngonTocTheoDau": [
+      0.0097,
+      -0.3347,
+      -0.1217
+     ]
+    },
+    {
+     "t": 1301,
+     "lechToc": 0.0452,
+     "xaDauNhat": 0.7766,
+     "lechVay": 0.0319,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.092,
+      0.9029,
+      -2.867
+     ],
+     "ngonTocTheoDau": [
+      0.0094,
+      -0.3347,
+      -0.122
+     ]
+    },
+    {
+     "t": 1418,
+     "lechToc": 0.0421,
+     "xaDauNhat": 0.7797,
+     "lechVay": 0.0292,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0914,
+      0.9076,
+      -2.861
+     ],
+     "ngonTocTheoDau": [
+      0.0089,
+      -0.3349,
+      -0.1257
+     ]
+    },
+    {
+     "t": 1502,
+     "lechToc": 0.0327,
+     "xaDauNhat": 0.7891,
+     "lechVay": 0.0259,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0915,
+      0.912,
+      -2.8604
+     ],
+     "ngonTocTheoDau": [
+      0.0098,
+      -0.3355,
+      -0.136
+     ]
+    },
+    {
+     "t": 1626,
+     "lechToc": 0.0174,
+     "xaDauNhat": 0.8107,
+     "lechVay": 0.0183,
+     "soHamCat": 2,
+     "dauChuoi": [
+      3.0918,
+      0.932,
+      -2.8581
+     ],
+     "ngonTocTheoDau": [
+      0.0131,
+      -0.3353,
+      -0.1606
+     ]
+    },
+    {
+     "t": 1718,
+     "lechToc": 0.018,
+     "xaDauNhat": 0.8231,
+     "lechVay": 0.0119,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0919,
+      0.9562,
+      -2.8526
+     ],
+     "ngonTocTheoDau": [
+      0.0164,
+      -0.3339,
+      -0.1758
+     ]
+    },
+    {
+     "t": 1802,
+     "lechToc": 0.0187,
+     "xaDauNhat": 0.8292,
+     "lechVay": 0.0068,
+     "soHamCat": 18,
+     "dauChuoi": [
+      3.0923,
+      0.9784,
+      -2.8471
+     ],
+     "ngonTocTheoDau": [
+      0.0185,
+      -0.3328,
+      -0.1836
+     ]
+    },
+    {
+     "t": 1901,
+     "lechToc": 0.0171,
+     "xaDauNhat": 0.836,
+     "lechVay": 0.005,
+     "soHamCat": 2,
+     "dauChuoi": [
+      3.0927,
+      1.0018,
+      -2.8381
+     ],
+     "ngonTocTheoDau": [
+      0.0215,
+      -0.3312,
+      -0.1924
+     ]
+    },
+    {
+     "t": 2001,
+     "lechToc": 0.0148,
+     "xaDauNhat": 0.8366,
+     "lechVay": 0.0055,
+     "soHamCat": 4,
+     "dauChuoi": [
+      3.093,
+      1.0232,
+      -2.8264
+     ],
+     "ngonTocTheoDau": [
+      0.0227,
+      -0.3312,
+      -0.1928
+     ]
+    }
+   ]
+  },
+  "toc/buon/luot-3": {
+   "dat": true,
+   "dinhLechToc": 0.0625,
+   "moc": 0.07,
+   "dichDauChuoiMax": 0.0561,
+   "dichNgonTheoDauMax": 0.0194,
+   "khungDaiNhatMs": 133.8,
+   "buocSpringToiDa": 1,
+   "mau": [
+    {
+     "t": 1,
+     "lechToc": 0.0022,
+     "xaDauNhat": 0.8196,
+     "lechVay": 0.0047,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0917,
+      1.0466,
+      -2.8113
+     ],
+     "ngonTocTheoDau": [
+      0.0188,
+      -0.3344,
+      -0.1711
+     ]
+    },
+    {
+     "t": 110,
+     "lechToc": 0.0112,
+     "xaDauNhat": 0.8106,
+     "lechVay": 0.0052,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.092,
+      1.0389,
+      -2.8177
+     ],
+     "ngonTocTheoDau": [
+      0.0178,
+      -0.3353,
+      -0.1602
+     ]
+    },
+    {
+     "t": 200,
+     "lechToc": 0.0218,
+     "xaDauNhat": 0.8001,
+     "lechVay": 0.0059,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.092,
+      1.0294,
+      -2.8243
+     ],
+     "ngonTocTheoDau": [
+      0.016,
+      -0.3355,
+      -0.1482
+     ]
+    },
+    {
+     "t": 301,
+     "lechToc": 0.0397,
+     "xaDauNhat": 0.7821,
+     "lechVay": 0.0111,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0919,
+      1.0039,
+      -2.8411
+     ],
+     "ngonTocTheoDau": [
+      0.0127,
+      -0.3347,
+      -0.1291
+     ]
+    },
+    {
+     "t": 402,
+     "lechToc": 0.0504,
+     "xaDauNhat": 0.7715,
+     "lechVay": 0.0177,
+     "soHamCat": 1,
+     "dauChuoi": [
+      3.0918,
+      0.9795,
+      -2.8543
+     ],
+     "ngonTocTheoDau": [
+      0.0108,
+      -0.3335,
+      -0.1182
+     ]
+    },
+    {
+     "t": 517,
+     "lechToc": 0.0504,
+     "xaDauNhat": 0.7715,
+     "lechVay": 0.0177,
+     "soHamCat": 1,
+     "dauChuoi": [
+      3.0918,
+      0.9795,
+      -2.8543
+     ],
+     "ngonTocTheoDau": [
+      0.0108,
+      -0.3335,
+      -0.1182
+     ]
+    },
+    {
+     "t": 605,
+     "lechToc": 0.0499,
+     "xaDauNhat": 0.7719,
+     "lechVay": 0.0321,
+     "soHamCat": 13,
+     "dauChuoi": [
+      3.0911,
+      0.9256,
+      -2.8697
+     ],
+     "ngonTocTheoDau": [
+      0.0095,
+      -0.3344,
+      -0.1165
+     ]
+    },
+    {
+     "t": 701,
+     "lechToc": 0.0625,
+     "xaDauNhat": 0.7594,
+     "lechVay": 0.0347,
+     "soHamCat": 7,
+     "dauChuoi": [
+      3.0912,
+      0.9134,
+      -2.8718
+     ],
+     "ngonTocTheoDau": [
+      0.0072,
+      -0.332,
+      -0.1058
+     ]
+    },
+    {
+     "t": 817,
+     "lechToc": 0.0439,
+     "xaDauNhat": 0.7779,
+     "lechVay": 0.0362,
+     "soHamCat": 5,
+     "dauChuoi": [
+      3.0915,
+      0.8978,
+      -2.8754
+     ],
+     "ngonTocTheoDau": [
+      0.0081,
+      -0.3345,
+      -0.1243
+     ]
+    },
+    {
+     "t": 900,
+     "lechToc": 0.0364,
+     "xaDauNhat": 0.7854,
+     "lechVay": 0.0351,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0916,
+      0.8993,
+      -2.8757
+     ],
+     "ngonTocTheoDau": [
+      0.0089,
+      -0.3353,
+      -0.132
+     ]
+    },
+    {
+     "t": 1003,
+     "lechToc": 0.0335,
+     "xaDauNhat": 0.7883,
+     "lechVay": 0.0347,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0917,
+      0.9022,
+      -2.8761
+     ],
+     "ngonTocTheoDau": [
+      0.0098,
+      -0.3355,
+      -0.1349
+     ]
+    },
+    {
+     "t": 1107,
+     "lechToc": 0.0322,
+     "xaDauNhat": 0.7896,
+     "lechVay": 0.0358,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0923,
+      0.9028,
+      -2.8798
+     ],
+     "ngonTocTheoDau": [
+      0.011,
+      -0.3356,
+      -0.1363
+     ]
+    },
+    {
+     "t": 1206,
+     "lechToc": 0.0323,
+     "xaDauNhat": 0.7895,
+     "lechVay": 0.0377,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.093,
+      0.9006,
+      -2.8842
+     ],
+     "ngonTocTheoDau": [
+      0.0118,
+      -0.3357,
+      -0.1359
+     ]
+    },
+    {
+     "t": 1311,
+     "lechToc": 0.0352,
+     "xaDauNhat": 0.7866,
+     "lechVay": 0.0402,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0935,
+      0.8964,
+      -2.8887
+     ],
+     "ngonTocTheoDau": [
+      0.012,
+      -0.3356,
+      -0.1325
+     ]
+    },
+    {
+     "t": 1407,
+     "lechToc": 0.0392,
+     "xaDauNhat": 0.7827,
+     "lechVay": 0.0421,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0938,
+      0.8919,
+      -2.8914
+     ],
+     "ngonTocTheoDau": [
+      0.0117,
+      -0.3353,
+      -0.1282
+     ]
+    },
+    {
+     "t": 1506,
+     "lechToc": 0.0372,
+     "xaDauNhat": 0.7846,
+     "lechVay": 0.0412,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0942,
+      0.889,
+      -2.8945
+     ],
+     "ngonTocTheoDau": [
+      0.0119,
+      -0.3354,
+      -0.1304
+     ]
+    },
+    {
+     "t": 1604,
+     "lechToc": 0.0261,
+     "xaDauNhat": 0.7957,
+     "lechVay": 0.0357,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0943,
+      0.8982,
+      -2.8949
+     ],
+     "ngonTocTheoDau": [
+      0.0134,
+      -0.3361,
+      -0.1422
+     ]
+    },
+    {
+     "t": 1702,
+     "lechToc": 0.019,
+     "xaDauNhat": 0.8028,
+     "lechVay": 0.0299,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0941,
+      0.9128,
+      -2.8921
+     ],
+     "ngonTocTheoDau": [
+      0.0146,
+      -0.3361,
+      -0.1502
+     ]
+    },
+    {
+     "t": 1811,
+     "lechToc": 0.0222,
+     "xaDauNhat": 0.8121,
+     "lechVay": 0.0178,
+     "soHamCat": 17,
+     "dauChuoi": [
+      3.0935,
+      0.9484,
+      -2.8805
+     ],
+     "ngonTocTheoDau": [
+      0.016,
+      -0.3355,
+      -0.1614
+     ]
+    },
+    {
+     "t": 1901,
+     "lechToc": 0.022,
+     "xaDauNhat": 0.8175,
+     "lechVay": 0.0118,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.093,
+      0.9702,
+      -2.8697
+     ],
+     "ngonTocTheoDau": [
+      0.0168,
+      -0.3349,
+      -0.1682
+     ]
+    },
+    {
+     "t": 2002,
+     "lechToc": 0.0207,
+     "xaDauNhat": 0.8233,
+     "lechVay": 0.0108,
+     "soHamCat": 2,
+     "dauChuoi": [
+      3.0922,
+      1.0003,
+      -2.8519
+     ],
+     "ngonTocTheoDau": [
+      0.0176,
+      -0.334,
+      -0.1758
+     ]
+    }
+   ]
+  },
+  "toc/ngac-nhien/moc-da-on-dinh": {
+   "dat": true,
+   "mocDaOnDinh": true
+  },
+  "toc/ngac-nhien/dang-dien-that": {
+   "dat": true,
+   "dangNen": "giat",
+   "clipThat": true,
+   "trangThai": "emoting"
+  },
+  "toc/ngac-nhien/luot-1": {
+   "dat": true,
+   "dinhLechToc": 0.0514,
+   "moc": 0.07,
+   "dichDauChuoiMax": 0.2216,
+   "dichNgonTheoDauMax": 0.0563,
+   "khungDaiNhatMs": 133.7,
+   "buocSpringToiDa": 1,
+   "mau": [
+    {
+     "t": 3,
+     "lechToc": 0.0084,
+     "xaDauNhat": 0.8135,
+     "lechVay": 0.0082,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.09,
+      1.0463,
+      -2.7959
+     ],
+     "ngonTocTheoDau": [
+      0.0176,
+      -0.3351,
+      -0.1636
+     ]
+    },
+    {
+     "t": 101,
+     "lechToc": 0.0405,
+     "xaDauNhat": 0.8364,
+     "lechVay": 0.0212,
+     "soHamCat": 26,
+     "dauChuoi": [
+      3.1057,
+      1.1119,
+      -2.7652
+     ],
+     "ngonTocTheoDau": [
+      0.0094,
+      -0.3303,
+      -0.1953
+     ]
+    },
+    {
+     "t": 224,
+     "lechToc": 0.0351,
+     "xaDauNhat": 0.8559,
+     "lechVay": 0.0371,
+     "soHamCat": 27,
+     "dauChuoi": [
+      3.1257,
+      1.174,
+      -2.6782
+     ],
+     "ngonTocTheoDau": [
+      0.0057,
+      -0.3229,
+      -0.2236
+     ]
+    },
+    {
+     "t": 325,
+     "lechToc": 0.0514,
+     "xaDauNhat": 0.8732,
+     "lechVay": 0.0304,
+     "soHamCat": 16,
+     "dauChuoi": [
+      3.1239,
+      1.1527,
+      -2.6389
+     ],
+     "ngonTocTheoDau": [
+      0.0154,
+      -0.3059,
+      -0.2584
+     ]
+    },
+    {
+     "t": 405,
+     "lechToc": 0.0276,
+     "xaDauNhat": 0.8431,
+     "lechVay": 0.0224,
+     "soHamCat": 25,
+     "dauChuoi": [
+      3.1111,
+      1.1295,
+      -2.6681
+     ],
+     "ngonTocTheoDau": [
+      0.0245,
+      -0.3262,
+      -0.2067
+     ]
+    },
+    {
+     "t": 536,
+     "lechToc": 0.0276,
+     "xaDauNhat": 0.8431,
+     "lechVay": 0.0224,
+     "soHamCat": 25,
+     "dauChuoi": [
+      3.1111,
+      1.1295,
+      -2.6681
+     ],
+     "ngonTocTheoDau": [
+      0.0245,
+      -0.3262,
+      -0.2067
+     ]
+    },
+    {
+     "t": 604,
+     "lechToc": 0.0132,
+     "xaDauNhat": 0.8297,
+     "lechVay": 0.018,
+     "soHamCat": 20,
+     "dauChuoi": [
+      3.0931,
+      1.0938,
+      -2.7446
+     ],
+     "ngonTocTheoDau": [
+      0.0245,
+      -0.3327,
+      -0.1835
+     ]
+    },
+    {
+     "t": 702,
+     "lechToc": 0.0256,
+     "xaDauNhat": 0.8474,
+     "lechVay": 0.0851,
+     "soHamCat": 28,
+     "dauChuoi": [
+      3.1423,
+      1.152,
+      -2.5365
+     ],
+     "ngonTocTheoDau": [
+      0.014,
+      -0.3271,
+      -0.2098
+     ]
+    },
+    {
+     "t": 801,
+     "lechToc": 0.022,
+     "xaDauNhat": 0.828,
+     "lechVay": 0.0843,
+     "soHamCat": 17,
+     "dauChuoi": [
+      3.1467,
+      1.1375,
+      -2.5204
+     ],
+     "ngonTocTheoDau": [
+      -0.0123,
+      -0.3233,
+      -0.1993
+     ]
+    },
+    {
+     "t": 917,
+     "lechToc": 0.0409,
+     "xaDauNhat": 0.8628,
+     "lechVay": 0.0822,
+     "soHamCat": 3,
+     "dauChuoi": [
+      3.1453,
+      1.1388,
+      -2.5275
+     ],
+     "ngonTocTheoDau": [
+      0.0264,
+      -0.3215,
+      -0.2295
+     ]
+    },
+    {
+     "t": 1002,
+     "lechToc": 0.032,
+     "xaDauNhat": 0.8539,
+     "lechVay": 0.0784,
+     "soHamCat": 2,
+     "dauChuoi": [
+      3.1448,
+      1.1368,
+      -2.5343
+     ],
+     "ngonTocTheoDau": [
+      0.0175,
+      -0.3254,
+      -0.2176
+     ]
+    },
+    {
+     "t": 1103,
+     "lechToc": 0.03,
+     "xaDauNhat": 0.8518,
+     "lechVay": 0.0722,
+     "soHamCat": 1,
+     "dauChuoi": [
+      3.1445,
+      1.136,
+      -2.5511
+     ],
+     "ngonTocTheoDau": [
+      0.0197,
+      -0.3265,
+      -0.214
+     ]
+    },
+    {
+     "t": 1201,
+     "lechToc": 0.0277,
+     "xaDauNhat": 0.8495,
+     "lechVay": 0.0673,
+     "soHamCat": 2,
+     "dauChuoi": [
+      3.1442,
+      1.1353,
+      -2.5654
+     ],
+     "ngonTocTheoDau": [
+      0.0194,
+      -0.3273,
+      -0.2109
+     ]
+    },
+    {
+     "t": 1317,
+     "lechToc": 0.0268,
+     "xaDauNhat": 0.8486,
+     "lechVay": 0.0613,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.1442,
+      1.1351,
+      -2.5876
+     ],
+     "ngonTocTheoDau": [
+      0.0193,
+      -0.3276,
+      -0.2097
+     ]
+    },
+    {
+     "t": 1402,
+     "lechToc": 0.0282,
+     "xaDauNhat": 0.8501,
+     "lechVay": 0.0595,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.1444,
+      1.136,
+      -2.5969
+     ],
+     "ngonTocTheoDau": [
+      0.0193,
+      -0.3271,
+      -0.2117
+     ]
+    },
+    {
+     "t": 1503,
+     "lechToc": 0.0483,
+     "xaDauNhat": 0.8354,
+     "lechVay": 0.0321,
+     "soHamCat": 27,
+     "dauChuoi": [
+      3.1413,
+      1.1277,
+      -2.61
+     ],
+     "ngonTocTheoDau": [
+      0.0281,
+      -0.3318,
+      -0.19
+     ]
+    },
+    {
+     "t": 1602,
+     "lechToc": 0.0464,
+     "xaDauNhat": 0.829,
+     "lechVay": 0.0156,
+     "soHamCat": 29,
+     "dauChuoi": [
+      3.1246,
+      1.1098,
+      -2.6884
+     ],
+     "ngonTocTheoDau": [
+      0.0301,
+      -0.3331,
+      -0.1813
+     ]
+    },
+    {
+     "t": 1718,
+     "lechToc": 0.0118,
+     "xaDauNhat": 0.81,
+     "lechVay": 0.0056,
+     "soHamCat": 11,
+     "dauChuoi": [
+      3.0936,
+      1.0549,
+      -2.7879
+     ],
+     "ngonTocTheoDau": [
+      0.0284,
+      -0.3347,
+      -0.1591
+     ]
+    },
+    {
+     "t": 1803,
+     "lechToc": 0.0034,
+     "xaDauNhat": 0.8231,
+     "lechVay": 0.0051,
+     "soHamCat": 4,
+     "dauChuoi": [
+      3.0898,
+      1.0496,
+      -2.8019
+     ],
+     "ngonTocTheoDau": [
+      0.0176,
+      -0.3339,
+      -0.1757
+     ]
+    },
+    {
+     "t": 1901,
+     "lechToc": 0.002,
+     "xaDauNhat": 0.8198,
+     "lechVay": 0.0046,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0905,
+      1.0497,
+      -2.8031
+     ],
+     "ngonTocTheoDau": [
+      0.018,
+      -0.3343,
+      -0.1716
+     ]
+    },
+    {
+     "t": 2002,
+     "lechToc": 0.0015,
+     "xaDauNhat": 0.8203,
+     "lechVay": 0.0037,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0911,
+      1.0483,
+      -2.8075
+     ],
+     "ngonTocTheoDau": [
+      0.0189,
+      -0.3343,
+      -0.172
+     ]
+    }
+   ]
+  },
+  "toc/ngac-nhien/luot-2": {
+   "dat": true,
+   "dinhLechToc": 0.0532,
+   "moc": 0.07,
+   "dichDauChuoiMax": 0.2322,
+   "dichNgonTheoDauMax": 0.0591,
+   "khungDaiNhatMs": 133.8,
+   "buocSpringToiDa": 1,
+   "mau": [
+    {
+     "t": 3,
+     "lechToc": 0.0032,
+     "xaDauNhat": 0.8186,
+     "lechVay": 0.0026,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0904,
+      1.0444,
+      -2.8156
+     ],
+     "ngonTocTheoDau": [
+      0.0181,
+      -0.3345,
+      -0.17
+     ]
+    },
+    {
+     "t": 120,
+     "lechToc": 0.0357,
+     "xaDauNhat": 0.8539,
+     "lechVay": 0.0202,
+     "soHamCat": 29,
+     "dauChuoi": [
+      3.1141,
+      1.1263,
+      -2.7679
+     ],
+     "ngonTocTheoDau": [
+      0.0011,
+      -0.3231,
+      -0.2217
+     ]
+    },
+    {
+     "t": 202,
+     "lechToc": 0.0492,
+     "xaDauNhat": 0.871,
+     "lechVay": 0.0267,
+     "soHamCat": 22,
+     "dauChuoi": [
+      3.126,
+      1.1598,
+      -2.714
+     ],
+     "ngonTocTheoDau": [
+      0.0034,
+      -0.3151,
+      -0.2459
+     ]
+    },
+    {
+     "t": 300,
+     "lechToc": 0.0532,
+     "xaDauNhat": 0.875,
+     "lechVay": 0.0229,
+     "soHamCat": 13,
+     "dauChuoi": [
+      3.1261,
+      1.1513,
+      -2.6713
+     ],
+     "ngonTocTheoDau": [
+      0.0107,
+      -0.3018,
+      -0.2646
+     ]
+    },
+    {
+     "t": 402,
+     "lechToc": 0.0319,
+     "xaDauNhat": 0.8434,
+     "lechVay": 0.0154,
+     "soHamCat": 23,
+     "dauChuoi": [
+      3.1115,
+      1.1245,
+      -2.6968
+     ],
+     "ngonTocTheoDau": [
+      0.0196,
+      -0.3242,
+      -0.2106
+     ]
+    },
+    {
+     "t": 516,
+     "lechToc": 0.0319,
+     "xaDauNhat": 0.8434,
+     "lechVay": 0.0154,
+     "soHamCat": 23,
+     "dauChuoi": [
+      3.1115,
+      1.1245,
+      -2.6968
+     ],
+     "ngonTocTheoDau": [
+      0.0196,
+      -0.3242,
+      -0.2106
+     ]
+    },
+    {
+     "t": 601,
+     "lechToc": 0.0161,
+     "xaDauNhat": 0.8379,
+     "lechVay": 0.0118,
+     "soHamCat": 3,
+     "dauChuoi": [
+      3.0921,
+      1.0798,
+      -2.7676
+     ],
+     "ngonTocTheoDau": [
+      0.0208,
+      -0.3301,
+      -0.1961
+     ]
+    },
+    {
+     "t": 702,
+     "lechToc": 0.0315,
+     "xaDauNhat": 0.8533,
+     "lechVay": 0.0756,
+     "soHamCat": 24,
+     "dauChuoi": [
+      3.1434,
+      1.1511,
+      -2.5527
+     ],
+     "ngonTocTheoDau": [
+      0.0104,
+      -0.3238,
+      -0.2199
+     ]
+    },
+    {
+     "t": 804,
+     "lechToc": 0.0353,
+     "xaDauNhat": 0.8318,
+     "lechVay": 0.0757,
+     "soHamCat": 16,
+     "dauChuoi": [
+      3.1465,
+      1.1449,
+      -2.5444
+     ],
+     "ngonTocTheoDau": [
+      0.002,
+      -0.3199,
+      -0.2082
+     ]
+    },
+    {
+     "t": 900,
+     "lechToc": 0.0302,
+     "xaDauNhat": 0.8501,
+     "lechVay": 0.076,
+     "soHamCat": 10,
+     "dauChuoi": [
+      3.1459,
+      1.1441,
+      -2.5442
+     ],
+     "ngonTocTheoDau": [
+      0.0119,
+      -0.3249,
+      -0.2157
+     ]
+    },
+    {
+     "t": 1020,
+     "lechToc": 0.0307,
+     "xaDauNhat": 0.8526,
+     "lechVay": 0.0721,
+     "soHamCat": 2,
+     "dauChuoi": [
+      3.1451,
+      1.14,
+      -2.5511
+     ],
+     "ngonTocTheoDau": [
+      0.0197,
+      -0.3262,
+      -0.2151
+     ]
+    },
+    {
+     "t": 1101,
+     "lechToc": 0.029,
+     "xaDauNhat": 0.8508,
+     "lechVay": 0.0694,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.1447,
+      1.1385,
+      -2.5587
+     ],
+     "ngonTocTheoDau": [
+      0.02,
+      -0.3269,
+      -0.2126
+     ]
+    },
+    {
+     "t": 1201,
+     "lechToc": 0.0267,
+     "xaDauNhat": 0.8486,
+     "lechVay": 0.0653,
+     "soHamCat": 1,
+     "dauChuoi": [
+      3.1445,
+      1.1372,
+      -2.5722
+     ],
+     "ngonTocTheoDau": [
+      0.0196,
+      -0.3276,
+      -0.2096
+     ]
+    },
+    {
+     "t": 1316,
+     "lechToc": 0.0261,
+     "xaDauNhat": 0.8479,
+     "lechVay": 0.0608,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.1443,
+      1.136,
+      -2.5908
+     ],
+     "ngonTocTheoDau": [
+      0.0196,
+      -0.3278,
+      -0.2087
+     ]
+    },
+    {
+     "t": 1402,
+     "lechToc": 0.0274,
+     "xaDauNhat": 0.8492,
+     "lechVay": 0.0601,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.1445,
+      1.1365,
+      -2.5969
+     ],
+     "ngonTocTheoDau": [
+      0.0196,
+      -0.3274,
+      -0.2104
+     ]
+    },
+    {
+     "t": 1502,
+     "lechToc": 0.0425,
+     "xaDauNhat": 0.8279,
+     "lechVay": 0.0325,
+     "soHamCat": 27,
+     "dauChuoi": [
+      3.1376,
+      1.1239,
+      -2.6185
+     ],
+     "ngonTocTheoDau": [
+      0.0338,
+      -0.3335,
+      -0.1789
+     ]
+    },
+    {
+     "t": 1601,
+     "lechToc": 0.0393,
+     "xaDauNhat": 0.8162,
+     "lechVay": 0.013,
+     "soHamCat": 28,
+     "dauChuoi": [
+      3.1158,
+      1.0968,
+      -2.7084
+     ],
+     "ngonTocTheoDau": [
+      0.036,
+      -0.3348,
+      -0.1641
+     ]
+    },
+    {
+     "t": 1701,
+     "lechToc": 0.0144,
+     "xaDauNhat": 0.8074,
+     "lechVay": 0.0072,
+     "soHamCat": 14,
+     "dauChuoi": [
+      3.0922,
+      1.0565,
+      -2.7822
+     ],
+     "ngonTocTheoDau": [
+      0.0298,
+      -0.3345,
+      -0.1565
+     ]
+    },
+    {
+     "t": 1801,
+     "lechToc": 0.0068,
+     "xaDauNhat": 0.825,
+     "lechVay": 0.0072,
+     "soHamCat": 6,
+     "dauChuoi": [
+      3.0893,
+      1.0535,
+      -2.7924
+     ],
+     "ngonTocTheoDau": [
+      0.0197,
+      -0.3337,
+      -0.1777
+     ]
+    },
+    {
+     "t": 1904,
+     "lechToc": 0.0028,
+     "xaDauNhat": 0.8211,
+     "lechVay": 0.0073,
+     "soHamCat": 1,
+     "dauChuoi": [
+      3.0904,
+      1.0551,
+      -2.7894
+     ],
+     "ngonTocTheoDau": [
+      0.0191,
+      -0.3342,
+      -0.173
+     ]
+    },
+    {
+     "t": 2001,
+     "lechToc": 0.0022,
+     "xaDauNhat": 0.8218,
+     "lechVay": 0.0085,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.091,
+      1.0546,
+      -2.7912
+     ],
+     "ngonTocTheoDau": [
+      0.0192,
+      -0.3341,
+      -0.1738
+     ]
+    }
+   ]
+  },
+  "toc/ngac-nhien/luot-3": {
+   "dat": true,
+   "dinhLechToc": 0.0498,
+   "moc": 0.07,
+   "dichDauChuoiMax": 0.1934,
+   "dichNgonTheoDauMax": 0.0727,
+   "khungDaiNhatMs": 133.8,
+   "buocSpringToiDa": 2,
+   "mau": [
+    {
+     "t": 2,
+     "lechToc": 0.0016,
+     "xaDauNhat": 0.8211,
+     "lechVay": 0.0055,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0902,
+      1.0519,
+      -2.7972
+     ],
+     "ngonTocTheoDau": [
+      0.0188,
+      -0.3342,
+      -0.1731
+     ]
+    },
+    {
+     "t": 101,
+     "lechToc": 0.0346,
+     "xaDauNhat": 0.84,
+     "lechVay": 0.0194,
+     "soHamCat": 28,
+     "dauChuoi": [
+      3.1062,
+      1.1077,
+      -2.7753
+     ],
+     "ngonTocTheoDau": [
+      0.0125,
+      -0.3297,
+      -0.1992
+     ]
+    },
+    {
+     "t": 201,
+     "lechToc": 0.0489,
+     "xaDauNhat": 0.8707,
+     "lechVay": 0.0297,
+     "soHamCat": 26,
+     "dauChuoi": [
+      3.1225,
+      1.1554,
+      -2.7163
+     ],
+     "ngonTocTheoDau": [
+      0.0058,
+      -0.3157,
+      -0.2448
+     ]
+    },
+    {
+     "t": 303,
+     "lechToc": 0.0498,
+     "xaDauNhat": 0.8716,
+     "lechVay": 0.0253,
+     "soHamCat": 10,
+     "dauChuoi": [
+      3.1253,
+      1.1511,
+      -2.6571
+     ],
+     "ngonTocTheoDau": [
+      0.0108,
+      -0.2987,
+      -0.2658
+     ]
+    },
+    {
+     "t": 402,
+     "lechToc": 0.0309,
+     "xaDauNhat": 0.834,
+     "lechVay": 0.0166,
+     "soHamCat": 20,
+     "dauChuoi": [
+      3.1116,
+      1.1279,
+      -2.6874
+     ],
+     "ngonTocTheoDau": [
+      0.0204,
+      -0.3262,
+      -0.1992
+     ]
+    },
+    {
+     "t": 519,
+     "lechToc": 0.0309,
+     "xaDauNhat": 0.834,
+     "lechVay": 0.0166,
+     "soHamCat": 20,
+     "dauChuoi": [
+      3.1116,
+      1.1279,
+      -2.6874
+     ],
+     "ngonTocTheoDau": [
+      0.0204,
+      -0.3262,
+      -0.1992
+     ]
+    },
+    {
+     "t": 615,
+     "lechToc": 0.0091,
+     "xaDauNhat": 0.83,
+     "lechVay": 0.0233,
+     "soHamCat": 28,
+     "dauChuoi": [
+      3.1078,
+      1.1139,
+      -2.7077
+     ],
+     "ngonTocTheoDau": [
+      0.0225,
+      -0.3328,
+      -0.1838
+     ]
+    },
+    {
+     "t": 722,
+     "lechToc": 0.0325,
+     "xaDauNhat": 0.8369,
+     "lechVay": 0.0735,
+     "soHamCat": 28,
+     "dauChuoi": [
+      3.1451,
+      1.1311,
+      -2.5187
+     ],
+     "ngonTocTheoDau": [
+      -0.0117,
+      -0.3249,
+      -0.2045
+     ]
+    },
+    {
+     "t": 821,
+     "lechToc": 0.0258,
+     "xaDauNhat": 0.8177,
+     "lechVay": 0.0721,
+     "soHamCat": 16,
+     "dauChuoi": [
+      3.1444,
+      1.1422,
+      -2.5435
+     ],
+     "ngonTocTheoDau": [
+      -0.0162,
+      -0.3187,
+      -0.1975
+     ]
+    },
+    {
+     "t": 901,
+     "lechToc": 0.0298,
+     "xaDauNhat": 0.8454,
+     "lechVay": 0.0709,
+     "soHamCat": 7,
+     "dauChuoi": [
+      3.1459,
+      1.1448,
+      -2.5542
+     ],
+     "ngonTocTheoDau": [
+      0.0069,
+      -0.3245,
+      -0.2125
+     ]
+    },
+    {
+     "t": 1007,
+     "lechToc": 0.0297,
+     "xaDauNhat": 0.8515,
+     "lechVay": 0.0662,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.1452,
+      1.1417,
+      -2.5633
+     ],
+     "ngonTocTheoDau": [
+      0.0184,
+      -0.3264,
+      -0.214
+     ]
+    },
+    {
+     "t": 1108,
+     "lechToc": 0.0272,
+     "xaDauNhat": 0.8491,
+     "lechVay": 0.0609,
+     "soHamCat": 2,
+     "dauChuoi": [
+      3.1448,
+      1.14,
+      -2.5789
+     ],
+     "ngonTocTheoDau": [
+      0.0195,
+      -0.3275,
+      -0.2103
+     ]
+    },
+    {
+     "t": 1200,
+     "lechToc": 0.0254,
+     "xaDauNhat": 0.8472,
+     "lechVay": 0.0571,
+     "soHamCat": 1,
+     "dauChuoi": [
+      3.1446,
+      1.1388,
+      -2.5921
+     ],
+     "ngonTocTheoDau": [
+      0.0193,
+      -0.328,
+      -0.2078
+     ]
+    },
+    {
+     "t": 1302,
+     "lechToc": 0.024,
+     "xaDauNhat": 0.8458,
+     "lechVay": 0.0524,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.1445,
+      1.1371,
+      -2.6097
+     ],
+     "ngonTocTheoDau": [
+      0.0193,
+      -0.3285,
+      -0.2059
+     ]
+    },
+    {
+     "t": 1401,
+     "lechToc": 0.0252,
+     "xaDauNhat": 0.847,
+     "lechVay": 0.0506,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.1448,
+      1.1373,
+      -2.6203
+     ],
+     "ngonTocTheoDau": [
+      0.0193,
+      -0.3281,
+      -0.2075
+     ]
+    },
+    {
+     "t": 1503,
+     "lechToc": 0.0429,
+     "xaDauNhat": 0.8291,
+     "lechVay": 0.0212,
+     "soHamCat": 24,
+     "dauChuoi": [
+      3.1313,
+      1.1179,
+      -2.6678
+     ],
+     "ngonTocTheoDau": [
+      0.0294,
+      -0.3332,
+      -0.1813
+     ]
+    },
+    {
+     "t": 1600,
+     "lechToc": 0.0405,
+     "xaDauNhat": 0.8165,
+     "lechVay": 0.0098,
+     "soHamCat": 28,
+     "dauChuoi": [
+      3.1156,
+      1.0942,
+      -2.7319
+     ],
+     "ngonTocTheoDau": [
+      0.0326,
+      -0.3351,
+      -0.1644
+     ]
+    },
+    {
+     "t": 1702,
+     "lechToc": 0.0216,
+     "xaDauNhat": 0.8002,
+     "lechVay": 0.0076,
+     "soHamCat": 6,
+     "dauChuoi": [
+      3.0891,
+      1.0545,
+      -2.7884
+     ],
+     "ngonTocTheoDau": [
+      0.0282,
+      -0.3347,
+      -0.1484
+     ]
+    },
+    {
+     "t": 1801,
+     "lechToc": 0.0035,
+     "xaDauNhat": 0.8246,
+     "lechVay": 0.0074,
+     "soHamCat": 2,
+     "dauChuoi": [
+      3.09,
+      1.0558,
+      -2.7871
+     ],
+     "ngonTocTheoDau": [
+      0.0179,
+      -0.3335,
+      -0.178
+     ]
+    },
+    {
+     "t": 1901,
+     "lechToc": 0.0011,
+     "xaDauNhat": 0.8229,
+     "lechVay": 0.0092,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.091,
+      1.0552,
+      -2.7895
+     ],
+     "ngonTocTheoDau": [
+      0.0195,
+      -0.334,
+      -0.1751
+     ]
+    },
+    {
+     "t": 2001,
+     "lechToc": 0.0007,
+     "xaDauNhat": 0.8212,
+     "lechVay": 0.0101,
+     "soHamCat": 0,
+     "dauChuoi": [
+      3.0918,
+      1.053,
+      -2.7941
+     ],
+     "ngonTocTheoDau": [
+      0.0195,
+      -0.3342,
+      -0.173
+     ]
+    }
+   ]
+  },
+  "spring-khong-chay-trong-vrm-update": {
+   "dat": true,
+   "owner": 0,
+   "gen": 0
+  },
+  "console-sach": {
+   "dat": true,
+   "loi": []
+  }
+ },
+ "loiConsole": [],
+ "khoi": {
+  "ke-tivi": {
+   "day": 0,
+   "noc": 0.55
+  },
+  "tranh-1": {
+   "day": 1.17,
+   "noc": 1.83
+  },
+  "tranh-2": {
+   "day": 1.21,
+   "noc": 1.79
+  },
+  "tham": {
+   "day": 0.006,
+   "noc": 0.006
+  },
+  "sofa": {
+   "day": 0,
+   "noc": 0.47,
+   "matNgoi": 0.2585
+  },
+  "goi-1": {
+   "day": 0.2585,
+   "noc": 0.5483
+  },
+  "goi-2": {
+   "day": 0.2585,
+   "noc": 0.5483
+  },
+  "ban-tra": {
+   "day": 0,
+   "noc": 0.26
+  },
+  "sach-ban-tra": {
+   "day": 0.26,
+   "noc": 0.4534
+  },
+  "coc-tra": {
+   "day": 0.26,
+   "noc": 0.3553
+  },
+  "ghe-don-1": {
+   "day": 0,
+   "noc": 0.47
+  },
+  "ghe-don-2": {
+   "day": 0,
+   "noc": 0.3399
+  },
+  "den-san": {
+   "day": 0,
+   "noc": 1.05
+  },
+  "ban-canh-sofa": {
+   "day": 0,
+   "noc": 0.2733
+  },
+  "den-ban-sofa": {
+   "day": 0.2733,
+   "noc": 0.5733
+  },
+  "cay-1": {
+   "day": 0,
+   "noc": 1.35
+  },
+  "cay-2": {
+   "day": 0,
+   "noc": 1.1
+  },
+  "tranh-3": {
+   "day": 1.14,
+   "noc": 1.86
+  },
+  "ke-module": {
+   "day": 0,
+   "noc": 1.9
+  },
+  "sach-ke-1": {
+   "day": 1.24,
+   "noc": 1.4472
+  },
+  "sach-ke-2": {
+   "day": 0.82,
+   "noc": 1.0272
+  },
+  "sach-ke-3": {
+   "day": 1.24,
+   "noc": 1.4196
+  },
+  "sach-ke-4": {
+   "day": 0.4,
+   "noc": 0.6072
+  },
+  "ban-dieu-khien": {
+   "day": 0,
+   "noc": 0.5862
+  },
+  "man-hinh-ban": {
+   "day": 0.5862,
+   "noc": 0.8862
+  },
+  "ban-phim": {
+   "day": 0.5862,
+   "noc": 0.6155
+  },
+  "chuot": {
+   "day": 0.5862,
+   "noc": 0.6139
+  },
+  "den-ban": {
+   "day": 0.5862,
+   "noc": 0.8862
+  },
+  "sach-ban": {
+   "day": 0.5862,
+   "noc": 0.7657
+  },
+  "coc-ban": {
+   "day": 0.5862,
+   "noc": 0.6815
+  },
+  "ghe-2": {
+   "day": 0,
+   "noc": 0.47,
+   "matNgoi": 0.2585
+  },
+  "bang-ghim": {
+   "day": 0.99,
+   "noc": 1.71
+  },
+  "tu-bep": {
+   "day": 0,
+   "noc": 0.95
+  },
+  "tu-bep-goc": {
+   "day": 0,
+   "noc": 0.95
+  },
+  "tu-duoi-1": {
+   "day": 0,
+   "noc": 0.95
+  },
+  "bep-nau": {
+   "day": 0,
+   "noc": 0.95
+  },
+  "tu-duoi-2": {
+   "day": 0,
+   "noc": 0.95
+  },
+  "tu-lanh": {
+   "day": 0,
+   "noc": 1.8
+  },
+  "tu-tren-3": {
+   "day": 1.5,
+   "noc": 2.2
+  },
+  "tu-tren-1": {
+   "day": 1.5,
+   "noc": 2.2
+  },
+  "tu-tren-2": {
+   "day": 1.5,
+   "noc": 2.2
+  },
+  "hut-mui": {
+   "day": 1.55,
+   "noc": 2.1
+  },
+  "lo-vi-song": {
+   "day": 0.95,
+   "noc": 1.2293
+  },
+  "may-ca-phe": {
+   "day": 0.95,
+   "noc": 1.25
+  },
+  "tham-an": {
+   "day": 0.006,
+   "noc": 0.006
+  },
+  "ban-an": {
+   "day": 0,
+   "noc": 0.4813
+  },
+  "ghe-1": {
+   "day": 0,
+   "noc": 0.47,
+   "matNgoi": 0.2585
+  },
+  "ban-an-ghe-2": {
+   "day": 0,
+   "noc": 0.47
+  },
+  "ban-an-ghe-3": {
+   "day": 0,
+   "noc": 0.47
+  },
+  "ban-an-ghe-4": {
+   "day": 0,
+   "noc": 0.47
+  },
+  "binh-hoa": {
+   "day": 0.4813,
+   "noc": 0.8213
+  },
+  "trai-cay": {
+   "day": 0.4818,
+   "noc": 0.5833
+  },
+  "tu-bat-dia": {
+   "day": 0,
+   "noc": 0.95
+  },
+  "binh-hoa-tu": {
+   "day": 0.95,
+   "noc": 1.27
+  },
+  "cay-4": {
+   "day": 0,
+   "noc": 1.4
+  },
+  "tranh-4": {
+   "day": 1.19,
+   "noc": 1.81
+  },
+  "ke-giay": {
+   "day": 0,
+   "noc": 0.4762
+  },
+  "moc-ao": {
+   "day": 0,
+   "noc": 1.72
+  },
+  "tham-cua": {
+   "day": 0,
+   "noc": 0.0221
+  },
+  "cua": {
+   "day": 0,
+   "noc": 2.05
+  }
+ },
+ "springTrongUpdate": {
+  "owner": 0,
+  "gen": 0
+ }
+}
