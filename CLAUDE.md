@@ -1509,3 +1509,64 @@ kế đầy đủ: `docs/spec/actor-api.md` mục **3.2f**. Bằng chứng Firef
   được** (`waitForFunction` tới khi `doXuong().state === 'idle'`), không theo
   một con số chờ cho chắc.
 
+
+### Vòng 3 — sau review độc lập PR #83 (4 lỗi chặn)
+
+- **Khoá sổ hoạt động theo TÊN làm lượt mới thành VÔ HÌNH.** `xoaHoatDong(actor,
+  id)` so bằng tên, mà chuỗi vừa bị cắt còn một `.then()` đang chạy: lượt mới
+  **trùng tên** kịp `datHoatDong` trước thì cái `.then()` cũ xoá mất đăng ký
+  của lượt mới. Reviewer đâm `di-dao → huỷ → di-dao` và đo được
+  `Start|Cancelled|Start|Done` với `describe().activity === null` — lượt hai
+  chạy trọn trong khi Boss gõ **không cắt được gì**, đúng lại lỗi vòng 2 qua
+  một cửa khác. Khoá là **token tăng dần**, đúng quy ước có sẵn: *"nhận diện
+  hành động bằng token, không bằng tên lệnh"*.
+- **`interrupt: true` của não không bắn `cmd.queued`, nên chuỗi ĐÈ lệnh não.**
+  Đo: giữa `di-dao`, não gửi `actor.moveTo { to: 'bep', interrupt: true }` →
+  `ok: true`, **không có `activityCancelled`**, Nhi kết thúc ở
+  `buc-trung-tam` chứ không ở bếp. Vá ở `tu-sinh-hoat` là đoán qua sự kiện và
+  sẽ hở lần nữa với đường vào tiếp theo; sửa ở gốc: **`Dispatcher.catNgang`
+  gọi `huyHoatDong(actor)`** — một chỗ lo cho `actor.stop`, `actor.remove`,
+  `interrupt: true`, bridge, MCP, phím, kịch bản. (`stage.reset` đổi sang
+  `donSoHoatDong()` **trước** vòng `catNgang`: dọn một sân khấu sắp bị xoá là
+  lệnh chạy vô ích.)
+- **Đường CẮT không dọn ⇒ tự sinh hoạt CHẾT HẲN.** Bản cũ chỉ thả đồ ở nhánh
+  `!huy`: cắt giữa `tuoi-cay` thì `holding=binh-tuoi` còn nguyên (đo thật), mà
+  `World.actorHold` **ném lỗi** khi tay đã có đồ ⇒ hoạt động có prop kế tiếp
+  mất prop. Nặng hơn: cắt giữa một hoạt động có `actor.sit` thì `actor.stand`
+  không bao giờ chạy ⇒ `state` giữ `sitting` ⇒ nhịp `tu-sinh-hoat` thấy
+  `state !== 'idle'` nên reset đồng hồ rảnh **mãi mãi**. Nay `donDep()` chạy
+  trên **cả hai** đường.
+- **Và phần dọn ấy tự vô hiệu hoá chính mình.** `chay()` mở đầu bằng
+  `if (huy) return false`, nên dùng nó trong `donDep()` thì lượt kiểm báo
+  `dropped: true` trong khi `lichSu` **không có cú `drop` nào** và tay vẫn còn
+  bình tưới. Dọn là việc PHẢI làm *vì* đã bị cắt → có `chayDon()` riêng, không
+  gác cờ `huy`. Và cờ trả về phải là **kết quả thật của lệnh**
+  (`ra.daTha = await chayDon(...)`), không phải một `true` gán tay.
+- **`activityCancelled` và `activityCleaned` là HAI sự kiện.** Lời hứa ≤300 ms
+  là về việc *dừng lại*; phần dọn (thả đồ, đứng dậy) tốn thêm ~1 s. Nhập hai
+  thứ vào một sự kiện là tự phá mốc 300 ms của chính mình.
+- **Bước của chuỗi KHÔNG được xếp hàng.** Review mục (c): một lệnh đã vào hàng
+  đợi thì không rút lại được, nên sau `activityCancelled` Nhi vẫn còn đi thêm
+  một chặng `moveTo` (tới 2,6 s). Nay mỗi bước **chờ thân trống rồi mới gửi**
+  (`choTrong()`), nên cờ `huy` một mình là đủ để dừng và ta không phải chạm
+  vào hàng đợi của não. Hệ quả: cờ `dangGuiBuoc` thành vô dụng, bỏ hẳn.
+- **"Place rảnh" phải lọc ở TẦNG CHỌN, không dựng cơ chế né người trong sân
+  khấu.** `VUNG_GIUA` chính là nơi Nam spawn, `World.choDung()` trả thẳng
+  `standAt` không né ai, `World.actorSit` không kiểm ghế có người.
+  `hoatDongDienDuoc()` loại hoạt động nào đi vào chỗ đang có người (ghế
+  `occupiedBy`, hoặc người khác trong `KHE_NGUOI` 1 m) — hết ứng viên thì nhịp
+  sau thử lại, **không ép Nhi chen vào chỗ Nam đứng**.
+- **`durationMs` đo theo quãng đường thật, và nói thẳng nó là ƯỚC LƯỢNG.**
+  Bản cũ cộng cứng 2 600 ms mỗi `moveTo` nên lệch tới **2,2 lần**
+  (`don-ban-an` 19 252 ms thật vs 8 700 ước). Nay tính từ `describe().places`.
+  Vẫn không thể thành lời hứa chắc: đường đi bị nội thất chắn
+  (`truotVaCham`) và việc phản xạ có chêm gì vào khe giữa hai bước hay không
+  chỉ biết được lúc đang chạy — spec 3.2f ghi rõ thế.
+- **Thước "một giọng" chạy `?bridge=0` là thước RỖNG.** Không có TTS thật thì
+  móc `AudioBufferSourceNode` không bao giờ nổ, đỉnh = 0 và mục ĐẠT mà chẳng
+  đo được gì — reviewer dùng bridge thật và thấy **đỉnh 2**. Bộ đo J2 nay bật
+  **bridge RIÊNG trên cổng 8985-8988**, mở khoá autoplay bằng cú bấm thật, và
+  đòi **`soBat` ≥ 2 lượt phát** mới cho con số đỉnh có nghĩa.
+- **Và `minY` ba mẫu mỗi hoạt động chỉ chứng minh "ba lúc tôi nhìn thì chạm".**
+  Reviewer lấy mẫu dày và thấy **−0,0226 m** / **−0,0233 m** ở hai ca ngồi
+  sofa. Nay lấy mẫu **mỗi 300 ms suốt cả phiên** ngay trong trang.

@@ -60,17 +60,28 @@ if (argv.includes('--lai')) {
 
 const CONG_WEB = Number(process.env.GEN_STAGE_WEB_PORT ?? 5393);
 /**
- * Đường TTS/STT **vô hiệu nhưng CÙNG ORIGIN** — xem ghi chú ở `moTrang()`.
+ * **Bridge RIÊNG của bộ đo**, cổng riêng — không đụng 8787-8790 của Boss.
  *
- * Lượt đo đầu trỏ sang cổng chết 8898/8899 và ăn **3 lỗi console** kiểu
- * *"Cross-Origin Request Blocked … CORS request did not succeed"* — Firefox ghi
- * `console.error` cho cú `fetch` chết tới origin khác, trước khi code của mình
- * kịp `catch`. Trỏ vào một đường **trên chính cổng web** thì `vite preview`
- * trả 404 sạch sẽ, `chuanBiGiong`/`khoeStt` tự `catch` và chỉ còn
- * `console.warn` (không tính là lỗi). Mất giọng không ảnh hưởng số đo: không
- * hoạt động nào nói.
+ * Lượt 1-4 chạy `?bridge=0` và trỏ TTS vào một đường chết, nên thước "một
+ * giọng" thành vô nghĩa: không có audio thật thì móc
+ * `AudioBufferSourceNode` không bao giờ nổ. Review PR #83 lỗi 4 đo bằng
+ * **bridge thật + TTS thật** và thấy **đỉnh 2 giọng**. Muốn chứng minh đã hết
+ * thì phải đo trên cùng điều kiện đó.
+ *
+ * Không nối vào bridge của Boss: vừa giành sân khấu với Boss, vừa lẫn số đo
+ * với tmux não thật đang chạy.
  */
-const DUONG_TAT = '/__tat-tieng';
+const CONG_WS = Number(process.env.GEN_STAGE_PORT ?? 8985);
+const CONG_TTS = Number(process.env.GEN_STAGE_TTS_PORT ?? 8986);
+const CONG_MCP = Number(process.env.GEN_STAGE_MCP_PORT ?? 8987);
+const CONG_STT = Number(process.env.GEN_STAGE_STT_PORT ?? 8988);
+const MOI_TRUONG_BRIDGE = {
+  ...process.env,
+  GEN_STAGE_PORT: String(CONG_WS),
+  GEN_STAGE_TTS_PORT: String(CONG_TTS),
+  GEN_STAGE_MCP_PORT: String(CONG_MCP),
+  GEN_STAGE_STT_PORT: String(CONG_STT),
+};
 /**
  * Firefox qua X11 + **llvmpipe**, như `kiem-g3.mjs`/`kiem-i1.mjs`.
  *
@@ -144,7 +155,7 @@ const nhatKy = {
   chay: new Date().toISOString(),
   issue: 79,
   trinhDuyet: 'Playwright firefox-1543, headless:false, llvmpipe (chỉ đo sự kiện + hình học)',
-  cong: { web: CONG_WEB, duongTat: DUONG_TAT },
+  cong: { web: CONG_WEB, ws: CONG_WS, tts: CONG_TTS, mcp: CONG_MCP, stt: CONG_STT },
   buoc: [],
 };
 let soBuoc = 0;
@@ -161,7 +172,43 @@ function ghi(nhan, ok, chiTiet, so) {
 /* ------------------------------------------------------------------- web */
 
 let web = null;
+let bridge = null;
 let trinhDuyet = null;
+
+/**
+ * Bật bridge riêng rồi **chờ đúng cái mình cần: `/tts` trả tiếng**.
+ *
+ * Cố ý KHÔNG chờ `/stt/khoe` như `kiem-i1.mjs`: bộ này không dùng mic, mà thợ
+ * STT nạp model ~930 MB mất hàng chục giây — chờ một thứ mình không dùng là
+ * tự kéo dài lượt chiếm GPU.
+ */
+async function moBridge() {
+  bridge = spawn('npx', ['tsx', 'bridge/server.ts'], {
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: MOI_TRUONG_BRIDGE,
+    // `detached` để có NHÓM tiến trình riêng: `tsx` sinh thêm một node con
+    // (quyết định #37), giết đúng PID mình giữ chỉ giết cái vỏ.
+    detached: true,
+  });
+  const doc = (d) => process.stdout.write('   [bridge] ' + d);
+  bridge.stdout.on('data', doc);
+  bridge.stderr.on('data', doc);
+  for (let i = 0; i < 120; i++) {
+    try {
+      const r = await fetch(
+        `http://127.0.0.1:${CONG_TTS}/tts?text=${encodeURIComponent('Dạ, Sếp?')}&voice=nu`,
+      );
+      if (r.ok) {
+        const n = (await r.arrayBuffer()).byteLength;
+        return n;
+      }
+    } catch {
+      /* chưa lên */
+    }
+    await nghi(500);
+  }
+  throw new Error(`bridge/TTS không lên (cổng ${CONG_TTS})`);
+}
 
 async function moWeb() {
   web = spawn('npx', ['vite', 'preview', '--port', String(CONG_WEB), '--strictPort'], {
@@ -193,12 +240,13 @@ function dongHet(ma) {
   } catch {
     /* trình duyệt đã chết */
   }
-  if (web?.pid) {
+  for (const p of [web, bridge]) {
+    if (!p?.pid) continue;
     try {
-      process.kill(-web.pid, 'SIGTERM');
+      process.kill(-p.pid, 'SIGTERM');
     } catch {
       try {
-        web.kill('SIGTERM');
+        p.kill('SIGTERM');
       } catch {
         /* đã chết rồi */
       }
@@ -232,19 +280,14 @@ async function moTrang() {
    * `bridge=0`: bộ này không cần bridge (xem đầu file), và nối vào bridge thật
    * của Boss là vừa sai số vừa giành sân khấu với Boss.
    *
-   * `ttsUrl`/`sttUrl` trỏ vào một đường vô hiệu **trên chính cổng web** —
-   * `bridge=0` chỉ tắt đường **ws**, còn `urlTts()`/`urlStt()` vẫn mặc định
-   * 8788/8790, tức bridge THẬT của Boss đang chạy. `GET /tts` chỉ đọc cache
-   * nên vô hại, nhưng "cổng riêng" phải là cổng riêng cho MỌI đường.
-   *
-   * Vì sao **cùng origin** chứ không phải cổng chết: xem `DUONG_TAT` — cú
-   * `fetch` chết sang origin khác bị Firefox ghi thẳng `console.error` (lỗi
-   * CORS) trước khi code mình kịp `catch`, và nó ăn mất phép đo "console 0 lỗi".
+   * Nối vào **bridge RIÊNG của bộ đo** (cổng 8985-8988), không phải bridge
+   * của Boss: cần TTS thật để thước "một giọng" có nghĩa (xem `CONG_WS`).
+   * Não thì KHÔNG nối — `brainConnected: false` nên phản xạ tự trả lời bằng
+   * não rule-based, đúng cảnh Boss gõ mà chưa bật agy.
    */
-  const tat = `http://localhost:${CONG_WEB}${DUONG_TAT}`;
   await page.goto(
-    `http://localhost:${CONG_WEB}/?bridge=0&ttsUrl=${encodeURIComponent(tat)}` +
-      `&sttUrl=${encodeURIComponent(tat)}`,
+    `http://localhost:${CONG_WEB}/?bridge=1&bridgePort=${CONG_WS}` +
+      `&ttsPort=${CONG_TTS}&sttPort=${CONG_STT}`,
     {
       waitUntil: 'load',
       timeout: 180000,
@@ -268,6 +311,55 @@ async function moTrang() {
      * `window.stage.doXuong()` là **đồng bộ**, nên chốt được ngay trong
      * handler (`stage.describe` qua dispatcher thì đã là một `await`).
      */
+    /**
+     * **Đỉnh GIỌNG THẬT đang phát** — móc `AudioBufferSourceNode.start`/`ended`
+     * (thước I1b/#75 dựng, J2 dùng lại nguyên).
+     *
+     * Đếm `actor.sayStart` của MỘT actor là tautology: dispatcher giữ 1 slot
+     * mỗi actor và lớp tiếng còn nối audio theo từng người, nên "đỉnh 1" là
+     * hệ quả có sẵn của kiến trúc. Cái phải đo là **hai nhân vật cùng mở
+     * miệng**; chỉ lớp TTS dùng `AudioBufferSourceNode` (emote dùng
+     * `createOscillator`), nên móc ở đây là đúng một thước giọng.
+     */
+    window.__am = { dinh: 0, dang: 0, soBat: 0 };
+    const S = window.AudioBufferSourceNode;
+    if (S) {
+      const start0 = S.prototype.start;
+      S.prototype.start = function (...a) {
+        window.__am.dang++;
+        window.__am.soBat++;
+        window.__am.dinh = Math.max(window.__am.dinh, window.__am.dang);
+        this.addEventListener('ended', () => {
+          window.__am.dang = Math.max(0, window.__am.dang - 1);
+        });
+        return start0.apply(this, a);
+      };
+    }
+
+    /**
+     * **Lấy mẫu `minY` mỗi 300 ms, suốt cả phiên** (review #83 mục d).
+     *
+     * Ba mẫu mỗi hoạt động bỏ sót hẳn hai ca lún: reviewer lấy mẫu dày và
+     * thấy **−0,0226 m** (`doc-sach-sofa`) và **−0,0233 m** (`ngu-gat-sofa`),
+     * dưới ngưỡng ≥ −0,01 m mà chính PR đặt. Thước thưa không chứng minh được
+     * "chân chạm sàn" — nó chỉ chứng minh "ba lúc tôi nhìn thì chạm".
+     */
+    window.__chan = { thapNhat: null, soMau: 0 };
+    setInterval(() => {
+      try {
+        const d = window.stage.doXuong('gen');
+        const y = d.tuThe?.minY;
+        if (typeof y !== 'number' || !Number.isFinite(y)) return;
+        window.__chan.soMau++;
+        const t = window.__chan.thapNhat;
+        if (t === null || y < t.minY) {
+          window.__chan.thapNhat = { minY: y, state: d.state, t: Date.now() };
+        }
+      } catch {
+        /* actor chưa có */
+      }
+    }, 300);
+
     window.__chot = {};
     window.stage.on('actor.activityDone', (e) => {
       try {
@@ -295,6 +387,24 @@ const lenh = (page) =>
   });
 const sauEv = (ds, ten, tu, loc = () => true) =>
   ds.find((e) => e.event === ten && e.t >= tu && loc(e)) ?? null;
+
+/**
+ * Đỉnh giọng thật + **số lượt đã phát** từ lúc đặt lại tới giờ.
+ *
+ * Phải trả cả `soBat`: nếu autoplay bị chặn thì không câu nào phát, đỉnh = 0
+ * và thước "không chồng giọng" **ĐẠT một cách rỗng**. Có đo thì phải chứng
+ * minh là mình đã đo được cái gì.
+ */
+const doGiong = (page) =>
+  page.evaluate(() => ({ dinh: window.__am?.dinh ?? 0, soBat: window.__am?.soBat ?? 0 }));
+const amDatLai = (page) =>
+  page.evaluate(() => {
+    if (!window.__am) return;
+    window.__am.dinh = window.__am.dang;
+    window.__am.soBat = 0;
+  });
+/** Mẫu `minY` thấp nhất của cả phiên (lấy mỗi 300 ms trong trang). */
+const chanDayNhat = (page) => page.evaluate(() => window.__chan);
 
 /** Số đo tư thế: đế thấp nhất của MESH (quét đỉnh thật) + chân xương. */
 const doChan = (page) =>
@@ -326,7 +436,9 @@ async function choHoatDongXong(page, tu, hanMs) {
 kiemFirefoxTrong();
 writeFileSync(CO_KHOA, new Date().toISOString() + '\n');
 
-in_(`\n--- dựng web ${CONG_WEB} (vite preview, không bridge) ---`);
+in_(`\n--- dựng bridge riêng (ws ${CONG_WS} · tts ${CONG_TTS}) + web ${CONG_WEB} ---`);
+const coTieng = await moBridge();
+in_(`   TTS thật trả ${coTieng} byte mp3 cho câu mẫu`);
 await moWeb();
 const { browser, page, loiConsole } = await moTrang();
 
@@ -343,6 +455,14 @@ try {
     { soHoatDong: dsHd?.length ?? 0 },
   );
   if (!Array.isArray(dsHd)) throw new Error('không đọc được actor.activities');
+
+  /*
+   * Mở khoá autoplay bằng một cú BẤM THẬT — không có nó thì Firefox chặn
+   * `AudioContext` và thước "một giọng" lại thành vô nghĩa (đo 0 giọng).
+   */
+  await page.click('#nut-tieng').catch(() => undefined);
+  const daMoTieng = await page.evaluate(() => window.stage.batTieng());
+  ghi('mở khoá tiếng (autoplay) — thước "một giọng" mới có nghĩa', daMoTieng === true, `batTieng → ${daMoTieng}`);
 
   const btr = await page.evaluate(() =>
     window.stage.run('stage.bootstrap').then((r) => (r.ok ? r.result.commands.map((c) => c.cmd) : [])),
@@ -483,6 +603,90 @@ try {
     JSON.stringify(sauCat),
     sauCat,
   );
+  /*
+   * MỐC 4b/4c — review #83 lỗi 3: đường CẮT phải DỌN. Đo trên một hoạt động
+   * **có prop + có ngồi** (`uong-nuoc-ghe-an`), cắt đúng lúc đang ngồi và
+   * trong tay còn cốc.
+   */
+  await nghi(1500);
+  await page.evaluate(() =>
+    window.stage.run('actor.activity', { actor: 'gen', name: 'uong-nuoc-ghe-an' }),
+  );
+  let dangCam = null;
+  for (let i = 0; i < 80; i++) {
+    await nghi(400);
+    dangCam = await page.evaluate(() =>
+      window.stage.run('stage.describe').then((x) => {
+        const g = x.result.actors.find((a) => a.id === 'gen');
+        return { state: g.state, holding: g.holding, activity: g.activity };
+      }),
+    );
+    if (dangCam.holding !== null && dangCam.state === 'sitting') break;
+  }
+  ghi(
+    'trước khi cắt: Nhi ĐANG NGỒI và trong tay có prop (đúng ca khó)',
+    dangCam?.holding !== null && dangCam?.state === 'sitting',
+    JSON.stringify(dangCam),
+    dangCam,
+  );
+  const tCat2 = Date.now();
+  await page.evaluate(() => window.stage.guiChat('Nhi ơi, dừng tay giúp anh'));
+  // chờ `actor.activityCleaned` (phần dọn tốn ~1 s, bắn riêng khỏi Cancelled)
+  await page
+    .waitForFunction(
+      () => window.__ev.some((e) => e.event === 'actor.activityCleaned'),
+      null,
+      { timeout: 20000 },
+    )
+    .catch(() => undefined);
+  await nghi(1500);
+  ds = await ev(page);
+  const evText2 = sauEv(ds, 'user.text', tCat2 - 50, (e) => e.data?.actor === 'owner');
+  const evCat2 = evText2
+    ? sauEv(ds, 'actor.activityCancelled', evText2.t - 5, (e) => e.data?.actor === 'gen')
+    : null;
+  const evDon = sauEv(ds, 'actor.activityCleaned', tCat2 - 50, (e) => e.data?.actor === 'gen');
+  const treCat2 = evText2 && evCat2 ? evCat2.t - evText2.t : null;
+  ghi(
+    'MỐC 4b — cắt lúc đang ngồi + cầm đồ: vẫn ≤300 ms, và có `activityCleaned`',
+    treCat2 !== null && treCat2 <= 300 && evDon !== null,
+    `cắt ${treCat2} ms · dọn: ${evDon ? JSON.stringify(evDon.data) : 'KHÔNG CÓ'}`,
+    { treCatMs: treCat2, don: evDon?.data ?? null },
+  );
+  const sauDon = await page.evaluate(() =>
+    window.stage.run('stage.describe').then((x) => {
+      const g = x.result.actors.find((a) => a.id === 'gen');
+      return { state: g.state, holding: g.holding, activity: g.activity };
+    }),
+  );
+  ghi(
+    'MỐC 4c — sau cú cắt: tay TRỐNG và KHÔNG còn ngồi (không thì tự sinh hoạt chết hẳn)',
+    sauDon.holding === null && sauDon.state !== 'sitting' && sauDon.activity === null,
+    JSON.stringify(sauDon),
+    sauDon,
+  );
+  /* MỐC 4d — Boss gõ 3 câu liên tiếp giữa hoạt động: KHÔNG được chồng giọng */
+  await nghi(3000);
+  await amDatLai(page);
+  await page.evaluate(() =>
+    window.stage.run('actor.activity', { actor: 'gen', name: 'ngam-cua-so' }),
+  );
+  await nghi(2000);
+  for (const cau of ['Nhi ơi', 'Nhi làm gì đấy', 'Nhi nghe anh không']) {
+    await page.evaluate((c) => window.stage.guiChat(c), cau);
+    await nghi(1200);
+  }
+  await nghi(6000);
+  const am = await doGiong(page);
+  const dinhAm = am.dinh;
+  ghi(
+    'MỐC 4d — Boss gõ 3 câu giữa hoạt động: đỉnh GIỌNG THẬT = 1 (không chồng)',
+    dinhAm <= 1 && am.soBat >= 2,
+    `đỉnh ${dinhAm} trên ${am.soBat} lượt phát thật (móc AudioBufferSourceNode; ` +
+      'hai nhân vật cùng mở miệng thì ra 2). `soBat` ≥ 2 là điều kiện để con số ' +
+      'đỉnh có nghĩa — autoplay bị chặn thì đỉnh 0 mà chẳng đo được gì',
+    am,
+  );
   // lệnh ngay sau khi cắt vẫn chạy được (hàng đợi không bị xoá sạch)
   const rSau = await page.evaluate(() =>
     window.stage.run('actor.emote', { actor: 'gen', emote: 'dong-y' }),
@@ -561,6 +765,14 @@ try {
     `lượt 1 ở +${tuSinh.length ? tuSinh[0].t - tYen : '—'} ms · khoảng giữa hai lượt ${dinhThoiGian} ms`,
     { luot1Ms: tuSinh.length ? tuSinh[0].t - tYen : null, giuaHaiLuotMs: dinhThoiGian },
   );
+  const chanDay = await chanDayNhat(page);
+  ghi(
+    'minY LẤY MẪU DÀY (mỗi 300 ms, cả phiên) vẫn ≥ −0,01 m',
+    chanDay?.thapNhat !== null && (chanDay?.thapNhat?.minY ?? -1) >= -0.01,
+    `thấp nhất ${chanDay?.thapNhat?.minY ?? '—'} m (state ${chanDay?.thapNhat?.state ?? '—'}) ` +
+      `trên ${chanDay?.soMau ?? 0} mẫu`,
+    chanDay,
+  );
   const chanTuSinh = await doChan(page);
   ghi(
     'sau khi tự sinh hoạt, chân vẫn chạm sàn (minY ≥ −0,01 m)',
@@ -619,6 +831,9 @@ try {
     `| rảnh 65 s → hoạt động tự sinh | ≥2, khác nhau | **${tuSinh.length} lượt / ${new Set(tenTuSinh).size} loại** | ${tuSinh.length >= 2 && new Set(tenTuSinh).size >= 2 ? '✅' : '❌'} |`,
     `| Boss gõ giữa chừng → cắt | ≤300 ms | **${treCat} ms** | ${treCat !== null && treCat <= 300 ? '✅' : '❌'} |`,
     `| \`r.ok\` mọi lệnh | 100 % | **${dsL.length - loiLenh.length}/${dsL.length}** | ${loiLenh.length === 0 ? '✅' : '❌'} |`,
+    `| cắt lúc NGỒI + CẦM ĐỒ (review #83 lỗi 3) | ≤300 ms + dọn | **${treCat2} ms**, holding ${sauDon.holding}, state ${sauDon.state} | ${treCat2 !== null && treCat2 <= 300 && sauDon.holding === null && sauDon.state !== 'sitting' ? '✅' : '❌'} |`,
+    `| đỉnh GIỌNG THẬT, Boss gõ 3 câu giữa hoạt động | 1 (trên ≥2 lượt phát) | **${dinhAm}** / ${am.soBat} lượt | ${dinhAm <= 1 && am.soBat >= 2 ? '✅' : '❌'} |`,
+    `| \`minY\` lấy mẫu DÀY (300 ms, cả phiên) | ≥ −0,01 m | **${chanDay?.thapNhat?.minY ?? '—'} m** (${chanDay?.soMau ?? 0} mẫu) | ${(chanDay?.thapNhat?.minY ?? -1) >= -0.01 ? '✅' : '❌'} |`,
     `| console | 0 lỗi | **${loiConsole.length}** | ${loiConsole.length === 0 ? '✅' : '❌'} |`,
     '',
     '### Từng hoạt động',
@@ -630,7 +845,7 @@ try {
     `Tự sinh hoạt: ${tenTuSinh.join(' → ') || '(không có)'}; lượt đầu ở +${
       tuSinh.length ? tuSinh[0].t - tYen : '—'
     } ms sau khi Boss để yên.`,
-    `Cổng web riêng ${CONG_WEB}, \`?bridge=0\` + TTS/STT trỏ \`${DUONG_TAT}\` cùng origin — không đụng 5173/8787-8790 của Boss.`,
+    `Cổng riêng: web ${CONG_WEB} · ws ${CONG_WS} · tts ${CONG_TTS} — bridge RIÊNG của bộ đo, không đụng 5173/8787-8790 của Boss.`,
   ].join('\n');
   writeFileSync(`${THU_MUC}/bang.md`, bang + '\n');
   in_('\n' + bang + '\n');
