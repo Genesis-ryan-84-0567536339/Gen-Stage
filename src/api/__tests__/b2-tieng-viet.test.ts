@@ -355,6 +355,33 @@ describe('LopTieng — tải, phát, nhép miệng', () => {
     expect(Date.now() - t0).toBeLessThan(2000);
   });
 
+  /**
+   * **Mọi dấu hiệu trong một cổng dùng chung đều phải TỰ HẾT HẠN.**
+   *
+   * Đo thật (lượt 31/37): `giuCho` là `Set`, xoá trong `finally` của
+   * `await phatNgay(...)` — mà `phatNgay` treo vĩnh viễn ở `await a.resume()`
+   * khi AudioContext kẹt `suspended`, nên `finally` không bao giờ chạy và chỗ
+   * giữ không bao giờ nhả ⇒ Nhi **câm suốt 60 s** của bước đo trần.
+   */
+  it('phatNgay treo vĩnh viễn → chỗ giữ vẫn TỰ hết hạn, sân khấu không câm', async () => {
+    const { ctx } = ctxGia();
+    const ctxTreo = {
+      ...(ctx as unknown as Record<string, unknown>),
+      state: 'suspended' as AudioContextState,
+      resume: () => new Promise<void>(() => undefined),
+    } as unknown as AudioContext;
+    ghiMiengNhep('owner', miengGia().mieng);
+    const t = new LopTieng({ fetchFn: fetchGia(2048), taoCtx: () => ctxTreo }); // ~0,2 s
+    const cau = await t.chuanBi('owner', 'Câu treo.', {});
+    cau!.phat();
+    await new Promise((r) => setTimeout(r, 60));
+    expect(t.aiConGiong()).toEqual(['owner']); // đang giữ chỗ
+
+    // hạn = dai + 600 ms → qua đó phải nhả, dù `phatNgay` còn treo
+    await new Promise((r) => setTimeout(r, 1000));
+    expect(t.aiConGiong()).toEqual([]);
+  });
+
   it('choGiongRanh() chờ hết câu đang phát rồi mới trả về', async () => {
     const { ctx } = ctxGia();
     ghiMiengNhep('owner', miengGia().mieng);

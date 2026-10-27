@@ -1240,3 +1240,22 @@ Hai lượt đo liền nhau (31/36 rồi 33/36) đóng đinh chuyện này:
   đo 0 lần ở đó là **đúng hành vi**. Dời phép đo "đổi tư thế" sang ca chờ 30 s,
   chỗ Nhi thật sự đứng rảnh. Và cửa sổ lấy mẫu mốc 3 phải ≥7 s vì Nam đọc tới
   4,7 s.
+
+#### Vòng 2f — gốc đồng hồ tầng 2, và luật "mọi dấu hiệu phải tự hết hạn"
+
+- **Gốc đồng hồ của tầng 1/2 là LÚC NAM DỨT LỜI, không phải `user.text`.**
+  `user.text` bắn ở **đầu** câu của Nam, mà Nam đọc câu của Boss mất 3,2–4,7 s
+  giọng thật. Hệ quả đo được ba lượt liền: câu đệm (mốc 200 ms) bị luật "quá
+  hạn câu nối thì thôi" ăn mất vì tới lúc Nhi được nói thì `troi` đã gần 6 s;
+  và câu nối (mốc 6 s) rơi vào lúc não đã trả lời ⇒ "không có câu đệm" + "0 câu
+  nối". **Không phải máy trạng thái sai, mà gốc đồng hồ sai.** Gốc đúng là lúc
+  **Boss nói xong** — đó mới là lúc Boss bắt đầu *chờ*. `actor.sayDone` của Nam
+  nay đặt lại `tOwnerNoi`, `choNao`, `tTuThe`, `tranDen`, `soCauNoi`.
+- **Mọi dấu hiệu trong một cổng dùng chung đều phải TỰ HẾT HẠN.** `giuCho` là
+  `Set`, xoá trong `finally` của `await phatNgay(...)` — mà `phatNgay` treo
+  vĩnh viễn ở `await a.resume()` khi AudioContext kẹt `suspended`, nên
+  `finally` không bao giờ chạy ⇒ Nhi **câm suốt 60 s** của bước đo trần (0 câu
+  kết, 0 đổi tư thế). Đổi sang `Map<actor, hạn>` với hạn = `dai + 600 ms`.
+  Đúng cái bẫy đã bịt cho `dangPhat` bằng `donMuon` mà lại bỏ sót một chỗ —
+  nên viết thành luật: **thêm một dấu hiệu vào cổng dùng chung thì thêm hạn cho
+  nó trong cùng lần sửa**, và `huy`/`huyHet` phải dọn nó.

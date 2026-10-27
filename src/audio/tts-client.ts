@@ -284,7 +284,7 @@ export class LopTieng {
         // Hàng đợi theo actor (không chồng tiếng cùng người) + cổng toàn sân
         // khấu đọc `dangPhat` ngay trước khi mở nguồn âm.
         void this.vaoHangDoi(actorId, async () => {
-          await this.choVaGiuCho(actorId);
+          await this.choVaGiuCho(actorId, durationMs);
           try {
             await this.phatNgay(actorId, buf!, envelope);
           } finally {
@@ -339,10 +339,23 @@ export class LopTieng {
    * (`aiConGiong()` ra `['owner','gen']`). Bên nào qua cổng thì **giữ chỗ
    * ngay trong cùng một tick**, trả lại khi phát xong.
    */
-  private giuCho = new Set<string>();
+  /**
+   * `actorId` → **hạn** của chỗ đã giữ (ms epoch). Map chứ không phải Set:
+   * **mọi dấu hiệu trong một cái cổng dùng chung đều phải tự hết hạn.**
+   *
+   * Đo thật (lượt 31/37): `giuCho` là `Set` và được xoá trong `finally` của
+   * `await phatNgay(...)` — nhưng `phatNgay` có thể **treo vĩnh viễn** ở
+   * `await a.resume()` khi AudioContext kẹt `suspended`, nên `finally` không
+   * bao giờ chạy và chỗ giữ không bao giờ nhả. Kết quả: Nhi **câm suốt 60 s**
+   * của bước đo trần (0 câu kết, 0 đổi tư thế). Đúng cái bẫy đã bịt cho
+   * `dangPhat` bằng `donMuon`, mà `giuCho` lại bỏ sót.
+   */
+  private giuCho = new Map<string, number>();
 
   aiConGiong(): string[] {
-    return [...new Set([...this.dangPhat.keys(), ...this.giuCho])];
+    const now = Date.now();
+    for (const [ai, han] of this.giuCho) if (han <= now) this.giuCho.delete(ai);
+    return [...new Set([...this.dangPhat.keys(), ...this.giuCho.keys()])];
   }
 
   /**
@@ -374,11 +387,13 @@ export class LopTieng {
    * bắt đúng cái đó (`aiConGiong()` ra `['owner','gen']`). Vòng `for` dưới đây
    * kiểm và claim liền nhau, chỉ `await` khi **phải chờ**.
    */
-  private async choVaGiuCho(actorId: string): Promise<void> {
+  private async choVaGiuCho(actorId: string, daiMs: number): Promise<void> {
     const han = Date.now() + LopTieng.TRAN_CHO_RANH_MS;
     for (;;) {
       if (this.aiConGiong().length === 0 || Date.now() >= han) {
-        this.giuCho.add(actorId);
+        // Hạn = đúng độ dài câu + lề. Phát xong thì `finally` nhả sớm hơn;
+        // treo thì hạn này nhả hộ.
+        this.giuCho.set(actorId, Date.now() + daiMs + 600);
         return;
       }
       await new Promise((r) => setTimeout(r, 25));
@@ -472,6 +487,7 @@ export class LopTieng {
   /** Cắt tiếng của một actor (từ `actor.stop`, `actor.emote`, `stage.reset`). */
   huy(actorId: string): void {
     this.dungCauCua(actorId);
+    this.giuCho.delete(actorId);
     this.hangDoi.delete(actorId);
   }
 
@@ -486,6 +502,7 @@ export class LopTieng {
   /** Cắt tiếng của mọi actor. */
   huyHet(): void {
     for (const id of [...this.dangPhat.keys()]) this.dungCauCua(id);
+    this.giuCho.clear();
     this.hangDoi.clear();
   }
 }

@@ -1064,6 +1064,30 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
         // nghĩ" của tầng 2 lo tiếp, dáng NGHE phải tắt mới đúng cái đang xảy ra)
         if (genId) nghe(genId, false);
         /**
+         * I1 vòng 2f — **ĐẶT LẠI ĐỒNG HỒ TẦNG 2 TỪ LÚC NAM DỨT LỜI.**
+         *
+         * Mọi mốc của tầng 1/2 vốn tính từ `user.text`, mà `user.text` bắn ở
+         * **đầu** câu của Nam — Nam đọc câu của Boss mất 3,2–4,7 s giọng thật.
+         * Hệ quả đo được: câu đệm (mốc 200 ms) bị luật "quá hạn câu nối thì
+         * thôi" ăn mất vì tới lúc Nhi được nói thì `troi` đã gần 6 s; và câu
+         * nối (mốc 6 s) rơi vào lúc não đã trả lời. Hai lượt liền ra "không có
+         * câu đệm" + "0 câu nối" — không phải máy trạng thái sai, mà **gốc
+         * đồng hồ sai**.
+         *
+         * Gốc đúng là **lúc Boss nói xong** (= Nam dứt lời): đó mới là lúc Boss
+         * bắt đầu *chờ*. Đặt lại ở đây thì câu đệm ≤400 ms sau khi Nam dứt lời,
+         * câu nối 6 s sau đó, trần 30 s cũng tính từ đó — đúng cảm nhận của
+         * Boss, và mỗi mốc lại đo được.
+         */
+        if (tangHai) {
+          const gio = bayGio();
+          tOwnerNoi = gio;
+          choNao = true;
+          tTuThe = gio + so.tuTheDauMs;
+          tranDen = gio + so.tranTangHaiMs;
+          soCauNoi = 0;
+        }
+        /**
          * E2 (#48 mục 7) — Javis nói với Gen xong thì **Gen liếc máy quay**
          * (Sếp vẫn đang xem). `actor.say` đã đổi mắt người nghe; chỗ này đổi
          * luôn "người nghe của Gen" để nhịp quét không kéo mắt Gen về lại

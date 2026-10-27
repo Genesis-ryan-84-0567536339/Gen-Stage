@@ -550,15 +550,29 @@ describe('I1 vòng 2 — một giọng duy nhất XUYÊN NHÂN VẬT (Nam + Nhi)
     expect(cacCau(t.world)).toEqual([]);
     expect(t.may.trangThai().tangHai).toBe(true);
 
-    // Nam nói xong → câu đệm phát NGAY nhịp sau, KHÔNG bị bỏ lặng lẽ
+    /*
+     * Nam nói xong → đồng hồ tầng 2 **đặt lại từ đây** (vòng 2f), nên câu đệm
+     * phát sau `choNaoMs` tính từ lúc Nam dứt lời, không phải từ `user.text`.
+     */
     namNoiXong(t, chu);
     await nhipMicro();
-    await t.tien(MAC_DINH.nhipMs);
+    await t.tien(MAC_DINH.choNaoMs + MAC_DINH.nhipMs * 2);
     expect(cacCau(t.world)).toEqual([CAU_DEM[0]]);
     t.may.dung();
   });
 
-  it('Nam nói DÀI quá mốc câu nối → bỏ câu đệm, câu nối tiếp quản (không nói cả hai)', async () => {
+  /**
+   * **Vòng 2f đổi hành vi ở đây, và đổi theo hướng đúng hơn.**
+   *
+   * Bản trước: Nam đọc quá mốc câu nối (6 s) thì câu đệm "hết nghĩa" và câu
+   * nối tiếp quản. Nhưng gốc đồng hồ khi đó là `user.text` — tức tính từ lúc
+   * Boss **bắt đầu** nói. Đo thật thì Nam đọc 3,2–4,7 s, nên gần như lượt nào
+   * câu đệm cũng bị ăn mất, và câu nối lại rơi vào lúc não đã trả lời.
+   * Gốc đúng là **lúc Boss nói xong**: đó mới là lúc Boss bắt đầu chờ. Vậy dù
+   * Nam đọc bao lâu, cái Nhi nói đầu tiên vẫn là **câu đệm**, rồi 6 s sau mới
+   * tới câu nối.
+   */
+  it('Nam đọc rất dài → đồng hồ tính lại từ lúc Nam dứt lời: câu đệm trước, câu nối sau 6 s', async () => {
     const t = await dung();
     datSoNao(1);
     const chu = 'Nhi ơi, anh kể dài lắm';
@@ -569,9 +583,13 @@ describe('I1 vòng 2 — một giọng duy nhất XUYÊN NHÂN VẬT (Nam + Nhi)
 
     namNoiXong(t, chu);
     await nhipMicro();
-    await t.tien(MAC_DINH.nhipMs);
-    // "Dạ, Sếp?" lúc này đã hết nghĩa — chỉ câu nối là đúng cái đang xảy ra
-    expect(cacCau(t.world)).toEqual([CAU_NOI]);
+    await t.tien(MAC_DINH.choNaoMs + MAC_DINH.nhipMs * 2);
+    expect(cacCau(t.world)).toEqual([CAU_DEM[0]]);
+
+    // 6 s SAU KHI NAM DỨT LỜI mới tới câu nối
+    await choHanhDong();
+    await t.tien(MAC_DINH.cauNoiMs);
+    expect(cacCau(t.world)).toEqual([CAU_DEM[0], CAU_NOI]);
     t.may.dung();
   });
 
@@ -851,7 +869,8 @@ describe('I1 vòng 2b — cờ sePhat bịt cửa sổ user.text → actor.saySt
     expect(cacCau(t.world)).toEqual([]);
     t.bus.emit('actor.sayDone', { actor: 'owner', text: 'Nhi ơi', to: 'camera' });
     await nhipMicro();
-    await t.tien(MAC_DINH.nhipMs);
+    // vòng 2f: mốc câu đệm tính từ lúc Nam dứt lời
+    await t.tien(MAC_DINH.choNaoMs + MAC_DINH.nhipMs * 2);
     expect(cacCau(t.world)).toEqual([CAU_DEM[0]]);
     t.may.dung();
   });
