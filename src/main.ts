@@ -51,6 +51,17 @@ export interface CuaStage {
   /** Số đo xương (bằng chứng số cho `scripts/kiem-a2.mjs`). */
   doXuong(actor: string): Record<string, unknown>;
   /**
+   * G1 vòng 3 (#56) — chỉ số đo TÓC, rẻ (không quét hộp bao chính xác như
+   * `doXuong`), để lấy mẫu dày 100 ms suốt một emote mà không làm hỏng FPS.
+   */
+  doToc(actor: string): Record<string, unknown>;
+  /**
+   * Đáy / nóc / mặt ngồi ĐO ĐƯỢC của từng khối nội thất (review PR #70): để
+   * script chấm "không món nào lơ lửng" bằng SỐ, vì `gopTinh()` dọn nhóm
+   * `khoi:<id>` nên đo lại trên cảnh ra rỗng.
+   */
+  doKhoi(): Record<string, { day: number; noc: number; matNgoi?: number }>;
+  /**
    * D1b (#48) — số lượt vẽ / tam giác / số mesh của khung vừa render. Boss
    * 26/10: "đừng đòi GPU lớn" → bằng chứng hiệu năng phải là SỐ, không phải
    * cảm giác. Mốc tự đặt: `calls ≤ 150`, `triangles ≤ 300k`.
@@ -149,6 +160,8 @@ window.stage = {
   log: () => nhatKy.toJSON(),
   bridge: (bat) => (bat ? bridge.bat() : bridge.tat()),
   doXuong: (actor) => world.doXuongActor(actor),
+  doToc: (actor) => world.doTocActor(actor),
+  doKhoi: () => world.doKhoiNha(),
   hieuNang: () => world.doHieuNang(),
   chieuDiem: (p) => world.chieuDiem(p),
   datMay: (vt, tam) => world.datMayThu(vt, tam),

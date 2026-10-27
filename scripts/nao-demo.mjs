@@ -116,7 +116,8 @@ export function chonLenh(cau, dem = 1) {
         ],
         [
           'module_build',
-          { id, shape: 'book', label: ten.slice(0, 24), from: 'main', durationMs: 2600 },
+          // H1 vòng 2: bỏ `from: 'main'` (màn hình đó không tồn tại — fallback)
+          { id, shape: 'book', label: ten.slice(0, 24), durationMs: 2600 },
         ],
         ['actor_emote', { actor: 'gen', emote: 'thanh-cong', interrupt: true }],
         [

@@ -53,13 +53,35 @@ if (await congBan(PORT)) {
   process.exit(3);
 }
 
-console.log(`==> bật vite dev riêng ở cổng ${PORT}`);
-const server = spawn('npx', ['vite', '--port', String(PORT), '--strictPort'], {
+/**
+ * H1 (#69 mục 50) — **ĐO TRÊN BẢN BUILD, KHÔNG TRÊN DEV SERVER.**
+ *
+ * `threejs-qa-release` gọi đây là cái bẫy có tên: "Dev server tested,
+ * production build shipped untested". Dev server không minify, kèm client HMR
+ * và source map, nên mọi số `calls`/FPS/luma đo trên nó là số của một bản
+ * **không ai dùng**. Build trước rồi `vite preview` — đúng bản Boss sẽ mở.
+ *
+ * `--khong-build` để chạy lại nhanh khi `dist/` đã mới.
+ */
+if (!process.argv.includes('--khong-build')) {
+  console.log('==> pnpm build (tsc + vite build) — số đo phải lấy trên bản build');
+  const b = spawnSync('npx', ['vite', 'build'], { stdio: 'inherit' });
+  if (b.status !== 0) {
+    console.error('⛔ vite build thất bại — không đo trên dev server để thay thế.');
+    process.exit(1);
+  }
+} else if (!existsSync('dist/index.html')) {
+  console.error('⛔ Chưa có dist/index.html — bỏ --khong-build để build trước.');
+  process.exit(1);
+}
+
+console.log(`==> bật vite PREVIEW (bản build) ở cổng ${PORT}`);
+const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], {
   stdio: ['ignore', 'pipe', 'pipe'],
   detached: true,
 });
 await new Promise((resolve, reject) => {
-  const han = setTimeout(() => reject(new Error('vite dev không khởi động')), 40000);
+  const han = setTimeout(() => reject(new Error('vite preview không khởi động')), 40000);
   const doc = (d) => {
     const s = String(d);
     if (/Local:/.test(s) || /ready in/.test(s)) {

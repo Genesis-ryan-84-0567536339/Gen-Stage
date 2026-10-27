@@ -232,6 +232,12 @@ export function batPhim(
     void chay('actor.steer', { actor: actorId, vx: 0, vz: 0, ms: HIEU_LUC_DUNG });
   }
 
+  /** Những phím mà `onKeyDown` dưới đây THỰC SỰ nhận (để biết có chặn nhịp lặp gốc). */
+  const PHIM_LENH = new Set(['Space', 'KeyC', 'KeyE', 'KeyR', 'Slash', 'IntlRo']);
+  function laPhimCuaMinh(code: string): boolean {
+    return Boolean(HUONG[code]) || /^(Digit|Numpad)[0-9]$/.test(code) || PHIM_LENH.has(code);
+  }
+
   function onKeyDown(e: KeyboardEvent): void {
     /**
      * F2 — đang gõ chữ (kể cả ô chat, ô kịch bản, ô nói nhanh) thì phím thuộc
@@ -247,6 +253,29 @@ export function batPhim(
     // của chữ, không phải lệnh lái.
     if (e.isComposing || e.keyCode === 229) return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
+    /**
+     * H1 (#69 mục 21) — **PHÍM LẶP KHÔNG PHẢI LỆNH MỚI.**
+     *
+     * Giữ một phím thì trình duyệt bắn `keydown` lặp ~30 lần/giây với
+     * `e.repeat === true`. Chuẩn `input-systems` (Core workflow 3) gọi đây là
+     * "đọc sai mép tín hiệu": giữ `1` thành 30 `actor.emote`/giây (dispatcher
+     * xếp hàng rồi cắt ngang nhau), giữ `C` thành đổi góc máy loạn, giữ `E`
+     * sinh một đống module, giữ `R` reset sân khấu liên tục.
+     *
+     * Đặt ngay sau `isComposing` (và trước MỌI nhánh phím) nên không nhánh nào
+     * phải tự nhớ kiểm: nhánh hướng vẫn đúng vì `dangGiu` + `batNhipSteer()`
+     * mới là thứ giữ nhân vật đi, chứ không phải nhịp `keydown` lặp.
+     */
+    if (e.repeat) {
+      /*
+       * H1 vòng 2 (review PR #72 mục 3 phụ) — chỉ `preventDefault` khi ĐÂY LÀ
+       * PHÍM CỦA MÌNH. Bản đầu chặn luôn nhịp lặp **gốc của trình duyệt** cho
+       * mọi phím khác (giữ Tab để chuyển focus, giữ F5, giữ phím mũi tên trong
+       * trang…), tức sửa một lỗi nhập liệu bằng cách sinh một lỗi nhập liệu.
+       */
+      if (laPhimCuaMinh(e.code)) e.preventDefault();
+      return;
+    }
 
     if (HUONG[e.code]) {
       e.preventDefault();
@@ -283,11 +312,14 @@ export function batPhim(
       case 'KeyE': {
         e.preventDefault();
         soModule += 1;
+        // H1 — BỎ `from: 'main'`: căn nhà không có màn hình nào tên `main`
+        // (chỉ `may-tinh` và `tivi`), nên phím `E` của Boss trước H1 **luôn**
+        // chết với «Không có màn hình "main"». Bỏ trống = kết tinh từ màn hình
+        // đầu tiên đang sống.
         void chay('module.build', {
           id: `module-phim-${soModule}`,
           shape: 'crystal',
           label: `Module ${soModule}`,
-          from: 'main',
         });
         break;
       }
