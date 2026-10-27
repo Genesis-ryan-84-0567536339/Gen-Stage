@@ -1,0 +1,1479 @@
+{
+  "khi": "2026-10-27T00:10:20.437Z",
+  "che": "vite preview · firefox headless:false · GPU thật",
+  "moc": {
+    "tuaTuong": 0.15,
+    "vung": {
+      "rong": 6,
+      "sau": 4
+    },
+    "daiToc": 0.45,
+    "hamToc": 0.45,
+    "lech": {
+      "dung": 0.02,
+      "di": 0.05,
+      "emote": 0.07
+    },
+    "sanY": 0.02
+  },
+  "anh": {
+    "toan-canh": "docs/j1/toan-canh-1440.png",
+    "phong-khach": "docs/j1/phong-khach-1440.png",
+    "ban-lam-viec": "docs/j1/ban-lam-viec-1440.png",
+    "bep": "docs/j1/bep-1440.png",
+    "cua-so": "docs/j1/cua-so-1440.png",
+    "toc-gen-chinh-dien": "docs/j1/toc-gen-chinh-dien.png",
+    "toc-gen-sau-lung": "docs/j1/toc-gen-sau-lung.png",
+    "toc-gen-nghieng": "docs/j1/toc-gen-nghieng.png",
+    "toc-owner-chinh-dien": "docs/j1/toc-owner-chinh-dien.png",
+    "toc-owner-sau-lung": "docs/j1/toc-owner-sau-lung.png",
+    "toc-owner-nghieng": "docs/j1/toc-owner-nghieng.png"
+  },
+  "tuaTuong": [
+    {
+      "id": "sofa",
+      "ho": 0.031
+    },
+    {
+      "id": "ghe-don-1",
+      "ho": 0.115
+    },
+    {
+      "id": "ghe-don-2",
+      "ho": 0.086
+    },
+    {
+      "id": "ke-tivi",
+      "ho": 0.148
+    },
+    {
+      "id": "ban-canh-sofa",
+      "ho": 0.142
+    },
+    {
+      "id": "ke-module",
+      "ho": 0.15
+    },
+    {
+      "id": "ban-dieu-khien",
+      "ho": 0.141
+    },
+    {
+      "id": "ban-an",
+      "ho": 0.145
+    },
+    {
+      "id": "tu-bat-dia",
+      "ho": -0.025
+    },
+    {
+      "id": "tu-bep",
+      "ho": 0.025
+    },
+    {
+      "id": "tu-bep-goc",
+      "ho": 0.014
+    },
+    {
+      "id": "tu-duoi-1",
+      "ho": 0.064
+    },
+    {
+      "id": "bep-nau",
+      "ho": 0.025
+    },
+    {
+      "id": "tu-duoi-2",
+      "ho": 0.025
+    },
+    {
+      "id": "tu-lanh",
+      "ho": 0.103
+    },
+    {
+      "id": "ke-giay",
+      "ho": 0.108
+    }
+  ],
+  "vungTrong": {
+    "vung": {
+      "x0": -3,
+      "x1": 3,
+      "z0": -2.5,
+      "z1": 2.5
+    },
+    "rong": 6,
+    "sau": 5,
+    "lan": []
+  },
+  "minY": [
+    {
+      "id": "ke-tivi",
+      "minY": 0,
+      "maxY": 0.55,
+      "x": [
+        -4.71,
+        -3.29
+      ],
+      "z": [
+        4.408,
+        4.852
+      ]
+    },
+    {
+      "id": "tranh-1",
+      "minY": 1.17,
+      "maxY": 1.83,
+      "x": [
+        -7,
+        -6.955
+      ],
+      "z": [
+        1.24,
+        1.76
+      ]
+    },
+    {
+      "id": "tranh-2",
+      "minY": 1.21,
+      "maxY": 1.79,
+      "x": [
+        -7,
+        -6.955
+      ],
+      "z": [
+        3.27,
+        3.73
+      ]
+    },
+    {
+      "id": "tham",
+      "minY": 0.006,
+      "maxY": 0.006,
+      "x": [
+        -6.7,
+        -3.3
+      ],
+      "z": [
+        1.776,
+        4.224
+      ]
+    },
+    {
+      "id": "sofa",
+      "minY": 0,
+      "maxY": 0.47,
+      "x": [
+        -6.969,
+        -6.131
+      ],
+      "z": [
+        2.999,
+        4.001
+      ]
+    },
+    {
+      "id": "goi-1",
+      "minY": 0.42,
+      "maxY": 0.845,
+      "x": [
+        -6.792,
+        -6.608
+      ],
+      "z": [
+        2.777,
+        3.223
+      ]
+    },
+    {
+      "id": "goi-2",
+      "minY": 0.42,
+      "maxY": 0.845,
+      "x": [
+        -6.8,
+        -6.6
+      ],
+      "z": [
+        3.775,
+        4.225
+      ]
+    },
+    {
+      "id": "ban-tra",
+      "minY": 0,
+      "maxY": 0.26,
+      "x": [
+        -5.874,
+        -5.126
+      ],
+      "z": [
+        2.774,
+        3.226
+      ]
+    },
+    {
+      "id": "sach-ban-tra",
+      "minY": 0.26,
+      "maxY": 0.4534,
+      "x": [
+        -5.86,
+        -5.54
+      ],
+      "z": [
+        2.893,
+        3.147
+      ]
+    },
+    {
+      "id": "coc-tra",
+      "minY": 0.26,
+      "maxY": 0.3553,
+      "x": [
+        -5.342,
+        -5.204
+      ],
+      "z": [
+        2.858,
+        2.942
+      ]
+    },
+    {
+      "id": "ghe-don-1",
+      "minY": 0,
+      "maxY": 0.47,
+      "x": [
+        -6.885,
+        -6.235
+      ],
+      "z": [
+        1.675,
+        2.325
+      ]
+    },
+    {
+      "id": "ghe-don-2",
+      "minY": 0,
+      "maxY": 0.3399,
+      "x": [
+        -6.914,
+        -6.206
+      ],
+      "z": [
+        0.679,
+        1.321
+      ]
+    },
+    {
+      "id": "den-san",
+      "minY": 0,
+      "maxY": 1.05,
+      "x": [
+        -6.593,
+        -6.407
+      ],
+      "z": [
+        -0.107,
+        0.107
+      ]
+    },
+    {
+      "id": "ban-canh-sofa",
+      "minY": 0,
+      "maxY": 0.2733,
+      "x": [
+        -5.69,
+        -5.31
+      ],
+      "z": [
+        4.702,
+        4.858
+      ]
+    },
+    {
+      "id": "den-ban-sofa",
+      "minY": 0.2733,
+      "maxY": 0.5733,
+      "x": [
+        -5.573,
+        -5.427
+      ],
+      "z": [
+        4.696,
+        4.864
+      ]
+    },
+    {
+      "id": "cay-1",
+      "minY": 0,
+      "maxY": 1.35,
+      "x": [
+        -6.719,
+        -6.281
+      ],
+      "z": [
+        -4.749,
+        -4.251
+      ]
+    },
+    {
+      "id": "cay-2",
+      "minY": 0,
+      "maxY": 1.1,
+      "x": [
+        -6.872,
+        -6.128
+      ],
+      "z": [
+        -2.372,
+        -1.628
+      ]
+    },
+    {
+      "id": "tranh-3",
+      "minY": 1.14,
+      "maxY": 1.86,
+      "x": [
+        -5.29,
+        -4.71
+      ],
+      "z": [
+        -5,
+        -4.955
+      ]
+    },
+    {
+      "id": "ke-module",
+      "minY": 0,
+      "maxY": 1.9,
+      "x": [
+        1.068,
+        1.932
+      ],
+      "z": [
+        -4.85,
+        -4.31
+      ]
+    },
+    {
+      "id": "sach-ke-1",
+      "minY": 1.24,
+      "maxY": 1.4472,
+      "x": [
+        1.064,
+        1.376
+      ],
+      "z": [
+        -4.625,
+        -4.415
+      ]
+    },
+    {
+      "id": "sach-ke-2",
+      "minY": 0.82,
+      "maxY": 1.0272,
+      "x": [
+        1.601,
+        1.919
+      ],
+      "z": [
+        -4.629,
+        -4.411
+      ]
+    },
+    {
+      "id": "sach-ke-3",
+      "minY": 1.24,
+      "maxY": 1.4196,
+      "x": [
+        1.66,
+        1.94
+      ],
+      "z": [
+        -4.619,
+        -4.421
+      ]
+    },
+    {
+      "id": "sach-ke-4",
+      "minY": 0.4,
+      "maxY": 0.6072,
+      "x": [
+        1.076,
+        1.404
+      ],
+      "z": [
+        -4.639,
+        -4.401
+      ]
+    },
+    {
+      "id": "ban-dieu-khien",
+      "minY": 0,
+      "maxY": 0.5862,
+      "x": [
+        2.44,
+        3.56
+      ],
+      "z": [
+        -4.859,
+        -4.261
+      ]
+    },
+    {
+      "id": "man-hinh-ban",
+      "minY": 0.5862,
+      "maxY": 0.8862,
+      "x": [
+        2.8,
+        3.2
+      ],
+      "z": [
+        -4.773,
+        -4.667
+      ]
+    },
+    {
+      "id": "ban-phim",
+      "minY": 0.5862,
+      "maxY": 0.6155,
+      "x": [
+        2.85,
+        3.15
+      ],
+      "z": [
+        -4.463,
+        -4.337
+      ]
+    },
+    {
+      "id": "chuot",
+      "minY": 0.5862,
+      "maxY": 0.6139,
+      "x": [
+        3.311,
+        3.369
+      ],
+      "z": [
+        -4.45,
+        -4.35
+      ]
+    },
+    {
+      "id": "den-ban",
+      "minY": 0.5862,
+      "maxY": 0.8862,
+      "x": [
+        2.42,
+        2.58
+      ],
+      "z": [
+        -4.68,
+        -4.52
+      ]
+    },
+    {
+      "id": "sach-ban",
+      "minY": 0.5862,
+      "maxY": 0.7657,
+      "x": [
+        3.356,
+        3.644
+      ],
+      "z": [
+        -4.747,
+        -4.533
+      ]
+    },
+    {
+      "id": "coc-ban",
+      "minY": 0.5862,
+      "maxY": 0.6815,
+      "x": [
+        3.238,
+        3.376
+      ],
+      "z": [
+        -4.622,
+        -4.538
+      ]
+    },
+    {
+      "id": "ghe-2",
+      "minY": 0,
+      "maxY": 0.47,
+      "x": [
+        2.898,
+        3.102
+      ],
+      "z": [
+        -3.602,
+        -3.398
+      ]
+    },
+    {
+      "id": "bang-ghim",
+      "minY": 0.99,
+      "maxY": 1.71,
+      "x": [
+        2.5,
+        3.5
+      ],
+      "z": [
+        -5,
+        -4.96
+      ]
+    },
+    {
+      "id": "tu-bep",
+      "minY": 0,
+      "maxY": 0.95,
+      "x": [
+        5.046,
+        5.954
+      ],
+      "z": [
+        -4.975,
+        -4.025
+      ]
+    },
+    {
+      "id": "tu-bep-goc",
+      "minY": 0,
+      "maxY": 0.95,
+      "x": [
+        6.014,
+        6.986
+      ],
+      "z": [
+        -4.986,
+        -4.014
+      ]
+    },
+    {
+      "id": "tu-duoi-1",
+      "minY": 0,
+      "maxY": 0.95,
+      "x": [
+        6.064,
+        6.936
+      ],
+      "z": [
+        -3.917,
+        -3.083
+      ]
+    },
+    {
+      "id": "bep-nau",
+      "minY": 0,
+      "maxY": 0.95,
+      "x": [
+        6.025,
+        6.975
+      ],
+      "z": [
+        -2.954,
+        -2.046
+      ]
+    },
+    {
+      "id": "tu-duoi-2",
+      "minY": 0,
+      "maxY": 0.95,
+      "x": [
+        6.025,
+        6.975
+      ],
+      "z": [
+        -1.954,
+        -1.046
+      ]
+    },
+    {
+      "id": "tu-lanh",
+      "minY": 0,
+      "maxY": 1.8,
+      "x": [
+        6.103,
+        6.897
+      ],
+      "z": [
+        -1.009,
+        0.009
+      ]
+    },
+    {
+      "id": "tu-tren-3",
+      "minY": 1.5,
+      "maxY": 2.2,
+      "x": [
+        5.114,
+        5.886
+      ],
+      "z": [
+        -4.697,
+        -4.303
+      ]
+    },
+    {
+      "id": "tu-tren-1",
+      "minY": 1.5,
+      "maxY": 2.2,
+      "x": [
+        6.303,
+        6.697
+      ],
+      "z": [
+        -3.886,
+        -3.114
+      ]
+    },
+    {
+      "id": "tu-tren-2",
+      "minY": 1.5,
+      "maxY": 2.2,
+      "x": [
+        6.303,
+        6.697
+      ],
+      "z": [
+        -1.886,
+        -1.114
+      ]
+    },
+    {
+      "id": "hut-mui",
+      "minY": 1.55,
+      "maxY": 2.1,
+      "x": [
+        6.304,
+        6.696
+      ],
+      "z": [
+        -2.796,
+        -2.204
+      ]
+    },
+    {
+      "id": "lo-vi-song",
+      "minY": 0.95,
+      "maxY": 1.2293,
+      "x": [
+        5.235,
+        5.685
+      ],
+      "z": [
+        -4.578,
+        -4.222
+      ]
+    },
+    {
+      "id": "may-ca-phe",
+      "minY": 0.95,
+      "maxY": 1.25,
+      "x": [
+        6.177,
+        6.583
+      ],
+      "z": [
+        -1.64,
+        -1.32
+      ]
+    },
+    {
+      "id": "tham-an",
+      "minY": 0.006,
+      "maxY": 0.006,
+      "x": [
+        4.3,
+        6.7
+      ],
+      "z": [
+        1.136,
+        2.864
+      ]
+    },
+    {
+      "id": "ban-an",
+      "minY": 0,
+      "maxY": 0.4813,
+      "x": [
+        5.945,
+        6.855
+      ],
+      "z": [
+        1.475,
+        2.525
+      ]
+    },
+    {
+      "id": "ghe-1",
+      "minY": 0,
+      "maxY": 0.47,
+      "x": [
+        4.869,
+        5.131
+      ],
+      "z": [
+        1.369,
+        1.631
+      ]
+    },
+    {
+      "id": "ban-an-ghe-2",
+      "minY": 0,
+      "maxY": 0.47,
+      "x": [
+        5.898,
+        6.102
+      ],
+      "z": [
+        0.898,
+        1.102
+      ]
+    },
+    {
+      "id": "ban-an-ghe-3",
+      "minY": 0,
+      "maxY": 0.47,
+      "x": [
+        5.898,
+        6.102
+      ],
+      "z": [
+        2.898,
+        3.102
+      ]
+    },
+    {
+      "id": "ban-an-ghe-4",
+      "minY": 0,
+      "maxY": 0.47,
+      "x": [
+        4.869,
+        5.131
+      ],
+      "z": [
+        2.369,
+        2.631
+      ]
+    },
+    {
+      "id": "binh-hoa",
+      "minY": 0.4813,
+      "maxY": 0.8213,
+      "x": [
+        6.285,
+        6.515
+      ],
+      "z": [
+        2.041,
+        2.24
+      ]
+    },
+    {
+      "id": "trai-cay",
+      "minY": 0.4818,
+      "maxY": 0.5833,
+      "x": [
+        6.024,
+        6.296
+      ],
+      "z": [
+        1.74,
+        2.02
+      ]
+    },
+    {
+      "id": "tu-bat-dia",
+      "minY": 0,
+      "maxY": 0.95,
+      "x": [
+        5.046,
+        5.954
+      ],
+      "z": [
+        4.075,
+        5.025
+      ]
+    },
+    {
+      "id": "binh-hoa-tu",
+      "minY": 0.95,
+      "maxY": 1.27,
+      "x": [
+        5.712,
+        5.928
+      ],
+      "z": [
+        4.442,
+        4.658
+      ]
+    },
+    {
+      "id": "cay-4",
+      "minY": 0,
+      "maxY": 1.4,
+      "x": [
+        6.273,
+        6.727
+      ],
+      "z": [
+        4.242,
+        4.758
+      ]
+    },
+    {
+      "id": "tranh-4",
+      "minY": 1.19,
+      "maxY": 1.81,
+      "x": [
+        6.955,
+        7
+      ],
+      "z": [
+        1.75,
+        2.25
+      ]
+    },
+    {
+      "id": "ke-giay",
+      "minY": 0,
+      "maxY": 0.4762,
+      "x": [
+        -2.5,
+        -1.5
+      ],
+      "z": [
+        -4.892,
+        -4.368
+      ]
+    },
+    {
+      "id": "moc-ao",
+      "minY": 0,
+      "maxY": 1.72,
+      "x": [
+        -3.305,
+        -2.695
+      ],
+      "z": [
+        -4.805,
+        -4.195
+      ]
+    },
+    {
+      "id": "tham-cua",
+      "minY": 0,
+      "maxY": 0.0221,
+      "x": [
+        -1.975,
+        -1.025
+      ],
+      "z": [
+        -4.262,
+        -3.738
+      ]
+    },
+    {
+      "id": "cua",
+      "minY": 0,
+      "maxY": 2.05,
+      "x": [
+        -0.493,
+        0.493
+      ],
+      "z": [
+        -5.115,
+        -4.885
+      ]
+    }
+  ],
+  "toc": {
+    "dung/gen": {
+      "soMau": 20,
+      "lechMax": 0.0184,
+      "lechTB": 0.0098,
+      "vayMax": 0.0117,
+      "daiChuoiToc": 0.45,
+      "tyThuToc": 0.3589,
+      "xaDauNhat": 0.5628,
+      "mocDaOnDinh": true,
+      "soHamCatMax": 0,
+      "soLechCatMax": 2,
+      "gocLechToiDa": 0.2,
+      "soToc": 28,
+      "spring": {
+        "soKhop": 58,
+        "cungMin": 0.4539880163240324,
+        "cungMax": 1.6201482784509873,
+        "hamMin": 0.45,
+        "hamMax": 0.45,
+        "daiMin": 0.025221556462446247,
+        "daiMax": 0.10265788947788025,
+        "lucTrenDai": 0.30000000000000004
+      }
+    },
+    "dung/owner": {
+      "soMau": 20,
+      "lechMax": 0.0019,
+      "lechTB": 0.0009,
+      "vayMax": 0.0017,
+      "daiChuoiToc": 0.1457,
+      "tyThuToc": 1,
+      "xaDauNhat": 0.4827,
+      "mocDaOnDinh": true,
+      "soHamCatMax": 0,
+      "soLechCatMax": 0,
+      "gocLechToiDa": 0.2,
+      "soToc": 16,
+      "spring": {
+        "soKhop": 22,
+        "cungMin": 0.6759020028294407,
+        "cungMax": 2.5940399499222675,
+        "hamMin": 0.45,
+        "hamMax": 0.45,
+        "daiMin": 0.0587011664988348,
+        "daiMax": 0.1457419670379589,
+        "lucTrenDai": 0.30000000000000004
+      }
+    },
+    "di/gen": {
+      "soMau": 20,
+      "lechMax": 0.0152,
+      "lechTB": 0.0107,
+      "vayMax": 0.1831,
+      "daiChuoiToc": 0.45,
+      "tyThuToc": 0.3589,
+      "xaDauNhat": 0.5596,
+      "mocDaOnDinh": true,
+      "soHamCatMax": 0,
+      "soLechCatMax": 5,
+      "gocLechToiDa": 0.2,
+      "soToc": 28,
+      "spring": {
+        "soKhop": 58,
+        "cungMin": 0.4539880163240324,
+        "cungMax": 1.6201482784509873,
+        "hamMin": 0.45,
+        "hamMax": 0.45,
+        "daiMin": 0.025221556462446247,
+        "daiMax": 0.10265788947788025,
+        "lucTrenDai": 0.30000000000000004
+      }
+    },
+    "di/owner": {
+      "soMau": 20,
+      "lechMax": 0.0049,
+      "lechTB": 0.003,
+      "vayMax": 0.0028,
+      "daiChuoiToc": 0.1457,
+      "tyThuToc": 1,
+      "xaDauNhat": 0.4834,
+      "mocDaOnDinh": true,
+      "soHamCatMax": 0,
+      "soLechCatMax": 1,
+      "gocLechToiDa": 0.2,
+      "soToc": 16,
+      "spring": {
+        "soKhop": 22,
+        "cungMin": 0.6759020028294407,
+        "cungMax": 2.5940399499222675,
+        "hamMin": 0.45,
+        "hamMax": 0.45,
+        "daiMin": 0.0587011664988348,
+        "daiMax": 0.1457419670379589,
+        "lucTrenDai": 0.30000000000000004
+      }
+    },
+    "emote-rat-vui/gen": {
+      "soMau": 20,
+      "lechMax": 0.0437,
+      "lechTB": 0.0237,
+      "vayMax": 0.0693,
+      "daiChuoiToc": 0.45,
+      "tyThuToc": 0.3589,
+      "xaDauNhat": 0.575,
+      "mocDaOnDinh": true,
+      "soHamCatMax": 0,
+      "soLechCatMax": 19,
+      "gocLechToiDa": 0.2,
+      "soToc": 28,
+      "spring": {
+        "soKhop": 58,
+        "cungMin": 0.4539880163240324,
+        "cungMax": 1.6201482784509873,
+        "hamMin": 0.45,
+        "hamMax": 0.45,
+        "daiMin": 0.025221556462446247,
+        "daiMax": 0.10265788947788025,
+        "lucTrenDai": 0.30000000000000004
+      }
+    },
+    "emote-ngac-nhien/gen": {
+      "soMau": 20,
+      "lechMax": 0.0606,
+      "lechTB": 0.0328,
+      "vayMax": 0.084,
+      "daiChuoiToc": 0.45,
+      "tyThuToc": 0.3589,
+      "xaDauNhat": 0.5986,
+      "mocDaOnDinh": true,
+      "soHamCatMax": 18,
+      "soLechCatMax": 25,
+      "gocLechToiDa": 0.2,
+      "soToc": 28,
+      "spring": {
+        "soKhop": 58,
+        "cungMin": 0.4539880163240324,
+        "cungMax": 1.6201482784509873,
+        "hamMin": 0.45,
+        "hamMax": 0.45,
+        "daiMin": 0.025221556462446247,
+        "daiMax": 0.10265788947788025,
+        "lucTrenDai": 0.30000000000000004
+      }
+    },
+    "emote-buon/gen": {
+      "soMau": 20,
+      "lechMax": 0.0315,
+      "lechTB": 0.0184,
+      "vayMax": 0.043,
+      "daiChuoiToc": 0.45,
+      "tyThuToc": 0.3589,
+      "xaDauNhat": 0.5522,
+      "mocDaOnDinh": true,
+      "soHamCatMax": 0,
+      "soLechCatMax": 10,
+      "gocLechToiDa": 0.2,
+      "soToc": 28,
+      "spring": {
+        "soKhop": 58,
+        "cungMin": 0.4539880163240324,
+        "cungMax": 1.6201482784509873,
+        "hamMin": 0.45,
+        "hamMax": 0.45,
+        "daiMin": 0.025221556462446247,
+        "daiMax": 0.10265788947788025,
+        "lucTrenDai": 0.30000000000000004
+      }
+    },
+    "emote-rat-vui/owner": {
+      "soMau": 20,
+      "lechMax": 0.0116,
+      "lechTB": 0.0058,
+      "vayMax": 0.0082,
+      "daiChuoiToc": 0.1457,
+      "tyThuToc": 1,
+      "xaDauNhat": 0.4853,
+      "mocDaOnDinh": true,
+      "soHamCatMax": 1,
+      "soLechCatMax": 3,
+      "gocLechToiDa": 0.2,
+      "soToc": 16,
+      "spring": {
+        "soKhop": 22,
+        "cungMin": 0.6759020028294407,
+        "cungMax": 2.5940399499222675,
+        "hamMin": 0.45,
+        "hamMax": 0.45,
+        "daiMin": 0.0587011664988348,
+        "daiMax": 0.1457419670379589,
+        "lucTrenDai": 0.30000000000000004
+      }
+    },
+    "emote-ngac-nhien/owner": {
+      "soMau": 20,
+      "lechMax": 0.0213,
+      "lechTB": 0.007,
+      "vayMax": 0.0124,
+      "daiChuoiToc": 0.1457,
+      "tyThuToc": 1,
+      "xaDauNhat": 0.4895,
+      "mocDaOnDinh": true,
+      "soHamCatMax": 9,
+      "soLechCatMax": 11,
+      "gocLechToiDa": 0.2,
+      "soToc": 16,
+      "spring": {
+        "soKhop": 22,
+        "cungMin": 0.6759020028294407,
+        "cungMax": 2.5940399499222675,
+        "hamMin": 0.45,
+        "hamMax": 0.45,
+        "daiMin": 0.0587011664988348,
+        "daiMax": 0.1457419670379589,
+        "lucTrenDai": 0.30000000000000004
+      }
+    },
+    "emote-buon/owner": {
+      "soMau": 20,
+      "lechMax": 0.0068,
+      "lechTB": 0.0026,
+      "vayMax": 0.0113,
+      "daiChuoiToc": 0.1457,
+      "tyThuToc": 1,
+      "xaDauNhat": 0.4874,
+      "mocDaOnDinh": true,
+      "soHamCatMax": 0,
+      "soLechCatMax": 0,
+      "gocLechToiDa": 0.2,
+      "soToc": 16,
+      "spring": {
+        "soKhop": 22,
+        "cungMin": 0.6759020028294407,
+        "cungMax": 2.5940399499222675,
+        "hamMin": 0.45,
+        "hamMax": 0.45,
+        "daiMin": 0.0587011664988348,
+        "daiMax": 0.1457419670379589,
+        "lucTrenDai": 0.30000000000000004
+      }
+    },
+    "xuong/gen": {
+      "head": [
+        -1.5989,
+        1.1055,
+        0.6478
+      ],
+      "bbox": [
+        0,
+        1.5668,
+        -1.9576,
+        -1.3206
+      ]
+    },
+    "xuong/owner": {
+      "head": [
+        1.6076,
+        1.0839,
+        0.639
+      ],
+      "bbox": [
+        0,
+        1.495,
+        1.3678,
+        1.8615
+      ]
+    }
+  },
+  "hieuNang": {
+    "calls": 372,
+    "triangles": 226381,
+    "callsNha": 34,
+    "callsVrm": 338,
+    "trianglesNha": 14269,
+    "trianglesVrm": 212112,
+    "coBong": 1024,
+    "pixelRatio": 1,
+    "mesh": 188,
+    "vatLieu": 91,
+    "theoGoc": {
+      "CanNhaAm": 35,
+      "actor:owner": 131,
+      "actor:gen": 18,
+      "(không tên)": 4
+    },
+    "soMay": []
+  },
+  "dat": {
+    "tua-tuong": {
+      "dat": true,
+      "hoXau": [],
+      "soMon": 16
+    },
+    "vung-giua-trong": {
+      "dat": true,
+      "vung": {
+        "x0": -3,
+        "x1": 3,
+        "z0": -2.5,
+        "z1": 2.5
+      },
+      "rong": 6,
+      "sau": 5,
+      "lan": []
+    },
+    "min-y-khong-lun-san": {
+      "dat": true,
+      "lunSan": [],
+      "soTreo": 29
+    },
+    "toc/dung/gen": {
+      "dat": true,
+      "soMau": 20,
+      "lechMax": 0.0184,
+      "lechTB": 0.0098,
+      "vayMax": 0.0117,
+      "daiChuoiToc": 0.45,
+      "tyThuToc": 0.3589,
+      "xaDauNhat": 0.5628,
+      "mocDaOnDinh": true,
+      "soHamCatMax": 0,
+      "soLechCatMax": 2,
+      "gocLechToiDa": 0.2,
+      "soToc": 28,
+      "spring": {
+        "soKhop": 58,
+        "cungMin": 0.4539880163240324,
+        "cungMax": 1.6201482784509873,
+        "hamMin": 0.45,
+        "hamMax": 0.45,
+        "daiMin": 0.025221556462446247,
+        "daiMax": 0.10265788947788025,
+        "lucTrenDai": 0.30000000000000004
+      }
+    },
+    "toc/dai/gen": {
+      "dat": true,
+      "daiChuoiToc": 0.45,
+      "moc": 0.45
+    },
+    "toc/ham/gen": {
+      "dat": true,
+      "hamMin": 0.45,
+      "hamMax": 0.45,
+      "moc": 0.45
+    },
+    "toc/dung/owner": {
+      "dat": true,
+      "soMau": 20,
+      "lechMax": 0.0019,
+      "lechTB": 0.0009,
+      "vayMax": 0.0017,
+      "daiChuoiToc": 0.1457,
+      "tyThuToc": 1,
+      "xaDauNhat": 0.4827,
+      "mocDaOnDinh": true,
+      "soHamCatMax": 0,
+      "soLechCatMax": 0,
+      "gocLechToiDa": 0.2,
+      "soToc": 16,
+      "spring": {
+        "soKhop": 22,
+        "cungMin": 0.6759020028294407,
+        "cungMax": 2.5940399499222675,
+        "hamMin": 0.45,
+        "hamMax": 0.45,
+        "daiMin": 0.0587011664988348,
+        "daiMax": 0.1457419670379589,
+        "lucTrenDai": 0.30000000000000004
+      }
+    },
+    "toc/dai/owner": {
+      "dat": true,
+      "daiChuoiToc": 0.1457,
+      "moc": 0.45
+    },
+    "toc/ham/owner": {
+      "dat": true,
+      "hamMin": 0.45,
+      "hamMax": 0.45,
+      "moc": 0.45
+    },
+    "toc/di/gen": {
+      "dat": true,
+      "soMau": 20,
+      "lechMax": 0.0152,
+      "lechTB": 0.0107,
+      "vayMax": 0.1831,
+      "daiChuoiToc": 0.45,
+      "tyThuToc": 0.3589,
+      "xaDauNhat": 0.5596,
+      "mocDaOnDinh": true,
+      "soHamCatMax": 0,
+      "soLechCatMax": 5,
+      "gocLechToiDa": 0.2,
+      "soToc": 28,
+      "spring": {
+        "soKhop": 58,
+        "cungMin": 0.4539880163240324,
+        "cungMax": 1.6201482784509873,
+        "hamMin": 0.45,
+        "hamMax": 0.45,
+        "daiMin": 0.025221556462446247,
+        "daiMax": 0.10265788947788025,
+        "lucTrenDai": 0.30000000000000004
+      }
+    },
+    "toc/di/owner": {
+      "dat": true,
+      "soMau": 20,
+      "lechMax": 0.0049,
+      "lechTB": 0.003,
+      "vayMax": 0.0028,
+      "daiChuoiToc": 0.1457,
+      "tyThuToc": 1,
+      "xaDauNhat": 0.4834,
+      "mocDaOnDinh": true,
+      "soHamCatMax": 0,
+      "soLechCatMax": 1,
+      "gocLechToiDa": 0.2,
+      "soToc": 16,
+      "spring": {
+        "soKhop": 22,
+        "cungMin": 0.6759020028294407,
+        "cungMax": 2.5940399499222675,
+        "hamMin": 0.45,
+        "hamMax": 0.45,
+        "daiMin": 0.0587011664988348,
+        "daiMax": 0.1457419670379589,
+        "lucTrenDai": 0.30000000000000004
+      }
+    },
+    "toc/emote/rat-vui/gen": {
+      "dat": true,
+      "soMau": 20,
+      "lechMax": 0.0437,
+      "lechTB": 0.0237,
+      "vayMax": 0.0693,
+      "daiChuoiToc": 0.45,
+      "tyThuToc": 0.3589,
+      "xaDauNhat": 0.575,
+      "mocDaOnDinh": true,
+      "soHamCatMax": 0,
+      "soLechCatMax": 19,
+      "gocLechToiDa": 0.2,
+      "soToc": 28,
+      "spring": {
+        "soKhop": 58,
+        "cungMin": 0.4539880163240324,
+        "cungMax": 1.6201482784509873,
+        "hamMin": 0.45,
+        "hamMax": 0.45,
+        "daiMin": 0.025221556462446247,
+        "daiMax": 0.10265788947788025,
+        "lucTrenDai": 0.30000000000000004
+      }
+    },
+    "toc/emote/ngac-nhien/gen": {
+      "dat": true,
+      "soMau": 20,
+      "lechMax": 0.0606,
+      "lechTB": 0.0328,
+      "vayMax": 0.084,
+      "daiChuoiToc": 0.45,
+      "tyThuToc": 0.3589,
+      "xaDauNhat": 0.5986,
+      "mocDaOnDinh": true,
+      "soHamCatMax": 18,
+      "soLechCatMax": 25,
+      "gocLechToiDa": 0.2,
+      "soToc": 28,
+      "spring": {
+        "soKhop": 58,
+        "cungMin": 0.4539880163240324,
+        "cungMax": 1.6201482784509873,
+        "hamMin": 0.45,
+        "hamMax": 0.45,
+        "daiMin": 0.025221556462446247,
+        "daiMax": 0.10265788947788025,
+        "lucTrenDai": 0.30000000000000004
+      }
+    },
+    "toc/emote/buon/gen": {
+      "dat": true,
+      "soMau": 20,
+      "lechMax": 0.0315,
+      "lechTB": 0.0184,
+      "vayMax": 0.043,
+      "daiChuoiToc": 0.45,
+      "tyThuToc": 0.3589,
+      "xaDauNhat": 0.5522,
+      "mocDaOnDinh": true,
+      "soHamCatMax": 0,
+      "soLechCatMax": 10,
+      "gocLechToiDa": 0.2,
+      "soToc": 28,
+      "spring": {
+        "soKhop": 58,
+        "cungMin": 0.4539880163240324,
+        "cungMax": 1.6201482784509873,
+        "hamMin": 0.45,
+        "hamMax": 0.45,
+        "daiMin": 0.025221556462446247,
+        "daiMax": 0.10265788947788025,
+        "lucTrenDai": 0.30000000000000004
+      }
+    },
+    "toc/emote/rat-vui/owner": {
+      "dat": true,
+      "soMau": 20,
+      "lechMax": 0.0116,
+      "lechTB": 0.0058,
+      "vayMax": 0.0082,
+      "daiChuoiToc": 0.1457,
+      "tyThuToc": 1,
+      "xaDauNhat": 0.4853,
+      "mocDaOnDinh": true,
+      "soHamCatMax": 1,
+      "soLechCatMax": 3,
+      "gocLechToiDa": 0.2,
+      "soToc": 16,
+      "spring": {
+        "soKhop": 22,
+        "cungMin": 0.6759020028294407,
+        "cungMax": 2.5940399499222675,
+        "hamMin": 0.45,
+        "hamMax": 0.45,
+        "daiMin": 0.0587011664988348,
+        "daiMax": 0.1457419670379589,
+        "lucTrenDai": 0.30000000000000004
+      }
+    },
+    "toc/emote/ngac-nhien/owner": {
+      "dat": true,
+      "soMau": 20,
+      "lechMax": 0.0213,
+      "lechTB": 0.007,
+      "vayMax": 0.0124,
+      "daiChuoiToc": 0.1457,
+      "tyThuToc": 1,
+      "xaDauNhat": 0.4895,
+      "mocDaOnDinh": true,
+      "soHamCatMax": 9,
+      "soLechCatMax": 11,
+      "gocLechToiDa": 0.2,
+      "soToc": 16,
+      "spring": {
+        "soKhop": 22,
+        "cungMin": 0.6759020028294407,
+        "cungMax": 2.5940399499222675,
+        "hamMin": 0.45,
+        "hamMax": 0.45,
+        "daiMin": 0.0587011664988348,
+        "daiMax": 0.1457419670379589,
+        "lucTrenDai": 0.30000000000000004
+      }
+    },
+    "toc/emote/buon/owner": {
+      "dat": true,
+      "soMau": 20,
+      "lechMax": 0.0068,
+      "lechTB": 0.0026,
+      "vayMax": 0.0113,
+      "daiChuoiToc": 0.1457,
+      "tyThuToc": 1,
+      "xaDauNhat": 0.4874,
+      "mocDaOnDinh": true,
+      "soHamCatMax": 0,
+      "soLechCatMax": 0,
+      "gocLechToiDa": 0.2,
+      "soToc": 16,
+      "spring": {
+        "soKhop": 22,
+        "cungMin": 0.6759020028294407,
+        "cungMax": 2.5940399499222675,
+        "hamMin": 0.45,
+        "hamMax": 0.45,
+        "daiMin": 0.0587011664988348,
+        "daiMax": 0.1457419670379589,
+        "lucTrenDai": 0.30000000000000004
+      }
+    },
+    "console-sach": {
+      "dat": true,
+      "loiConsole": []
+    }
+  },
+  "loiConsole": []
+}

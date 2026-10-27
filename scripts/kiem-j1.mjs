@@ -143,16 +143,40 @@ const br = await firefox.launch({
   env: { ...process.env, MOZ_ENABLE_WAYLAND: '0', MOZ_X11_EGL: '0' },
 });
 try {
-  const ctx = await br.newContext({ viewport: { width: 1440, height: 900 } });
-  const pg = await ctx.newPage();
-
-  pg.on('console', (m) => m.type() === 'error' && kq.loiConsole.push(m.text()));
-  pg.on('pageerror', (e) => kq.loiConsole.push(`pageerror: ${e.message}`));
-
-  // `?bridge=0`: KHÔNG nối vào bridge thật của Boss (8787–8790 đang chạy).
-  await pg.goto(`${url}?bridge=0`, { waitUntil: 'load', timeout: 180000 });
-  await pg.waitForFunction(() => window.stage?.san === true, null, { timeout: 180000 });
-  await nghi(4500); // nạp VRM + ~40 model Kenney + biên dịch shader
+  /*
+   * NẠP TRANG CÓ THỬ LẠI — **vẫn đúng MỘT lần mở Firefox** (một
+   * `firefox.launch` cho cả lượt): chỉ tạo lại context/tab bên trong cùng
+   * browser đó. Lý do: nouveau trên máy này thỉnh thoảng giết tiến trình GPU
+   * ngay sau khi biên dịch shader (bằng chứng: `kernel rejected pushbuf` rồi
+   * "Target page ... has been closed"). Thử lại trong cùng browser thay vì bắt
+   * cả lượt đo chạy lại từ đầu — mỗi lần chạy lại là một lần cửa sổ nhấp nháy
+   * làm phiền Boss, và là một lượt xếp hàng nữa với các agent khác.
+   */
+  let pg = null;
+  for (let lan = 1; lan <= 3; lan += 1) {
+    const ctx = await br.newContext({ viewport: { width: 1440, height: 900 } });
+    pg = await ctx.newPage();
+    pg.on('console', (m) => m.type() === 'error' && kq.loiConsole.push(m.text()));
+    pg.on('pageerror', (e) => kq.loiConsole.push(`pageerror: ${e.message}`));
+    pg.on('crash', () => console.error('   ⚠ tab chết (GPU nouveau?)'));
+    try {
+      // `?bridge=0`: KHÔNG nối vào bridge thật của Boss (8787–8790 đang chạy).
+      await pg.goto(`${url}?bridge=0`, { waitUntil: 'load', timeout: 180000 });
+      await pg.waitForFunction(() => window.stage?.san === true, null, { timeout: 180000 });
+      await nghi(4500); // nạp VRM + ~40 model Kenney + biên dịch shader
+      await pg.addStyleTag({
+        content:
+          '#bang,#hud,#toast,#loading,#o-chat,#goi-y-phim,#nut-tieng,#o-noi-nhanh{display:none!important}',
+      });
+      break;
+    } catch (e) {
+      console.error(`   ⚠ lần ${lan}: ${String(e?.message ?? e).split('\n')[0]}`);
+      kq.loiConsole.length = 0; // lỗi của tab đã chết, không tính vào "console sạch"
+      await ctx.close().catch(() => {});
+      if (lan === 3) throw e;
+      await nghi(4000);
+    }
+  }
 
   /** Chạy một lệnh sân khấu, KIỂM `r.ok`, ném nếu hỏng. */
   const chay = async (cmd, args) => {
@@ -168,11 +192,6 @@ try {
     if (r.x && r.x.ok === false) throw new Error(`lệnh ${cmd} trả ok=false: ${JSON.stringify(r.x)}`);
     return r.x;
   };
-
-  await pg.addStyleTag({
-    content:
-      '#bang,#hud,#toast,#loading,#o-chat,#goi-y-phim,#nut-tieng,#o-noi-nhanh{display:none!important}',
-  });
 
   /* ============ 1. min.y + hộp bao XZ của MỌI khối, đo LÚC DỰNG ============
    * Đọc `window.stage.doKhoi()` — sổ đo `Box3` của từng khối ghi NGAY LÚC
@@ -260,6 +279,10 @@ try {
       tyThuToc: mau[0].tyThuToc,
       xaDauNhat: Math.max(...mau.map((m) => m.xaDauNhat)),
       mocDaOnDinh: mau[mau.length - 1].mocDaOnDinh,
+      // bằng chứng hai trần dáng vẽ có thật sự cắt hay không (J1 #78)
+      soHamCatMax: Math.max(...mau.map((m) => m.soHamCat ?? 0)),
+      soLechCatMax: Math.max(...mau.map((m) => m.soLechCat ?? 0)),
+      gocLechToiDa: mau[0].gocLechToiDa,
       soToc: mau[0].soToc,
       spring: mau[0].spring,
     };

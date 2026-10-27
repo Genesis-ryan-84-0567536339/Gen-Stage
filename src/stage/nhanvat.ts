@@ -269,12 +269,16 @@ const TOC_BAN_KINH_BOT = 0.75;
  * chỗ chậm hơn.
  *
  * Chặn đúng chỗ: dáng VẼ RA của mỗi xương tóc không được lệch khỏi **dáng
- * nghỉ** (chốt ở `chotMocToc`) quá bấy nhiêu radian. 0,42 rad ≈ 24° — đủ cho
- * tóc đung đưa, lắc đầu, tay gạt tóc thấy được; quá đó là "rối" theo đúng
- * nghĩa Boss nói. Trạng thái bên trong (`_currentTail`) KHÔNG bị sửa, nên khi
- * cú đẩy qua rồi tóc tự về, không bị khoá cứng.
+ * nghỉ** (chốt ở `chotMocToc`) quá bấy nhiêu radian. Trạng thái bên trong
+ * (`_currentTail`) KHÔNG bị sửa, nên khi cú đẩy qua rồi tóc tự về, không bị
+ * khoá cứng — đây là trần DÁNG VẼ, không phải đổi vật lý.
+ *
+ * Chốt **0,2 rad ≈ 11,5° MỖI KHỚP** bằng cách đo, không đoán: 0,42 rad cho
+ * `lechToc` 0,1438 m ở `ngac-nhien`, mà lệch tóc ~ tỉ lệ với góc, nên muốn
+ * ≤ 0,07 m thì cần ≈ 0,42 × 0,07/0,1438 ≈ 0,2 rad. Chuỗi tóc của Nhi có 5–6
+ * khớp nên đuôi tóc vẫn quét được tới ~60–70° — tóc mềm, chỉ không "rối".
  */
-const GOC_LECH_TOC_TOI_DA = 0.42;
+const GOC_LECH_TOC_TOI_DA = 0.2;
 /** Tóc không được quét xuống thấp hơn đế giày — chừa lề bấy nhiêu mét. */
 const LE_TOC_TREN_SAN = 0.03;
 /** Chờ bấy nhiêu giây cho tóc về dáng cân bằng rồi mới đóng lại mốc (xem `chotLaiMocToc`). */

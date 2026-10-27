@@ -1,0 +1,122 @@
+J1 (#78) — 2026-10-27T00:10:20.437Z
+chế độ: vite preview · firefox headless:false · GPU thật
+
+== 1. TỰA TƯỜNG (mép MODEL tới tường gần nhất, mốc ≤ 0,15 m) ==
+  sofa             hở 0.031 m  ĐẠT
+  ghe-don-1        hở 0.115 m  ĐẠT
+  ghe-don-2        hở 0.086 m  ĐẠT
+  ke-tivi          hở 0.148 m  ĐẠT
+  ban-canh-sofa    hở 0.142 m  ĐẠT
+  ke-module        hở 0.150 m  ĐẠT
+  ban-dieu-khien   hở 0.141 m  ĐẠT
+  ban-an           hở 0.145 m  ĐẠT
+  tu-bat-dia       hở -0.025 m  ĐẠT
+  tu-bep           hở 0.025 m  ĐẠT
+  tu-bep-goc       hở 0.014 m  ĐẠT
+  tu-duoi-1        hở 0.064 m  ĐẠT
+  bep-nau          hở 0.025 m  ĐẠT
+  tu-duoi-2        hở 0.025 m  ĐẠT
+  tu-lanh          hở 0.103 m  ĐẠT
+  ke-giay          hở 0.108 m  ĐẠT
+
+== 2. VÙNG GIỮA TRỐNG (x -3…3 · z -2.5…2.5) ==
+  kích thước 6 × 5 m (mốc ≥ 6 × 4 m)
+  khối lấn vào: KHÔNG CÓ → ĐẠT
+
+== 3. min.y MỌI KHỐI (m) — âm là lún xuống dưới sàn ==
+  ke-tivi          min.y   0.0000  max.y   0.5500
+  sofa             min.y   0.0000  max.y   0.4700
+  ban-tra          min.y   0.0000  max.y   0.2600
+  ghe-don-1        min.y   0.0000  max.y   0.4700
+  ghe-don-2        min.y   0.0000  max.y   0.3399
+  den-san          min.y   0.0000  max.y   1.0500
+  ban-canh-sofa    min.y   0.0000  max.y   0.2733
+  cay-1            min.y   0.0000  max.y   1.3500
+  cay-2            min.y   0.0000  max.y   1.1000
+  ke-module        min.y   0.0000  max.y   1.9000
+  ban-dieu-khien   min.y   0.0000  max.y   0.5862
+  ghe-2            min.y   0.0000  max.y   0.4700
+  tu-bep           min.y   0.0000  max.y   0.9500
+  tu-bep-goc       min.y   0.0000  max.y   0.9500
+  tu-duoi-1        min.y   0.0000  max.y   0.9500
+  bep-nau          min.y   0.0000  max.y   0.9500
+  tu-duoi-2        min.y   0.0000  max.y   0.9500
+  tu-lanh          min.y   0.0000  max.y   1.8000
+  ban-an           min.y   0.0000  max.y   0.4813
+  ghe-1            min.y   0.0000  max.y   0.4700
+  ban-an-ghe-2     min.y   0.0000  max.y   0.4700
+  ban-an-ghe-3     min.y   0.0000  max.y   0.4700
+  ban-an-ghe-4     min.y   0.0000  max.y   0.4700
+  tu-bat-dia       min.y   0.0000  max.y   0.9500
+  cay-4            min.y   0.0000  max.y   1.4000
+  ke-giay          min.y   0.0000  max.y   0.4762
+  moc-ao           min.y   0.0000  max.y   1.7200
+  tham-cua         min.y   0.0000  max.y   0.0221
+  cua              min.y   0.0000  max.y   2.0500
+  tham             min.y   0.0060  max.y   0.0060
+  tham-an          min.y   0.0060  max.y   0.0060
+  sach-ban-tra     min.y   0.2600  max.y   0.4534
+  coc-tra          min.y   0.2600  max.y   0.3553
+  den-ban-sofa     min.y   0.2733  max.y   0.5733
+  sach-ke-4        min.y   0.4000  max.y   0.6072
+  goi-1            min.y   0.4200  max.y   0.8450
+  goi-2            min.y   0.4200  max.y   0.8450
+  binh-hoa         min.y   0.4813  max.y   0.8213
+  trai-cay         min.y   0.4818  max.y   0.5833
+  man-hinh-ban     min.y   0.5862  max.y   0.8862
+  ban-phim         min.y   0.5862  max.y   0.6155
+  chuot            min.y   0.5862  max.y   0.6139
+  den-ban          min.y   0.5862  max.y   0.8862
+  sach-ban         min.y   0.5862  max.y   0.7657
+  coc-ban          min.y   0.5862  max.y   0.6815
+  sach-ke-2        min.y   0.8200  max.y   1.0272
+  lo-vi-song       min.y   0.9500  max.y   1.2293
+  may-ca-phe       min.y   0.9500  max.y   1.2500
+  binh-hoa-tu      min.y   0.9500  max.y   1.2700
+  bang-ghim        min.y   0.9900  max.y   1.7100
+  tranh-3          min.y   1.1400  max.y   1.8600
+  tranh-1          min.y   1.1700  max.y   1.8300
+  tranh-4          min.y   1.1900  max.y   1.8100
+  tranh-2          min.y   1.2100  max.y   1.7900
+  sach-ke-1        min.y   1.2400  max.y   1.4472
+  sach-ke-3        min.y   1.2400  max.y   1.4196
+  tu-tren-3        min.y   1.5000  max.y   2.2000
+  tu-tren-1        min.y   1.5000  max.y   2.2000
+  tu-tren-2        min.y   1.5000  max.y   2.2000
+  hut-mui          min.y   1.5500  max.y   2.1000
+
+== 4. LỆCH TÓC (mẫu 100 ms × 2 s) ==
+  mốc: đứng ≤ 0.02 · đi ≤ 0.05 · emote ≤ 0.07 m
+  dung/gen                   lệch max 0.0184 · TB 0.0098 · váy 0.0117 · chuỗi tóc 0.4500 m · hãm 0.450…0.450
+  dung/owner                 lệch max 0.0019 · TB 0.0009 · váy 0.0017 · chuỗi tóc 0.1457 m · hãm 0.450…0.450
+  di/gen                     lệch max 0.0152 · TB 0.0107 · váy 0.1831 · chuỗi tóc 0.4500 m · hãm 0.450…0.450
+  di/owner                   lệch max 0.0049 · TB 0.0030 · váy 0.0028 · chuỗi tóc 0.1457 m · hãm 0.450…0.450
+  emote-rat-vui/gen          lệch max 0.0437 · TB 0.0237 · váy 0.0693 · chuỗi tóc 0.4500 m · hãm 0.450…0.450
+  emote-ngac-nhien/gen       lệch max 0.0606 · TB 0.0328 · váy 0.0840 · chuỗi tóc 0.4500 m · hãm 0.450…0.450
+  emote-buon/gen             lệch max 0.0315 · TB 0.0184 · váy 0.0430 · chuỗi tóc 0.4500 m · hãm 0.450…0.450
+  emote-rat-vui/owner        lệch max 0.0116 · TB 0.0058 · váy 0.0082 · chuỗi tóc 0.1457 m · hãm 0.450…0.450
+  emote-ngac-nhien/owner     lệch max 0.0213 · TB 0.0070 · váy 0.0124 · chuỗi tóc 0.1457 m · hãm 0.450…0.450
+  emote-buon/owner           lệch max 0.0068 · TB 0.0026 · váy 0.0113 · chuỗi tóc 0.1457 m · hãm 0.450…0.450
+
+== 5. ĐẠT / KHÔNG ==
+  ĐẠT    tua-tuong
+  ĐẠT    vung-giua-trong
+  ĐẠT    min-y-khong-lun-san
+  ĐẠT    toc/dung/gen
+  ĐẠT    toc/dai/gen
+  ĐẠT    toc/ham/gen
+  ĐẠT    toc/dung/owner
+  ĐẠT    toc/dai/owner
+  ĐẠT    toc/ham/owner
+  ĐẠT    toc/di/gen
+  ĐẠT    toc/di/owner
+  ĐẠT    toc/emote/rat-vui/gen
+  ĐẠT    toc/emote/ngac-nhien/gen
+  ĐẠT    toc/emote/buon/gen
+  ĐẠT    toc/emote/rat-vui/owner
+  ĐẠT    toc/emote/ngac-nhien/owner
+  ĐẠT    toc/emote/buon/owner
+  ĐẠT    console-sach
+
+lỗi console: 0
+hiệu năng: {"calls":372,"triangles":226381,"callsNha":34,"callsVrm":338,"trianglesNha":14269,"trianglesVrm":212112,"coBong":1024,"pixelRatio":1,"mesh":188,"vatLieu":91,"theoGoc":{"CanNhaAm":35,"actor:owner":131,"actor:gen":18,"(không tên)":4},"soMay":[]}
