@@ -19,6 +19,8 @@ import { batOChat, type OChat } from './ui/o-chat';
 import { batHieuLenh } from './behavior/hieu-lenh';
 // C0 (#28) — phản xạ xã hội: Gen quay lại, nhìn, đáp ngay khi Sếp gọi, KHÔNG chờ não.
 import { batPhanXa } from './behavior/phan-xa';
+// J2 (#79) — rảnh > 20 s thì Nhi tự sinh hoạt; Boss gõ/nói là cắt ngay.
+import { batTuSinhHoat } from './behavior/tu-sinh-hoat';
 import { BridgeClient, coBatBridge, urlTts } from './bridge-client';
 // B2 (#20) — giọng tiếng Việt thật + nút mở khoá autoplay.
 import { lopTieng } from './audio/tts-client';
@@ -211,7 +213,8 @@ async function khoiDong(): Promise<void> {
 
   // C1 (#31) — mic đi ĐÚNG cửa ô chat (`oChat.gui`), không có đường tắt vào
   // dispatcher: Boss nói hay gõ đều ra một `actor.say` lên nhân vật owner.
-  mic = batMic({ urlStt: urlStt(), oChat, toast });
+  // I1 (#74) — `bus` để mic bắn `user.listening` (Boss bắt đầu nói, chưa có chữ).
+  mic = batMic({ urlStt: urlStt(), oChat, toast, bus });
 
   // B2 (#20) — nút "🔊 Bật tiếng" (ẩn nếu Boss đã đồng ý ở phiên trước).
   if (tieng) {
@@ -222,6 +225,14 @@ async function khoiDong(): Promise<void> {
   // C0 (#28) — bật "tuỷ sống" của Gen. Đặt sau khi cảnh đã có đủ nhân vật, và
   // trước `stage.ready` để câu đầu tiên của Sếp cũng được phản xạ bắt.
   batPhanXa({ dispatcher, bus });
+
+  /*
+   * J2 (#79) — máy TỰ SINH HOẠT. Bật SAU phản xạ nhưng điều đó không quyết
+   * định gì về thứ tự ưu tiên: nó cắt hoạt động **đồng bộ** trong handler
+   * `user.text`/`user.listening`, nên dù chạy trước hay sau phản xạ trong
+   * cùng sự kiện thì tới lúc phản xạ cần chêm câu, Nhi đã rảnh.
+   */
+  batTuSinhHoat({ dispatcher, bus });
 
   /*
    * D1b vòng 2 — `?fps=1`: thước FPS trong app để Boss TỰ ĐO trên Firefox +

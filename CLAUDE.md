@@ -52,6 +52,8 @@ node scripts/kiem-g1.mjs      # bằng chứng G1: bỏ trần + chân chạm s�
 node scripts/kiem-g1-ngoi.mjs # bằng chứng G1 mục NGỒI: nội thất cỡ chibi, chân chạm sàn khi ngồi (cổng 5363)
 node scripts/kiem-g1-vong3.mjs # bằng chứng G1 vòng 3 (review PR #70): đế giày QUÉT MESH (đứng/đi/ngồi/đứng lên) + lệch tóc mỗi 100 ms khi emote; `--dev` chạy trên dev, `--tai` chặn luồng chính 250 ms/khung để giả khung hình dài (cổng 5451/5452)
 node scripts/kiem-e1.mjs      # bằng chứng E1: UI 390 px, não diễn thật, /tts retry, hiểu "Javis", cài 1 lệnh, vào docs/e1/ (CHẠY MỘT LẦN)
+node scripts/kiem-i1.mjs      # bằng chứng I1: phản ứng tức thì 3 tầng (mốc bus/nhật ký) trên FIREFOX thật, vào docs/i1/ (CHẠY MỘT LẦN)
+node scripts/kiem-j2.mjs      # bằng chứng J2: 12 hoạt động + tự sinh hoạt khi rảnh, trên FIREFOX thật, vào docs/j2/ (CHẠY MỘT LẦN)
 ```
 
 ## Quy ước
@@ -136,6 +138,9 @@ biết registry, **giao diện** không gọi thẳng vào sân khấu.
 | `bridge/mcp.ts` | **B3** — MCP server: tool **sinh tự động** từ registry (`a.b` → `a_b`) + `stage_events` (long-poll). Hai cửa: stdio (`pnpm mcp`) và HTTP streamable `127.0.0.1:8789/mcp`. Cả hai nói với sân khấu bằng **vai client ws** của bridge |
 | `src/behavior/phan-xa.ts` | **C0** — PHẢN XẠ XÃ HỘI: máy trạng thái chạy trong trình duyệt, không chờ não. Mọi hành động đi qua dispatcher, nguồn `phan-xa`, ưu tiên thấp nhất |
 | `src/behavior/so-nao.ts` | **C0** — sổ "có mấy client MCP đang nối" (bridge ghi vào, `stage.describe` đọc ra) |
+| `src/behavior/hoat-dong.ts` | **J2 (#79)** — **BẢNG HOẠT ĐỘNG**: 12 chuỗi lệnh có đầu có cuối (ra bếp pha cà phê, ngồi sofa đọc sách…) + sổ "ai đang làm hoạt động gì". Dữ liệu thuần, KHÔNG import gì |
+| `src/api/commands/hoat-dong.ts` | **J2 (#79)** — `actor.activity` + `actor.activities`: chạy từng bước qua `ctx.run` (mẫu `module.demo`), **không** khai `chiemActor` (sẽ deadlock), huỷ được bằng `huyHoatDong()` |
+| `src/behavior/tu-sinh-hoat.ts` | **J2 (#79)** — rảnh > 20 s thì Nhi tự chọn một hoạt động mà làm; Boss gõ/nói hay não ra lệnh là cắt ngay. Ưu tiên THẤP NHẤT, thấp hơn cả phản xạ |
 | `src/ui/o-chat.ts` | **B3** — ô chat dưới màn hình: Enter = `actor.say` lên nhân vật `owner`, y như `Space` |
 | `skills/gen-stage-nao/SKILL.md` | **B3** — skill cho agy CLI: vòng `stage_events` → `stage_describe` → 1–3 lệnh → `actor_say` |
 | `scripts/nao-agy.mjs` | **DRIVER NÃO** — vòng lặp nằm ở đây, không ở agy: nghe `user.text` qua ws, phản xạ ≤300 ms, gộp câu 800 ms, hàng đợi 1 lượt, bơm một dòng vào agy đang ấm trong tmux |
@@ -1000,6 +1005,267 @@ và cách tái hiện: **`docs/f2/GOC-DIEU-KHIEN-LOAN.md`**.
   chấm trên máy thật phải **cộng 2 khung hình đo từ chính sổ**, không thì đang
   đo tốc độ GPU của máy kiểm chứ không đo đường cong phanh.
 
+## Quyết định I1 — phản ứng tức thì 3 tầng (29/10, Issue #74)
+
+Boss: *"các nhân vật phải đưa ra phản ứng và hành vi tức thì ngay sau khi nhận
+lệnh để tăng trải nghiệm chân thực trong quá trình nó suy nghĩ"*. Thiết kế đầy
+đủ: `docs/spec/actor-api.md` mục **3.2e**. Bằng chứng Firefox thật:
+`node scripts/kiem-i1.mjs` (cổng riêng 8950-8953 / web 5390, chạy MỘT LẦN).
+
+- **Khoảng im lặng dài nhất KHÔNG phải lúc chờ não — là lúc chờ STT.** C0 chỉ
+  phản ứng ở `user.text`, mà giọng nói mất **3–18 s** mới thành chữ (rồi còn
+  1,5 s cho Boss sửa trong ô chat). Nên phải có một sự kiện mới:
+  **`user.listening { on, dangNhanDang }`** bắn từ `src/audio/mic.ts` ngay lúc
+  `MediaRecorder.start()`. Khai trong `SU_KIEN_HE_THONG` (`registry.ts`) để
+  `stage_events` của MCP thấy — não cũng cần biết "Sếp đang nói, đừng chen".
+- **Lời hứa ≤150 ms không được phụ thuộc nhịp quét.** Nhịp của phản xạ là
+  100 ms, nên nếu tầng 0 chỉ *đặt cờ* rồi chờ nhịp thì đã mất ⅔ ngân sách
+  trước khi gửi lệnh đầu. `micBatDau()` gọi `actor.lookAt` **đồng bộ ngay
+  trong handler sự kiện**; test chứng minh bằng cách không gọi `nhip()` lần nào.
+- **Mốc câu đệm 1500 → 200 ms.** Lời hứa là "bắt đầu PHÁT trong ≤400 ms", mà
+  `actor.say` còn phải `chuanBiGiong` (tải mp3 từ bridge) trước khi bong bóng
+  hiện. Nhịp 100 ms nên mốc 200 ms nổ ở 200–300 ms, chừa 100–200 ms cho giọng.
+  Đặt 400 ở đây là **hết luôn ngân sách** trước khi mở miệng.
+- **`actor.emote chu-y` ở tầng 1 là CÁI CHẶN chính câu đệm.** Nó dài 800 ms và
+  **chiếm thân**: tới mốc 200 ms thì Nhi còn đang diễn chính cú chú ý đó, câu
+  đệm bị bỏ hẳn (đo thật, không suy luận). Tầng 1 giờ ngẩng mặt bằng
+  **`actor.express`** (không chiếm thân); cú `chu-y` trọn gói chuyển về **tầng
+  0**, chỗ còn vài giây trước khi có chữ.
+- **Cái gật phải là MỘT LỆNH, không phải một lời gọi thẳng vào sân khấu.** C0
+  gọi `world.actorNgheNgong(...)` trực tiếp — hành động duy nhất không qua
+  dispatcher, nên nó không có trong nhật ký và **không có mốc nào đo được**,
+  đúng cái thước đo "t(`user.text`) → t(gật) ≤300 ms" của Issue đòi. Thêm lệnh
+  **`actor.listen { actor, on?, question? }`**: không chiếm thân (xếp hàng thì
+  cái gật chạy sau khi câu đệm nói xong — đúng lúc hết cần), nên dùng được cả
+  khi Nhi đang bận việc của não.
+- **Mọi thứ tầng 2 chỉ gửi khi Nhi ĐANG RẢNH.** Không phải để lịch sự: hàng đợi
+  là FIFO, nên một câu nối *xếp hàng* sẽ chạy **TRƯỚC** câu trả lời thật của
+  não. Câu nối tới hạn mà Nhi đang nói thì **hoãn sang nhịp sau**, không bỏ và
+  không chen — đó là chỗ giữ lời hứa "một giọng, không chồng".
+- **Cờ `dangDienCho` là chốt hai chiều của việc cắt.** C0 gác `cmd.queued`
+  bằng `cauDemDangPhat !== null` nên chỉ che được câu đệm; tầng 2 còn chêm cả
+  tư thế nghĩ. Cờ này bật ⇒ cái đang chiếm Nhi là việc chêm của phản xạ ⇒ cắt
+  được bằng `world.actorInterrupt` (**không** `catNgang`, xem mục C0). Cờ tắt ⇒
+  là việc của não ⇒ **không cắt gì, hàng đợi nguyên vẹn**. Cờ **tự hết hạn ở
+  đầu mỗi nhịp** khi Nhi rảnh — để nó treo lại là một `moveTo` của não xếp
+  hàng sau đó bị cắt oan.
+- **Câu chêm được nhường chỗ cho CHÍNH MÌNH, không cho ai khác** (`noiChem`):
+  tư thế nghĩ đang chạy mà tới hạn câu đệm → cắt tư thế; đang `speaking` → hoãn
+  câu sau; đang làm việc của não → im. Sau `actorInterrupt`, `dangBan` **chưa**
+  tắt trong cùng tick (dispatcher dọn chỗ trong một `.then()`), nên câu mới cố
+  ý đi qua hàng đợi — `done` của hành động vừa huỷ giải quyết ngay nên nó chạy
+  sau đúng một microtask.
+- **"Mắt liếc lên" dùng `actor.lookAt { target: null }`.** `validate.ts` nhận
+  toạ độ cho kiểu `target`, nhưng handler `actor.lookAt` lại `String()` tham số
+  rồi đưa cho `world.actorLookAt(id, string|null)` — tức **lookAt không hỗ trợ
+  toạ độ**. `null` = thả mắt (lớp "nhìn quanh" tự chạy, có cả hướng lên), rồi
+  mốc `nhinTamDen` của C0 kéo mắt về đúng người nghe: thành ra đúng "đổi tư thế
+  nhẹ **rồi nhìn lại Boss**" mà không thêm API nào.
+- **Nam không tự phản ứng với mình** (Boss gõ/nói = Nam nói). Khi Nhi nói, Nam
+  quay mắt + thân về Nhi; Nhi **nói xong** thì Nam gật nhẹ 1,2 s. Cả hai chỉ
+  làm khi Nam đang rảnh — Boss có thể đang lái anh ta bằng WASD, xoay thân anh
+  ta giữa cú đi là đúng cái tật F2 (#56) đã sửa.
+- **Nhánh "Boss lại gần → chào nhẹ" bị tắt trong lúc chờ não** (`!tangHai`):
+  hai vòng cùng giành hướng mắt thì Nhi vừa nghĩ vừa chào.
+- **Não giả trong test phải nằm trên ĐÚNG cái đồng hồ giả** (`naoGia` trong
+  `src/api/__tests__/i1-phan-ung-tuc-thi.test.ts`), không `setTimeout`: không
+  thì "trễ 25 s" thành 25 giây chờ thật mỗi lần chạy `pnpm test`.
+- **Cạm bẫy đo trên sân khấu giả**: hành động ở đó dài **20 ms thật**, nên đẩy
+  đồng hồ giả 6 s (65 nhịp ≈ 65 ms thật) là `moveTo` đã xong từ lâu và Nhi rảnh
+  lại — kiểm "đang bận thì im" phải đẩy ngắn (≤500 ms) hoặc kiểm bằng
+  `soCho()`. Và `actorSay` ghi **hai** dòng `say:` (nội dung + hành động chiếm
+  thân), đếm cả hai là mỗi câu thành hai câu.
+
+### Vòng 2 — sau review độc lập PR #75 (2 lỗi chặn + 3 điểm mong manh)
+
+- **"Một giọng" là XUYÊN NHÂN VẬT, và thước đo cũ mù với chuyện đó.** Review
+  móc `AudioBufferSourceNode.start`/`ended` (chỉ lớp TTS dùng node này; emote
+  dùng `createOscillator`) và đo **đỉnh 2 giọng** trong cả ba ca. Gốc: `actor.say`
+  bắn `user.text` ở **đầu câu** của Nam, Nam đọc câu của Boss mất 2–3 s giọng
+  thật, mà I1 vòng 1 hạ `choNaoMs` còn 200 ms → Nhi chen "Dạ, Sếp?" vào giữa
+  câu Nam. Mốc 1,5 s của C0 che chuyện đó một cách **tình cờ**. Nay phản xạ giữ
+  sổ `aiDangNoi` từ `actor.sayStart`/`sayDone` của **mọi** actor, và mọi câu
+  (lẫn tư thế có tiếng) phải qua cửa `aiKhacDangNoi()`. Gật/nhìn (không tiếng)
+  vẫn tức thì.
+  Hệ quả cho thước đo: lời hứa "câu đệm ≤400 ms" tính từ **lúc Nam dứt lời** —
+  mốc sớm nhất Nhi trả lời được mà không chồng giọng. Và thước "đỉnh số
+  `actor.sayStart` của Nhi" là **tautology** (dispatcher giữ 1 slot mỗi actor,
+  lớp tiếng còn nối audio theo từng người): thước thật phải ở tầng audio.
+- **Câu đệm phải HOÃN, không được BỎ.** Bản vòng 1 xoá `choNao` ngay khi tới
+  hạn, nói được hay không — mà trong app thật Nam LUÔN đọc câu của Boss, nên
+  câu đệm bị bỏ lặng lẽ và để lại khoảng im tới mốc câu nối 6 s. Giữ `choNao`
+  tới khi nói được, hoặc tới lúc câu đệm hết nghĩa (mốc câu nối tiếp quản) —
+  không bao giờ nói cả hai.
+- **Tầng 2 phải có TRẦN.** Ba cửa ra của vòng 1 (câu của não, lệnh của não,
+  câu không gửi cho Nhi) đều cần **não mở miệng**. Não nhận `user.text` rồi
+  chết giữa đường ⇒ `tangHai` không bao giờ tắt: review đo `actor.emote` của
+  phản xạ **8 ở mốc 32 s → 11 ở mốc 46 s và vẫn tăng**, và nhánh "Boss lại gần
+  → chào nhẹ" bị `!tangHai` khoá **vĩnh viễn**. Nay có `tranTangHaiMs` = 30 s
+  (nói `CAU_HET_CHO` rồi thoát hẳn) + hai cửa sập `bridge.disconnected` và
+  `bridge.brain { count: 0 }`.
+- **`world.actorInterrupt` KHÔNG cắt được câu đang trong cửa sổ `chuanBiGiong`.**
+  Dispatcher chiếm chỗ actor **trước** khi gọi handler, nhưng `actor.say` còn
+  `await chuanBiGiong` (fetch `/tts` + `decodeAudioData`, 300–900 ms thật) mới
+  tạo hành động — trong cửa sổ đó **không có gì để huỷ**, câu bị cắt vẫn phát
+  trọn và câu của não xếp hàng sau nó (đo được: não nói muộn **616–854 ms** chứ
+  không phải "ngay"). Vitest không bao giờ thấy vì `lopTieng()` là `null` nên
+  cửa sổ bằng 0. Sửa: `CommandCtx.daHuy()` + `Dispatcher.catNhe()` (huỷ hành
+  động, **giữ hàng đợi**, đánh dấu `daHuy`), và `actor.say` đọc cửa đó ngay sau
+  `await` rồi thôi, trả `ok: true` kèm `huy: true`.
+- **Cờ `boolean` của phản xạ không bao giờ khớp được với slot thật của
+  dispatcher.** `dangDienCho` tự hết hạn theo nhịp 100 ms, nên có cửa sổ cờ còn
+  bật trong lúc slot đã thuộc về não → phản xạ cắt rồi **xếp câu đệm SAU câu
+  của não**. Bỏ hẳn cờ, đọc `Dispatcher.nguonDangChay(actor)` — nguồn sự thật
+  của chính dispatcher, không có cửa sổ nào.
+- **`actor.faceTo` xoay cả thân người đang NGỒI** (`goc.rotation.y`): đo được
+  Nhi ngồi `ghe-1` (ghế `facing: 0`) mà `facing: 318` — lệch ghế 42°. Lỗi có từ
+  C0; I1 mở thêm một cửa cho nó (tầng 0, mỗi lần bấm mic). Bịt ở **hai** chỗ
+  gọi: `quayVeNeuDuoc` trong phản xạ và chính `actor.say` (nơi duy nhất biết ai
+  đang ngồi). Ngồi thì đầu/mắt là đủ.
+- **Dọn vụn theo review**: `.gitignore` không thêm luật rộng tay — symlink của
+  worktree trỏ vào **đúng những thư mục đã bị loại** (`public/models`,
+  `public/kenney`, …) nên `git status` sạch mà không che `public/favicon.svg`
+  trong tương lai; bỏ dòng FPS khỏi bảng bằng chứng (1–2 fps trên llvmpipe
+  không nói được gì về mượt — Cửa 1); `scripts/kiem-i1.mjs` **từ chối chạy** khi còn
+  phiên Firefox nào của Playwright (nouveau gãy khi nhiều phiên tranh GPU, mà
+  lượt gãy giữa đường thì số đo vô nghĩa) — **mẫu kiểm đúng xem mục vòng 2c**,
+  không phải `pgrep -f firefox-1543`.
+
+#### Vòng 2b — sau khi tự đo lại (cùng Issue #74)
+
+- **Gốc THẬT của "đỉnh 2 giọng" là cửa sổ `user.text` → `actor.sayStart`.** Bịt
+  bằng sổ "ai đang nói" lấy từ `sayStart` là **chưa đủ**: `actor.say` bắn
+  `user.text` ở đầu câu nhưng `sayStart` chỉ bắn sau `await chuanBiGiong`
+  (300–900 ms thật). Trong khoảng đó sổ còn trống nên Nhi vẫn chêm câu đệm rồi
+  Nam mở miệng chồng lên — tự đo lại sau vòng sửa đầu vẫn ra **đỉnh 2 giọng**.
+  `actor.say` nay gắn cờ **`sePhat: true`** vào `user.text` ("người này sắp có
+  tiếng"), phản xạ chặn từ chính mốc đó, kèm trần `tranSePhatMs` = 12 s làm dây
+  an toàn cho ca câu bị `daHuy` giữa lúc tải giọng (không có `sayDone` nào tới).
+- **Thoát tầng 2 phải VÔ ĐIỀU KIỆN; câu kết chỉ là cố gắng hết sức.** Bản đầu
+  chỉ thoát khi nói được `CAU_HET_CHO`, mà ở mốc 30 s Nhi có thể đang chạy việc
+  dài của não ⇒ `noiChem` trả `false` ⇒ tầng 2 sống tiếp vĩnh viễn, đúng họ lỗi
+  mà cái trần sinh ra để diệt. Nay cố nói trong 3 s rồi thoát bất chấp.
+- **Thước đo phải dọn sạch sau mình.** Bước "Nhi đang bận" dùng clip **lặp** và
+  không có cách dừng nào không xoá hàng đợi (`actor.stop` → `catNgang` → một
+  lệnh trả `ok: false`, hỏng cổng "r.ok mọi lệnh"), nên Nhi còn bận suốt **cả
+  bước đo trần** → đo được 0 emote, 0 câu kết và chấm oan. Đổi sang việc dài
+  **có hạn** (`speed: 0.1`) + chờ `busy === false && queued === 0` trước bước sau.
+- **Đổi lời hứa thì phải đổi cả cửa sổ lấy mẫu.** Câu đệm giờ hoãn tới khi Nam
+  dứt lời (2–3 s), mà script còn lấy mẫu ở 1,2 s → "thiếu mốc" và chấm sai
+  chính cái vừa sửa.
+
+#### Vòng 2c — "một giọng" là tính chất của SÂN KHẤU, không của phản xạ
+
+Tự đo lại lần nữa (34/36): tầng 2 đã có trần, câu đệm đã chờ Nam dứt lời
+(119 ms sau `actor.sayDone`, **đúng thứ tự**), nhưng móc
+`AudioBufferSourceNode` **vẫn** ra đỉnh 2 giọng. Hai nguyên nhân còn lại, cả
+hai đều **không** nằm trong tầm của lớp phản xạ:
+
+- **`actor.sayDone` bắn theo ƯỚC LƯỢNG, không theo audio thật.** `durationMs`
+  của hành động lấy từ `uocThoiLuongNoi`, có thể ngắn hơn `buf.duration` — nên
+  Nhi mở miệng 119 ms sau `sayDone` mà đuôi giọng Nam còn đang chạy. Thước
+  thật là `LopTieng.aiConGiong()` (đọc `dangPhat`, khoá theo `buf.duration`).
+- **Lớp tiếng nối hàng đợi theo TỪNG ACTOR** (`vaoHangDoi(actorId, …)`), nên
+  hai nhân vật khác nhau phát cùng lúc được. Mà câu của **não** cũng đi đường
+  đó: não trả lời ở mốc 2 s trong khi Nam còn đọc câu của Boss ⇒ chồng giọng,
+  và không cờ nào của phản xạ chặn được vì phản xạ không gửi câu đó.
+
+Nên chốt dời về **lớp tiếng** — chỗ duy nhất mọi câu đi qua (phản xạ, não, lớp
+hiểu lệnh): `khoaGiong` là một hàng đợi **toàn sân khấu**, cộng `choGiongRanh()`
+mà **`actor.say` await TRƯỚC `world.actorSay`**. Phải chờ ở `actor.say` chứ
+không chỉ khoá phần audio: `world.actorSay` dựng bong bóng chữ + nhép miệng
+ngay, khoá riêng audio thì bong bóng hiện trước giọng vài giây — lệch còn khó
+chịu hơn chồng giọng.
+
+Hệ quả cần biết: câu trả lời của não **chờ Nam đọc xong** mới phát. Đó là điều
+đúng (người ta không trả lời khi người khác còn đang nói), nhưng nó đổi nghĩa
+thước "não nói ngay sau khi gửi lệnh" → phải tính từ **max(lệnh của não, lúc
+sân khấu hết tiếng)**.
+
+- **Mẫu kiểm "Firefox phải trống" đúng là neo argv[0]**:
+  `pgrep -f '^[^ ]*firefox-1543/firefox/firefox'`. Mẫu không neo khớp luôn vòng
+  `bash -c` của agent khác đang chờ Firefox → bộ kiểm tự chặn mình bằng người
+  đang chờ nó. Giữ thêm thước thứ hai độc lập (`/proc/<pid>/exe`, vì tiến trình
+  bash có `exe` là `/usr/bin/bash` nên không thể tự khớp).
+
+- **Khoá toàn sân khấu PHẢI có trần.** Lượt bằng chứng đầu có `khoaGiong` treo
+  **2 phút** ở mốc 2: một `phatNgay` không bao giờ giải quyết (vd `AudioContext`
+  kẹt `suspended` nên `resume()` không settle) giữ khoá vĩnh viễn — và vì khoá
+  là **toàn** sân khấu, một câu hỏng làm **mọi** nhân vật câm, nặng hơn hẳn bản
+  cũ (hỏng theo từng người). `TRAN_KHOA_MS` = 8 s: chuỗi khoá đi tiếp theo cái
+  nào xong trước (việc thật hay trần), việc thật vẫn chạy tới cùng nên audio
+  không bị cắt — nó chỉ mất quyền chặn câu sau mãi mãi. Quy tắc chung: **thêm
+  một khoá dùng chung thì phải thêm trần cho nó trong cùng một lần sửa.**
+
+- **Trần của `choGiongRanh` phải CHẶT (1,5 s), khác trần của chuỗi khoá (8 s).**
+  Bên gọi là `actor.say`, mà nó **đang giữ chỗ actor** trong dispatcher suốt
+  lúc chờ. Đo thật trên Firefox (lượt 31/36) với trần 8 s: câu đệm của Nhi ngồi
+  trong `choGiongRanh` **4 giây**, bị `catNhe` của não huỷ (`huy: true`), rồi
+  câu của não vào đúng chỗ đó lại chờ tiếp — **cả lượt không ai nói gì**, mà
+  `r.ok` vẫn **157/157** vì không lệnh nào *lỗi*, chúng chỉ bị nhường chỗ. Bài
+  học hai phần: (1) việc duy nhất hàm đó cần che là **cái đuôi audio** (vài
+  trăm ms) vì phản xạ đã không gửi câu khi còn người khác đang nói — nên trần
+  phải nhỏ hơn mọi khoảng có thể nuốt trọn một lượt; (2) **`r.ok` 100 % không
+  chứng minh là có tiếng**: phải đo `actor.sayStart`, vì đường "bị huỷ" cố ý
+  trả `ok: true`.
+
+#### Vòng 2d — cổng "một giọng" phải là TRẠNG THÁI, không phải chuỗi promise
+
+Hai lượt đo liền nhau (31/36 rồi 33/36) đóng đinh chuyện này:
+
+- **Chuỗi promise tự đầu độc.** `khoaGiong` nối mọi câu vào một `Promise`. Một
+  `phatNgay` không bao giờ giải quyết (AudioContext kẹt `suspended` ở lượt đầu
+  phiên) nằm lại trong chuỗi ⇒ **mọi** câu về sau phải chờ hết trần: lượt đầu
+  mất trọn một lượt hội thoại, lượt sau câu đệm trễ **1545 ms** — đúng bằng
+  trần 1,5 s, tức là *lần nào cũng* chờ hết trần. Và vì câu đệm ngốn 1,5 s,
+  tầng 2 không còn chỗ: 0 đổi tư thế, 0 câu nối.
+- **Thay bằng trạng thái quan sát được**: cổng đọc `dangPhat` (có thêm
+  `giuCho`), và `phatNgay` **luôn** xoá bản ghi của mình trong `dai + 400 ms`
+  bằng một `setTimeout` riêng — trạng thái tự lành, không có gì để đầu độc.
+- **Kiểm-rồi-claim không được có `await` ở giữa.** Bản đầu `await
+  choGiongRanh()` rồi mới `giuCho.add()`: hai actor cùng `phat()` trong một
+  tick thì **cả hai** qua cổng trước khi ai kịp giữ chỗ (test đơn vị ra
+  `['owner','gen']`). `choVaGiuCho` kiểm và claim liền nhau, chỉ `await` khi
+  thật sự phải chờ. Đây là lỗi kinh điển của mọi cái cổng; viết test hai-actor
+  **trước** khi tin cái cổng.
+
+#### Vòng 2e — `actor.sayDone` là ƯỚC LƯỢNG, lớp tiếng mới là sự thật
+
+- **Cổng "một giọng" của phản xạ phải hỏi LỚP TIẾNG, không chỉ sổ sự kiện.**
+  `actor.sayDone` bắn theo `uocThoiLuongNoi`, có thể sớm hơn `buf.duration` cả
+  trăm ms — đo thật: Nhi mở miệng **119 ms** sau `sayDone` của Nam mà móc
+  `AudioBufferSourceNode` vẫn ra **đỉnh 2 giọng**. `aiKhacDangNoi` nay hỏi thêm
+  `lopTieng().aiConGiong()` (tiêm được để test).
+- **Cảnh giác với một mốc "đạt" không giải thích được.** Lượt giữa đo ra "đỉnh
+  1" và dễ tưởng là xong — thật ra chỉ vì **chuỗi khoá bị đầu độc** làm Nhi trễ
+  1,5 s, tình cờ che đúng cái đuôi audio. Sửa cái đầu độc thì "đỉnh 2" hiện
+  lại ngay. Một con số xanh mà không có cơ chế giải thích nó thì chưa phải bằng
+  chứng.
+- **Đổi lời hứa thì phải đổi cả thước đo.** Từ khi câu đệm chờ Nam dứt lời, ca
+  "não trễ 8 s" có thể **không còn cửa sổ rảnh nào** cho một cú đổi tư thế (Nam
+  đọc 3,2–4,7 s → câu đệm → 6 s là mốc câu nối tiếp quản → 8 s não trả lời):
+  đo 0 lần ở đó là **đúng hành vi**. Dời phép đo "đổi tư thế" sang ca chờ 30 s,
+  chỗ Nhi thật sự đứng rảnh. Và cửa sổ lấy mẫu mốc 3 phải ≥7 s vì Nam đọc tới
+  4,7 s.
+
+#### Vòng 2f — gốc đồng hồ tầng 2, và luật "mọi dấu hiệu phải tự hết hạn"
+
+- **Gốc đồng hồ của tầng 1/2 là LÚC NAM DỨT LỜI, không phải `user.text`.**
+  `user.text` bắn ở **đầu** câu của Nam, mà Nam đọc câu của Boss mất 3,2–4,7 s
+  giọng thật. Hệ quả đo được ba lượt liền: câu đệm (mốc 200 ms) bị luật "quá
+  hạn câu nối thì thôi" ăn mất vì tới lúc Nhi được nói thì `troi` đã gần 6 s;
+  và câu nối (mốc 6 s) rơi vào lúc não đã trả lời ⇒ "không có câu đệm" + "0 câu
+  nối". **Không phải máy trạng thái sai, mà gốc đồng hồ sai.** Gốc đúng là lúc
+  **Boss nói xong** — đó mới là lúc Boss bắt đầu *chờ*. `actor.sayDone` của Nam
+  nay đặt lại `tOwnerNoi`, `choNao`, `tTuThe`, `tranDen`, `soCauNoi`.
+- **Mọi dấu hiệu trong một cổng dùng chung đều phải TỰ HẾT HẠN.** `giuCho` là
+  `Set`, xoá trong `finally` của `await phatNgay(...)` — mà `phatNgay` treo
+  vĩnh viễn ở `await a.resume()` khi AudioContext kẹt `suspended`, nên
+  `finally` không bao giờ chạy ⇒ Nhi **câm suốt 60 s** của bước đo trần (0 câu
+  kết, 0 đổi tư thế). Đổi sang `Map<actor, hạn>` với hạn = `dai + 600 ms`.
+  Đúng cái bẫy đã bịt cho `dangPhat` bằng `donMuon` mà lại bỏ sót một chỗ —
+  nên viết thành luật: **thêm một dấu hiệu vào cổng dùng chung thì thêm hạn cho
+  nó trong cùng lần sửa**, và `huy`/`huyHet` phải dọn nó.
 ## Quy tắc đo trên Firefox thật (Boss 27/10: "bị gì mà cứ mở tắt trình duyệt hoài vậy")
 - Mỗi lượt đo mở Firefox **đúng một lần** (một browser/context/page), tải lại bằng `reload/goto`, đóng khi xong hẳn. Không chạy lặp script "cho chắc".
 - **Một lúc chỉ một agent** dùng Firefox thật: trước khi mở, `pgrep -f '^[^ ]*firefox-1543/firefox/firefox'` (NEO ĐẦU DÒNG vào argv[0] — mọi mẫu không neo như `pgrep -f firefox-1543` hay `pgrep -f 'firefox-1543/firefox/firefox'` đều tự khớp chính vòng chờ `bash -c` của mình và của agent khác → cả đội chờ nhau mãi, đã xảy ra 2 lần 27/10) phải trống; phần không cần trình duyệt (đọc code, test, build, merge-tree, viết script) làm trước trong lúc chờ.
@@ -1114,3 +1380,214 @@ cổng riêng **5362**); số đo trước khi sửa ở `docs/g1/do-truoc/`.
   chấm trên một nhân vật đang đứng im và ĐẠT một cách vô nghĩa — nay
   `chayLenh()` ném lỗi khi lệnh rớt, và có hẳn mục `2-ngoi-that-su-ngoi`;
   (3) ảnh bằng chứng nén sang `.jpg` ≤1280 px sau khi chạy (14 MB → 1,8 MB).
+
+## Quyết định J2 — bảng hoạt động + tự sinh hoạt khi rảnh (27/10, Issue #79)
+
+Boss: *"tăng thêm các động tác hành vi của các nhân vật cho phong phú"*. Thiết
+kế đầy đủ: `docs/spec/actor-api.md` mục **3.2f**. Bằng chứng Firefox thật:
+`node scripts/kiem-j2.mjs` (cổng web riêng 5393, `?bridge=0`, chạy MỘT LẦN).
+
+- **Cái thiếu không phải thêm emote — là thêm CHUỖI.** Bộ v0.1 có 13 clip + 16
+  emote, vẫn trông như demo vì mọi thứ Nhi làm đều là **một lệnh lẻ**. Người
+  thật *ra bếp pha cà phê rồi mang cốc về bàn*: 5 lệnh, có đầu có cuối. Nên J2
+  không thêm một động tác nào mới, chỉ thêm một **tầng dữ liệu** trên bộ lệnh
+  cũ (`src/behavior/hoat-dong.ts`, 12 hoạt động) — thêm hoạt động = thêm một
+  dòng, y như bảng bố cục (`bo-cuc.ts`) và bảng emote (`emotes.ts`).
+- **`actor.activity` cố ý KHÔNG khai `chiemActor` — khai là DEADLOCK, mà là
+  deadlock treo chứ không đỏ.** Dispatcher đánh dấu actor bận **trước** khi gọi
+  handler (`Dispatcher.chay`), nên bước đầu `ctx.run('actor.moveTo')` thấy
+  actor bận → xếp hàng → chờ chính cái lệnh đang gọi nó xong. `pnpm test` khi
+  đó **treo**, không báo lỗi. Thân vẫn bị chiếm thật, chỉ là theo từng bước:
+  mỗi `moveTo`/`sit`/`play`/`emote` đều `chiemActor` nên `busy` bật suốt hoạt
+  động. Cùng mẫu `module.demo` (E1 #48) — cũng 5 bước, cũng không khai.
+- **`ctx.run` trả lời khi hành động BẮT ĐẦU, không khi nó xong.** Quy ước
+  "thời gian là lời hứa" nói thẳng thế (`durationMs` + `done`), nên chuỗi
+  `await` chỉ nối đúng các bước GIỮA: bước 2 xếp hàng sau bước 1 nên nó chờ
+  thật, còn **bước cuối không có ai xếp hàng sau**. Bắn `actor.activityDone`
+  ngay lúc đó là sự kiện nói dối — đo thật trên sân khấu giả: `state` còn
+  `playing` khi `Done` tới, test "về idle" đỏ. Phải chờ `ctx.hangDoi()[ai]`
+  hết `busy` (đúng nguồn sự thật `Dispatcher.dangChay`) rồi mới dọn + báo xong,
+  trần 12 s làm dây an toàn cho trường hợp não chen một clip `loop: true`.
+- **Máy tự sinh hoạt là FILE RIÊNG, không nhét vào `phan-xa.ts`.** Hai máy trả
+  lời hai câu hỏi khác nhau: phản xạ là *"có ai vừa gọi mình không"* (theo sự
+  kiện, ngân sách trăm mili giây), tự sinh hoạt là *"đã lâu không ai gọi mình"*
+  (theo đồng hồ, ngân sách chục giây). Trộn vào vòng 100 ms của I1 thì mọi cờ
+  (`dangDienCho`, `tangHai`, `choNao`) phải thêm một nhánh "mà có đang tự sinh
+  hoạt không" — đúng chỗ dễ sai nhất của C0/I1.
+- **"Rảnh" đo bằng `describe()` + `dangBan()` mỗi nhịp, KHÔNG bằng danh sách
+  sự kiện.** Không có sự kiện nào nghĩa là *"não vừa ra lệnh"* cho mọi đường
+  vào (ws, MCP, bảng lệnh, ô kịch bản, phím) — `cmd.queued` chỉ bắn **khi
+  actor đang bận**. Nhưng lệnh nào chiếm thân cũng làm `busy` bật và `state`
+  khác `idle`: một thước đo, thay cho một danh sách phải nhớ bổ sung mỗi lần
+  thêm đường vào.
+- **Cờ `dangGuiBuoc` — nếu không có nó thì máy tự sinh hoạt TỰ CẮT CHÍNH
+  MÌNH.** Giữa hai bước có một khe Nhi rảnh, và phản xạ được phép chêm đúng
+  vào khe đó (nhánh "Boss lại gần → chào nhẹ"); bước kế tiếp khi ấy xếp hàng
+  sau cú chào và bắn `cmd.queued` cho Nhi — máy nghe `cmd.queued` sẽ tưởng não
+  xen vào. Cờ bật/tắt **đồng bộ quanh đúng một lời gọi `ctx.run`** (dispatcher
+  bắn `cmd.queued` trước `await` đầu tiên), cùng mẫu `tuGui` của `phan-xa.ts`.
+- **Nghỉ giữa hai lượt là 3 s, không phải 20 s nữa.** Thước đo của Issue là
+  *"rảnh 60 s → ≥2 hoạt động khác nhau"*; hoạt động dài 8–20 s nên chờ lại 20 s
+  là lượt thứ hai rơi ra ngoài phút đo. Đời thực cũng vậy: người đang rảnh làm
+  việc nọ tiếp việc kia, chỉ nghỉ một nhịp.
+- **`actor.stop`/`actor.remove` phải cắt cả CHUỖI, không chỉ bước đang chạy.**
+  `catNgang` gọi `cancel` của hành động hiện tại (một `actor.moveTo` chẳng
+  hạn), còn chuỗi thì vẫn chạy sang bước sau — Boss bấm "dừng" mà nhân vật vẫn
+  đi tiếp. Hai lệnh đó giờ gọi `huyHoatDong(id)` trước `catNgang`, và
+  `stage.reset` gọi `donSoHoatDong()`.
+- **Cắt vẫn đi qua `world.actorInterrupt`, KHÔNG `catNgang`** (bài học C0,
+  nhắc lại ở I1): `catNgang` xoá sạch hàng đợi → giết luôn lệnh não vừa xếp
+  hàng, đúng cái ta đang nhường chỗ cho. Cắt chạy **đồng bộ trong handler**
+  `user.text`/`user.listening`, không chờ nhịp 500 ms.
+- **Prop cốc/sách/bình tưới = hình khối A1, không thêm asset.** Kenney
+  Furniture Kit CC0 đang tải về `public/kenney/` **không có** cốc hay bình
+  tưới (`books.glb` thì có, nhưng `World.propSpawn` chưa nạp model cho prop),
+  mà asset không được commit — thêm file mới chỉ để ba cái prop nhỏ là đổi lấy
+  một bước cài đặt nữa cho Boss. Dựng **một lần** rồi dùng mãi, cuối hoạt động
+  tự `actor.drop` + `prop.moveTo` về chỗ cũ.
+- **Không hoạt động nào NÓI.** Bảng chỉ có `moveTo`/`sit`/`stand`/`play`/
+  `emote`/`turnTo`/`express`, cố ý: lời hứa "một giọng, không chồng" của I1b
+  (#75) được giữ ở đây bằng cách **không mở miệng**, chứ không phải bằng thêm
+  một cái cổng nữa vào `aiKhacDangNoi()`. Hoạt động là *việc Nhi làm khi không
+  ai nói chuyện với mình*; muốn nó bình luận thì não gọi `actor.say` riêng.
+- **Vùng giữa tạm là `buc-trung-tam`** (hằng `VUNG_GIUA`): `bo-cuc.ts` chưa có
+  `VUNG_HOAT_DONG`, và J1 đang sửa file đó — có hằng thật thì đổi đúng một dòng.
+- **Cạm bẫy đo trên sân khấu giả, bản J2**: hành động giả dài **20 ms thật**
+  còn đồng hồ do test đẩy tay, hai cái không dính nhau. Nhịp chỉ nghỉ 2 ms
+  thật thì một hoạt động 10 bước cần ~100 nhịp mới xong, tức "50 giây" trên
+  đồng hồ giả, và phép đo *"rảnh 60 s → ≥2 hoạt động"* **không bao giờ đạt dù
+  logic đúng**. Nghỉ 12 ms mỗi nhịp đưa tỉ lệ về gần bản thật.
+- **`steps` trong `actor.activityDone` đếm MỌI lệnh đã chạy**, kể cả phần prop
+  (`prop.spawn` → `actor.hold` → `actor.drop` → `prop.moveTo`) mà bảng không
+  khai — nên nó ≥ số bước trong bảng, không bằng.
+
+
+### Vòng 2 — sau lượt đo đầu trên Firefox thật (20/27 → sửa 1 lỗi app, 2 lỗi dụng cụ đo)
+
+- **LỖI APP: cờ "lượt này của tôi" làm Boss gõ KHÔNG cắt được hoạt động do não
+  gọi.** `coNguoiGoi()` gác bằng `dangChay`, nên chỉ cắt hoạt động do chính máy
+  tự sinh. Đo thật: Boss gõ giữa một `actor.activity` gửi từ bảng lệnh/não thì
+  **không có `actor.activityCancelled` nào**, và 2 s sau Nhi vẫn
+  `{activity:"di-dao", state:"walking", queued:2}` — đi tiếp hết vòng dạo trong
+  khi Boss đang chờ. Luật đúng: **một hoạt động không bao giờ là việc gấp**,
+  nên nó nhường chỗ bất kể ai đặt nó. Không phá "lệnh não > phản xạ": mọi lệnh
+  não khác (`moveTo`, `say`, `play`…) vẫn nguyên, chỉ chuỗi hoạt động bị cắt.
+  (Và `genId` phải đọc lại trong handler: Boss gõ được **trước** nhịp quét đầu.)
+- **DỤNG CỤ ĐO SAI 1: chấm "về idle" nửa giây sau mốc xong là chấm sai người.**
+  3/12 hoạt động hiện `playing`/`emoting` ở mốc +600 ms, và cả 3 đều kết thúc ở
+  `buc-trung-tam` — **nơi Nam đứng**. Nhi vừa rảnh thì phản xạ C0 chạy đúng
+  nhánh *"Boss đứng gần > 4 s → chào nhẹ"*: `actor.turnTo` (state `playing`,
+  xem `xoayVe`) + `actor.emote chao` (state `emoting`). App đúng; thước đo phải
+  chốt tư thế **đồng bộ trong handler `actor.activityDone`** (`doXuong()` là
+  hàm đồng bộ, `stage.describe` qua dispatcher thì đã là một `await`).
+- **DỤNG CỤ ĐO SAI 2: "cổng chết" đổi 0 lỗi console thành 3 lỗi console.**
+  Trỏ `ttsPort`/`sttPort` sang cổng không ai nghe thì Firefox ghi thẳng
+  `console.error` *"Cross-Origin Request Blocked … CORS request did not
+  succeed"* **trước khi** `chuanBiGiong`/`khoeStt` kịp `catch`. Cách đúng để
+  vô hiệu hoá một đường mà vẫn sạch console: trỏ `ttsUrl`/`sttUrl` vào một
+  đường **trên chính cổng web** — `vite preview` trả 404 cùng origin, code tự
+  bắt, chỉ còn `console.warn`.
+- **Vòng 2 đo lại: "cắt mọi hoạt động" hoá ra cắt cả vì MỘT CÚ CHÀO.** Sửa
+  xong lỗi trên thì «Nhảy nhẹ theo nhạc» bị `actor.activityCancelled` oan:
+  phản xạ C0 chêm `actor.turnTo` + `actor.emote chao` vào đúng khe giữa hai
+  bước (Nhi vừa rảnh), bước kế tiếp đã kịp chiếm chỗ nên **cú chào xếp hàng**
+  → `cmd.queued` cho Nhi → máy tự sinh hoạt tưởng não xen vào. `dangGuiBuoc`
+  không che được vì lệnh xếp hàng là của phản xạ, không phải của mình. Sửa ở
+  gốc: `cmd.queued` giờ mang **`nguon`**, và máy bỏ qua `nguon === 'phan-xa'`
+  — phản xạ **chêm vào chỗ trống, không đòi chỗ**; nó là ưu tiên thấp hơn
+  chính hoạt động tự sinh ở điểm này.
+- **Vòng 3: "lượt tự sinh đầu ở +13,7 s" là DỤNG CỤ ĐO sai, không phải app.**
+  Script chờ 36 s cho trần tầng 2 của I1 hết hạn **rồi mới** bấm giờ — nhưng
+  Nhi đã rảnh suốt 36 s đó, nên đồng hồ `ranhMs` của máy chạy từ trước mốc
+  bấm. Muốn đo đúng ngưỡng 20 s thì phải **bấm lại đồng hồ bằng một lệnh
+  thật** (một `actor.emote` ngắn làm Nhi bận một nhịp ⇒ máy reset `tRanhTu`
+  qua nhánh "bận vì việc của người khác"), rồi mới tính từ đó.
+- **Vòng 4: chờ cứng "cho chắc" làm lệch đúng 448 ms giữa ĐẠT và KHÔNG ĐẠT.**
+  Thước đo bấm giờ sau `nghi(2500)` cho một emote dài 1300 ms, nên mốc "Boss
+  để yên" trễ ~1,2 s so với lúc Nhi rảnh thật → lượt tự sinh đầu rơi vào
+  **+18552 ms** thay vì ≥19 s. Mốc nào cũng phải bấm theo **trạng thái đọc
+  được** (`waitForFunction` tới khi `doXuong().state === 'idle'`), không theo
+  một con số chờ cho chắc.
+
+
+### Vòng 3 — sau review độc lập PR #83 (4 lỗi chặn)
+
+- **Khoá sổ hoạt động theo TÊN làm lượt mới thành VÔ HÌNH.** `xoaHoatDong(actor,
+  id)` so bằng tên, mà chuỗi vừa bị cắt còn một `.then()` đang chạy: lượt mới
+  **trùng tên** kịp `datHoatDong` trước thì cái `.then()` cũ xoá mất đăng ký
+  của lượt mới. Reviewer đâm `di-dao → huỷ → di-dao` và đo được
+  `Start|Cancelled|Start|Done` với `describe().activity === null` — lượt hai
+  chạy trọn trong khi Boss gõ **không cắt được gì**, đúng lại lỗi vòng 2 qua
+  một cửa khác. Khoá là **token tăng dần**, đúng quy ước có sẵn: *"nhận diện
+  hành động bằng token, không bằng tên lệnh"*.
+- **`interrupt: true` của não không bắn `cmd.queued`, nên chuỗi ĐÈ lệnh não.**
+  Đo: giữa `di-dao`, não gửi `actor.moveTo { to: 'bep', interrupt: true }` →
+  `ok: true`, **không có `activityCancelled`**, Nhi kết thúc ở
+  `buc-trung-tam` chứ không ở bếp. Vá ở `tu-sinh-hoat` là đoán qua sự kiện và
+  sẽ hở lần nữa với đường vào tiếp theo; sửa ở gốc: **`Dispatcher.catNgang`
+  gọi `huyHoatDong(actor)`** — một chỗ lo cho `actor.stop`, `actor.remove`,
+  `interrupt: true`, bridge, MCP, phím, kịch bản. (`stage.reset` đổi sang
+  `donSoHoatDong()` **trước** vòng `catNgang`: dọn một sân khấu sắp bị xoá là
+  lệnh chạy vô ích.)
+- **Đường CẮT không dọn ⇒ tự sinh hoạt CHẾT HẲN.** Bản cũ chỉ thả đồ ở nhánh
+  `!huy`: cắt giữa `tuoi-cay` thì `holding=binh-tuoi` còn nguyên (đo thật), mà
+  `World.actorHold` **ném lỗi** khi tay đã có đồ ⇒ hoạt động có prop kế tiếp
+  mất prop. Nặng hơn: cắt giữa một hoạt động có `actor.sit` thì `actor.stand`
+  không bao giờ chạy ⇒ `state` giữ `sitting` ⇒ nhịp `tu-sinh-hoat` thấy
+  `state !== 'idle'` nên reset đồng hồ rảnh **mãi mãi**. Nay `donDep()` chạy
+  trên **cả hai** đường.
+- **Và phần dọn ấy tự vô hiệu hoá chính mình.** `chay()` mở đầu bằng
+  `if (huy) return false`, nên dùng nó trong `donDep()` thì lượt kiểm báo
+  `dropped: true` trong khi `lichSu` **không có cú `drop` nào** và tay vẫn còn
+  bình tưới. Dọn là việc PHẢI làm *vì* đã bị cắt → có `chayDon()` riêng, không
+  gác cờ `huy`. Và cờ trả về phải là **kết quả thật của lệnh**
+  (`ra.daTha = await chayDon(...)`), không phải một `true` gán tay.
+- **`activityCancelled` và `activityCleaned` là HAI sự kiện.** Lời hứa ≤300 ms
+  là về việc *dừng lại*; phần dọn (thả đồ, đứng dậy) tốn thêm ~1 s. Nhập hai
+  thứ vào một sự kiện là tự phá mốc 300 ms của chính mình.
+- **Bước của chuỗi KHÔNG được xếp hàng.** Review mục (c): một lệnh đã vào hàng
+  đợi thì không rút lại được, nên sau `activityCancelled` Nhi vẫn còn đi thêm
+  một chặng `moveTo` (tới 2,6 s). Nay mỗi bước **chờ thân trống rồi mới gửi**
+  (`choTrong()`), nên cờ `huy` một mình là đủ để dừng và ta không phải chạm
+  vào hàng đợi của não. Hệ quả: cờ `dangGuiBuoc` thành vô dụng, bỏ hẳn.
+- **"Place rảnh" phải lọc ở TẦNG CHỌN, không dựng cơ chế né người trong sân
+  khấu.** `VUNG_GIUA` chính là nơi Nam spawn, `World.choDung()` trả thẳng
+  `standAt` không né ai, `World.actorSit` không kiểm ghế có người.
+  `hoatDongDienDuoc()` loại hoạt động nào đi vào chỗ đang có người (ghế
+  `occupiedBy`, hoặc người khác trong `KHE_NGUOI` 1 m) — hết ứng viên thì nhịp
+  sau thử lại, **không ép Nhi chen vào chỗ Nam đứng**.
+- **`durationMs` đo theo quãng đường thật, và nói thẳng nó là ƯỚC LƯỢNG.**
+  Bản cũ cộng cứng 2 600 ms mỗi `moveTo` nên lệch tới **2,2 lần**
+  (`don-ban-an` 19 252 ms thật vs 8 700 ước). Nay tính từ `describe().places`.
+  Vẫn không thể thành lời hứa chắc: đường đi bị nội thất chắn
+  (`truotVaCham`) và việc phản xạ có chêm gì vào khe giữa hai bước hay không
+  chỉ biết được lúc đang chạy — spec 3.2f ghi rõ thế.
+- **Thước "một giọng" chạy `?bridge=0` là thước RỖNG.** Không có TTS thật thì
+  móc `AudioBufferSourceNode` không bao giờ nổ, đỉnh = 0 và mục ĐẠT mà chẳng
+  đo được gì — reviewer dùng bridge thật và thấy **đỉnh 2**. Bộ đo J2 nay bật
+  **bridge RIÊNG trên cổng 8985-8988**, mở khoá autoplay bằng cú bấm thật, và
+  đòi **`soBat` ≥ 2 lượt phát** mới cho con số đỉnh có nghĩa.
+- **Và `minY` ba mẫu mỗi hoạt động chỉ chứng minh "ba lúc tôi nhìn thì chạm".**
+  Reviewer lấy mẫu dày và thấy **−0,0226 m** / **−0,0233 m** ở hai ca ngồi
+  sofa. Nay lấy mẫu **mỗi 300 ms suốt cả phiên** ngay trong trang.
+- **Vòng 3, lượt đo 1: ba lỗi nữa của DỤNG CỤ ĐO, và một lỗi THẬT chưa thuộc J2.**
+  (1) Lấy mẫu `minY` mỗi **300 ms** làm **sập trang** ở phút thứ 5,5 ("sân
+  khấu ngắt kết nối" → `Target page has been closed`): `doXuong().tuThe.minY`
+  gọi `Box3.setFromObject(root, true)`, quét toàn bộ đỉnh mesh có biến dạng
+  xương — đúng cạm bẫy F2 (#56) *dụng cụ đo làm hỏng cái cần đo*. Hạ về 1 s.
+  (2) Script **không ghi `bang.md` khi hỏng giữa đường**, nên cả bộ số của 12
+  hoạt động và MỐC 4 (đã đo xong, đã ĐẠT) mất trắng vì một cú `page.screenshot`
+  cuối. Nay nhánh lỗi cũng ghi bảng "những mục đã đo xong".
+  (3) Thước "kết thúc về idle" vẫn chấm sai 2/12 vì Nam spawn ĐÚNG ở
+  `VUNG_GIUA`: Nhi vừa rảnh là phản xạ chào nhẹ chiếm thân. Nay **đẩy Nam ra
+  `cua` trước khi đo 12 hoạt động** (tách hai hệ thống để đo từng cái một;
+  phần chạy cùng nhau thì MỐC 4 đo riêng), và điều kiện đạt đổi sang "không
+  còn **dư âm của chính hoạt động**" (`holding` null, không ngồi lại) thay vì
+  "sân khấu đứng im" — phản xạ có quyền diễn ngay sau đó.
+  (4) **Chồng giọng vẫn còn: đỉnh 3 giọng trên 6 lượt phát** dù đã gộp đủ 12
+  commit của I1. Hoạt động **không nói câu nào** nên gần như chắc không phải
+  J2 — nhưng "gần như chắc" không phải bằng chứng, nên bộ đo nay có **mẫu ĐỐI
+  CHỨNG**: đúng 3 câu đó, `actor.stop` cho Nhi trước, **không hoạt động nào
+  chạy**. Hai đỉnh bằng nhau ⇒ khoanh được vùng sang lớp tiếng/I1 bằng số,
+  không phải bằng suy luận. **Một bộ bằng chứng chỉ ra "có lỗi" mà không
+  khoanh được vùng thì người sửa vẫn phải đo lại từ đầu.**

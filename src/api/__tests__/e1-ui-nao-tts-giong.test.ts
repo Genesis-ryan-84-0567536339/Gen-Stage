@@ -253,13 +253,17 @@ describe('E1 — /tts thử lại thay vì trả 502', () => {
     ).rejects.toThrow('hỏng lần 3');
   });
 
-  it('hâm sẵn đúng 8 câu đệm hay dùng nhất', () => {
-    expect(CAU_DEM_SAN).toHaveLength(8);
-    // phải phủ trọn câu đệm của phản xạ — đó là mấy câu dính 502 gây hại nhất
+  it('hâm sẵn đủ MỌI câu phản xạ tự nói (I1 #74 thêm 2 câu nối)', () => {
+    // Số câu không phải lời hứa — **phủ trọn** mới là lời hứa: mấy câu này
+    // nổ đúng lúc Boss đang chờ, dính 502 của Edge ở đó là Nhi câm.
+    expect(CAU_DEM_SAN.length).toBeGreaterThanOrEqual(8);
     for (const c of ['Dạ, Sếp?', 'Em nghe ạ', 'Sếp cần gì ạ?', 'Dạ em đây']) {
       expect(CAU_DEM_SAN).toContain(c);
     }
     expect(CAU_DEM_SAN).toContain('Em chưa có não, Sếp bật agy nhé.');
+    // I1 (#74) — câu nối của tầng 2
+    expect(CAU_DEM_SAN).toContain('Em đang nghĩ ạ…');
+    expect(CAU_DEM_SAN).toContain('Hơi lâu, Sếp chờ em chút.');
   });
 });
 

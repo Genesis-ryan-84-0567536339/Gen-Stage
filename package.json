@@ -28,7 +28,9 @@
     "kiem-d1": "node scripts/kiem-d1.mjs",
     "kiem-d1b": "node scripts/kiem-d1b.mjs",
     "kiem-f2": "node scripts/kiem-f2.mjs",
-    "kiem-f3": "node scripts/kiem-f3.mjs"
+    "kiem-f3": "node scripts/kiem-f3.mjs",
+    "kiem-i1": "node scripts/kiem-i1.mjs",
+    "kiem-j2": "node scripts/kiem-j2.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",

@@ -15,6 +15,13 @@ import { giongTheoActor, lopTieng } from '../../audio/tts-client';
 import { boMiengNhep } from '../../audio/so-tieng';
 // C1 (#31) — phiếu mic để biết câu này Boss NÓI chứ không gõ (không phụ thuộc DOM).
 import { layPhieuGiong } from '../../audio/so-giong';
+/**
+ * J2 (#79) — sổ hoạt động. `actor.stop`/`actor.remove` phải cắt cả **chuỗi**
+ * hoạt động, không chỉ bước đang chạy: `catNgang` gọi `cancel` của hành động
+ * hiện tại (một `actor.moveTo` chẳng hạn), còn chuỗi thì vẫn chạy sang bước
+ * sau — Boss bấm "dừng" mà nhân vật vẫn đi tiếp.
+ */
+import { huyHoatDong } from '../../behavior/hoat-dong';
 
 const s = (v: unknown) => String(v);
 
@@ -106,6 +113,7 @@ export const LENH_ACTOR: CommandSpec[] = [
     handler(a, ctx) {
       const id = s(a.actor);
       if (!ctx.world.coActor(id)) throw new Error(`Không có actor "${id}"`);
+      huyHoatDong(id); // J2 — cắt cả chuỗi hoạt động, không chỉ bước đang chạy
       ctx.catNgang(id);
       lopTieng()?.huy(id); // B2 — dọn tiếng + sổ nhép miệng của actor này
       boMiengNhep(id);
@@ -319,6 +327,54 @@ export const LENH_ACTOR: CommandSpec[] = [
   },
 
   {
+    /**
+     * I1 (#74) — **dáng LẮNG NGHE** qua đúng cửa dispatcher.
+     *
+     * Trước I1, `phan-xa.ts` gọi thẳng `world.actorNgheNgong(...)`: cái gật
+     * đầu của người nghe là hành động duy nhất KHÔNG đi qua dispatcher, nên
+     * nó không có trong nhật ký và không có mốc thời gian nào đo được — mà
+     * thước đo tầng 1 của Issue #74 chính là *"t(user.text) → t(gật) ≤300 ms"*.
+     *
+     * Cố ý **không** `chiemActor`: nghe là việc làm song song, và nếu nó xếp
+     * hàng thì cái gật sẽ chạy sau khi câu đệm nói xong — đúng lúc hết cần.
+     * Cũng vì thế nó dùng được cả khi nhân vật đang bận việc của não (luật
+     * "khi bận chỉ cho phép lệnh nhìn": lệnh này không chiếm thân, không di
+     * chuyển, không chạm hàng đợi).
+     */
+    cmd: 'actor.listen',
+    group: 'actor',
+    events: ['actor.listening'],
+    desc:
+      'Bật/tắt dáng LẮNG NGHE (gật đầu nhẹ theo nhịp, nghiêng đầu khi là câu hỏi) — ' +
+      'không chiếm thân, không xếp hàng, gọi được cả khi actor đang bận',
+    params: [
+      P_ACTOR,
+      {
+        name: 'on',
+        type: 'boolean',
+        desc: 'true = đang nghe (gật nhẹ), false = thôi nghe',
+        default: true,
+      },
+      {
+        name: 'question',
+        type: 'boolean',
+        desc: 'Người nói đang HỎI → nghiêng đầu thêm',
+        default: false,
+      },
+    ],
+    example: { cmd: 'actor.listen', args: { actor: 'gen', on: true, question: true } },
+    handler(a, ctx) {
+      const id = s(a.actor);
+      if (!ctx.world.coActor(id)) throw new Error(`Không có actor "${id}"`);
+      const bat = a.on !== false;
+      const hoi = a.question === true;
+      ctx.world.actorNgheNgong(id, bat, hoi);
+      ctx.bus.emit('actor.listening', { actor: id, on: bat, question: bat && hoi });
+      return ngay({ actor: id, on: bat, question: bat && hoi });
+    },
+  },
+
+  {
     cmd: 'actor.sit',
     group: 'actor',
     events: ['actor.sat', 'cmd.queued'],
@@ -393,6 +449,7 @@ export const LENH_ACTOR: CommandSpec[] = [
     handler(a, ctx) {
       const id = s(a.actor);
       if (!ctx.world.coActor(id)) throw new Error(`Không có actor "${id}"`);
+      huyHoatDong(id); // J2 — xem ghi chú ở import
       const boQua = ctx.catNgang(id);
       lopTieng()?.huy(id); // B2 — im tiếng ngay, không đọc tiếp sau khi stop
       ctx.world.actorStop(id);
@@ -491,7 +548,20 @@ export const LENH_ACTOR: CommandSpec[] = [
        */
       const nguoiNoi = ctx.world.describe().actors.find((x) => x.id === id);
       if (nguoiNoi?.controlledBy === 'owner') {
-        ctx.bus.emit('user.text', { actor: id, text: chu, to: nghe });
+        /**
+         * I1 vòng 2 (#74) — **`sePhat`: câu này SẮP được phát ra bằng giọng.**
+         *
+         * `user.text` bắn ở **đầu câu**, còn `actor.sayStart` chỉ bắn sau
+         * `await chuanBiGiong` (300–900 ms thật). Trong khoảng giữa đó, phản
+         * xạ đọc sổ "ai đang nói" và thấy **trống** → nó chêm câu đệm vào, rồi
+         * Nam mở miệng chồng lên: đúng hai giọng mà review PR #75 đo được, và
+         * vòng sửa đầu KHÔNG bịt được vì chỉ nghe `sayStart`.
+         *
+         * Cờ này là lời cam kết "người nói này sắp có tiếng", để phản xạ chặn
+         * ngay từ mốc `user.text`. Chỉ `actor.say` đặt được nó — không ai khác
+         * biết chắc sẽ có giọng.
+         */
+        ctx.bus.emit('user.text', { actor: id, text: chu, to: nghe, sePhat: true });
         /**
          * C1 (#31) — câu này Boss **nói** chứ không gõ thì bắn thêm
          * `user.speech { text, confidence, durationMs }` (spec mục 3.5). Mic
@@ -508,9 +578,21 @@ export const LENH_ACTOR: CommandSpec[] = [
        * sau chính câu nói này). Phản xạ sẽ GIỮ hướng đó suốt câu.
        */
       const ngheLaActor = nghe !== 'camera' && nghe !== 'cursor' && ctx.world.coActor(nghe);
+      /**
+       * I1 vòng 2 (review PR #75 mục mong manh 3) — **người ĐANG NGỒI chỉ
+       * quay đầu/mắt.**
+       *
+       * `actor.faceTo` ghi `goc.rotation.y`, tức xoay cả thân: đo thật thấy
+       * Nhi ngồi `ghe-1` (ghế `facing: 0`) mà `facing: 318` — lệch ghế 42°,
+       * ngồi xoay ngang ra khỏi ghế. Lỗi có từ C0; I1 mở thêm cửa cho nó (tầng
+       * 0 gọi mỗi lần Boss bấm mic) nên phải bịt ở ĐÂY, chỗ duy nhất biết ai
+       * đang ngồi.
+       */
+      const dungYen = (ai: string) =>
+        ctx.world.describe().actors.find((x) => x.id === ai)?.state !== 'sitting';
       try {
         ctx.world.actorLookAt(id, nghe);
-        ctx.world.actorFaceTo(id, nghe);
+        if (dungYen(id)) ctx.world.actorFaceTo(id, nghe);
         /**
          * E2 (#48 mục 7) — **hai nhân vật nhìn nhau**.
          *
@@ -522,7 +604,7 @@ export const LENH_ACTOR: CommandSpec[] = [
          */
         if (ngheLaActor) {
           ctx.world.actorLookAt(nghe, id);
-          ctx.world.actorFaceTo(nghe, id);
+          if (dungYen(nghe)) ctx.world.actorFaceTo(nghe, id);
           ctx.world.actorNgheNgong(nghe, true, laCauHoi(chu));
         }
       } catch {
@@ -530,6 +612,40 @@ export const LENH_ACTOR: CommandSpec[] = [
       }
 
       const tieng = await chuanBiGiong(id, chu, giong, camXuc);
+      /**
+       * I1 vòng 2 (review PR #75 mục mong manh 1) — **đã bị cắt trong lúc tải
+       * giọng thì THÔI, không mở miệng.**
+       *
+       * `chuanBiGiong` mất 300–900 ms thật (fetch `/tts` + `decodeAudioData`).
+       * Dispatcher chiếm chỗ actor từ trước khi gọi handler, nhưng hành động
+       * sân khấu chưa tồn tại, nên `world.actorInterrupt` trong cửa sổ đó
+       * **không có gì để huỷ**: câu đệm bị cắt vẫn phát trọn và câu của não
+       * phải xếp hàng sau nó — đo thật là não nói muộn 616–854 ms thay vì
+       * "ngay". `ctx.daHuy()` là cửa duy nhất biết chuyện đó.
+       *
+       * Trả `ok: true` kèm `huy: true`: lệnh không lỗi, nó bị nhường chỗ —
+       * nhật ký phải phân biệt được hai thứ đó.
+       */
+      if (ctx.daHuy?.() === true) {
+        return ngay({ actor: id, text: chu, to: nghe, huy: true });
+      }
+      /**
+       * I1 vòng 2 (#74) — **chờ sân khấu hết tiếng rồi mới mở miệng.**
+       *
+       * Khoá nằm ở lớp tiếng (`choGiongRanh`), nhưng phải chờ **ở đây**, chứ
+       * không chỉ chờ lúc phát audio: `world.actorSay` dựng bong bóng chữ +
+       * nhép miệng ngay, nên nếu chỉ khoá phần audio thì bong bóng hiện trước
+       * giọng vài giây — lệch còn khó chịu hơn chồng giọng.
+       *
+       * Đây là chỗ duy nhất mọi câu đi qua (phản xạ, não, lớp hiểu lệnh), nên
+       * lời hứa "một giọng" của Issue #74 giữ được cho **mọi** nguồn, không
+       * phải chỉ cho tuỷ sống.
+       */
+      await lopTieng()?.choGiongRanh();
+      // chờ xong có thể đã bị cắt (não gửi câu mới) → đọc lại cửa huỷ
+      if (ctx.daHuy?.() === true) {
+        return ngay({ actor: id, text: chu, to: nghe, huy: true });
+      }
       const hd = ctx.world.actorSay(id, chu, camXuc, giong);
       // `actor.sayStart` bắn đúng lúc bong bóng chữ hiện ra (sau khi tải tiếng,
       // trước khi chờ nói xong). Driver não (`scripts/nao-agy.mjs`) đo độ trễ

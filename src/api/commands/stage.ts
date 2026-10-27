@@ -9,6 +9,8 @@ import { moTaLenh } from '../registry';
 import { ngay } from './tien-ich';
 // C2 (#32) — câu giọng gần nhất + lệnh đã hiểu (spec mục 3.6).
 import { lenhCuoi } from '../../behavior/hieu-lenh';
+// J2 (#79) — sổ "ai đang làm hoạt động gì" (`actor.activity`).
+import { donSoHoatDong, layHoatDong } from '../../behavior/hoat-dong';
 
 export const PHIEN_BAN_API = '0.1';
 
@@ -73,7 +75,14 @@ export const LENH_STAGE: CommandSpec[] = [
       // ánh cả hành động trong sân khấu lẫn lệnh đang chờ ở dispatcher
       st.actors = st.actors.map((a) => {
         const q = hd[a.id];
-        return q ? { ...a, busy: a.busy || q.busy, queued: q.queued } : a;
+        const ghep = q ? { ...a, busy: a.busy || q.busy, queued: q.queued } : { ...a };
+        /**
+         * J2 (#79) — `activity` ghép ở ĐÂY, cùng chỗ với `busy`/`queued`, vì
+         * cùng một lý do: cả ba đều là trạng thái của **tầng lệnh**, sân khấu
+         * không biết (và không được biết) tới chúng.
+         */
+        ghep.activity = layHoatDong(a.id);
+        return ghep;
       });
       const cuoi = lenhCuoi();
       return ngay({
@@ -91,6 +100,10 @@ export const LENH_STAGE: CommandSpec[] = [
     params: [],
     example: { cmd: 'stage.reset' },
     async handler(_a, ctx) {
+      // J2 (#79) — dọn sổ TRƯỚC `catNgang`: từ review #83, `catNgang` tự gọi
+      // `huyHoatDong` (và kéo theo cả phần dọn thả đồ/đứng dậy), mà `reset`
+      // thì xoá sạch sân khấu — dọn một cái sắp bị xoá là lệnh chạy vô ích.
+      donSoHoatDong();
       for (const id of ctx.world.actorIds()) ctx.catNgang(id);
       await ctx.world.reset();
       ctx.bus.emit('stage.reset', {});

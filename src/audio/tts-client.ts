@@ -281,7 +281,16 @@ export class LopTieng {
       phat: () => {
         if (daPhat) return;
         daPhat = true;
-        void this.vaoHangDoi(actorId, () => this.phatNgay(actorId, buf!, envelope));
+        // Hàng đợi theo actor (không chồng tiếng cùng người) + cổng toàn sân
+        // khấu đọc `dangPhat` ngay trước khi mở nguồn âm.
+        void this.vaoHangDoi(actorId, async () => {
+          await this.choVaGiuCho(actorId, durationMs);
+          try {
+            await this.phatNgay(actorId, buf!, envelope);
+          } finally {
+            this.giuCho.delete(actorId);
+          }
+        });
       },
       huy: () => this.huy(actorId),
     };
@@ -302,6 +311,93 @@ export class LopTieng {
     const sau = truoc.then(viec, viec);
     this.hangDoi.set(actorId, sau);
     return sau;
+  }
+
+  /**
+   * I1 vòng 2 (#74) — **MỘT GIỌNG CHO CẢ SÂN KHẤU**, không phải mỗi người một
+   * giọng.
+   *
+   * `vaoHangDoi` nối theo **từng actor**, nên hai nhân vật khác nhau vẫn phát
+   * cùng lúc được: review PR #75 móc `AudioBufferSourceNode` và đo **đỉnh 2
+   * giọng**. Issue #74 ghi thẳng *"không bao giờ nói chồng (một giọng)"* — đó
+   * là tính chất của **sân khấu**, nên chốt phải ở đây, chỗ duy nhất mọi câu
+   * đi qua, không phải chỉ ở lớp phản xạ (não và lớp hiểu lệnh cũng gửi câu).
+   *
+   * **Cổng là TRẠNG THÁI QUAN SÁT ĐƯỢC (`dangPhat`), không phải chuỗi promise.**
+   * Bản đầu nối các câu vào một `Promise` chung; đo thật hai lượt liền cho
+   * thấy cách đó **tự đầu độc**: một `phatNgay` không giải quyết (AudioContext
+   * kẹt `suspended` ở lượt đầu phiên) nằm lại trong chuỗi, nên **mọi** câu về
+   * sau phải chờ hết trần — lượt 31/36 mất trọn một lượt hội thoại, lượt sau
+   * câu đệm trễ **1545 ms** (= đúng cái trần 1,5 s). Trạng thái thì tự lành:
+   * `phatNgay` luôn xoá `dangPhat` của mình trong `dai + lề`, kể cả khi vòng
+   * nhép miệng chết.
+   */
+  /**
+   * **ĐẶT CHỖ đồng bộ.** `choGiongRanh` → `phatNgay` là một cặp
+   * kiểm-rồi-làm: giữa chúng có `await` (resume AudioContext…), nên hai actor
+   * cùng thấy sân khấu trống rồi cùng mở nguồn âm — test đơn vị bắt được ngay
+   * (`aiConGiong()` ra `['owner','gen']`). Bên nào qua cổng thì **giữ chỗ
+   * ngay trong cùng một tick**, trả lại khi phát xong.
+   */
+  /**
+   * `actorId` → **hạn** của chỗ đã giữ (ms epoch). Map chứ không phải Set:
+   * **mọi dấu hiệu trong một cái cổng dùng chung đều phải tự hết hạn.**
+   *
+   * Đo thật (lượt 31/37): `giuCho` là `Set` và được xoá trong `finally` của
+   * `await phatNgay(...)` — nhưng `phatNgay` có thể **treo vĩnh viễn** ở
+   * `await a.resume()` khi AudioContext kẹt `suspended`, nên `finally` không
+   * bao giờ chạy và chỗ giữ không bao giờ nhả. Kết quả: Nhi **câm suốt 60 s**
+   * của bước đo trần (0 câu kết, 0 đổi tư thế). Đúng cái bẫy đã bịt cho
+   * `dangPhat` bằng `donMuon`, mà `giuCho` lại bỏ sót.
+   */
+  private giuCho = new Map<string, number>();
+
+  aiConGiong(): string[] {
+    const now = Date.now();
+    for (const [ai, han] of this.giuCho) if (han <= now) this.giuCho.delete(ai);
+    return [...new Set([...this.dangPhat.keys(), ...this.giuCho.keys()])];
+  }
+
+  /**
+   * Chờ tới khi **không còn giọng nào** trên sân khấu.
+   *
+   * Trần **chặt** (1,5 s) và cố ý nhỏ: việc duy nhất hàm này cần che là **cái
+   * đuôi audio** của người nói trước (`actor.sayDone` bắn theo ước lượng, có
+   * thể sớm hơn `buf.duration` cả trăm ms) — phản xạ đã không gửi câu khi còn
+   * người khác đang nói. Bên gọi là `actor.say`, mà nó **đang giữ chỗ actor**
+   * trong dispatcher suốt lúc chờ, nên trần phải nhỏ hơn mọi khoảng có thể
+   * nuốt trọn một lượt.
+   */
+  private static TRAN_CHO_RANH_MS = 1500;
+
+  async choGiongRanh(): Promise<void> {
+    const han = Date.now() + LopTieng.TRAN_CHO_RANH_MS;
+    while (this.aiConGiong().length > 0 && Date.now() < han) {
+      await new Promise((r) => setTimeout(r, 25));
+    }
+  }
+
+  /**
+   * Chờ sân khấu hết tiếng **RỒI GIỮ CHỖ NGAY TRONG CÙNG MỘT TICK**.
+   *
+   * Tách khỏi `choGiongRanh` vì đây là chỗ duy nhất được phép đặt chỗ, và vì
+   * thứ tự *kiểm rồi claim* phải **không có `await` ở giữa**. Bản trước gọi
+   * `await choGiongRanh()` rồi mới `giuCho.add()`: hai actor cùng `phat()`
+   * trong một tick thì cả hai qua cổng trước khi ai kịp giữ chỗ — test đơn vị
+   * bắt đúng cái đó (`aiConGiong()` ra `['owner','gen']`). Vòng `for` dưới đây
+   * kiểm và claim liền nhau, chỉ `await` khi **phải chờ**.
+   */
+  private async choVaGiuCho(actorId: string, daiMs: number): Promise<void> {
+    const han = Date.now() + LopTieng.TRAN_CHO_RANH_MS;
+    for (;;) {
+      if (this.aiConGiong().length === 0 || Date.now() >= han) {
+        // Hạn = đúng độ dài câu + lề. Phát xong thì `finally` nhả sớm hơn;
+        // treo thì hạn này nhả hộ.
+        this.giuCho.set(actorId, Date.now() + daiMs + 600);
+        return;
+      }
+      await new Promise((r) => setTimeout(r, 25));
+    }
   }
 
   private async phatNgay(
@@ -337,11 +433,21 @@ export class LopTieng {
     const dai = buf.duration * 1000;
     const dangPhat: CauDangPhat = { nguon, hen: 0, mieng };
     this.dangPhat.set(actorId, dangPhat);
+    /*
+     * Dây an toàn: xoá bản ghi "đang phát" KHÔNG MUỘN HƠN `dai + lề`, dù vòng
+     * nhép miệng có chết giữa đường (AudioContext kẹt, tab bị ẩn…). Sổ
+     * `dangPhat` là cổng "một giọng" của cả sân khấu — một bản ghi sót lại là
+     * mọi nhân vật câm.
+     */
+    const donMuon = setTimeout(() => {
+      if (this.dangPhat.get(actorId) === dangPhat) this.dangPhat.delete(actorId);
+    }, dai + 400);
 
     await new Promise<void>((xong) => {
       const nhip = () => {
         const troi = Date.now() - batDau;
         if (troi >= dai || this.dangPhat.get(actorId) !== dangPhat) {
+          clearTimeout(donMuon);
           mieng?.nhepMiengTheoBienDo(0);
           if (this.dangPhat.get(actorId) === dangPhat) this.dangPhat.delete(actorId);
           xong();
@@ -381,6 +487,7 @@ export class LopTieng {
   /** Cắt tiếng của một actor (từ `actor.stop`, `actor.emote`, `stage.reset`). */
   huy(actorId: string): void {
     this.dungCauCua(actorId);
+    this.giuCho.delete(actorId);
     this.hangDoi.delete(actorId);
   }
 
@@ -395,6 +502,7 @@ export class LopTieng {
   /** Cắt tiếng của mọi actor. */
   huyHet(): void {
     for (const id of [...this.dangPhat.keys()]) this.dungCauCua(id);
+    this.giuCho.clear();
     this.hangDoi.clear();
   }
 }

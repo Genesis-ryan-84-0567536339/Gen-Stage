@@ -15,12 +15,15 @@ import { LENH_SCREEN } from './screen';
 import { LENH_MODULE } from './module';
 // E1 (#48) — lệnh gói `module.demo`: cả màn dựng module trong MỘT lệnh.
 import { LENH_DEMO } from './demo';
+// J2 (#79) — BẢNG HOẠT ĐỘNG: `actor.activity` + `actor.activities`.
+import { LENH_HOAT_DONG } from './hoat-dong';
 import { LENH_FX } from './fx';
 
 export function taoRegistry(): Registry {
   return new Registry().dangKy(
     ...LENH_STAGE,
     ...LENH_ACTOR,
+    ...LENH_HOAT_DONG,
     ...LENH_PROP,
     ...LENH_SCENE,
     ...LENH_CAMERA,

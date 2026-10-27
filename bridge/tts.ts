@@ -78,6 +78,10 @@ export const CAU_DEM_SAN = [
   'Em là Gen, trợ lý của Sếp ạ.',
   'Em chưa có não, Sếp bật agy nhé.',
   'Dạ em làm ngay ạ.',
+  // I1 (#74) — câu nối lúc chờ não. Hâm sẵn vì chúng nổ đúng lúc Boss đang
+  // sốt ruột nhất; để chờ Edge ở đó là mất trắng cả ý nghĩa của câu nối.
+  'Em đang nghĩ ạ…',
+  'Hơi lâu, Sếp chờ em chút.',
 ] as const;
 
 export interface ThamSoNoi {

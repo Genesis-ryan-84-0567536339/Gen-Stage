@@ -239,6 +239,7 @@ Hai thứ mới trong bộ lệnh (v0.1, không đổi nghĩa lệnh cũ):
 | --- | --- |
 | `actor.say` + `to?: actorId \| "camera"` | Nói **với ai**. Mặc định `camera` = Sếp đang xem. Người nói tự quay mặt về người nghe; người nghe (nếu là actor) vào dáng lắng nghe. `user.text` và `actor.sayDone` mang theo `to`. |
 | `actor.faceTo { actor, target }` | Quay người về mục tiêu **KHÔNG chiếm thân, không xếp hàng**. `actor.turnTo` chiếm thân nên gọi lúc đang nói chỉ xếp hàng chạy sau khi nói xong — đúng lúc hết cần. Đây là lệnh "giữ hướng", gọi được mỗi nhịp. |
+| `actor.listen { actor, on?, question? }` | **Sửa spec 29/10 — I1, Issue #74.** Bật/tắt **dáng lắng nghe** (gật đầu nhẹ theo nhịp, nghiêng đầu khi `question`). Cũng **không chiếm thân, không xếp hàng**, nên dùng được cả khi actor đang bận việc khác. Bắn `actor.listening { actor, on, question }`. Trước I1 dáng này chỉ đặt được từ bên trong sân khấu (`actor.say` tự bật cho người nghe) nên **không có mốc thời gian nào đo được**; giờ nó là một lệnh như mọi lệnh khác, vào nhật ký, và phản xạ dùng chính nó cho cái "gật ngay trong 300 ms". |
 
 `stage.describe` thêm hai thứ:
 
@@ -327,8 +328,141 @@ Ví dụ kịch bản Boss dán vào ô kịch bản (hoặc agent gửi):
 ]}}
 ```
 
+### 3.2e Phản ứng tức thì ba tầng (Sửa spec 29/10 — I1, Issue #74)
+
+Boss 29/10: *"các nhân vật phải đưa ra phản ứng và hành vi tức thì ngay sau khi
+nhận lệnh để tăng trải nghiệm chân thực trong quá trình nó suy nghĩ"*.
+
+C0 (mục 3.2d) chỉ phản ứng khi **đã có chữ**. Giọng nói mất 3–18 s để thành chữ
+và câu đệm còn chờ thêm 1,5 s, nên Boss nói xong là nhìn một nhân vật đứng im
+hàng chục giây. I1 chia khoảng chờ đó thành ba tầng, **không thêm lệnh nào cho
+não phải học** (chỉ `actor.listen` ở bảng trên, và một sự kiện mới):
+
+| Tầng | Mốc | Nhi làm gì |
+| --- | --- | --- |
+| 0 | `user.listening { on: true }` — Boss vừa bấm mic, **chưa có chữ** | `actor.lookAt camera` **≤150 ms** (chạy đồng bộ trong handler, không chờ nhịp quét) + `actor.listen` + `actor.emote chu-y` nhẹ |
+| 0b | `user.listening { on: false, dangNhanDang: true }` — STT đang chạy | `actor.emote suy-nghi` nhẹ (đang nhẩm), vẫn hướng về Boss |
+| 1 | `user.text` / `user.speech` — đã có chữ | gật (`actor.listen`, ≤300 ms) + `actor.faceTo` + mặt ngẩng (`actor.express`) + **câu đệm bắt đầu phát ≤400 ms** (mốc chờ não hạ 1500 → **200 ms**) |
+| 2 | từ khi có chữ tới lệnh đầu của não | vòng "đang nghĩ": đổi tư thế mỗi **4,5 s** rồi nhìn lại Boss; **6 s** một câu nối ("Em đang nghĩ ạ…"); **20 s** câu "Hơi lâu, Sếp chờ em chút." Não mở miệng là **cắt ngay** và về dáng chú ý |
+
+Bốn giao kèo bắt buộc của tầng 2 (chỗ dễ sai nhất):
+
+1. **Một giọng duy nhất, XUYÊN NHÂN VẬT** (sửa 27/10 sau review PR #75). Mọi
+   câu/tư thế-có-tiếng của Nhi chỉ phát khi **không còn ai** trên sân khấu
+   đang nói — phản xạ giữ sổ `aiDangNoi` từ `actor.sayStart`/`sayDone` của mọi
+   actor. `actor.say` bắn `user.text` ở **đầu câu** của Nam, nên không có cửa
+   này là Nhi chen vào giữa câu Nam (đo ở tầng audio: đỉnh 2 giọng). Gật/nhìn
+   (không tiếng) vẫn tức thì, và câu đệm được **hoãn** tới khi Nam dứt lời chứ
+   không bị bỏ. Thêm một lý do nữa phải chờ Nhi rảnh: hàng đợi là FIFO, nên
+   một câu nối *xếp hàng* sẽ chạy **trước** câu trả lời thật của não.
+1b. **Tầng 2 có trần**: 30 s (`tranTangHaiMs`) thì nói một câu kết rồi về nhịp
+   thường; `bridge.disconnected` và `bridge.brain { count: 0 }` là hai cửa sập
+   tắt ngay. Không có trần thì não chết giữa đường là Nhi quay tư thế mãi mãi.
+2. **Khi bận chỉ cho lệnh nhìn.** Nhi đang chạy việc của não (`moveTo`,
+   `play`…) thì phản xạ chỉ `actor.lookAt` + `actor.listen` — không `faceTo`,
+   không emote, không nói, **không chạm hàng đợi**.
+3. **Cắt bằng `world.actorInterrupt`, không bao giờ `actor.stop`/`interrupt:
+   true`** (xem mục 3.2d): hai cửa đó xoá sạch hàng đợi → giết luôn câu của
+   não vừa xếp hàng sau câu chêm.
+4. **Câu chêm được phép nhường chỗ cho CHÍNH MÌNH, không cho ai khác.** Tư thế
+   nghĩ đang chạy mà tới hạn câu đệm thì cắt tư thế đó; đang NÓI thì hoãn câu
+   sau; đang làm việc của não thì im.
+
+**Nam** (nhân vật `owner`): Boss gõ/nói = Nam nói, nên Nam **không** tự phản ứng
+với chính mình. Khi Nhi nói, Nam quay mắt + thân về Nhi; Nhi **nói xong** thì
+Nam gật nhẹ 1,2 s. Cả hai chỉ làm khi Nam đang rảnh — Boss có thể đang lái anh
+ta bằng WASD.
+
+### 3.2f Bảng hoạt động + tự sinh hoạt khi rảnh (Sửa spec 27/10 — J2, Issue #79)
+
+Boss 27/10: *"tăng thêm các động tác hành vi của các nhân vật cho phong phú"*.
+
+Bộ lệnh v0.1 chỉ có **động tác lẻ** (`moveTo`, `sit`, `emote`, `play`). Người
+thật thì không "emote" — người thật **ra bếp pha cà phê rồi mang cốc về bàn**,
+tức một CHUỖI có đầu có cuối. J2 thêm một tầng dữ liệu trên bộ lệnh cũ, **không
+đổi nghĩa lệnh nào**:
+
+| Lệnh | Chiếm thân | Việc |
+| --- | --- | --- |
+| `actor.activities` | không | Liệt kê **BẢNG HOẠT ĐỘNG** (`src/behavior/hoat-dong.ts`): `name`, `label`, `desc`, `steps`, `prop`, `estimatedMs` |
+| `actor.activity { actor?, name }` | theo từng bước (xem dưới) | Làm trọn một hoạt động. Bắn `actor.activityStart` → `actor.activityDone { steps, errors? }`, hoặc `actor.activityCancelled { steps }` + `actor.activityCleaned { dropped, stood }` khi bị cắt |
+
+`estimatedMs`/`durationMs` của hai lệnh này là **ƯỚC LƯỢNG THÔ, KHÔNG phải lời
+hứa** (khác mọi lệnh khác trong spec, và nói rõ ở đây để agent không lên lịch
+theo nó): nó tính theo quãng đường thật giữa các place, nhưng đường đi bị nội
+thất chắn (`truotVaCham`) và việc phản xạ có chêm gì vào khe giữa hai bước hay
+không thì chỉ biết được lúc đang chạy. Muốn biết đã xong chưa thì **nghe sự
+kiện**, đừng đếm giờ.
+
+`stage.describe().actors[].activity` = id hoạt động đang làm, `null` khi không
+làm gì. Nó được ghép vào snapshot ở **tầng lệnh**, đúng chỗ `busy`/`queued`
+được ghép từ hàng đợi của dispatcher — sân khấu không biết "chuỗi" là gì.
+
+**12 hoạt động v1**: `doc-sach-sofa`, `pha-ca-phe`, `go-may-tinh`, `vuon-vai`,
+`ngam-cua-so`, `tuoi-cay`, `don-ban-an`, `nhay-theo-nhac`, `tap-the-duc`,
+`di-dao`, `uong-nuoc-ghe-an`, `ngu-gat-sofa`. Thêm một hoạt động = thêm **một
+dòng** vào bảng; `stage.bootstrap`, bảng lệnh UI, ô kịch bản và tool MCP
+`actor_activity` tự biết.
+
+Bốn giao kèo, mỗi cái có test giữ (`src/api/__tests__/j2-hoat-dong.test.ts`):
+
+1. **`actor.activity` cố ý KHÔNG khai `chiemActor`.** Dispatcher đánh dấu actor
+   bận *trước* khi gọi handler, nên bước đầu (`ctx.run('actor.moveTo')`) sẽ
+   xếp hàng chờ chính lệnh đang gọi nó → deadlock. Thân vẫn bị chiếm thật, chỉ
+   là **theo từng bước**: mỗi `moveTo`/`sit`/`play`/`emote` đều `chiemActor`,
+   nên `busy` bật suốt hoạt động và lệnh của não gửi tới giữa chừng vẫn xếp
+   hàng đúng chỗ. Cùng mẫu `module.demo` (mục 3.4b).
+2. **Về idle, chân chạm sàn.** Ngồi thì phải `actor.stand`, cầm thì lệnh tự
+   `actor.drop` + trả prop về chỗ cũ; `actor.activityDone` chỉ bắn khi thân
+   **thật sự** rảnh (`ctx.hangDoi()`), không bắn lúc bước cuối vừa bắt đầu.
+3. **Cắt bằng `world.actorInterrupt`, KHÔNG `actor.stop`/`catNgang`** (xem mục
+   3.2d/3.2e): `catNgang` xoá sạch hàng đợi → giết luôn lệnh não vừa xếp hàng.
+   Ngược lại thì **`Dispatcher.catNgang` LUÔN cắt chuỗi hoạt động**
+   (`huyHoatDong`), nên `interrupt: true` của não cũng thắng — một chỗ lo cho
+   mọi đường vào.
+5. **Bị cắt thì phải DỌN**: `actor.drop` + trả prop về chỗ trong bảng, và
+   `actor.stand` nếu đang ngồi. Bỏ bước này là hoạt động kế tiếp mất prop
+   (`actorHold` ném lỗi khi tay đã có đồ) và tự sinh hoạt chết hẳn (ngồi mãi
+   thì `state !== 'idle'`). `activityCancelled` bắn ngay (lời hứa ≤300 ms là về
+   việc *dừng*), `activityCleaned` bắn sau khi dọn xong.
+6. **Mỗi bước chờ thân TRỐNG rồi mới gửi**, không xếp hàng: lệnh đã vào hàng
+   đợi thì không rút lại được, nên xếp hàng là sau `activityCancelled` nhân vật
+   còn đi thêm một chặng.
+7. **Chỉ chọn hoạt động mà chỗ còn RẢNH** (`hoatDongDienDuoc`): ghế phải trống
+   (`occupiedBy`), và chỗ đứng không có nhân vật khác trong 1 m. Sân khấu không
+   né người (`choDung()` trả thẳng `standAt`), nên việc này phải làm ở tầng chọn.
+4. **Prop dựng bằng hình khối đơn giản của A1** (`HINH_PROP`), dựng một lần
+   rồi dùng mãi: Kenney Furniture Kit CC0 không có cốc/bình tưới, và asset
+   không được commit.
+
+**Tự sinh hoạt khi rảnh** (`src/behavior/tu-sinh-hoat.ts`, nhịp 500 ms):
+
+| Điều kiện | Nhi làm gì |
+| --- | --- |
+| rảnh (`idle` + `busy === false`) liên tục **> 20 s**, không ai ra lệnh | chọn **ngẫu nhiên** một hoạt động (trừ cái vừa làm) rồi `actor.activity` với nguồn `tu-sinh-hoat` |
+| xong một lượt | nghỉ **3 s** rồi được phép tự sinh lượt kế (nhờ vậy *"rảnh 60 s → ≥2 hoạt động"* đạt được) |
+| `user.text` / `user.speech` / `user.listening` / `user.command`, hoặc `cmd.queued` cho Nhi | **cắt NGAY, đồng bộ trong handler** — không chờ nhịp quét |
+
+Ưu tiên: **lệnh Boss/não > phản xạ (3.2d/3.2e) > tự sinh hoạt**. Nam
+(`controlledBy: 'owner'`) **không bao giờ** tự sinh hoạt — Boss có thể đang
+lái anh ta bằng WASD. Và máy này không chêm giọng bao giờ: nó chỉ gửi lệnh khi
+Nhi đang rảnh, nên lời hứa "một giọng, không chồng" của 3.2e còn nguyên.
+
+"Rảnh" đo bằng `describe()` + `dangBan()` mỗi nhịp, **không** bằng một danh
+sách sự kiện: không có sự kiện nào nghĩa là *"não vừa ra lệnh"* cho mọi đường
+vào (ws, MCP, bảng lệnh, phím), nhưng lệnh nào chiếm thân cũng làm `busy` bật
+— một thước đo thay cho một danh sách phải nhớ bổ sung.
+
 ### 3.5 Sự kiện sân khấu → agent
 `actor.arrived`, `actor.steerDone`, `actor.clipDone`, `actor.sayDone`, `actor.emoteDone`, `script.done`, `user.speech` (Boss nói, đã chuyển thành chữ), `user.click` (Boss bấm vào actor/prop), `user.text` (Boss gõ).
+
+**Sửa spec (29/10, I1 — Issue #74):** thêm **`user.listening { on, dangNhanDang }`**
+— Boss **bắt đầu/kết thúc nói**, bắn từ `src/audio/mic.ts`, trước khi có chữ.
+Ba mốc: `{on:true}` lúc `MediaRecorder` chạy, `{on:false, dangNhanDang:true}`
+lúc gửi audio lên STT, `{on:false, dangNhanDang:false}` khi lượt nói đóng (có
+chữ, không ra chữ, hay lỗi). Não đọc được nó qua `stage_events` để biết Sếp
+đang nói mà đừng chen vào. Thêm `actor.listening { actor, on, question }` do
+`actor.listen` bắn.
 
 **Sửa spec (26/10, C0 — Issue #28):** thêm `bridge.brain { count, connected }` —
 bridge báo số client MCP đang nối, đi **xuống** sân khấu (hướng ngược với mọi
