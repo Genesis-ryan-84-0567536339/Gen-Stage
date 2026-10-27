@@ -1201,3 +1201,23 @@ sân khấu hết tiếng)**.
   phải nhỏ hơn mọi khoảng có thể nuốt trọn một lượt; (2) **`r.ok` 100 % không
   chứng minh là có tiếng**: phải đo `actor.sayStart`, vì đường "bị huỷ" cố ý
   trả `ok: true`.
+
+#### Vòng 2d — cổng "một giọng" phải là TRẠNG THÁI, không phải chuỗi promise
+
+Hai lượt đo liền nhau (31/36 rồi 33/36) đóng đinh chuyện này:
+
+- **Chuỗi promise tự đầu độc.** `khoaGiong` nối mọi câu vào một `Promise`. Một
+  `phatNgay` không bao giờ giải quyết (AudioContext kẹt `suspended` ở lượt đầu
+  phiên) nằm lại trong chuỗi ⇒ **mọi** câu về sau phải chờ hết trần: lượt đầu
+  mất trọn một lượt hội thoại, lượt sau câu đệm trễ **1545 ms** — đúng bằng
+  trần 1,5 s, tức là *lần nào cũng* chờ hết trần. Và vì câu đệm ngốn 1,5 s,
+  tầng 2 không còn chỗ: 0 đổi tư thế, 0 câu nối.
+- **Thay bằng trạng thái quan sát được**: cổng đọc `dangPhat` (có thêm
+  `giuCho`), và `phatNgay` **luôn** xoá bản ghi của mình trong `dai + 400 ms`
+  bằng một `setTimeout` riêng — trạng thái tự lành, không có gì để đầu độc.
+- **Kiểm-rồi-claim không được có `await` ở giữa.** Bản đầu `await
+  choGiongRanh()` rồi mới `giuCho.add()`: hai actor cùng `phat()` trong một
+  tick thì **cả hai** qua cổng trước khi ai kịp giữ chỗ (test đơn vị ra
+  `['owner','gen']`). `choVaGiuCho` kiểm và claim liền nhau, chỉ `await` khi
+  thật sự phải chờ. Đây là lỗi kinh điển của mọi cái cổng; viết test hai-actor
+  **trước** khi tin cái cổng.
