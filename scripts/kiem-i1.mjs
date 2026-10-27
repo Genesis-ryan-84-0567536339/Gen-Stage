@@ -692,11 +692,14 @@ try {
   const guiOk = await page.evaluate(() => window.stage.guiChat('Nhi ơi, hôm nay mình làm gì nhỉ'));
   ghi('ô chat nhận câu gõ (cùng cửa mic dùng)', guiOk === true, `guiChat → ${guiOk}`);
   /*
-   * Chờ 5 s, KHÔNG phải 1,2 s: từ vòng 2 câu đệm **hoãn tới khi Nam dứt lời**
-   * (Nam đọc câu của Boss mất 2–3 s giọng thật). Lấy mẫu ở 1,2 s thì chưa có
-   * `actor.sayDone` của Nam lẫn câu đệm nào — thước đo bắt oan chính cái sửa.
+   * Chờ **7 s**, không phải 1,2 s hay 5 s.
+   *
+   * Từ vòng 2, câu đệm **hoãn tới khi Nam dứt lời** — mà Nam đọc câu của Boss
+   * mất 3,2–4,7 s giọng thật (đo được cả hai mốc đó ở hai lượt liền nhau).
+   * Lấy mẫu ở 5 s thì lượt nào Nam chậm là "thiếu mốc", và thước đo bắt oan
+   * đúng cái vừa sửa. 7 s vẫn trước lúc não trả lời (8 s).
    */
-  await nghi(5000);
+  await nghi(7000);
   ds = await ev(page);
   dsL = await lenh(page);
   const evText = sauEv(ds, 'user.text', tGo, (e) => e.data?.actor === 'owner');
@@ -768,10 +771,21 @@ try {
   const soLau8 = demCau(ds, CAU_NOI_LAU, evText?.t ?? tGo, tNao8);
   const dinh8 = dinhChongGiong(ds, 'gen', evText?.t ?? tGo, tNao8 + 6000);
   const dinhAm8 = await dinhGiong(page);
+  /*
+   * **Đổi tư thế KHÔNG đo ở ca 8 s nữa** — đo ở ca trần tầng 2 (mốc 7).
+   *
+   * Từ khi "một giọng" bắt câu đệm chờ Nam dứt lời, ca 8 s có thể **không còn
+   * cửa sổ rảnh nào** cho một cú đổi tư thế: Nam đọc 3,2–4,7 s → câu đệm →
+   * tới 6 s là mốc câu nối tiếp quản (câu nối ưu tiên hơn đổi tư thế) → 8 s
+   * não trả lời. Đo được 0 lần ở đó là **đúng hành vi**, không phải lỗi; đòi
+   * ≥1 là thước sai. Ca chờ 30 s mới là chỗ Nhi thật sự đứng rảnh, và mốc 7b
+   * đếm đúng số đó.
+   */
   ghi(
-    'MỐC 4a — não trễ 8 s: ≥1 ĐỔI TƯ THẾ trong lúc chờ',
-    soTuThe8 >= 1,
-    `${soTuThe8} lần (emote suy-nghi/cham-chu, nguồn phan-xa)`,
+    'MỐC 4a — ca 8 s: số đổi tư thế (ghi nhận, không đòi ≥1 — xem mốc 7f)',
+    true,
+    `${soTuThe8} lần (emote suy-nghi/cham-chu, nguồn phan-xa) — ca này Nam đọc ` +
+      `${evNamXong && evText ? evNamXong.t - evText.t : '—'} ms nên có thể không còn cửa sổ rảnh`,
     { soTuThe: soTuThe8 },
   );
   ghi(
@@ -1037,6 +1051,12 @@ try {
     nhinSau.lookingAt !== 'camera',
     `lookingAt "${nhinSau.lookingAt}" · cách Nam ${nhinSau.xa} m (bản cũ: mục 4 bị !tangHai khoá vĩnh viễn)`,
     nhinSau,
+  );
+  ghi(
+    'MỐC 7f — ca chờ 30 s: CÓ đổi tư thế (chỗ Nhi thật sự đứng rảnh)',
+    emoteA >= 1,
+    `${emoteA} lần emote của phản xạ trong lúc chờ`,
+    { soTuThe: emoteA },
   );
   const dinhAm7 = await dinhGiong(page);
   ghi('MỐC 7e — cả bước này vẫn ĐỈNH 1 giọng', dinhAm7 <= 1, `đỉnh ${dinhAm7} giọng`, {

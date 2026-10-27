@@ -74,6 +74,9 @@
 import type { ActorSnapshot, EventBusLike, Result, StageState, StageWorld } from '../api/types';
 import { laCauHoi } from '../api/commands/actor';
 import { coNao } from './so-nao';
+// I1 vòng 2e (#74) — lớp tiếng là nguồn sự thật về "còn giọng nào đang phát".
+// `lopTieng()` trả `null` ngoài trình duyệt (test Node) nên mọi chỗ gọi có `?.`.
+import { lopTieng } from '../audio/tts-client';
 
 /** Nguồn ghi vào nhật ký cho mọi lệnh do phản xạ sinh ra. */
 export const NGUON_PHAN_XA = 'phan-xa';
@@ -276,6 +279,15 @@ export interface ThamSoPhanXa {
    * nối dây đồng hồ 3 s vào `main.ts` ở đúng một chỗ, không sửa file này.
    */
   choSauBridge?: () => boolean;
+  /**
+   * I1 vòng 2e — **những actor còn GIỌNG THẬT đang phát** (test tiêm được).
+   *
+   * Mặc định đọc `lopTieng().aiConGiong()`. Cần cửa riêng vì `actor.sayDone`
+   * bắn theo **ước lượng** (`uocThoiLuongNoi`), có thể sớm hơn `buf.duration`
+   * cả trăm ms — đo thật thấy đuôi giọng Nam còn chạy khi Nhi mở miệng, và
+   * móc `AudioBufferSourceNode` đếm ra **đỉnh 2 giọng**.
+   */
+  aiConGiong?: () => string[];
 }
 
 export interface TrangThaiPhanXa {
@@ -326,6 +338,7 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
   const coNaoNoi = ts.coNaoNoi ?? coNao;
   /** Xem `ThamSoPhanXa.choSauBridge` — mặc định: không chờ gì cả. */
   const choSauBridge = ts.choSauBridge ?? (() => false);
+  const aiConGiong = ts.aiConGiong ?? (() => lopTieng()?.aiConGiong() ?? []);
 
   let ownerId: string | null = null;
   let genId: string | null = null;
@@ -464,6 +477,14 @@ export function batPhanXa(ts: ThamSoPhanXa): MayPhanXa {
       if (den > now) return true;
       dangNoiDen.delete(x); // hết trần: câu bị huỷ giữa lúc tải giọng
     }
+    /*
+     * I1 vòng 2e — hỏi thêm **lớp tiếng**: `actor.sayDone` bắn theo ƯỚC LƯỢNG
+     * nên sổ sự kiện có thể đã xoá người nói trong khi audio còn chạy nốt cái
+     * đuôi. Đo thật: Nhi mở miệng 119 ms sau `sayDone` của Nam và móc
+     * `AudioBufferSourceNode` ra **đỉnh 2 giọng**. Lượt trước thấy "đỉnh 1"
+     * chỉ vì chuỗi khoá bị đầu độc làm Nhi trễ 1,5 s — may, không phải thiết kế.
+     */
+    for (const x of aiConGiong()) if (x !== minh) return true;
     return false;
   }
 

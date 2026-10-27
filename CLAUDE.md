@@ -1221,3 +1221,22 @@ Hai lượt đo liền nhau (31/36 rồi 33/36) đóng đinh chuyện này:
   `['owner','gen']`). `choVaGiuCho` kiểm và claim liền nhau, chỉ `await` khi
   thật sự phải chờ. Đây là lỗi kinh điển của mọi cái cổng; viết test hai-actor
   **trước** khi tin cái cổng.
+
+#### Vòng 2e — `actor.sayDone` là ƯỚC LƯỢNG, lớp tiếng mới là sự thật
+
+- **Cổng "một giọng" của phản xạ phải hỏi LỚP TIẾNG, không chỉ sổ sự kiện.**
+  `actor.sayDone` bắn theo `uocThoiLuongNoi`, có thể sớm hơn `buf.duration` cả
+  trăm ms — đo thật: Nhi mở miệng **119 ms** sau `sayDone` của Nam mà móc
+  `AudioBufferSourceNode` vẫn ra **đỉnh 2 giọng**. `aiKhacDangNoi` nay hỏi thêm
+  `lopTieng().aiConGiong()` (tiêm được để test).
+- **Cảnh giác với một mốc "đạt" không giải thích được.** Lượt giữa đo ra "đỉnh
+  1" và dễ tưởng là xong — thật ra chỉ vì **chuỗi khoá bị đầu độc** làm Nhi trễ
+  1,5 s, tình cờ che đúng cái đuôi audio. Sửa cái đầu độc thì "đỉnh 2" hiện
+  lại ngay. Một con số xanh mà không có cơ chế giải thích nó thì chưa phải bằng
+  chứng.
+- **Đổi lời hứa thì phải đổi cả thước đo.** Từ khi câu đệm chờ Nam dứt lời, ca
+  "não trễ 8 s" có thể **không còn cửa sổ rảnh nào** cho một cú đổi tư thế (Nam
+  đọc 3,2–4,7 s → câu đệm → 6 s là mốc câu nối tiếp quản → 8 s não trả lời):
+  đo 0 lần ở đó là **đúng hành vi**. Dời phép đo "đổi tư thế" sang ca chờ 30 s,
+  chỗ Nhi thật sự đứng rảnh. Và cửa sổ lấy mẫu mốc 3 phải ≥7 s vì Nam đọc tới
+  4,7 s.

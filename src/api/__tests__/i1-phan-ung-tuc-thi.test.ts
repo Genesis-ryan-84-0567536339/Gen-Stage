@@ -95,11 +95,14 @@ async function dung(opts: { treNaoMs?: number; ganNhau?: boolean } = {}) {
     opts.treNaoMs === undefined
       ? null
       : naoGia({ bus, dispatcher, treMs: opts.treNaoMs, gio });
+  /** Lớp tiếng giả: test đặt tay "ai còn giọng đang phát". */
+  const conGiong = new Set<string>();
   const may = batPhanXa({
     dispatcher,
     bus,
     bayGio: gio,
     chonCauDem: (ds) => ds[0]!,
+    aiConGiong: () => [...conGiong],
     so: { nhipMs: 1_000_000 }, // test gọi `nhip()` tay
   });
   return {
@@ -109,6 +112,7 @@ async function dung(opts: { treNaoMs?: number; ganNhau?: boolean } = {}) {
     may,
     nao,
     gio,
+    conGiong,
     /** Đẩy đồng hồ `ms` rồi quét **từng nhịp 100 ms** như bản thật. */
     async tien(ms: number) {
       const buoc = MAC_DINH.nhipMs;
@@ -893,6 +897,43 @@ describe('I1 vòng 2b — cờ sePhat bịt cửa sổ user.text → actor.saySt
     // qua trần 30 s + grace 3 s: phải thoát, dù chưa nói được câu nào
     expect(t.may.trangThai().tangHai).toBe(false);
     expect(cacCau(t.world)).not.toContain(CAU_HET_CHO);
+    t.may.dung();
+  });
+});
+
+/* ===== VÒNG 2e — đuôi audio: sayDone là ƯỚC LƯỢNG, lớp tiếng mới là sự thật ==== */
+
+describe('I1 vòng 2e — Nhi chờ cả ĐUÔI audio của người khác', () => {
+  beforeEach(() => xoaSoNao());
+
+  /**
+   * `actor.sayDone` bắn theo `uocThoiLuongNoi`, có thể sớm hơn `buf.duration`
+   * cả trăm ms. Đo thật: Nhi mở miệng **119 ms** sau `sayDone` của Nam mà móc
+   * `AudioBufferSourceNode` vẫn ra **đỉnh 2 giọng**. Lượt sau thấy "đỉnh 1"
+   * chỉ vì chuỗi khoá bị đầu độc làm Nhi trễ 1,5 s — may, không phải thiết kế.
+   */
+  it('sayDone của Nam đã bắn nhưng audio còn chạy → Nhi vẫn im', async () => {
+    const t = await dung();
+    datSoNao(1);
+    const chu = 'Nhi ơi';
+    t.bus.emit('user.text', { actor: 'owner', text: chu, to: 'camera', sePhat: true });
+    t.bus.emit('actor.sayStart', { actor: 'owner', text: chu, to: 'camera' });
+    t.conGiong.add('owner'); // lớp tiếng: giọng Nam đang phát
+    await nhipMicro();
+
+    // Nam "nói xong" theo sổ sự kiện, NHƯNG đuôi audio còn chạy
+    t.bus.emit('actor.sayDone', { actor: 'owner', text: chu, to: 'camera' });
+    await nhipMicro();
+    expect(t.may.trangThai().aiDangNoi).not.toContain('owner');
+    t.world.lichSu.length = 0;
+
+    await t.tien(MAC_DINH.nhipMs * 4);
+    expect(cacCau(t.world)).toEqual([]); // vẫn im vì lớp tiếng còn báo có giọng
+
+    // đuôi audio tắt → câu đệm phát
+    t.conGiong.delete('owner');
+    await t.tien(MAC_DINH.nhipMs);
+    expect(cacCau(t.world)).toEqual([CAU_DEM[0]]);
     t.may.dung();
   });
 });
