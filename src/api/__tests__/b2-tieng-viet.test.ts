@@ -270,6 +270,130 @@ describe('LopTieng — tải, phát, nhép miệng', () => {
     expect(mau.length).toBe(soMauLucCat); // không nhép thêm sau khi cắt
   });
 
+  /**
+   * I1 vòng 2 (#74, review PR #75 lỗi chặn 1) — **MỘT GIỌNG CHO CẢ SÂN KHẤU.**
+   *
+   * `vaoHangDoi` nối theo **từng actor**, nên hai nhân vật khác nhau vẫn phát
+   * cùng lúc được: móc `AudioBufferSourceNode` ở bộ bằng chứng đo **đỉnh 2
+   * giọng** (Nam đọc câu của Boss, Nhi chêm vào giữa). Issue #74 ghi thẳng
+   * *"không bao giờ nói chồng (một giọng)"* — tính chất của **sân khấu**, nên
+   * chốt phải ở lớp tiếng, chỗ duy nhất mọi câu đi qua.
+   */
+  it('HAI ACTOR khác nhau: câu sau chờ câu trước, không bao giờ chồng giọng', async () => {
+    const { ctx } = ctxGia();
+    ghiMiengNhep('owner', miengGia().mieng);
+    ghiMiengNhep('gen', miengGia().mieng);
+    const t = new LopTieng({ fetchFn: fetchGia(10240), taoCtx: () => ctx }); // ~1 s/câu
+
+    const cuaNam = await t.chuanBi('owner', 'Nam đọc câu của Boss.', {});
+    const cuaNhi = await t.chuanBi('gen', 'Dạ, Sếp?', {});
+    cuaNam!.phat();
+    cuaNhi!.phat();
+
+    // ngay sau khi gọi cả hai: CHỈ Nam có giọng
+    await new Promise((r) => setTimeout(r, 150));
+    expect(t.aiConGiong()).toEqual(['owner']);
+
+    // Nhi chỉ mở miệng sau khi Nam dứt hẳn — đỉnh số giọng luôn là 1
+    let dinh = 0;
+    for (let i = 0; i < 24; i++) {
+      dinh = Math.max(dinh, t.aiConGiong().length);
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    expect(dinh).toBe(1);
+  });
+
+  /**
+   * **Khoá toàn sân khấu PHẢI có trần.** Lượt bằng chứng đầu có khoá treo
+   * 2 phút ở mốc 2: một `phatNgay` không bao giờ giải quyết (vd `AudioContext`
+   * kẹt ở `suspended` nên `resume()` không settle) giữ khoá vĩnh viễn, và vì
+   * khoá là toàn sân khấu nên **mọi** nhân vật câm — nặng hơn hẳn bản cũ
+   * (hỏng theo từng người).
+   */
+  it('câu treo vô hạn KHÔNG wedge cả sân khấu (khoá có trần)', async () => {
+    const { ctx } = ctxGia();
+    // `resume()` không bao giờ settle → `phatNgay` của Nam treo mãi
+    const ctxTreo = {
+      ...(ctx as unknown as Record<string, unknown>),
+      state: 'suspended' as AudioContextState,
+      resume: () => new Promise<void>(() => undefined),
+    } as unknown as AudioContext;
+    ghiMiengNhep('owner', miengGia().mieng);
+    const t = new LopTieng({ fetchFn: fetchGia(2048), taoCtx: () => ctxTreo });
+    const cau = await t.chuanBi('owner', 'Câu treo.', {});
+    cau!.phat();
+
+    // chờ quá trần (8 s) thì khoá phải nhả — dùng đồng hồ giả cho nhanh
+    vi.useFakeTimers();
+    const cho = t.choGiongRanh();
+    await vi.advanceTimersByTimeAsync(9000);
+    vi.useRealTimers();
+    await expect(cho).resolves.toBeUndefined();
+  });
+
+  /**
+   * Trần của `choGiongRanh` phải CHẶT (1,5 s), không phải 8 s như trần chuỗi.
+   *
+   * Bên gọi là `actor.say`, nó **đang giữ chỗ actor** trong lúc chờ. Đo thật
+   * (lượt 31/36) với trần 8 s: câu đệm ngồi chờ 4 s rồi bị não huỷ, câu của
+   * não vào chỗ đó chờ tiếp — cả lượt không ai nói gì, mà `r.ok` vẫn 100 %.
+   */
+  it('choGiongRanh() không bao giờ chờ quá 2 s (không nuốt trọn một lượt)', async () => {
+    const { ctx } = ctxGia();
+    const ctxTreo = {
+      ...(ctx as unknown as Record<string, unknown>),
+      state: 'suspended' as AudioContextState,
+      resume: () => new Promise<void>(() => undefined),
+    } as unknown as AudioContext;
+    ghiMiengNhep('owner', miengGia().mieng);
+    const t = new LopTieng({ fetchFn: fetchGia(2048), taoCtx: () => ctxTreo });
+    const cau = await t.chuanBi('owner', 'Câu treo.', {});
+    cau!.phat();
+
+    const t0 = Date.now();
+    await t.choGiongRanh();
+    expect(Date.now() - t0).toBeLessThan(2000);
+  });
+
+  /**
+   * **Mọi dấu hiệu trong một cổng dùng chung đều phải TỰ HẾT HẠN.**
+   *
+   * Đo thật (lượt 31/37): `giuCho` là `Set`, xoá trong `finally` của
+   * `await phatNgay(...)` — mà `phatNgay` treo vĩnh viễn ở `await a.resume()`
+   * khi AudioContext kẹt `suspended`, nên `finally` không bao giờ chạy và chỗ
+   * giữ không bao giờ nhả ⇒ Nhi **câm suốt 60 s** của bước đo trần.
+   */
+  it('phatNgay treo vĩnh viễn → chỗ giữ vẫn TỰ hết hạn, sân khấu không câm', async () => {
+    const { ctx } = ctxGia();
+    const ctxTreo = {
+      ...(ctx as unknown as Record<string, unknown>),
+      state: 'suspended' as AudioContextState,
+      resume: () => new Promise<void>(() => undefined),
+    } as unknown as AudioContext;
+    ghiMiengNhep('owner', miengGia().mieng);
+    const t = new LopTieng({ fetchFn: fetchGia(2048), taoCtx: () => ctxTreo }); // ~0,2 s
+    const cau = await t.chuanBi('owner', 'Câu treo.', {});
+    cau!.phat();
+    await new Promise((r) => setTimeout(r, 60));
+    expect(t.aiConGiong()).toEqual(['owner']); // đang giữ chỗ
+
+    // hạn = dai + 600 ms → qua đó phải nhả, dù `phatNgay` còn treo
+    await new Promise((r) => setTimeout(r, 1000));
+    expect(t.aiConGiong()).toEqual([]);
+  });
+
+  it('choGiongRanh() chờ hết câu đang phát rồi mới trả về', async () => {
+    const { ctx } = ctxGia();
+    ghiMiengNhep('owner', miengGia().mieng);
+    const t = new LopTieng({ fetchFn: fetchGia(10240), taoCtx: () => ctx });
+    const cau = await t.chuanBi('owner', 'Nam đọc một giây.', {});
+    cau!.phat();
+    await new Promise((r) => setTimeout(r, 100));
+    expect(t.aiConGiong()).toEqual(['owner']);
+    await t.choGiongRanh();
+    expect(t.aiConGiong()).toEqual([]);
+  });
+
   it('phat() gọi hai lần cũng chỉ phát một lần', async () => {
     const { ctx, daPhat } = ctxGia();
     ghiMiengNhep('gen', miengGia().mieng);

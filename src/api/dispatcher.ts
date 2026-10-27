@@ -41,6 +41,22 @@ interface DangChay {
   token: number;
   cmd: string;
   cancel?: () => void;
+  /**
+   * Nguồn đã gọi lệnh này (`ui` · `bridge` · `phan-xa` · `window.stage`…).
+   *
+   * I1 vòng 2 (#74, review PR #75 mục mong manh 2): phản xạ cần biết **cái
+   * đang chiếm Nhi là việc của ai** để quyết định có được cắt hay không. Bản
+   * I1 vòng 1 dùng một cờ `boolean` tự hết hạn theo nhịp 100 ms, nên có cửa
+   * sổ ≤100 ms mà cờ còn bật trong lúc slot đã thuộc về não → phản xạ cắt rồi
+   * **xếp câu đệm SAU câu của não**. Đọc thẳng nguồn của slot thì không còn
+   * cửa sổ nào.
+   */
+  nguon: string;
+  /**
+   * Đã bị cắt (xem `CommandCtx.daHuy`). Đặt bởi `catNhe`/`catNgang` để
+   * handler đang treo trong `await` tự thôi sau khi `await` xong.
+   */
+  daHuy?: boolean;
 }
 
 export interface DispatcherOpts {
@@ -70,13 +86,23 @@ export class Dispatcher {
     this.nhatKy = o.nhatKy;
   }
 
-  /** Bối cảnh truyền cho handler. */
-  private ctx(): CommandCtx {
+  /**
+   * Bối cảnh truyền cho handler.
+   *
+   * `actor`/`token` chỉ có khi lệnh chiếm actor — đó là cái làm `daHuy()` biết
+   * nói về ĐÚNG lượt chạy này, không phải lượt nào khác của cùng actor.
+   */
+  private ctx(actor = '', token = 0): CommandCtx {
     return {
       world: this.world,
       bus: this.bus,
       registry: this.registry,
       run: (cmd, args) => this.run(cmd, args, 'noi-bo'),
+      daHuy: () => {
+        if (!actor) return false;
+        const h = this.dangChay.get(actor);
+        return h === undefined || h.token !== token || h.daHuy === true;
+      },
       hangDoi: () => this.trangThaiHangDoi(),
       catNgang: (actor) => this.catNgang(actor),
     };
@@ -96,6 +122,33 @@ export class Dispatcher {
 
   dangBan(actor: string): boolean {
     return this.dangChay.has(actor);
+  }
+
+  /**
+   * I1 vòng 2 — **nguồn của hành động đang chiếm actor** (`null` = đang rảnh).
+   *
+   * Phản xạ đọc cái này thay cho cờ `dangDienCho` cũ: nó là sự thật của chính
+   * dispatcher, không có cửa sổ lệch nhịp nào.
+   */
+  nguonDangChay(actor: string): string | null {
+    return this.dangChay.get(actor)?.nguon ?? null;
+  }
+
+  /**
+   * I1 vòng 2 — **cắt NHẸ**: huỷ đúng hành động đang chạy, **GIỮ hàng đợi**.
+   *
+   * Đây là cửa cho phản xạ nhường chỗ (câu đệm/tư thế nghĩ của chính nó).
+   * `catNgang` không dùng được vì nó xoá sạch hàng đợi → giết luôn câu của não
+   * vừa xếp hàng sau câu đệm (quyết định C0). So với việc gọi thẳng
+   * `world.actorInterrupt`, hàm này thêm đúng một thứ cần thiết: đánh dấu
+   * `daHuy` để handler còn đang treo trong `await chuanBiGiong` tự thôi —
+   * không thì câu đã bị cắt vẫn phát trọn (review PR #75).
+   */
+  catNhe(actor: string): void {
+    const hien = this.dangChay.get(actor);
+    if (hien) hien.daHuy = true;
+    hien?.cancel?.();
+    this.world.actorInterrupt(actor);
   }
 
   soCho(actor: string): number {
@@ -195,9 +248,9 @@ export class Dispatcher {
 
     try {
       // đánh dấu bận TRƯỚC khi gọi handler: handler có thể gọi lệnh khác
-      if (actor) this.dangChay.set(actor, { token, cmd: spec.cmd });
+      if (actor) this.dangChay.set(actor, { token, cmd: spec.cmd, nguon });
 
-      const kq = await spec.handler(args, this.ctx());
+      const kq = await spec.handler(args, this.ctx(actor, token));
 
       const result: Record<string, unknown> = { ...kq.result };
       if (kq.durationMs !== undefined) result.durationMs = kq.durationMs;
@@ -206,7 +259,7 @@ export class Dispatcher {
         // hành động cũ có thể đã cắt mình giữa chừng → không giành lại chỗ
         const conGiuCho = this.dangChay.get(actor)?.token === token;
         if (kq.done && conGiuCho) {
-          this.dangChay.set(actor, { token, cmd: spec.cmd, cancel: kq.cancel });
+          this.dangChay.set(actor, { token, cmd: spec.cmd, nguon, cancel: kq.cancel });
           void kq.done
             .catch(() => undefined)
             .then(() => this.xongActor(actor, token));
@@ -256,6 +309,8 @@ export class Dispatcher {
   /** Cắt hành động đang chạy + bỏ sạch hàng đợi của actor. */
   catNgang(actor: string): number {
     const hien = this.dangChay.get(actor);
+    // handler còn treo trong `await` cũng phải biết là mình đã bị cắt
+    if (hien) hien.daHuy = true;
     this.dangChay.delete(actor);
     hien?.cancel?.();
     this.world.actorInterrupt(actor);

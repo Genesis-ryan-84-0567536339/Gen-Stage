@@ -211,7 +211,8 @@ async function khoiDong(): Promise<void> {
 
   // C1 (#31) — mic đi ĐÚNG cửa ô chat (`oChat.gui`), không có đường tắt vào
   // dispatcher: Boss nói hay gõ đều ra một `actor.say` lên nhân vật owner.
-  mic = batMic({ urlStt: urlStt(), oChat, toast });
+  // I1 (#74) — `bus` để mic bắn `user.listening` (Boss bắt đầu nói, chưa có chữ).
+  mic = batMic({ urlStt: urlStt(), oChat, toast, bus });
 
   // B2 (#20) — nút "🔊 Bật tiếng" (ẩn nếu Boss đã đồng ý ở phiên trước).
   if (tieng) {

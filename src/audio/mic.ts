@@ -201,6 +201,14 @@ export interface CauHinhMic {
   urlStt: string;
   oChat: OChatLike;
   toast: (chu: string) => void;
+  /**
+   * I1 (#74) — bus sự kiện, để bắn **`user.listening`**.
+   *
+   * Tuỳ chọn: `batMic` vẫn chạy khi không có bus (test đơn vị, script cũ).
+   * Giữ kiểu hẹp đúng một hàm `emit` thay vì `EventBusLike` để file mic
+   * không kéo theo cả `api/types`.
+   */
+  bus?: { emit(event: string, data?: Record<string, unknown>): unknown };
 }
 
 const TRONG: Omit<
@@ -295,6 +303,19 @@ export function batMic(ch: CauHinhMic): Mic {
   let dangDoi: Promise<void> | null = null;
   /** Một lần xin quyền đang bay — đừng gọi `getUserMedia` hai lần song song. */
   let dangXin: Promise<KetQuaQuyen> | null = null;
+
+  /**
+   * I1 (#74) — **nói ra là Boss đang nói**, trước khi có chữ.
+   *
+   * Ba mốc: bắt đầu ghi (`on: true`), gửi khối audio lên STT
+   * (`dangNhanDang: true`) và kết thúc lượt (`dangNhanDang: false`). Phản xạ
+   * (`src/behavior/phan-xa.ts`) nghe đúng ba mốc này để quay/nhìn/nhẩm NGAY,
+   * không chờ 3–18 s của STT. Gọi nhiều lần cùng một trạng thái cũng không
+   * sao: bên nghe tự lọc.
+   */
+  function baoNghe(on: boolean, dangNhanDang = false): void {
+    ch.bus?.emit('user.listening', { on, dangNhanDang });
+  }
 
   function moiThongKe(): ThongKeMic {
     return {
@@ -541,6 +562,9 @@ export function batMic(ch: CauHinhMic): Mic {
       nut?.classList.add('dang-ghi');
       ghiBuoc(`đang ghi · dạng "${dangMime}"`);
       ch.oChat.trangThai('🎤 đang nghe…');
+      // I1 (#74) — mốc Boss BẮT ĐẦU nói. Bắn sau `start()` cho khỏi nói dối:
+      // mọi nhánh thoát phía trên (không quyền, nhả phím sớm) chưa ghi gì cả.
+      baoNghe(true);
     } finally {
       dangMo = false;
     }
@@ -605,11 +629,13 @@ export function batMic(ch: CauHinhMic): Mic {
     if (tk.soMauRms * BUOC_RMS_MS < GIU_TOI_THIEU_MS) {
       ch.oChat.trangThai(null);
       ghiBuoc('bấm lỡ (giữ < 250 ms) — bỏ qua');
+      baoNghe(false);
       return;
     }
     if (!dai2?.coTieng) {
       ch.oChat.trangThai(null);
       ch.toast('🎤 Không nghe thấy gì — giữ V rồi nói gần mic hơn');
+      baoNghe(false);
       return;
     }
     if (khoi.size === 0) {
@@ -618,10 +644,17 @@ export function batMic(ch: CauHinhMic): Mic {
       ch.oChat.trangThai(null);
       ch.toast('🎤 MediaRecorder không ghi được byte nào — tải lại trang');
       ghiBuoc('blob 0 byte');
+      baoNghe(false);
       return;
     }
     dangDoi = gui(khoi, dai2.tuMs, dai2.denMs);
-    await dangDoi;
+    try {
+      await dangDoi;
+    } finally {
+      // I1 (#74) — lượt nói ĐÓNG ở đây, dù STT ra chữ, không ra chữ hay lỗi
+      // mạng. Thiếu mốc này thì Nhi đứng giữ mãi tư thế "đang nhẩm".
+      baoNghe(false);
+    }
   }
 
   /* ---------------------------------------------------- gửi lên bridge STT */
@@ -630,6 +663,9 @@ export function batMic(ch: CauHinhMic): Mic {
     tk.byteGui = khoi.size;
     const t0 = Date.now();
     ch.oChat.trangThai('⏳ đang nhận dạng…');
+    // I1 (#74) — hết ghi, bắt đầu nhận dạng: Nhi chuyển sang dáng "đang nhẩm"
+    // (`suy-nghi` nhẹ) chứ không đứng im suốt 3–18 s của STT.
+    baoNghe(false, true);
     // Cắt im lặng: bridge đưa `tu`/`den` thẳng cho ffmpeg, nên trình duyệt
     // không phải giải mã opus để cắt mẫu (Firefox không có bộ mã hoá wav).
     const u = `${ch.urlStt}/stt?tu=${Math.round(tuMs)}&den=${Math.round(denMs)}`;

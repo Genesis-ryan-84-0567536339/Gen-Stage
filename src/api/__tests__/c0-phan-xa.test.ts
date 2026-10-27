@@ -140,11 +140,32 @@ describe('phản xạ: Owner nói → Gen quay lại ngay, không chờ não', (
     t.may.dung();
   });
 
-  it('emote chu-y chạy ngay (faceTo không chiếm thân nên không phải xếp hàng)', async () => {
+  /**
+   * **I1 (#74) đổi chỗ cú "chú ý".**
+   *
+   * C0 gửi `actor.emote chu-y` ngay ở `user.text`. Emote đó dài 800 ms và
+   * CHIẾM THÂN, nên nó ăn trọn ngân sách 400 ms mà I1 hứa cho câu đệm — đo
+   * thật thì câu đệm bị bỏ hẳn vì tới hạn Nhi còn đang diễn chính cú chú ý.
+   * Giờ: tầng 1 ngẩng mặt bằng `actor.express` (không chiếm thân), còn cú
+   * `chu-y` trọn gói chuyển về **tầng 0** (`user.listening`) — chỗ còn vài
+   * giây trước khi có chữ. Lời hứa "phản ứng ngay khi Sếp gọi" không đổi.
+   */
+  it('I1: có chữ → ngẩng mặt bằng actor.express (không chiếm thân, không chắn câu đệm)', async () => {
     const t = await dung();
     datSoNao(1);
     t.world.lichSu.length = 0;
     t.bus.emit('user.text', { actor: 'owner', text: 'Gen ơi' });
+    await nhipMicro();
+    expect(coTrongLichSu(t.world, 'express:surprised')).toBe(true);
+    expect(coTrongLichSu(t.world, 'emote.chu-y')).toBe(false);
+    t.may.dung();
+  });
+
+  it('I1: cú emote chu-y trọn gói giờ nằm ở tầng 0 (Sếp vừa bấm mic)', async () => {
+    const t = await dung();
+    datSoNao(1);
+    t.world.lichSu.length = 0;
+    t.bus.emit('user.listening', { on: true });
     await nhipMicro();
     expect(coTrongLichSu(t.world, 'emote.chu-y')).toBe(true);
     t.may.dung();
@@ -186,10 +207,10 @@ describe('phản xạ: Owner nói → Gen quay lại ngay, không chờ não', (
   });
 });
 
-describe('phản xạ: câu đệm khi não im quá 1,5 s', () => {
+describe('phản xạ: câu đệm khi não im quá mốc choNaoMs (I1 #74: 200 ms)', () => {
   beforeEach(() => xoaSoNao());
 
-  it('não im 1,5 s → Gen nói câu đệm bằng chính actor.say', async () => {
+  it('não im hết mốc choNaoMs (I1: 200 ms) → Gen nói câu đệm bằng chính actor.say', async () => {
     const t = await dung();
     datSoNao(1);
     t.bus.emit('user.text', { actor: 'owner', text: 'Gen ơi' });
@@ -215,7 +236,8 @@ describe('phản xạ: câu đệm khi não im quá 1,5 s', () => {
     await choHanhDong();
     t.world.lichSu.length = 0;
 
-    t.tien(MAC_DINH.choNaoMs - 200);
+    // nửa mốc: chưa tới hạn (số tương đối theo `choNaoMs`, I1 hạ nó 1500 → 200)
+    t.tien(Math.floor(MAC_DINH.choNaoMs / 2));
     await nhipMicro();
     expect(t.world.lichSu.some((x) => x.startsWith('say:'))).toBe(false);
     t.may.dung();
